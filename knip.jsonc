@@ -34,6 +34,12 @@
         "sign-macos.ts",
         "smoke-desktop-app.ts",
         "verify-windows-desktop-artifact.ts",
+        // Flow: the `flow` CLI, the supervisor's child guard and the browser bundle's
+        // install checks are run by path.
+        "flow.mjs",
+        "instances/child-guard.mjs",
+        "verify-browser-install.mjs",
+        "verify-browser-runtime.mjs",
       ],
       "ignoreDependencies": ["agent-device", "esbuild"],
       // The `t3` npm package's files: copied into the package, never imported.
@@ -54,6 +60,8 @@
         "src/provider/testFixtures/*.mjs",
         // graphqlgen reads its config.
         "graphql.config.ts",
+        // Flow: the standalone cloud Brain host's surface; nothing in this repo imports it.
+        "src/brain/cloud-host.ts",
       ],
       // The generated operations export every selection's class.
       "ignoreIssues": { "**/*.graphql.ts": ["exports", "types", "namespaceMembers"] },
@@ -61,7 +69,16 @@
       // The Vite+ web build prerequisite.
       // Native and disk-loaded provider packages stay external to the bundle; the
       // CLI archive and desktop sidecar stage them from this manifest.
-      "ignoreDependencies": ["@effect/platform-node-shared", "@t3tools/web", "@napi-rs/keyring"],
+      "ignoreDependencies": [
+        "@effect/platform-node-shared",
+        "@t3tools/web",
+        "@napi-rs/keyring",
+        // Flow: build:bundle packs the Brain services' source by path, and their native
+        // SQLite driver stays external, so it installs from this manifest.
+        "@flow/brain-graph-gateway",
+        "@flow/brain-orchestrator",
+        "better-sqlite3",
+      ],
     },
     "apps/desktop": {
       // Electron loads these bundles by filename rather than importing them.
@@ -135,6 +152,30 @@
     "infra/relay": {
       // Alchemy loads src/worker.ts as the Worker entry and reads its default export.
       "entry": ["alchemy.run.ts!", "src/persistence/schema.ts!", "src/worker.ts!"],
+    },
+    // Flow: the Brain setup CLI, its hooks and the preserved Brain services.
+    "flow-t3/shared/bin": {
+      // Coding agents run the hook shim by path once it is installed.
+      "entry": ["harness/flow-hook.mjs"],
+      // Declarations TypeScript reads beside their .mjs; knip does not count them as used.
+      "ignore": ["**/*.d.mts"],
+    },
+    "flow-t3/shared/orchestrator": {
+      // build:bundle packs brain-runtime.ts; the rest are run by hand with tsx or loaded
+      // by deployments (private integrations, the standalone ingest status route).
+      "entry": [
+        "src/brain-runtime.ts",
+        "src/integration.ts",
+        "src/ingest-status.ts",
+        "_live_*.ts",
+        "scripts/*.ts",
+      ],
+      // The legacy Slack adapter is kept, unbooted, until its paths move to slack-agent.
+      "ignore": ["src/adapters/slack.ts"],
+    },
+    "flow-t3/shared/graph-gateway": {
+      // Retrieval evals and embedding maintenance scripts are run by hand.
+      "entry": ["eval/*.ts", "scripts/*.{ts,mjs}"],
     },
     "packages/*": {
       // These workspace packages are private to this monorepo.
