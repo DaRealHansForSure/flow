@@ -1,16 +1,19 @@
 # Worklog
 
-Updated: 2026-10-29 23:15
+Updated: 2026-10-30 00:10
 
 ## Current focus
 
-- **Topic:** After the T3 v0.1.5 sync: per-chat Brain on "No project" chats, lint debt
-- **Goal:** Every fork feature works on T3 v0.1.5 and the fork passes T3's lint and knip checks
-- **Branch:** develop (next: feat/no-project-brain, chore/t3-lint-rules)
-- **Last step done:** sync/t3-v0.1.5 merged into develop; server smoke run with Brain ready
-- **Next step:** Port per-chat Brain (d18ed904d, c91d5ae57) onto T3's No project chats
-- **Open questions / blockers:** Codex and OpenCode curator flags unverified (CLIs not
-  installed here); owner to try a real chat in the Dev Flow
+- **Topic:** The Brain as a closable tab of T3's right panel (option A)
+- **Goal:** Brain tab open by default per chat, remembered when closed, header button with
+  update dot, nothing shown for a chat without a Brain
+- **Branch:** feat/brain-right-panel (worktree .t3/worktrees/brain-panel)
+- **Last step done:** Brain surface, default-open per chat, header button, new-tab menu and
+  command palette entries, readChat lists the chat's own Brain; store tests pass
+- **Next step:** Owner tries it in the Dev Flow (new chat, close tab, reload, No Brain chat),
+  then merge into develop with --no-ff
+- **Open questions / blockers:** Server change (readChat state) not covered by a server test;
+  server tests are off limits inside the live service
 
 ## Finished features
 
@@ -24,6 +27,7 @@ Updated: 2026-10-29 23:15
 
 ## History
 
+- 2026-10-30 00:10 - Brain moved into the right panel as a tab; header button with update dot
 - 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
 - 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)
 - 2026-10-29 21:30 - Sync: Brain hooks into RunExecutionService via BrainChatTurns reference
