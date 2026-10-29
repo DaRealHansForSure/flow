@@ -1128,6 +1128,21 @@ export const SETTINGS_SEARCH_ITEMS = [
       "flow service background login launchd systemd start stop restart supervisor persistent capture brain quit",
     ],
   },
+  // Fork settings: what the Brain's notes agent maintains besides conversation notes.
+  {
+    id: "brain-auto-docs",
+    title: "Auto-Docs",
+    to: "/settings/general",
+    scope: "project-defaults",
+    searchTerms: ["brain notes agent curator documents docs disable turn off project override"],
+  },
+  {
+    id: "brain-auto-skills",
+    title: "Auto-Skills",
+    to: "/settings/general",
+    scope: "project-defaults",
+    searchTerms: ["brain notes agent curator skills procedures disable turn off project override"],
+  },
   {
     id: "linked-environments",
     peerLinksOnly: true,

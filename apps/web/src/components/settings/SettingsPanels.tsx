@@ -56,6 +56,7 @@ import { useScopedModelDisabledReason } from "./useScopedModelAvailability";
 import { useOptionalSettingsScope, useSettingsScope } from "./SettingsScopeContext";
 import { scopedIdleCompaction } from "./scopedSettings";
 import { ProjectDefaultsSettings } from "./ProjectDefaultsSettings";
+import { BrainCurationSettings } from "./BrainCurationSettings";
 import { ThreadTitleInstructionsSettings } from "./ThreadTitleInstructionsSettings";
 import { SnoozePresetsRow } from "./SnoozePresetsSettings";
 import { useDesktopUpdateState } from "../../state/desktopUpdate";
@@ -553,6 +554,11 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.enableAgentBrowserAccess !== DEFAULT_UNIFIED_SETTINGS.enableAgentBrowserAccess
       ? ["Agent browser access"]
       : []),
+    // Fork: the Brain's Auto-Docs and Auto-Skills switches.
+    ...(settings.brainAutoDocs !== DEFAULT_UNIFIED_SETTINGS.brainAutoDocs ? ["Auto-Docs"] : []),
+    ...(settings.brainAutoSkills !== DEFAULT_UNIFIED_SETTINGS.brainAutoSkills
+      ? ["Auto-Skills"]
+      : []),
   ];
 
   const restoreDefaults = async () => {
@@ -674,6 +680,8 @@ export function useSettingsRestore(onRestored?: () => void) {
       browserAutoShowFloatingPreview: DEFAULT_UNIFIED_SETTINGS.browserAutoShowFloatingPreview,
       pullRequestLinksOpenInApp: DEFAULT_UNIFIED_SETTINGS.pullRequestLinksOpenInApp,
       enableAgentBrowserAccess: DEFAULT_UNIFIED_SETTINGS.enableAgentBrowserAccess,
+      brainAutoDocs: DEFAULT_UNIFIED_SETTINGS.brainAutoDocs,
+      brainAutoSkills: DEFAULT_UNIFIED_SETTINGS.brainAutoSkills,
     });
     onRestored?.();
   };
@@ -1570,6 +1578,9 @@ export function ThreadsSettingsPanel() {
       </SettingsSection>
 
       <ProjectDefaultsSettings category="general" />
+
+      {/* Fork: Auto-Docs and Auto-Skills switches for the Brain's notes agent. */}
+      <BrainCurationSettings />
 
       {!isProjectScope ? (
         <SettingsSection id="snooze" title="Snooze">
