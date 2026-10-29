@@ -65,7 +65,7 @@ The installed Flow (AppImage plus `flow.service`, data in `~/.t3`) is the stable
 owner works and chats in. The Dev Flow runs from this checkout next to it:
 
 ```bash
-scripts/fork/dev-flow.sh          # desktop app with hot reload, data in .t3/dev
+scripts/fork/dev-flow.sh          # desktop app with hot reload, data in ~/.flow-dev
 scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats (about 3 GB)
 ```
 
@@ -75,17 +75,19 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
   dev app. The server runs from `apps/server/dist`, built once at launch, so server and
   Brain changes need `dev-flow.sh` restarted.
 - Closing the dev window ends the whole session about 15 seconds later; Ctrl+C works too.
-- Everything the Dev Flow prints is also written to `.t3/dev/logs/dev-flow.log` (the
+- Everything the Dev Flow prints is also written to `~/.flow-dev/logs/dev-flow.log` (the
   previous run in `dev-flow.previous.log`). Read that file to see the app's logs; strip
   colour codes with `sed 's/\x1b\[[0-9;]*m//g'`.
 - The window's console is in the same log (`ELECTRON_ENABLE_LOGGING=1`). For slowness,
-  `grep '\[flow-perf\]' .t3/dev/logs/dev-flow.log` lists renderer stalls with the scripts
+  `grep '\[flow-perf\]' ~/.flow-dev/logs/dev-flow.log` lists renderer stalls with the scripts
   behind them, slow or large API responses and route timings. Dev builds run React in
   development mode under StrictMode, so they are slower than a release on their own.
 - `glab` / "No unknown source control provider" warnings in the log are harmless: they
   come from PR lookups for seeded GitLab or remote-less projects.
-- The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `.t3/dev`. Never
-  point dev at `~/.t3`, and never attach it to the installed service.
+- The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `~/.flow-dev`,
+  outside the checkout because T3 hides "No project" chats when the data directory is
+  inside a git work tree. Never point dev at `~/.t3`, and never attach it to the
+  installed service.
 - Agent chats live in `flow.service`. Stopping or restarting it, installing a release,
   or toggling its network access ends every running chat, including the one doing the work.
 - For longer tasks an agent works in a git worktree, so neither side switches branches
