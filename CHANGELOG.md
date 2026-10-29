@@ -22,6 +22,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Dev Flow window no longer fails with "Failed to fetch": the server's development
+  CORS list now allows the Flow desktop origins (`flow://app`, `flow-dev://app`).
 - Settings > Network access now reaches the Flow service: the service listens on every
   interface when it is on, and Settings shows the service's real LAN and Tailscale
   addresses instead of the unused port 3773. Needs a service built from this fork.

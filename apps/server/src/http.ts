@@ -52,7 +52,15 @@ import { requestFlowBrowserUpdate } from "./flowBrowserUpdate.ts";
 
 const OTLP_TRACES_PROXY_PATH = "/api/observability/v1/traces";
 const LOOPBACK_HOSTNAMES = new Set(["127.0.0.1", "::1", "localhost"]);
-const DESKTOP_RENDERER_ORIGINS = ["t3code://app", "t3code-dev://app"];
+// Flow's desktop serves its renderer from `flow://app` (`flow-dev://app` in dev), see
+// DESKTOP_PRODUCTION_SCHEME in apps/desktop/src/electron/ElectronProtocol.ts. The T3
+// origins stay for upstream parity.
+const DESKTOP_RENDERER_ORIGINS = [
+  "t3code://app",
+  "t3code-dev://app",
+  "flow://app",
+  "flow-dev://app",
+];
 const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 // HTML previews are agent output, not the app. The sandbox gives the document an
 // opaque origin: scripts run, but same-origin cookies, storage, and API calls are
