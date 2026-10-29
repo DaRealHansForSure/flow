@@ -241,49 +241,52 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
   const attached = yield* Ref.make(Option.none<AttachSuccess>());
   const parkedFailure = yield* Ref.make(Option.none<DesktopBackendManager.PreflightFailure>());
 
-  const checkCompatibility = (
+  const checkCompatibility = Effect.fn("DesktopAttachedBackend.checkCompatibility")(function* (
     httpBaseUrl: URL,
-  ): Effect.Effect<Option.Option<DesktopBackendManager.PreflightFailure>> =>
-    Effect.gen(function* () {
-      const payload = yield* Effect.result(fetchDescriptor(httpBaseUrl));
-      if (Result.isFailure(payload))
-        return Option.some(
-          failure("unreachable", "The Flow service did not answer.", payload.failure.detail),
-        );
-      const descriptor = decodeDescriptor(payload.success);
-      // A malformed `desktopProtocol` fails the whole decode. That is the
-      // same signal as an absent one — the server cannot state a generation
-      // this build understands — so both land on "update the service".
-      if (Option.isNone(descriptor))
-        return Option.some(
-          failure(
-            "incompatible",
-            "The Flow service needs to be updated.",
-            "Its environment descriptor could not be read.",
-          ),
-        );
-      const generation = descriptor.value.desktopProtocol;
-      if (generation === undefined)
-        return Option.some(
-          failure(
-            "incompatible",
-            "The Flow service needs to be updated.",
-            "It does not report a desktop-attach protocol generation.",
-          ),
-        );
-      if (
-        generation < DESKTOP_PROTOCOL_SUPPORTED.min ||
-        generation > DESKTOP_PROTOCOL_SUPPORTED.max
-      )
-        return Option.some(
-          failure(
-            "incompatible",
-            "The Flow service needs to be updated.",
-            `It speaks desktop-attach generation ${String(generation)}; this app supports ${String(DESKTOP_PROTOCOL_SUPPORTED.min)} through ${String(DESKTOP_PROTOCOL_SUPPORTED.max)}.`,
-          ),
-        );
-      return Option.none<DesktopBackendManager.PreflightFailure>();
-    });
+  ): Effect.fn.Return<Option.Option<DesktopBackendManager.PreflightFailure>> {
+    const payload = yield* Effect.result(fetchDescriptor(httpBaseUrl));
+    if (Result.isFailure(payload)) {
+      return Option.some(
+        failure("unreachable", "The Flow service did not answer.", payload.failure.detail),
+      );
+    }
+    const descriptor = decodeDescriptor(payload.success);
+    // A malformed `desktopProtocol` fails the whole decode. That is the
+    // same signal as an absent one: the server cannot state a generation
+    // this build understands, so both land on "update the service".
+    if (Option.isNone(descriptor)) {
+      return Option.some(
+        failure(
+          "incompatible",
+          "The Flow service needs to be updated.",
+          "Its environment descriptor could not be read.",
+        ),
+      );
+    }
+    const generation = descriptor.value.desktopProtocol;
+    if (generation === undefined) {
+      return Option.some(
+        failure(
+          "incompatible",
+          "The Flow service needs to be updated.",
+          "It does not report a desktop-attach protocol generation.",
+        ),
+      );
+    }
+    if (
+      generation < DESKTOP_PROTOCOL_SUPPORTED.min ||
+      generation > DESKTOP_PROTOCOL_SUPPORTED.max
+    ) {
+      return Option.some(
+        failure(
+          "incompatible",
+          "The Flow service needs to be updated.",
+          `It speaks desktop-attach generation ${String(generation)}; this app supports ${String(DESKTOP_PROTOCOL_SUPPORTED.min)} through ${String(DESKTOP_PROTOCOL_SUPPORTED.max)}.`,
+        ),
+      );
+    }
+    return Option.none<DesktopBackendManager.PreflightFailure>();
+  });
 
   // A service that is still booting is polled rather than rejected; anything
   // else is decided on the first look. None means it never settled — the
@@ -454,22 +457,24 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
     } satisfies DesktopBackendManager.DesktopBackendSnapshot;
   });
 
-  const waitForReady = (timeout: Duration.Duration) =>
-    Effect.gen(function* () {
-      // Give up early once something flipped desiredRunning off: there is
-      // nothing left to become ready.
-      if (!(yield* Ref.get(desiredRunning))) return { done: true, ready: false };
-      const isReady = yield* Ref.get(ready);
-      return isReady ? { done: true, ready: true } : { done: false, ready: false };
-    }).pipe(
-      Effect.repeat({
-        until: (status) => status.done,
-        schedule: Schedule.spaced(STARTING_POLL_INTERVAL),
-      }),
-      Effect.map((status) => status.ready),
-      Effect.timeoutOption(timeout),
-      Effect.map(Option.getOrElse(() => false)),
-    );
+  const waitForReady = Effect.fn("DesktopAttachedBackend.waitForReady")(
+    (timeout: Duration.Duration) =>
+      Effect.gen(function* () {
+        // Give up early once something flipped desiredRunning off: there is
+        // nothing left to become ready.
+        if (!(yield* Ref.get(desiredRunning))) return { done: true, ready: false };
+        const isReady = yield* Ref.get(ready);
+        return isReady ? { done: true, ready: true } : { done: false, ready: false };
+      }).pipe(
+        Effect.repeat({
+          until: (status) => status.done,
+          schedule: Schedule.spaced(STARTING_POLL_INTERVAL),
+        }),
+        Effect.map((status) => status.ready),
+        Effect.timeoutOption(timeout),
+        Effect.map(Option.getOrElse(() => false)),
+      ),
+  );
 
   return {
     id: spec.id,

@@ -168,14 +168,9 @@ const exists = async (path: string): Promise<boolean> => {
 
 /**
  * Whether the installed unit still launches *this* installation's supervisor.
- *
- * `scripts/instances/service.mjs` decides the same question by re-rendering the
- * unit it would write today and comparing the text. That needs the release
- * layout and the private node path, neither of which a packaged desktop knows,
- * so this checks the two facts the unit itself carries: that it supervises this
- * registry's instance directory, and that the entry point it names still exists.
- * A unit left behind by a removed checkout, or pointed at another registry,
- * fails the check exactly as it does in the CLI.
+ * `scripts/instances/service.mjs` re-renders the unit instead, which needs a
+ * release layout the desktop lacks, so this checks what the unit carries: this
+ * registry's instance directory and an entry point that still exists.
  */
 const isUnitCurrent = async (unit: string, resolved: ResolvedInput): Promise<boolean> => {
   const argv = parseUnitArguments(unit, resolved.host);
@@ -261,10 +256,9 @@ export const stopFlowService = async (
 };
 
 /**
- * Turn the service's network access on or off. The supervisor records the
- * choice in its own config (the desktop never writes the registry), and the
- * service manager restarts the service so the server binds the new address.
- * Without a service manager the choice still applies from the next start,
+ * Turn the service's network access on or off. The supervisor records it (the
+ * desktop never writes the registry) and the service manager restarts the
+ * service to bind the new address; unmanaged, it applies from the next start,
  * which the `not-managed` result tells the caller.
  */
 export const setFlowServiceNetworkAccess = async (
@@ -342,12 +336,10 @@ export interface StartFlowServiceInput extends FlowServiceInput {
 }
 
 /**
- * Start a stopped service. A managed service is started by its service manager
- * (`launchctl kickstart` / `systemctl start`). An unmanaged one is started by
- * running the service's own launcher — the same `flow` the user would type —
- * which takes the launcher and supervisor locks itself, so two clients starting
- * at once cannot produce two servers. The desktop still never spawns a
- * supervisor directly. Resolves once discovery no longer reports `stopped`.
+ * Start a stopped service through its service manager, or else through its own
+ * `flow` launcher, whose locks stop two clients from starting two servers. The
+ * desktop never spawns a supervisor itself. Resolves once discovery no longer
+ * reports `stopped`.
  */
 export const startFlowService = async (
   input: StartFlowServiceInput,

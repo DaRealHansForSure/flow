@@ -151,9 +151,8 @@ const runPair = (environment: RecoveryEnvironment, dataHome: string): Promise<Mi
 
 /**
  * A standard-scope pairing URL for the running service, minted the way
- * `t3 pair` mints one: run the service's own entry against its data home, so
- * the auth database and the pairing base URL are the service's, not this
- * app's. Administrative scopes are deliberately not used — a browser session
+ * `t3 pair` does: the service's own entry against its data home, so the auth
+ * database and base URL are the service's. No admin scopes: a browser session
  * is a client, not the app's own attach.
  */
 export const mintServicePairingUrl = async (
