@@ -250,7 +250,12 @@ In a chat with a brain, the **Brain** tab of the right panel shows the graph, Au
 conversation notes. A new chat opens it by itself. Close it like any other tab and that chat
 keeps it closed; the Brain button in the chat header, the panel's new-tab menu or **Show Brain
 for this chat** in the command palette bring it back. A dot on the button means the brain is
-updating the chat's notes. Chats without a brain show neither tab nor button.
+updating the chat's notes. A chat without a brain has no Brain button, and the panel's menu
+shows **Brain** greyed out.
+
+The button is amber until the brain has answered. Red means the brain failed; hover it for the
+reason, which a **Brain unavailable** message also shows once. The **Brain** entry at the top of
+the sidebar works the same way for the brain itself: amber while it starts, red when it fails.
 
 Choose a brain for the project to give its chats Flow's graph, memory, and committed-source
 access. The next regular message automatically supplies Flow's orientation, including in an
@@ -288,9 +293,10 @@ To stop this background work, turn off **Settings → General → Brain → Note
 Settings. The chat keeps its brain briefing and tools, and its messages are still recorded, so
 turning the agent back on catches up on what it missed.
 
-To keep notes but stop Auto-Docs or Auto-Skills, turn them off in the same section. A project
-inherits these two switches and can override them in the **Brain** section of its settings.
-Existing documents stay available and searchable either way.
+To keep notes but stop Auto-Docs or Auto-Skills, turn them off in the same section; they are
+greyed out while the notes agent is off. A project inherits these two switches and can override
+them in the **Brain** section of its settings. Existing documents stay available and searchable
+either way.
 
 Notes update after completed turns and about every 60 seconds while new activity arrives.
 Busy extraction coalesces later activity into a follow-up. The tab shows pending work or an
