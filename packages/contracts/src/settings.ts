@@ -1024,6 +1024,9 @@ export const PROJECT_SCOPED_SERVER_SETTING_KEYS = [
   "sidebarAutoSettleKeepPullRequests",
   "continueThreadsAfterServerUpdate",
   "responseStreamingMode",
+  // Fork settings: which outputs the Brain's notes agent maintains besides notes.
+  "brainAutoDocs",
+  "brainAutoSkills",
 ] as const;
 export type ProjectScopedServerSettingKey = (typeof PROJECT_SCOPED_SERVER_SETTING_KEYS)[number];
 
@@ -1061,6 +1064,8 @@ export const ProjectSettingsOverrides = Schema.Struct({
   sidebarAutoSettleKeepPullRequests: Schema.optionalKey(Schema.Boolean),
   continueThreadsAfterServerUpdate: Schema.optionalKey(Schema.Boolean),
   responseStreamingMode: Schema.optionalKey(ResponseStreamingMode),
+  brainAutoDocs: Schema.optionalKey(Schema.Boolean),
+  brainAutoSkills: Schema.optionalKey(Schema.Boolean),
   providerInstances: Schema.optionalKey(
     Schema.Record(ProviderInstanceId, ProjectProviderInstanceOverride),
   ),
@@ -1237,6 +1242,10 @@ export const ServerSettings = Schema.Struct({
   // Fork setting: off turns every pull/merge request feature off, on the server
   // (background lookups, PR-based settling, PR requests) and in every client.
   pullRequestsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  // Fork settings: off stops the Brain's notes agent from creating or updating Auto-Docs or
+  // Auto-Skills. Conversation notes are always kept and existing documents stay readable.
+  brainAutoDocs: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  brainAutoSkills: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   backgroundActivity: BackgroundActivitySettings,
 
   automaticGitFetchInterval: Schema.DurationFromMillis.pipe(
@@ -1582,6 +1591,8 @@ export const ServerSettingsPatch = Schema.Struct({
   sidebarAutoSettleKeepPullRequests: Schema.optionalKey(Schema.Boolean),
   sidebarAutoSettleOnMerge: Schema.optionalKey(Schema.Boolean),
   pullRequestsEnabled: Schema.optionalKey(Schema.Boolean),
+  brainAutoDocs: Schema.optionalKey(Schema.Boolean),
+  brainAutoSkills: Schema.optionalKey(Schema.Boolean),
   autoResumeLimitedThreads: Schema.optionalKey(Schema.Boolean),
   snoozeLimitedThreads: Schema.optionalKey(Schema.Boolean),
   snoozePresets: Schema.optionalKey(SnoozePresetSettings),

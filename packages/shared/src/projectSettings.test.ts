@@ -56,18 +56,31 @@ describe("resolveProjectSettings", () => {
     const settings = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
       defaultAutoPull: true,
       sidebarAutoSettleAfterDays: 3,
+      brainAutoSkills: false,
       projectSettingsOverrides: {
-        [projectId]: { defaultAutoPull: false, sidebarAutoSettleAfterDays: null },
+        [projectId]: {
+          defaultAutoPull: false,
+          sidebarAutoSettleAfterDays: null,
+          brainAutoDocs: false,
+          brainAutoSkills: true,
+        },
       },
     });
     const resolved = resolveProjectSettings(settings, projectId);
     expect(resolved.settings.defaultAutoPull).toBe(false);
     expect(resolved.settings.sidebarAutoSettleAfterDays).toBeNull();
     expect(resolved.settings.defaultThreadEnvMode).toBe(settings.defaultThreadEnvMode);
+    expect(resolved.settings.brainAutoDocs).toBe(false);
+    expect(resolved.settings.brainAutoSkills).toBe(true);
     expect(resolved.sources.defaultAutoPull).toBe("project");
     expect(resolved.sources.sidebarAutoSettleAfterDays).toBe("project");
+    expect(resolved.sources.brainAutoSkills).toBe("project");
     expect(resolved.sources.defaultThreadEnvMode).toBe("environment");
-    expect(resolveProjectSettings(settings, otherProjectId).settings.defaultAutoPull).toBe(true);
+    const other = resolveProjectSettings(settings, otherProjectId);
+    expect(other.settings.defaultAutoPull).toBe(true);
+    expect(other.settings.brainAutoDocs).toBe(true);
+    expect(other.settings.brainAutoSkills).toBe(false);
+    expect(other.sources.brainAutoSkills).toBe("environment");
   });
 
   it("honours the aggregate's own fields only until the server has folded them", () => {
