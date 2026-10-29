@@ -58,6 +58,11 @@ import {
   resolveQuickAction,
   resolveThreadBranchUpdate,
 } from "./GitActionsControl.logic";
+import {
+  withoutPullRequestMenuItems,
+  withoutPullRequestQuickAction,
+} from "./GitActionsControl.pullRequests";
+import { usePullRequestsTurnedOff } from "../hooks/usePullRequestsTurnedOff";
 import { AnimatedHeight } from "./AnimatedHeight";
 import { StartTruncatedPath } from "./StartTruncatedPath";
 import { Button } from "~/components/ui/button";
@@ -1165,15 +1170,26 @@ export default function GitActionsControl({
     return gitStatusForActions?.isDefaultRef ?? false;
   }, [gitStatusForActions?.isDefaultRef]);
 
-  const gitActionMenuItems = useMemo(
-    () => buildMenuItems(gitStatusForActions, isGitActionRunning, hasPrimaryRemote),
-    [gitStatusForActions, hasPrimaryRemote, isGitActionRunning],
-  );
-  const quickAction = useMemo(
-    () =>
-      resolveQuickAction(gitStatusForActions, isGitActionRunning, isDefaultRef, hasPrimaryRemote),
-    [gitStatusForActions, hasPrimaryRemote, isDefaultRef, isGitActionRunning],
-  );
+  const pullRequestsTurnedOff = usePullRequestsTurnedOff(activeEnvironmentId);
+  const gitActionMenuItems = useMemo(() => {
+    const items = buildMenuItems(gitStatusForActions, isGitActionRunning, hasPrimaryRemote);
+    return pullRequestsTurnedOff ? withoutPullRequestMenuItems(items) : items;
+  }, [gitStatusForActions, hasPrimaryRemote, isGitActionRunning, pullRequestsTurnedOff]);
+  const quickAction = useMemo(() => {
+    const action = resolveQuickAction(
+      gitStatusForActions,
+      isGitActionRunning,
+      isDefaultRef,
+      hasPrimaryRemote,
+    );
+    return pullRequestsTurnedOff ? withoutPullRequestQuickAction(action) : action;
+  }, [
+    gitStatusForActions,
+    hasPrimaryRemote,
+    isDefaultRef,
+    isGitActionRunning,
+    pullRequestsTurnedOff,
+  ]);
   const quickActionDisabledReason = quickAction.disabled
     ? (quickAction.hint ?? "This action is currently unavailable.")
     : null;

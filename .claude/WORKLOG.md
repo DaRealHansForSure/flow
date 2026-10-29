@@ -1,15 +1,15 @@
 # Worklog
 
-Updated: 2026-10-29 21:40
+Updated: 2026-10-29 22:30
 
 ## Current focus
 
-- **Topic:** Dev Flow feels slow: performance logging to find the cause
-- **Goal:** See what blocks the renderer when opening a chat
-- **Branch:** feat/dev-perf-log
-- **Last step done:** devPerformanceLog.ts plus renderer console in dev-flow.log
-- **Next step:** Owner restarts dev-flow.sh, opens a chat; read [flow-perf] lines
-- **Open questions / blockers:** PR toggle postponed by owner; design: server setting pullRequestsEnabled
+- **Topic:** Pull requests can be turned off (Settings > Source Control)
+- **Goal:** One switch stops all PR/MR lookups and hides PR features everywhere
+- **Branch:** feat/pull-request-toggle
+- **Last step done:** Contracts, server gates, client-runtime, web, mobile, docs; focused tests pass
+- **Next step:** Owner tries the switch in the Dev Flow (restart dev-flow.sh); then merge into develop
+- **Open questions / blockers:** Older servers (installed 0.1.15) ignore the setting until updated
 
 ## Finished features
 
@@ -20,6 +20,7 @@ Updated: 2026-10-29 21:40
 
 ## History
 
+- 2026-10-29 22:30 - pullRequestsEnabled: server gates, capability folding, web and mobile
 - 2026-10-29 21:40 - Server traces: chat open 1-50ms server side, slowness is renderer
 - 2026-10-29 21:05 - One branch per topic; per-commit branches regrouped
 - 2026-10-29 20:55 - Dev Flow stops on window close (runner group watcher)

@@ -68,6 +68,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { isDesktopLocalConnectionTarget } from "../connection/desktopLocal";
 import { useDesktopLocalBootstraps } from "../connection/useDesktopLocalBootstraps";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
+import { usePullRequestsTurnedOff } from "../hooks/usePullRequestsTurnedOff";
 import { useOpenPanelPullRequestUrl } from "../hooks/useOpenPanelPullRequestUrl";
 import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
 import { useClientSettings } from "../hooks/useSettings";
@@ -607,14 +608,16 @@ function OpenCommandPaletteDialog(props: {
   const openPanelPullRequestUrl = useOpenPanelPullRequestUrl(
     activeThread ? scopeThreadRef(activeThread.environmentId, activeThread.id) : null,
   );
+  const pullRequestsTurnedOff = usePullRequestsTurnedOff(activeThread?.environmentId ?? null);
+  const storedPullRequestUrl =
+    activeThread?.linkedPullRequest?.url ?? activeThread?.branchPullRequest?.url ?? null;
   const activeThreadReferenceCopyTarget =
     activeThread == null
       ? null
       : resolveThreadReferenceCopyTarget({
           threadId: activeThread.id,
           openPanelPullRequestUrl,
-          linkedPullRequestUrl:
-            activeThread.linkedPullRequest?.url ?? activeThread.branchPullRequest?.url ?? null,
+          linkedPullRequestUrl: pullRequestsTurnedOff ? null : storedPullRequestUrl,
         });
   const copyActiveThreadReference = useCallback(async () => {
     const target = activeThreadReferenceCopyTarget;

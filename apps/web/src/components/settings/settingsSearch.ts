@@ -430,6 +430,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     primaryOnly: true,
   },
   {
+    id: "pull-requests-enabled",
+    title: "Pull requests",
+    to: "/settings/source-control",
+    searchTerms: ["pull request merge request pr mr github gitlab glab gh disable turn off"],
+    primaryOnly: true,
+  },
+  {
     id: "follow-change-request-templates",
     title: "Follow change request templates",
     to: "/settings/source-control",

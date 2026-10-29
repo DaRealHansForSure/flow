@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { connectionAtomRuntime } from "../connection/runtime";
 import { appAtomRegistry } from "./atom-registry";
 import { useEnvironmentQuery } from "./query";
+import { useEnvironmentServerConfig } from "./entities";
 import { presentThreadPr, type ThreadPrPresentation } from "./thread-pr-presentation";
 
 const pullRequestSummaryAtom = createLinkedPullRequestSummaryAtomFamily(connectionAtomRuntime);
@@ -39,7 +40,12 @@ export {
  * request for the same PR in the same environment.
  */
 export function useThreadPr(thread: EnvironmentThreadShell): ThreadPrPresentation | null {
-  const pullRequestRef = thread.linkedPullRequest ?? thread.branchPullRequest ?? null;
+  // Fork: with pull requests turned off in the server's settings, a thread shows
+  // no PR, even one stored on it from before.
+  const pullRequestsTurnedOff =
+    useEnvironmentServerConfig(thread.environmentId)?.settings.pullRequestsEnabled === false;
+  const storedPullRequestRef = thread.linkedPullRequest ?? thread.branchPullRequest ?? null;
+  const pullRequestRef = pullRequestsTurnedOff ? null : storedPullRequestRef;
   const threadKey = scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id));
   const snapshotIdentity = JSON.stringify(pullRequestRef);
   // Select this row's entry so writes for other rows do not re-render it.

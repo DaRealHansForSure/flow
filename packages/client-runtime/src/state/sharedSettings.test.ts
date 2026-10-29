@@ -67,6 +67,7 @@ describe("pickSharedServerSettings", () => {
     ).toEqual([
       "continueThreadsAfterServerUpdate",
       "newWorktreesStartFromOrigin",
+      "pullRequestsEnabled",
       "sidebarAutoSettleAfterDays",
       "sidebarAutoSettleOnMerge",
       "sourceControlWritingStyle",

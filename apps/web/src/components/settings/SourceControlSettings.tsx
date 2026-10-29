@@ -57,6 +57,7 @@ import {
 } from "../Icons";
 import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { SourceControlWritingSettingsSection } from "./SourceControlWritingSettings";
+import { PullRequestSettingsSection } from "./PullRequestSettingsSection";
 import {
   PolicyTooltip,
   SettingResetButton,
@@ -544,6 +545,7 @@ export function SourceControlSettingsPanel() {
   return (
     <SettingsPageContainer>
       <SharedSettingsMismatchAlert />
+      <PullRequestSettingsSection />
       {isInitialScanPending ? (
         <>
           <SourceControlSectionSkeleton title="Version Control" headerAction={scanButton} />

@@ -14,6 +14,7 @@ import * as Stream from "effect/Stream";
 import * as GitManager from "../git/GitManager.ts";
 import * as PullRequestService from "../pullRequest/PullRequestService.ts";
 import * as ServerSettings from "../serverSettings.ts";
+import { readPullRequestsEnabled } from "../pullRequest/pullRequestsEnabled.ts";
 import { forkParked } from "../serverActivation.ts";
 import * as OrchestrationEngine from "./Services/OrchestrationEngine.ts";
 import * as ProjectionSnapshotQuery from "./Services/ProjectionSnapshotQuery.ts";
@@ -103,6 +104,10 @@ export const make = Effect.gen(function* () {
         concurrency: 8,
       },
     )).filter((thread) => thread !== null);
+    // With pull requests turned off, inactivity is the only way a thread settles.
+    if (!(yield* readPullRequestsEnabled(settingsService))) {
+      return;
+    }
 
     // Use the same cwd as PR discovery so both paths share GitManager's cache.
     const lookupCwdByThreadId = new Map<string, string>();
@@ -253,6 +258,7 @@ export const make = Effect.gen(function* () {
     const initialSettings = yield* settingsService.getSettings.pipe(Effect.orDie);
     let lastAfterDays = initialSettings.sidebarAutoSettleAfterDays;
     let lastOnMerge = initialSettings.sidebarAutoSettleOnMerge;
+    let lastPullRequestsEnabled = initialSettings.pullRequestsEnabled;
     yield* forkParked(
       Effect.gen(function* () {
         yield* worker.enqueue(undefined);
@@ -263,12 +269,14 @@ export const make = Effect.gen(function* () {
       Stream.runForEach(settingsChanges, (settings) => {
         if (
           settings.sidebarAutoSettleAfterDays === lastAfterDays &&
-          settings.sidebarAutoSettleOnMerge === lastOnMerge
+          settings.sidebarAutoSettleOnMerge === lastOnMerge &&
+          settings.pullRequestsEnabled === lastPullRequestsEnabled
         ) {
           return Effect.void;
         }
         lastAfterDays = settings.sidebarAutoSettleAfterDays;
         lastOnMerge = settings.sidebarAutoSettleOnMerge;
+        lastPullRequestsEnabled = settings.pullRequestsEnabled;
         return worker.enqueue(undefined);
       }),
     );

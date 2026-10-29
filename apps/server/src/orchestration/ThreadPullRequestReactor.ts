@@ -18,6 +18,8 @@ import * as Stream from "effect/Stream";
 
 import * as GitManager from "../git/GitManager.ts";
 import * as PullRequestService from "../pullRequest/PullRequestService.ts";
+import { readPullRequestsEnabled } from "../pullRequest/pullRequestsEnabled.ts";
+import * as ServerSettings from "../serverSettings.ts";
 import * as RepositoryIdentityResolver from "../project/RepositoryIdentityResolver.ts";
 import { forkParked } from "../serverActivation.ts";
 import * as OrchestrationEngine from "./Services/OrchestrationEngine.ts";
@@ -85,6 +87,7 @@ export const make = Effect.gen(function* () {
   const repositoryIdentities = yield* RepositoryIdentityResolver.RepositoryIdentityResolver;
   const crypto = yield* Crypto.Crypto;
   const fileSystem = yield* FileSystem.FileSystem;
+  const settingsService = yield* ServerSettings.ServerSettingsService;
   // Settled threads get one link discovery at startup. Failed lookups retry on
   // the periodic pass a few times, then stop until the thread changes or the
   // server restarts, so a missing or logged-out CLI cannot loop forever.
@@ -104,6 +107,9 @@ export const make = Effect.gen(function* () {
   const synchronize = Effect.fn("ThreadPullRequestReactor.synchronize")(function* (
     request: RefreshRequest,
   ) {
+    if (!(yield* readPullRequestsEnabled(settingsService))) {
+      return;
+    }
     const snapshot = yield* snapshots.getShellSnapshot();
     const projects = new Map(snapshot.projects.map((project) => [project.id, project]));
     if (request.backfill) {
