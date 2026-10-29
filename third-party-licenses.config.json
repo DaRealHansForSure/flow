@@ -321,7 +321,9 @@
       "version": "0.4.0",
       "license": "Apache-2.0 AND OFL-1.1",
       "generatedNotices": [
-        { "licenseId": "Apache-2.0" },
+        {
+          "licenseId": "Apache-2.0"
+        },
         {
           "licenseId": "OFL-1.1",
           "copyrights": [
@@ -868,6 +870,114 @@
       "name": "iobuffer",
       "license": "MIT",
       "sourceUrl": "https://github.com/image-js/iobuffer"
+    },
+    {
+      "name": "bezier-js",
+      "version": "6.1.4",
+      "sourceUrl": "https://github.com/Pomax/bezierjs",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) Pomax"]
+      }
+    },
+    {
+      "name": "generic-pool",
+      "version": "3.9.0",
+      "sourceUrl": "https://github.com/coopernurse/node-pool",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2010-2016 James Cooper"]
+      }
+    },
+    {
+      "name": "redis",
+      "version": "5.12.1",
+      "sourceUrl": "https://github.com/redis/node-redis",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022-2023, Redis, inc."]
+      }
+    },
+    {
+      "name": "@redis/client",
+      "version": "5.12.1",
+      "sourceUrl": "https://github.com/redis/node-redis",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022-2023, Redis, inc."]
+      }
+    },
+    {
+      "name": "@redis/bloom",
+      "version": "5.12.1",
+      "sourceUrl": "https://github.com/redis/node-redis",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022-2023, Redis, inc."]
+      }
+    },
+    {
+      "name": "@redis/json",
+      "version": "5.12.1",
+      "sourceUrl": "https://github.com/redis/node-redis",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022-2023, Redis, inc."]
+      }
+    },
+    {
+      "name": "@redis/search",
+      "version": "5.12.1",
+      "sourceUrl": "https://github.com/redis/node-redis",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022-2023, Redis, inc."]
+      }
+    },
+    {
+      "name": "@redis/time-series",
+      "version": "5.12.1",
+      "sourceUrl": "https://github.com/redis/node-redis",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022-2023, Redis, inc."]
+      }
+    },
+    {
+      "name": "@reflink/reflink",
+      "version": "0.1.19",
+      "sourceUrl": "https://github.com/pnpm/reflink",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) pnpm contributors"]
+      }
+    },
+    {
+      "name": "@reflink/reflink-linux-x64-gnu",
+      "version": "0.1.19",
+      "sourceUrl": "https://github.com/pnpm/reflink",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) pnpm contributors"]
+      }
+    },
+    {
+      "name": "@flow/brain-ui",
+      "version": "0.1.0",
+      "license": "AGPL-3.0-only",
+      "noticeFile": "flow-t3/shared/LICENSE"
+    },
+    {
+      "name": "@flow/brain-runtime",
+      "version": "0.1.0",
+      "license": "AGPL-3.0-only",
+      "noticeFile": "flow-t3/shared/LICENSE"
+    },
+    {
+      "name": "@flow/brain-setup",
+      "version": "0.1.0",
+      "license": "AGPL-3.0-only",
+      "noticeFile": "flow-t3/shared/LICENSE"
     }
   ]
 }
