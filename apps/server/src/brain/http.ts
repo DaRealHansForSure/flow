@@ -169,7 +169,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
           return yield* Effect.tryPromise(async () => {
             try {
               return {
-                state: await runtime.state(thread.value.projectId),
+                state: await runtime.state(thread.value.projectId, false, command.threadId),
                 chatMemories: await runtime.chatMemories(
                   thread.value.projectId,
                   command.threadId,
@@ -180,7 +180,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
               };
             } catch (cause) {
               return {
-                state: await runtime.state(thread.value.projectId, true),
+                state: await runtime.state(thread.value.projectId, true, command.threadId),
                 error: cause instanceof Error ? cause.message : "Could not load brain context.",
                 createdWorkspaceId: null,
               };

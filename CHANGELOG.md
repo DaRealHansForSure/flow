@@ -55,6 +55,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A chat that picked its own Brain shows that Brain next to it, and a "No Brain" chat shows
+  none, instead of the project's Brain.
+
 - "No project" chats now show in the Dev Flow: its data moved from `.t3/dev` inside the
   checkout to `~/.flow-dev`. `dev-flow.sh` moves an existing `.t3/dev` there once, with its
   Brain graph.

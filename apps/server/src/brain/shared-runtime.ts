@@ -346,13 +346,22 @@ export class SharedBrainRuntime implements BrainClient {
       throw Error("The project’s brain changed. Retry the request.");
     return result;
   }
-  async state(projectId?: ProjectId, metadataOnly = false) {
+  /** With threadId, a project's workspaces narrow to that chat's own Brain choice (fork). */
+  async state(projectId?: ProjectId, metadataOnly = false, threadId?: string) {
     const state = decodeState(await this.request("state", { metadataOnly }));
+    let selectedBrainId: string | undefined;
+    if (projectId !== undefined) {
+      if (threadId === undefined) {
+        selectedBrainId = this.projectBrainId(projectId);
+      } else {
+        selectedBrainId = this.threadBrainId(projectId, threadId);
+      }
+    }
     return {
       ...state,
       configuredProjectIds: this.projectBindings.configuredProjectIds(),
       workspaces: state.workspaces
-        .filter((w) => !projectId || this.projectBrainId(projectId) === w.id)
+        .filter((w) => !projectId || w.id === selectedBrainId)
         .map((w) => ({
           ...w,
           projectIds: this.projectBindings.idsFor(
