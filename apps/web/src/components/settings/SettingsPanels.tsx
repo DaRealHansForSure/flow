@@ -546,6 +546,10 @@ export function useSettingsRestore(onRestored?: () => void) {
       ? ["Delete confirmation"]
       : []),
     ...(settings.confirmQuit !== DEFAULT_UNIFIED_SETTINGS.confirmQuit ? ["Quit shortcut"] : []),
+    // Flow: window close confirmation.
+    ...(settings.confirmWindowClose !== DEFAULT_UNIFIED_SETTINGS.confirmWindowClose
+      ? ["Confirm before closing"]
+      : []),
     ...(isTextGenerationModelDirty ? ["Text generation model"] : []),
     ...(settings.threadTitleInstructions !== DEFAULT_UNIFIED_SETTINGS.threadTitleInstructions
       ? ["Thread title instructions"]
@@ -658,6 +662,8 @@ export function useSettingsRestore(onRestored?: () => void) {
       confirmThreadDelete: DEFAULT_UNIFIED_SETTINGS.confirmThreadDelete,
       confirmThreadUnpin: DEFAULT_UNIFIED_SETTINGS.confirmThreadUnpin,
       confirmQuit: DEFAULT_UNIFIED_SETTINGS.confirmQuit,
+      // Flow: window close confirmation.
+      confirmWindowClose: DEFAULT_UNIFIED_SETTINGS.confirmWindowClose,
       textGenerationModelSelection: DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection,
       threadTitleInstructions: DEFAULT_UNIFIED_SETTINGS.threadTitleInstructions,
       fontFamilySans: DEFAULT_UNIFIED_SETTINGS.fontFamilySans,
@@ -1011,6 +1017,34 @@ export function GeneralSettingsPanel() {
                   ))}
                 </SelectPopup>
               </Select>
+            }
+          />
+        ) : null}
+        {/* Flow: closing the window quits the app on Windows and Linux. */}
+        {isElectron ? (
+          <SettingsRow
+            {...searchableSetting("window-close-confirmation")}
+            description="Ask before closing the window quits the app (Windows and Linux)."
+            resetAction={
+              settings.confirmWindowClose !== DEFAULT_UNIFIED_SETTINGS.confirmWindowClose ? (
+                <SettingResetButton
+                  label="window close confirmation"
+                  onClick={() =>
+                    updateSettings({
+                      confirmWindowClose: DEFAULT_UNIFIED_SETTINGS.confirmWindowClose,
+                    })
+                  }
+                />
+              ) : null
+            }
+            control={
+              <Switch
+                checked={settings.confirmWindowClose}
+                onCheckedChange={(checked) =>
+                  updateSettings({ confirmWindowClose: Boolean(checked) })
+                }
+                aria-label="Confirm before closing the window quits the app"
+              />
             }
           />
         ) : null}

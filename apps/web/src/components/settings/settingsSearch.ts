@@ -659,6 +659,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["confirmation desktop app exit direct hold double click press twice"],
     desktopOnly: true,
   },
+  // Flow: asks before closing the window quits the app.
+  {
+    id: "window-close-confirmation",
+    title: "Confirm before closing",
+    to: "/settings/general",
+    searchTerms: ["quit confirmation desktop app exit close window button alt f4 ask"],
+    desktopOnly: true,
+  },
   {
     id: "text-generation-model",
     title: "Text generation model",

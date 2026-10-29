@@ -34,6 +34,8 @@ import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
 import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as DesktopRendererHistory from "../telemetry/DesktopRendererHistory.ts";
 import { makeQuitShortcutHandler } from "./QuitHold.ts";
+// Flow: confirmation before closing the window quits the app.
+import { makeWindowCloseHandler } from "./WindowCloseConfirmation.ts";
 import { copyContextMenuImage } from "./ContextMenuImage.ts";
 
 const TITLEBAR_HEIGHT = 40;
@@ -323,6 +325,31 @@ export const make = Effect.gen(function* () {
 
   const currentMainWindow = electronWindow.currentMainOrFirst.pipe(Effect.flatMap(withoutSplash));
   const focusedMainWindow = electronWindow.focusedMainOrFirst.pipe(Effect.flatMap(withoutSplash));
+
+  // Flow: an unreadable settings file keeps the confirmation on.
+  const readConfirmWindowClose = clientSettings.get.pipe(
+    Effect.map(
+      Option.match({
+        onNone: () => DEFAULT_CLIENT_SETTINGS.confirmWindowClose,
+        onSome: (settings) => settings.confirmWindowClose,
+      }),
+    ),
+    Effect.orElseSucceed(() => DEFAULT_CLIENT_SETTINGS.confirmWindowClose),
+  );
+  // Flow: "Don't ask again" in the close confirmation; a failed save still lets the app quit.
+  const disableConfirmWindowClose = clientSettings.get.pipe(
+    Effect.flatMap((settings) =>
+      clientSettings.set({
+        ...Option.getOrElse(settings, () => DEFAULT_CLIENT_SETTINGS),
+        confirmWindowClose: false,
+      }),
+    ),
+    Effect.catch((error) =>
+      logWindowWarning("failed to save the window close confirmation setting", {
+        message: error.message,
+      }),
+    ),
+  );
 
   const zoomWindow = Effect.fn("desktop.window.zoomWindow")(function* (
     window: Electron.BrowserWindow,
@@ -668,8 +695,17 @@ export const make = Effect.gen(function* () {
     window.on("move", scheduleBoundsPersist);
     window.on("maximize", scheduleBoundsPersist);
     window.on("unmaximize", scheduleBoundsPersist);
-    window.on("close", () => {
+    // Flow: closing the window asks before it quits the app.
+    const windowCloseHandler = makeWindowCloseHandler(window, {
+      platform: environment.platform,
+      appName: environment.displayName,
+      isAppQuitting: () => Ref.getUnsafe(desktopState.quitting),
+      isConfirmationEnabled: () => runPromise(readConfirmWindowClose),
+      disableConfirmation: () => runPromise(disableConfirmWindowClose),
+    });
+    window.on("close", (event) => {
       runFork(flushBoundsPersist);
+      windowCloseHandler(event);
     });
 
     if (environment.platform === "darwin") {

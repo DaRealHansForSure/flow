@@ -39,6 +39,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A chat without a project picks its own Brain or "No Brain" on the new-chat screen; the
   choice stays with the chat.
 
+- On Windows and Linux, closing the desktop window asks "Quit Flow?" before the app quits;
+  "Don't ask again" or Settings > General > Confirm before closing turns it off.
+
 ### Changed
 
 - Flow installs and updates from this fork (DaRealHansForSure/flow): the `flow` CLI,
