@@ -13,6 +13,7 @@ import {
 import { tryCopyTextWithHaptic } from "../../lib/copyTextWithHaptic";
 import { T3KeyboardCommands } from "../../native/T3KeyboardCommands";
 import { useThreadShell } from "../../state/entities";
+import { useEnvironmentServerConfig } from "../../state/entities";
 import type { GitActionProgress } from "../../state/use-vcs-action-state";
 import { GitActionProgressOverlay } from "../threads/GitActionProgressOverlay";
 import {
@@ -38,17 +39,20 @@ export function HardwareKeyboardCommandProvider({
   const navigation = useNavigation();
   const activeThreadRef = useMemo(() => parseActiveThreadPath(pathname), [pathname]);
   const activeThread = useThreadShell(activeThreadRef);
-  const copyTarget = useMemo(
-    () =>
-      activeThreadRef === null
-        ? null
-        : resolveThreadReferenceCopyTarget({
-            threadId: activeThread?.id ?? activeThreadRef.threadId,
-            linkedPullRequestUrl:
-              (activeThread?.linkedPullRequest ?? activeThread?.branchPullRequest)?.url ?? null,
-          }),
-    [activeThread, activeThreadRef],
-  );
+  const pullRequestsTurnedOff =
+    useEnvironmentServerConfig(activeThreadRef?.environmentId ?? null)?.settings
+      .pullRequestsEnabled === false;
+  const copyTarget = useMemo(() => {
+    if (activeThreadRef === null) {
+      return null;
+    }
+    const storedPullRequestUrl =
+      (activeThread?.linkedPullRequest ?? activeThread?.branchPullRequest)?.url ?? null;
+    return resolveThreadReferenceCopyTarget({
+      threadId: activeThread?.id ?? activeThreadRef.threadId,
+      linkedPullRequestUrl: pullRequestsTurnedOff ? null : storedPullRequestUrl,
+    });
+  }, [activeThread, activeThreadRef, pullRequestsTurnedOff]);
   const [copyFeedback, setCopyFeedback] = useState<GitActionProgress>(EMPTY_COPY_FEEDBACK);
   const copyRequestIdRef = useRef(0);
   const copyFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

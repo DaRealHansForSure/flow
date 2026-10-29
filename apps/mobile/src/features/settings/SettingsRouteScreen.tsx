@@ -622,6 +622,13 @@ function AutoSettleSettingsRows() {
   return (
     <>
       <SettingsSwitchRow
+        icon="arrow.triangle.pull"
+        label="Pull requests"
+        subtitle="Off stops PR lookups and hides PR status and actions"
+        value={referenceSettings.pullRequestsEnabled}
+        onValueChange={(value) => writeToAll({ pullRequestsEnabled: value })}
+      />
+      <SettingsSwitchRow
         icon="arrow.triangle.branch"
         label="Auto-settle merged threads"
         value={referenceSettings.sidebarAutoSettleOnMerge}
