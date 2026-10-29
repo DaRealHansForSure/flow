@@ -141,6 +141,7 @@ import * as UsageLimitSources from "./usage/UsageLimitSources.ts";
 import * as UsageService from "./usage/UsageService.ts";
 import * as TraceDiagnostics from "./diagnostics/TraceDiagnostics.ts";
 import * as PullRequestService from "./pullRequest/PullRequestService.ts";
+import { gatePullRequestService } from "./pullRequest/gatedPullRequestService.ts";
 import * as SourceControlDiscovery from "./sourceControl/SourceControlDiscovery.ts";
 import * as SourceControlRepositoryService from "./sourceControl/SourceControlRepositoryService.ts";
 import * as AzureDevOpsCli from "./sourceControl/AzureDevOpsCli.ts";
@@ -602,7 +603,10 @@ const makeWsRpcLayer = (
       );
       const sourceControlRepositories =
         yield* SourceControlRepositoryService.SourceControlRepositoryService;
-      const pullRequests = yield* PullRequestService.PullRequestService;
+      const pullRequests = gatePullRequestService(
+        yield* PullRequestService.PullRequestService,
+        serverSettings,
+      );
       const bootstrapCredentials = yield* PairingGrantStore.PairingGrantStore;
       const sessions = yield* SessionStore.SessionStore;
       const processDiagnostics = yield* ProcessDiagnostics.ProcessDiagnostics;
@@ -2931,7 +2935,10 @@ export const websocketRpcRouteLayer = Layer.unwrap(
           ),
         ),
     });
-    const pullRequests = yield* PullRequestService.PullRequestService;
+    const pullRequests = gatePullRequestService(
+      yield* PullRequestService.PullRequestService,
+      yield* ServerSettings.ServerSettingsService,
+    );
     return HttpRouter.add(
       "GET",
       "/ws",

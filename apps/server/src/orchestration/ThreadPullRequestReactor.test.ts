@@ -29,6 +29,7 @@ import { GitManager, type GitBranchPullRequest } from "../git/GitManager.ts";
 import { PullRequestService } from "../pullRequest/PullRequestService.ts";
 import { RepositoryIdentityResolver } from "../project/RepositoryIdentityResolver.ts";
 import { ServerActivation } from "../serverActivation.ts";
+import * as ServerSettings from "../serverSettings.ts";
 import { OrchestrationEngineService } from "./Services/OrchestrationEngine.ts";
 import { ProjectionSnapshotQuery } from "./Services/ProjectionSnapshotQuery.ts";
 import * as ThreadPullRequestReactor from "./ThreadPullRequestReactor.ts";
@@ -131,6 +132,7 @@ const makeHarness = Effect.fn("makeThreadPullRequestHarness")(function* (options
   readonly existingWorktrees?: ReadonlyArray<string>;
   readonly project?: OrchestrationProjectShell;
   readonly resolveRepositoryIdentity?: RepositoryIdentityResolver["Service"]["resolve"];
+  readonly pullRequestsEnabled?: boolean;
 }) {
   const activation = yield* Deferred.make<void>();
   const snapshots = yield* Ref.make<OrchestrationShellSnapshot>({
@@ -205,6 +207,7 @@ const makeHarness = Effect.fn("makeThreadPullRequestHarness")(function* (options
       },
     }),
     Layer.succeed(ServerActivation, Deferred.await(activation)),
+    ServerSettings.layerTest({ pullRequestsEnabled: options.pullRequestsEnabled ?? true }),
     Layer.succeed(
       Crypto.Crypto,
       Crypto.make({
@@ -234,6 +237,7 @@ const makeHarness = Effect.fn("makeThreadPullRequestHarness")(function* (options
     branchCalls,
     summaryCalls,
     publish: (event: OrchestrationEvent) => PubSub.publish(events, event),
+    activate: Deferred.succeed(activation, undefined),
     layer: ThreadPullRequestReactor.layer.pipe(Layer.provide(dependencies)),
   };
 });
@@ -273,6 +277,38 @@ describe("ThreadPullRequestReactor", () => {
       }),
     ),
   );
+
+  // Both cases run the same steps, so the "off" case cannot pass just because the
+  // reactor had not run yet when the assertions read the calls.
+  for (const pullRequestsEnabled of [true, false]) {
+    it.effect(`looks up pull requests only while they are on (on: ${pullRequestsEnabled})`, () =>
+      Effect.scoped(
+        Effect.gen(function* () {
+          const fixture = yield* makeHarness({
+            threads: [thread("first")],
+            branchPullRequest: () => Effect.succeed(branchPullRequest()),
+            pullRequestsEnabled,
+          });
+          yield* Effect.gen(function* () {
+            const reactor = yield* ThreadPullRequestReactor.ThreadPullRequestReactor;
+            yield* reactor.start();
+            yield* fixture.activate;
+            yield* TestClock.adjust("1 second");
+            yield* reactor.drain;
+            const lookups = (yield* Ref.get(fixture.branchCalls)).length;
+            const commands = (yield* Ref.get(fixture.commands)).length;
+            if (pullRequestsEnabled) {
+              expect(lookups).toBeGreaterThan(0);
+              expect(commands).toBeGreaterThan(0);
+            } else {
+              expect(lookups).toBe(0);
+              expect(commands).toBe(0);
+            }
+          }).pipe(Effect.provide(fixture.layer));
+        }),
+      ),
+    );
+  }
 
   it.effect("replaces terminal manual links but preserves open links and explicit unlink", () =>
     Effect.scoped(

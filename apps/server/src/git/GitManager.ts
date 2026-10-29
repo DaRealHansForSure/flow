@@ -57,6 +57,7 @@ import * as ProjectSetupScriptRunner from "../project/ProjectSetupScriptRunner.t
 import * as ProviderRegistry from "../provider/Services/ProviderRegistry.ts";
 import { extractBranchNameFromRemoteRef } from "./remoteRefs.ts";
 import * as ServerSettings from "../serverSettings.ts";
+import { readPullRequestsEnabled } from "../pullRequest/pullRequestsEnabled.ts";
 import type { GitManagerServiceError } from "@t3tools/contracts";
 import * as GitVcsDriver from "../vcs/GitVcsDriver.ts";
 import * as SourceControlProviderRegistry from "../sourceControl/SourceControlProviderRegistry.ts";
@@ -1140,6 +1141,9 @@ export const make = Effect.gen(function* () {
     },
     refreshMissingPullRequest = false,
   ) {
+    if (!(yield* readPullRequestsEnabled(serverSettingsService))) {
+      return null;
+    }
     // Keyed by (cwd, branch) only: the upstream ref changing (e.g. a first
     // `push -u`) must not orphan the fallback value for the same branch.
     const branchKey = `${cwd}\u0000${details.branch}`;
@@ -2049,6 +2053,9 @@ export const make = Effect.gen(function* () {
   const branchPullRequest: GitManager["Service"]["branchPullRequest"] = Effect.fn(
     "branchPullRequest",
   )(function* ({ cwd, branch }, options) {
+    if (!(yield* readPullRequestsEnabled(serverSettingsService))) {
+      return null;
+    }
     const cacheCwd = yield* normalizeStatusCacheKey(cwd);
     const remotes = yield* gitCore.execute({
       operation: "GitManager.branchPullRequest.remotes",
