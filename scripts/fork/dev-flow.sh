@@ -41,6 +41,11 @@ if [[ ! -x "${REPO_ROOT}/node_modules/.bin/vp" ]]; then
     echo "dev-flow: dependencies are missing, run 'pnpm install' first." >&2
     exit 1
 fi
+# The desktop build compiles a C helper for browser login import against libsecret.
+if ! pkg-config --exists libsecret-1 2>/dev/null; then
+    echo "dev-flow: libsecret headers are missing, run 'sudo apt install libsecret-1-dev' first." >&2
+    exit 1
+fi
 # dev-runner spawns `vp`, which only the repo's own node_modules provides; `vp run`
 # and `pnpm run` add this to PATH, a direct call has to do it itself.
 export PATH="${REPO_ROOT}/node_modules/.bin:${PATH}"
