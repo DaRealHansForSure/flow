@@ -1,16 +1,17 @@
 # Worklog
 
-Updated: 2026-10-29 23:15
+Updated: 2026-10-29 23:58
 
 ## Current focus
 
-- **Topic:** After the T3 v0.1.5 sync: per-chat Brain on "No project" chats, lint debt
-- **Goal:** Every fork feature works on T3 v0.1.5 and the fork passes T3's lint and knip checks
-- **Branch:** develop (next: feat/no-project-brain, chore/t3-lint-rules)
-- **Last step done:** sync/t3-v0.1.5 merged into develop; server smoke run with Brain ready
-- **Next step:** Port per-chat Brain (d18ed904d, c91d5ae57) onto T3's No project chats
-- **Open questions / blockers:** Codex and OpenCode curator flags unverified (CLIs not
-  installed here); owner to try a real chat in the Dev Flow
+- **Topic:** Auto-Docs and Auto-Skills switches for the Brain's notes agent
+- **Goal:** Turn either output off globally, with per-project overrides that inherit when unset
+- **Branch:** feat/curation-switches (worktree .t3/worktrees/curation-switches)
+- **Last step done:** Settings, curator enforcement (prompt, refusing write tool, renewal on
+  change) and the web switches in Settings > General > Brain and project settings
+- **Next step:** Owner review, one check in the Dev Flow, then merge into develop with --no-ff
+- **Open questions / blockers:** Mobile has no rows for the switches yet (server enforces
+  them); 9 tests in orchestrator test/curation.test.ts already fail on develop (memory writes)
 
 ## Finished features
 
@@ -24,6 +25,7 @@ Updated: 2026-10-29 23:15
 
 ## History
 
+- 2026-10-29 23:58 - Auto-Docs/Auto-Skills switches: settings, curator gate, web rows
 - 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
 - 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)
 - 2026-10-29 21:30 - Sync: Brain hooks into RunExecutionService via BrainChatTurns reference
