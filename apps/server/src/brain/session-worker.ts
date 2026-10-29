@@ -67,6 +67,9 @@ export async function startSessionWorker(
     ),
   );
   const child = NodeChildProcess.fork(filename, catalog ? ["--catalog"] : [], {
+    // Under Electron the worker would run on Electron's Node, whose ABI differs from the
+    // one the Brain's native modules were built for in a checkout; the Dev Flow sets this.
+    ...(process.env.FLOW_BRAIN_NODE ? { execPath: process.env.FLOW_BRAIN_NODE } : {}),
     execArgv: filename.endsWith(".ts") ? ["--import", tsxLoader()] : [],
     env: {
       ...inherited,
