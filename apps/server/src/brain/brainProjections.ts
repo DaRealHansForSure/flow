@@ -7,6 +7,7 @@ import type { OrchestrationProjectShell, ProjectId, ThreadId } from "@t3tools/co
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 
+import * as ProjectEnrichmentService from "../project/ProjectEnrichmentService.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
 import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
 
@@ -28,10 +29,32 @@ export interface BrainProjections {
 export const makeBrainProjections = Effect.gen(function* () {
   const threads = yield* ProjectionStore.ProjectionStoreV2;
   const projects = yield* ProjectStore.ProjectStoreV2;
+  const enrichment = yield* ProjectEnrichmentService.ProjectEnrichmentService;
+  // The v2 store leaves the repository empty, but Brain bindings are keyed by repository.
+  const withRepository = (project: OrchestrationProjectShell) =>
+    project.repositoryIdentity
+      ? Effect.succeed(project)
+      : enrichment
+          .readRepositoryIdentity(project.workspaceRoot)
+          .pipe(Effect.map((repositoryIdentity) => ({ ...project, repositoryIdentity })));
   return {
     getThreadShellById: (threadId) =>
       threads.getThreadShell(threadId).pipe(Effect.map(Option.fromNullishOr)),
-    getProjectShellById: (projectId) => projects.getShell(projectId),
-    listProjectShells: Effect.suspend(() => projects.listShells()),
+    getProjectShellById: (projectId) =>
+      projects.getShell(projectId).pipe(
+        Effect.flatMap(
+          Option.match({
+            onNone: () => Effect.succeedNone,
+            onSome: (project) => withRepository(project).pipe(Effect.asSome),
+          }),
+        ),
+      ),
+    listProjectShells: Effect.suspend(() =>
+      projects
+        .listShells()
+        .pipe(
+          Effect.flatMap((shells) => Effect.forEach(shells, withRepository, { concurrency: 8 })),
+        ),
+    ),
   } satisfies BrainProjections;
 });

@@ -92,6 +92,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Projects connected to a Brain by their repository (most of them) found their Brain again
+  after the T3 v0.1.5 sync; chats in them showed no Brain.
+
 - The Dev Flow's Brain starts: its worker runs on the system Node instead of Electron's, which
   cannot load the checkout's better-sqlite3 build.
 

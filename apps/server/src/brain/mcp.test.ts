@@ -9,7 +9,12 @@ import { BrainToolkitRegistrationLive } from "./mcp.ts";
 import { McpInvocationContext } from "../mcp/McpInvocationContext.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
 import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
+import * as ProjectEnrichmentService from "../project/ProjectEnrichmentService.ts";
 import * as AnalyticsService from "../telemetry/AnalyticsService.ts";
+
+const noRepository = {
+  readRepositoryIdentity: () => Effect.succeed(null),
+} as unknown as ProjectEnrichmentService.ProjectEnrichmentService["Service"];
 
 const client = McpSchema.McpServerClient.of({
   clientId: 1,
@@ -68,6 +73,9 @@ it.effect(
           Layer.provideMerge(Layer.succeed(BrainService, { ready: Effect.succeed(runtime) })),
           Layer.provideMerge(Layer.succeed(ProjectionStore.ProjectionStoreV2, threads)),
           Layer.provideMerge(Layer.succeed(ProjectStore.ProjectStoreV2, projects)),
+          Layer.provideMerge(
+            Layer.succeed(ProjectEnrichmentService.ProjectEnrichmentService, noRepository),
+          ),
           Layer.provideMerge(
             Layer.succeed(
               AnalyticsService.AnalyticsService,
