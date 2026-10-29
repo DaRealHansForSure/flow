@@ -6,6 +6,7 @@ import {
   DesktopServerExposureModeSchema,
   type AdvertisedEndpoint,
   type AdvertisedEndpointProvider,
+  type DesktopFlowServiceActionResult,
   type DesktopServerExposureMode,
   type DesktopServerExposureState,
 } from "@t3tools/contracts";
@@ -241,15 +242,29 @@ export class DesktopTailscaleServePersistenceError extends Schema.TaggedErrorCla
   }
 }
 
+export class DesktopServerExposureServiceError extends Schema.TaggedErrorClass<DesktopServerExposureServiceError>()(
+  "DesktopServerExposureServiceError",
+  {
+    mode: DesktopServerExposureModeSchema,
+    detail: Schema.String,
+  },
+) {
+  override get message(): string {
+    return `The Flow service did not switch to ${this.mode}: ${this.detail}`;
+  }
+}
+
 export const DesktopServerExposureSetModeError = Schema.Union([
   DesktopServerExposureNoNetworkAddressError,
   DesktopServerExposureModePersistenceError,
+  DesktopServerExposureServiceError,
 ]);
 export type DesktopServerExposureSetModeError = typeof DesktopServerExposureSetModeError.Type;
 
 export const DesktopServerExposureError = Schema.Union([
   DesktopServerExposureNoNetworkAddressError,
   DesktopServerExposureModePersistenceError,
+  DesktopServerExposureServiceError,
   DesktopTailscaleServePersistenceError,
 ]);
 export type DesktopServerExposureError = typeof DesktopServerExposureError.Type;
@@ -267,6 +282,16 @@ export interface DesktopServerExposureChange {
   readonly requiresRelaunch: boolean;
 }
 
+/** A Flow service the desktop attached to instead of starting a server of its
+    own. Its port and bind address belong to the service, so network access is
+    read from it and changed through it. */
+export interface AttachedServiceExposure {
+  readonly port: number;
+  readonly networkAccess: boolean;
+  /** Records the choice with the service and restarts it so it takes effect. */
+  readonly setNetworkAccess: (enabled: boolean) => Effect.Effect<DesktopFlowServiceActionResult>;
+}
+
 export class DesktopServerExposure extends Context.Service<
   DesktopServerExposure,
   {
@@ -275,6 +300,9 @@ export class DesktopServerExposure extends Context.Service<
     readonly configureFromSettings: (input: {
       readonly port: number;
     }) => Effect.Effect<DesktopServerExposureState>;
+    readonly followAttachedService: (
+      service: AttachedServiceExposure,
+    ) => Effect.Effect<DesktopServerExposureState>;
     readonly setMode: (
       mode: DesktopServerExposureMode,
     ) => Effect.Effect<DesktopServerExposureChange, DesktopServerExposureSetModeError>;
@@ -418,6 +446,7 @@ export const make = Effect.gen(function* () {
   const httpClient = yield* HttpClient.HttpClient;
   const desktopSettings = yield* DesktopAppSettings.DesktopAppSettings;
   const stateRef = yield* Ref.make(initialRuntimeState());
+  const attachedServiceRef = yield* Ref.make(Option.none<AttachedServiceExposure>());
 
   // Cache the `tailscale status` spawn for the TTL. On macOS, the Mac App
   // Store Tailscale CLI lives inside Tailscale's sandbox container, so each
@@ -453,6 +482,31 @@ export const make = Effect.gen(function* () {
     },
   );
 
+  const followAttachedService = Effect.fn("desktop.serverExposure.followAttachedService")(
+    function* (service: AttachedServiceExposure) {
+      yield* Effect.annotateCurrentSpan({
+        port: service.port,
+        networkAccess: service.networkAccess,
+      });
+      yield* Ref.set(attachedServiceRef, Option.some(service));
+      const settings = yield* desktopSettings.get;
+      const currentNetworkInterfaces = yield* readNetworkInterfaces;
+      let serviceMode: DesktopServerExposureMode = "local-only";
+      if (service.networkAccess) {
+        serviceMode = "network-accessible";
+      }
+      const resolved = resolveRuntimeState({
+        requestedMode: serviceMode,
+        settings,
+        port: service.port,
+        networkInterfaces: currentNetworkInterfaces,
+        advertisedHostOverride: config.desktopLanHostOverride,
+      });
+      yield* Ref.set(stateRef, resolved.state);
+      return toContractState(resolved.state);
+    },
+  );
+
   const setMode = Effect.fn("desktop.serverExposure.setMode")(function* (
     mode: DesktopServerExposureMode,
   ) {
@@ -476,6 +530,19 @@ export const make = Effect.gen(function* () {
       return yield* new DesktopServerExposureNoNetworkAddressError({ port: previous.port });
     }
 
+    // An attached service owns its bind address: switching it is a service
+    // restart, not a relaunch of this app's own (unused) server.
+    const attachedService = yield* Ref.get(attachedServiceRef);
+    if (Option.isSome(attachedService)) {
+      const result = yield* attachedService.value.setNetworkAccess(mode === "network-accessible");
+      if (!result.ok) {
+        return yield* new DesktopServerExposureServiceError({
+          mode,
+          detail: result.detail ?? result.reason ?? "unknown failure",
+        });
+      }
+    }
+
     const change = yield* desktopSettings.setServerExposureMode(mode).pipe(
       Effect.mapError(
         (cause) =>
@@ -487,6 +554,9 @@ export const make = Effect.gen(function* () {
     );
 
     yield* Ref.set(stateRef, resolved.state);
+    if (Option.isSome(attachedService)) {
+      return { state: toContractState(resolved.state), requiresRelaunch: false };
+    }
     return {
       state: toContractState(resolved.state),
       requiresRelaunch: change.changed || requiresBackendRelaunch(previous, resolved.state),
@@ -561,6 +631,7 @@ export const make = Effect.gen(function* () {
     getState,
     backendConfig,
     configureFromSettings,
+    followAttachedService,
     setMode,
     setTailscaleServeEnabled,
     getAdvertisedEndpoints,

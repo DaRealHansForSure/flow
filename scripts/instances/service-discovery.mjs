@@ -114,7 +114,13 @@ export async function discoverService({
       };
     // Do not forward arbitrary server fields: runtime tokens and control URLs
     // belong to the lifecycle owner, never to a renderer or CLI JSON response.
-    return { ...identity, status: live.phase };
+    // `networkAccess` is what the running server listens on, absent from
+    // supervisors that predate the setting.
+    return {
+      ...identity,
+      status: live.phase,
+      ...(typeof live.networkAccess === "boolean" ? { networkAccess: live.networkAccess } : {}),
+    };
   } catch {
     return { ...identity, status: "unreachable", reason: "Service could not be reached." };
   }

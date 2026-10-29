@@ -15,6 +15,7 @@ import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import * as DesktopTelemetryPublisher from "../telemetry/DesktopTelemetryPublisher.ts";
 import * as ElectronDialog from "../electron/ElectronDialog.ts";
 import * as DesktopWindow from "../window/DesktopWindow.ts";
+import * as DesktopServerExposure from "./DesktopServerExposure.ts";
 import * as DesktopWslEnvironment from "../wsl/DesktopWslEnvironment.ts";
 import * as DesktopBackendConfiguration from "./DesktopBackendConfiguration.ts";
 import * as DesktopBackendPool from "./DesktopBackendPool.ts";
@@ -101,6 +102,15 @@ function makePoolLayer(
         DesktopAppSettings.layerTest(),
         DesktopWslEnvironment.layerTest(),
         ElectronDialog.layer,
+        Layer.succeed(DesktopServerExposure.DesktopServerExposure, {
+          getState: Effect.die("unexpected getState"),
+          backendConfig: Effect.die("unexpected backendConfig"),
+          configureFromSettings: () => Effect.die("unexpected configureFromSettings"),
+          followAttachedService: () => Effect.die("unexpected followAttachedService"),
+          setMode: () => Effect.die("unexpected setMode"),
+          setTailscaleServeEnabled: () => Effect.die("unexpected setTailscaleServeEnabled"),
+          getAdvertisedEndpoints: Effect.die("unexpected getAdvertisedEndpoints"),
+        } satisfies DesktopServerExposure.DesktopServerExposure["Service"]),
         Layer.succeed(DesktopWindow.DesktopWindow, {
           createMain: Effect.die("unexpected window create"),
           ensureMain: Effect.die("unexpected window ensure"),

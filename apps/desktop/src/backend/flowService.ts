@@ -260,6 +260,51 @@ export const stopFlowService = async (
   }
 };
 
+/**
+ * Turn the service's network access on or off. The supervisor records the
+ * choice in its own config (the desktop never writes the registry), and the
+ * service manager restarts the service so the server binds the new address.
+ * Without a service manager the choice still applies from the next start,
+ * which the `not-managed` result tells the caller.
+ */
+export const setFlowServiceNetworkAccess = async (
+  input: FlowServiceInput,
+  enabled: boolean,
+): Promise<DesktopFlowServiceActionResult> => {
+  const resolved = resolveInput(input);
+  const control = await readServiceControl({
+    registryRoot: resolved.registryRoot,
+    name: resolved.name,
+  });
+  if (control === null) {
+    return failed("not-running", null);
+  }
+  try {
+    const response = await resolved.fetchImpl(new URL("/network-access", control.url), {
+      method: "POST",
+      redirect: "error",
+      signal: AbortSignal.timeout(CONTROL_TIMEOUT_MS),
+      headers: {
+        authorization: `Bearer ${control.token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ enabled }),
+    });
+    if (response.status === 404) {
+      return failed(
+        "failed",
+        "This Flow service is too old to change network access. Update it first.",
+      );
+    }
+    if (!response.ok) {
+      return failed("failed", "The service refused the network access request.");
+    }
+  } catch (cause) {
+    return failed("failed", cause instanceof Error ? cause.message : String(cause));
+  }
+  return restartFlowService(input);
+};
+
 /** Spawns a detached process and resolves once it has started. Injected so
     tests assert the argv rather than launching a service. */
 export type ServiceProcessLauncher = (

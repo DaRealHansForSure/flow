@@ -38,6 +38,9 @@ export interface ServiceDiscoveryResult {
   // The server's own HTTP origin, reported by a live supervisor's `/status`.
   // Present only once the service reaches `ready`.
   readonly serverOrigin?: string;
+  /** Whether the running server listens on every interface rather than loopback;
+      absent from supervisors that predate the setting. */
+  readonly networkAccess?: boolean;
   readonly reason?: string;
 }
 
@@ -263,6 +266,7 @@ export const discoverService = async ({
       ...identity,
       status: phase,
       ...(nonEmptyString(live.origin) ? { serverOrigin: live.origin } : {}),
+      ...(typeof live.networkAccess === "boolean" ? { networkAccess: live.networkAccess } : {}),
     };
   } catch {
     return { ...identity, status: "unreachable", reason: "Service could not be reached." };

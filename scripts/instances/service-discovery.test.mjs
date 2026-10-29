@@ -107,6 +107,8 @@ test("authenticates live identity without exposing credentials or trusting respo
   assert.equal(result.environmentId, "environment");
   assert.equal(result.token, undefined);
   assert.equal(result.arbitrary, undefined);
+  // A supervisor that predates the setting reports nothing, not a guess.
+  assert.equal(result.networkAccess, undefined);
   assert.equal(JSON.stringify(result).includes("private-control-token"), false);
 });
 test("rejects a reused port with a different service identity", async (t) => {

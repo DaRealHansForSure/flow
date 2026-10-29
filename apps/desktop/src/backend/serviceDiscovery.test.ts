@@ -95,6 +95,7 @@ describe("desktop service discovery", () => {
           phase: "ready",
           origin: "http://127.0.0.1:41773",
           url: "http://localhost:41773",
+          networkAccess: true,
         }),
       );
     });
@@ -103,6 +104,7 @@ describe("desktop service discovery", () => {
 
     assert.equal(result.status, "ready");
     assert.equal(result.serverOrigin, "http://127.0.0.1:41773");
+    assert.equal(result.networkAccess, true);
     assert.equal(result.dataHome, f.config.home);
     assert.deepEqual(seenAuthorization, ["Bearer private-control-token"]);
     assert.isUndefined((result as unknown as Record<string, unknown>).token);
