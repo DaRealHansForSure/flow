@@ -227,6 +227,10 @@ export ELECTRON_ENABLE_LOGGING=1
 # The legacy backend makes the dev app run its own server from this checkout
 # instead of attaching to the installed flow.service.
 export FLOW_DESKTOP_LEGACY_BACKEND=1
+# The dev app runs its server on Electron; the Brain worker needs the Node the
+# checkout's native modules (better-sqlite3) were built for.
+FLOW_BRAIN_NODE="$(command -v node)"
+export FLOW_BRAIN_NODE
 # Own process group (set -m), so Ctrl+C and a closed window both stop the runner
 # and everything it started, exactly as an interactive Ctrl+C would. A background
 # group that touches the terminal is suspended by the kernel (SIGTTIN), and Vite

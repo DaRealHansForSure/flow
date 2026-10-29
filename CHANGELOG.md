@@ -83,6 +83,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Dev Flow's Brain starts: its worker runs on the system Node instead of Electron's, which
+  cannot load the checkout's better-sqlite3 build.
+
 - A chat that picked its own Brain shows that Brain next to it, and a "No Brain" chat shows
   none, instead of the project's Brain.
 
