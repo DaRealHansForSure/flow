@@ -2,6 +2,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { FastifyInstance } from "fastify";
+import type { BrainCurationOutputs } from "../../../runtime/src/contracts.js";
 import { CurationStore } from "./store.js";
 import {
   evidenceParts,
@@ -20,6 +21,7 @@ import type {
   DocumentStatus,
   SaveDocument,
 } from "./types.js";
+import { ALL_CURATION_OUTPUTS } from "./types.js";
 
 const str = { type: "string" };
 const num = { type: "integer" };
@@ -145,6 +147,19 @@ function choice<T extends string>(
     throw new Error(`Invalid ${name}.`);
   return value as T;
 }
+/** The settings switch is enforced here so a model that ignores its instructions still cannot write. */
+function refuseDisabledKind(kind: DocumentKind, outputs: BrainCurationOutputs): void {
+  if (kind === "doc" && !outputs.docs) {
+    throw new Error(
+      "Auto-Docs are turned off for this conversation. Do not create or update docs; keep the knowledge in the conversation notes. Existing docs stay readable.",
+    );
+  }
+  if (kind === "skill" && !outputs.skills) {
+    throw new Error(
+      "Auto-Skills are turned off for this conversation. Do not create or update skills; keep the procedure in the conversation notes. Existing skills stay readable.",
+    );
+  }
+}
 export class CuratorTools {
   private calls = 0;
   private legacyReads = new Map<string, string>();
@@ -154,6 +169,7 @@ export class CuratorTools {
     readonly checkpoint: CurationCheckpoint,
     readonly budget: TranscriptBudget,
     readonly sourceReader?: CuratorSourceReader,
+    readonly outputs: BrainCurationOutputs = ALL_CURATION_OUTPUTS,
   ) {}
   async executeAsync(name: string, args: Record<string, unknown>): Promise<unknown> {
     if (name !== "source_read" && name !== "source_search") return this.execute(name, args);
@@ -254,6 +270,7 @@ export class CuratorTools {
     if (name === "write_document") {
       const kind = choice<DocumentKind>(args.kind, ["notes", "doc", "skill"], "document kind");
       if (!kind) throw new Error("Document kind is required.");
+      refuseDisabledKind(kind, this.outputs);
       if (
         !Array.isArray(args.evidence) ||
         args.evidence.length > 100 ||

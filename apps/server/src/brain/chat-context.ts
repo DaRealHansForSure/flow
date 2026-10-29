@@ -1,8 +1,10 @@
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
 import type { ChatAttachment, ThreadId } from "@t3tools/contracts";
+import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { makeBrainProjections } from "./brainProjections.ts";
+import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
 import type { BrainCapture } from "./session-worker.ts";
 
@@ -93,6 +95,7 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
 });
 export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function* () {
   const service = yield* BrainService;
+  const serverSettings = yield* ServerSettingsService;
   const projections = yield* makeBrainProjections;
   const capture: BrainChatCapture = Effect.fn("brain.captureChatEvent")(function* (
     threadId: ThreadId,
@@ -115,10 +118,15 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
       (runtime.threadBrainId(thread.value.projectId, threadId) ?? "") !== expectedBinding
     )
       return;
+    const settings = yield* serverSettings.getSettings.pipe(
+      Effect.mapError(() => "Could not read the Brain settings for capture."),
+    );
+    const projectSettings = resolveProjectSettings(settings, thread.value.projectId).settings;
     yield* Effect.tryPromise({
       try: () =>
         runtime.captureProjectEvent(thread.value.projectId, {
           ...event,
+          outputs: { docs: projectSettings.brainAutoDocs, skills: projectSettings.brainAutoSkills },
           context: {
             session: threadId,
             ...(workspaceRoot ? { workspaceRoot } : {}),

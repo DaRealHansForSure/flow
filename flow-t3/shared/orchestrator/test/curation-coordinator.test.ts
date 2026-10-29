@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import { CurationStore } from "../src/curation/store.js";
 import { CurationCoordinator } from "../src/curation/coordinator.js";
 import type {
+  BrainCurationOutputs,
   BrainCuratorRun,
   BrainCuratorResult,
   BrainCuratorReply,
@@ -35,13 +36,13 @@ function fixture(run: (request: BrainCuratorRun) => Promise<BrainCuratorReply>) 
     db,
     store,
     coordinator,
-    add(text: string, closed = false) {
+    add(text: string, closed = false, outputs?: BrainCurationOutputs) {
       db.prepare("INSERT INTO t3_capture VALUES (?, 'chat-a', 'user_prompt', ?, ?)").run(
         ++seq,
         JSON.stringify({ text }),
         seq * 1000,
       );
-      coordinator.capture("chat-a", "flow", seq, closed);
+      coordinator.capture("chat-a", "flow", seq, closed, outputs);
       return seq;
     },
     close() {
@@ -251,6 +252,34 @@ NodeTest.test(
     NodeAssert.equal(calls.length, 2);
     NodeAssert.match(calls[1]!.input, /Meaningful progress/);
     await f.coordinator.flush();
+    f.close();
+  },
+);
+
+NodeTest.test(
+  "a switched-off output leaves the instructions, and switching it back renews the context",
+  async () => {
+    const calls: BrainCuratorRun[] = [];
+    const f = fixture(async (request) => {
+      calls.push(request);
+      return result;
+    });
+    f.add("Document the deploy procedure.", true, { docs: false, skills: true });
+    await f.coordinator.flush();
+    f.add("Another step, settings unchanged.", true);
+    await f.coordinator.flush();
+    f.add("Docs are wanted again.", true, { docs: true, skills: true });
+    await f.coordinator.flush();
+    NodeAssert.equal(calls.length, 3);
+    NodeAssert.doesNotMatch(calls[0]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.match(calls[0]!.instructions, /^AUTO-SKILLS$/m);
+    NodeAssert.match(calls[0]!.instructions, /Auto-Docs \(doc\) are turned off/);
+    NodeAssert.equal(calls[1]!.renew, false);
+    NodeAssert.match(calls[1]!.input, /Continue the same conversation's notes and Auto-Skills/);
+    NodeAssert.doesNotMatch(calls[1]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.equal(calls[2]!.renew, true);
+    NodeAssert.match(calls[2]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.deepEqual(f.store.curationOutputs("chat-a"), { docs: true, skills: true });
     f.close();
   },
 );

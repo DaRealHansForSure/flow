@@ -29,6 +29,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   git actions offer commit and push without a PR, and the Pull Requests page disappears, on
   web, desktop and mobile.
 
+- Settings > General > Brain: Auto-Docs and Auto-Skills switches turn off what the notes agent
+  writes besides conversation notes. Each project inherits them and can override them in its
+  project settings; existing docs and skills stay available and searchable.
+
 - A loading indicator in the content pane while a page or chat is still loading, instead of
   an empty pane.
 

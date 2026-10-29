@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import { meaningfulTokens } from "../memory/search-query.js";
 import { redactSecrets } from "./transcript.js";
 import { noteChunks, type NoteChunk } from "./notes.js";
+import type { BrainCurationOutputs } from "../../../runtime/src/contracts.js";
 import type {
   BrainDocument,
   BrainContributor,
@@ -15,6 +16,7 @@ import type {
   DocumentKind,
   SaveDocument,
 } from "./types.js";
+import { ALL_CURATION_OUTPUTS } from "./types.js";
 
 const COLUMNS = `id, kind, folder, name, description, revision, session_id AS sessionId, repo,
   lifecycle, status, half_life_days AS halfLifeDays, created_at AS createdAt, updated_at AS updatedAt,
@@ -51,6 +53,8 @@ export const CURATION_SCHEMA = `
   CREATE TABLE IF NOT EXISTS brain_curation_sessions (
     session_id TEXT PRIMARY KEY, last_seq INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'idle', error TEXT, updated_at INTEGER NOT NULL);
+  CREATE TABLE IF NOT EXISTS brain_curation_outputs (
+    session_id TEXT PRIMARY KEY, docs INTEGER NOT NULL, skills INTEGER NOT NULL);
   CREATE TABLE IF NOT EXISTS brain_import_evidence (
     origin TEXT NOT NULL, session TEXT NOT NULL, source_seq INTEGER NOT NULL, target_seq INTEGER NOT NULL,
     PRIMARY KEY(origin, session, source_seq));
@@ -327,6 +331,23 @@ export class CurationStore {
       WHERE c.seq > COALESCE(s.last_seq, 0) AND c.kind != 'graph'`)
         .all() as Array<{ id: string }>
     ).map((row) => row.id);
+  }
+  /** The outputs this chat's curator may write, as its host last reported them. */
+  curationOutputs(sessionId: string): BrainCurationOutputs {
+    const row = this.db
+      .prepare("SELECT docs, skills FROM brain_curation_outputs WHERE session_id = ?")
+      .get(sessionId) as { docs: number; skills: number } | undefined;
+    if (!row) {
+      return ALL_CURATION_OUTPUTS;
+    }
+    return { docs: row.docs === 1, skills: row.skills === 1 };
+  }
+  /** Persisted so a restarted worker recovers unfinished chats under the same settings. */
+  setCurationOutputs(sessionId: string, outputs: BrainCurationOutputs): void {
+    this.db
+      .prepare(`INSERT INTO brain_curation_outputs(session_id, docs, skills) VALUES (?, ?, ?)
+      ON CONFLICT(session_id) DO UPDATE SET docs=excluded.docs, skills=excluded.skills`)
+      .run(sessionId, Number(outputs.docs), Number(outputs.skills));
   }
   bootstrap(checkpoint: CurationCheckpoint, text: string): BrainDocument {
     const existing = this.get(`notes:${checkpoint.sessionId}`);

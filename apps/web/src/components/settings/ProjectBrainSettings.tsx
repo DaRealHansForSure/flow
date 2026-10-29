@@ -6,6 +6,7 @@ import { useAtomCommand } from "../../state/use-atom-command";
 import { BrainSelect, CreateBrainDialog } from "../brain/BrainControls";
 import { BrainIcon } from "../brain/BrainIcon";
 import { Button } from "../ui/button";
+import { BrainCurationSettingRows } from "./BrainCurationSettings";
 import { SettingsRow, SettingsSection } from "./settingsLayout";
 
 export function ProjectBrainSettings({
@@ -171,6 +172,7 @@ export function ProjectBrainSettings({
           </Button>
         </div>
       )}
+      <BrainCurationSettingRows />
       <CreateBrainDialog
         open={createOpen}
         onOpenChange={setCreateOpen}

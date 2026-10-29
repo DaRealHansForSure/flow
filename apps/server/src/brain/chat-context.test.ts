@@ -13,8 +13,10 @@ import {
   type OrchestrationV2TurnItem,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
+import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
 import type { BrainRuntime } from "./BrainRuntime.ts";
+import type { BrainCapture } from "./session-worker.ts";
 import { makeRunCapture } from "./chatTurns.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
 import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
@@ -118,6 +120,7 @@ it.effect(
       let race = false;
       let fail = false;
       let captures = 0;
+      let lastCapture: BrainCapture | undefined;
       const orientText = "Original curated orientation\n" + "x".repeat(30000);
       const runtime = {
         projectBrainId: () => binding,
@@ -139,8 +142,9 @@ it.effect(
           if (race) binding = "other";
           return { isError: fail, content: [{ type: "text", text: orientText }] };
         },
-        captureProjectEvent: async () => {
+        captureProjectEvent: async (_project: ProjectId, input: BrainCapture) => {
           captures++;
+          lastCapture = input;
         },
       } as unknown as BrainRuntime;
       const threads = {
@@ -157,6 +161,14 @@ it.effect(
         Effect.provideService(BrainService, { ready: Effect.succeed(runtime) }),
         Effect.provideService(ProjectionStore.ProjectionStoreV2, threads),
         Effect.provideService(ProjectStore.ProjectStoreV2, projects),
+        Effect.provide(
+          ServerSettingsService.layerTest({
+            brainAutoDocs: false,
+            projectSettingsOverrides: {
+              [projectId]: { brainAutoDocs: true, brainAutoSkills: false },
+            },
+          }),
+        ),
       );
       expect(yield* load(threadId)).toEqual({ bindingKey: "" });
       yield* capture(threadId, {
@@ -187,6 +199,7 @@ it.effect(
         "team",
       );
       expect(captures).toBe(1);
+      expect(lastCapture?.outputs).toEqual({ docs: true, skills: false });
       binding = undefined;
       expect((yield* load(threadId, "team")).context).toContain("disconnected");
       yield* capture(threadId, { receipt: "event-2", kind: "user_prompt", data: {} }, "team");

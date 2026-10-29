@@ -15,6 +15,13 @@ export interface BrainCapture {
   kind: "user_prompt" | "update" | "error" | "created" | "graph";
   data: unknown;
   closed?: boolean;
+  /** Resolved by the host from the chat's project settings. Absent keeps the chat's last value. */
+  outputs?: BrainCurationOutputs;
+}
+/** Curated outputs the notes agent may write besides conversation notes, which are always kept. */
+export interface BrainCurationOutputs {
+  docs: boolean;
+  skills: boolean;
 }
 /** The Brain owns curation; its host supplies subscription-backed execution. */
 export type BrainCuratorCli = "codex" | "claude" | "opencode";

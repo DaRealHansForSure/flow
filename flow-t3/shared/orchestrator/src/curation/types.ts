@@ -1,3 +1,4 @@
+import type { BrainCurationOutputs } from "../../../runtime/src/contracts.js";
 export type DocumentKind = "notes" | "doc" | "memory" | "skill";
 export type DocumentLifecycle = "standing" | "temporal" | "issue";
 export type DocumentStatus = "active" | "resolved" | "superseded";
@@ -77,3 +78,5 @@ export interface CurationSession {
   error: string | null;
   updatedAt: number;
 }
+/** A chat whose host never reported its settings keeps every output, as before the switches. */
+export const ALL_CURATION_OUTPUTS: BrainCurationOutputs = { docs: true, skills: true };

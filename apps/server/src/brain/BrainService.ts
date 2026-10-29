@@ -86,7 +86,11 @@ export class BrainService extends Context.Service<
       });
       {
         const close = yield* Effect.tryPromise({
-          try: () => serveSharedBrain(runtime, config.stateDir),
+          try: () =>
+            serveSharedBrain(runtime, config.stateDir, async () => {
+              const settings = await run(providerSettings.getSettings);
+              return { docs: settings.brainAutoDocs, skills: settings.brainAutoSkills };
+            }),
           catch: (cause) =>
             new BrainServiceError({
               message: cause instanceof Error ? cause.message : "Brain transport unavailable",
