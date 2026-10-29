@@ -208,6 +208,13 @@ describe("ClientSettings quit confirmation", () => {
     expect(settings.confirmQuit).toBe(mode);
     expect(encodeClientSettings(settings).confirmQuit).toBe(mode);
   });
+
+  // Flow: closing the window asks first unless the user turned it off.
+  it("asks before a window close quits when existing settings omit it", () => {
+    expect(decodeClientSettings({}).confirmWindowClose).toBe(true);
+    expect(decodeClientSettings({ confirmWindowClose: false }).confirmWindowClose).toBe(false);
+    expect(decodeClientSettingsPatch({})).not.toHaveProperty("confirmWindowClose");
+  });
 });
 
 describe("provider enabled defaults", () => {
