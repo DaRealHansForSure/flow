@@ -33,7 +33,7 @@ function release(tag = "flow-v1.2.3") {
     prerelease: false,
     assets: ["flow-source.tar.gz", "flow-source.tar.gz.sha256"].map((name) => ({
       name,
-      browser_download_url: `https://github.com/samyakkkk/flow/releases/download/${tag}/${name}`,
+      browser_download_url: `https://github.com/DaRealHansForSure/flow/releases/download/${tag}/${name}`,
     })),
   };
 }

@@ -24,7 +24,7 @@ NodeTest.test("selects the Mac bundle and verifies its exact asset/checksum name
     assets: [name, `${name}.sha256`, "flow-source.tar.gz", "flow-source.tar.gz.sha256"].map(
       (name) => ({
         name,
-        browser_download_url: `https://github.com/samyakkkk/flow/releases/download/flow-v1.2.3/${name}`,
+        browser_download_url: `https://github.com/DaRealHansForSure/flow/releases/download/flow-v1.2.3/${name}`,
       }),
     ),
   };
