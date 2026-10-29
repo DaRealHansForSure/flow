@@ -1,8 +1,7 @@
 // Fork-only: the pull request service as clients reach it, refusing every
 // operation while Settings has pull requests turned off. Wrapping the service
-// once, instead of each RPC handler in ws.ts, keeps the fork's footprint in
-// upstream code to the line that picks the service up, and gates operations a
-// later upstream sync adds without anyone remembering to.
+// once, not each ws.ts handler, keeps the fork's upstream footprint to one line
+// and also gates operations a later upstream sync adds.
 
 import { PullRequestOperationError } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
@@ -35,11 +34,10 @@ export const gatePullRequestService = (
 
   const gated: Record<string, unknown> = { ...service };
   for (const [name, member] of Object.entries(service)) {
-    // Every function member is an operation returning Effect<_, PullRequestError>,
-    // and PullRequestOperationError is one of those errors, so the wrapper keeps
-    // each signature. All arguments pass through: some operations take options or
-    // an inner effect (withRoutingCredential) after their input. The non-function members (refresh and merge streams,
-    // refreshAfterTurn) only signal clients to re-read, which these gates refuse.
+    // Every function member returns Effect<_, PullRequestError> and
+    // PullRequestOperationError is one of those, so each signature is kept. All
+    // arguments pass through (withRoutingCredential takes an inner effect). The
+    // non-function members only signal clients to re-read, which the gates refuse.
     if (typeof member === "function") {
       gated[name] = (...args: ReadonlyArray<unknown>) =>
         requireEnabled(name).pipe(

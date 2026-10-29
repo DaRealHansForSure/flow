@@ -1,18 +1,4 @@
 import BRAND from "../../../branding.json" with { type: "json" };
-/**
- * Browser import - pulling cookies from a browser already installed on the
- * machine into a T3 Code browser profile.
- *
- * Only cookies are imported. They carry the logged-in sessions, which is what
- * makes an imported profile useful; saved passwords are deliberately out of
- * scope because Electron exposes no password store to put them in.
- *
- * Availability is per source and per platform, and the reasons are modelled
- * explicitly: some are a permission the user can grant, one is a limitation
- * no amount of consent works around. The UI needs to tell those apart.
- *
- * @module BrowserImport
- */
 import * as Schema from "effect/Schema";
 import { TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { BrowserProfileId } from "./browserProfile.ts";
