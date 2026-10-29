@@ -125,7 +125,8 @@ seed_dev_brain() {
         # The Dev Flow's own graph belongs to its empty Brain; the copy replaces it.
         rm -rf "${dev_graph}"
         mkdir -p "${dev_graph}"
-        rsync -a --exclude '*.sock' "${live_graph}/" "${dev_graph}/"
+        # owner.lock and the sockets belong to the installed Flow's running database.
+        rsync -a --exclude '*.sock' --exclude 'owner.lock' "${live_graph}/" "${dev_graph}/"
     fi
     echo "dev-flow: seeded ${DEV_BRAIN} and ${dev_graph} from your real Brain."
 }
