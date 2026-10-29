@@ -44,6 +44,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Releases build for Linux only: the macOS service bundle and the macOS desktop builds are
+  gone from the release workflows.
+
 - Flow installs and updates from this fork (DaRealHansForSure/flow): the `flow` CLI,
   `install.sh` / `install.ps1` and the app's links point here instead of samyakkkk/flow.
 

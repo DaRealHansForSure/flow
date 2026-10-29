@@ -48,7 +48,8 @@ jobs:
       matrix:
         # Desktop apps install this release on first launch, so every platform
         # the desktop ships for that the CLI supports needs a bundle here.
-        os: [macos-15, ubuntu-24.04]
+        # Flow fork: no macOS bundle; this fork ships Linux.
+        os: [ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
