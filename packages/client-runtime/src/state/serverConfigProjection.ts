@@ -1,10 +1,19 @@
 import type { ServerConfig, ServerConfigStreamEvent } from "@t3tools/contracts";
 import * as Option from "effect/Option";
 
+import {
+  applyPullRequestsSetting,
+  readAdvertisedPullRequestCapabilities,
+  type AdvertisedPullRequestCapabilities,
+} from "./pullRequestsSetting.ts";
+
 export interface ServerConfigProjection {
   readonly config: ServerConfig;
   readonly latestEvent: ServerConfigStreamEvent;
   readonly source: "cache" | "live";
+  /** Pull request capabilities as the server advertised them, before the
+      `pullRequestsEnabled` setting folds into `config` (fork). */
+  readonly advertisedPullRequests?: AdvertisedPullRequestCapabilities;
 }
 
 /**
@@ -25,6 +34,25 @@ export function applyServerConfigProjection(
   current: Option.Option<ServerConfigProjection>,
   event: ServerConfigStreamEvent,
 ): Option.Option<ServerConfigProjection> {
+  const next = applyServerConfigEvent(current, event);
+  // Only snapshots and settings updates set the advertised pull request
+  // capabilities; every other event keeps the ones it was built on (fork).
+  if (Option.isNone(next) || next.value.advertisedPullRequests !== undefined) {
+    return next;
+  }
+  if (Option.isNone(current) || current.value.advertisedPullRequests === undefined) {
+    return next;
+  }
+  return Option.some({
+    ...next.value,
+    advertisedPullRequests: current.value.advertisedPullRequests,
+  });
+}
+
+function applyServerConfigEvent(
+  current: Option.Option<ServerConfigProjection>,
+  event: ServerConfigStreamEvent,
+): Option.Option<ServerConfigProjection> {
   switch (event.type) {
     case "snapshot": {
       // Wire snapshots never contain published themes. Keep the previous set
@@ -39,14 +67,19 @@ export function applyServerConfigProjection(
         capabilities.usageLimitSources === true && Option.isSome(current)
           ? current.value.config.usageLimitSources
           : undefined;
+      const advertisedPullRequests = readAdvertisedPullRequestCapabilities(event.config);
       return Option.some({
-        config: {
-          ...event.config,
-          ...(carriedThemes === undefined ? {} : { environmentThemes: carriedThemes }),
-          ...(carriedSources === undefined ? {} : { usageLimitSources: carriedSources }),
-        },
+        config: applyPullRequestsSetting(
+          {
+            ...event.config,
+            ...(carriedThemes === undefined ? {} : { environmentThemes: carriedThemes }),
+            ...(carriedSources === undefined ? {} : { usageLimitSources: carriedSources }),
+          },
+          advertisedPullRequests,
+        ),
         latestEvent: event,
         source: "live" as const,
+        advertisedPullRequests,
       });
     }
     case "keybindingsUpdated":
@@ -69,14 +102,20 @@ export function applyServerConfigProjection(
         source: "live",
       }));
     case "settingsUpdated":
-      return Option.map(current, (projection) => ({
-        config: {
-          ...projection.config,
-          settings: event.payload.settings,
-        },
-        latestEvent: event,
-        source: "live",
-      }));
+      return Option.map(current, (projection) => {
+        const advertisedPullRequests =
+          projection.advertisedPullRequests ??
+          readAdvertisedPullRequestCapabilities(projection.config);
+        return {
+          config: applyPullRequestsSetting(
+            { ...projection.config, settings: event.payload.settings },
+            advertisedPullRequests,
+          ),
+          latestEvent: event,
+          source: "live",
+          advertisedPullRequests,
+        };
+      });
     case "environmentThemesUpdated":
       return Option.map(current, (projection) => ({
         config: {
