@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Code blocks in chats, Brain documents and file previews have a Download button next to Copy.
+  It saves the block as a file named after the fence's file name, or `snippet.<ext>` from the
+  block's language (`.txt` when unknown).
+
 - `dev-flow.sh --seed --force` deletes the Dev Flow's chats and Brain and copies both fresh
   from your real data.
 
