@@ -155,5 +155,6 @@ app's update feed is the repository its release workflow runs in.
   `flow-vX.Y.Z` and then `flow-desktop-vX.Y.Z` from the same commit. Release this way: every
   desktop app offers to move the service to exactly its own version, so that service release
   must exist.
-- A machine that still has an upstream install switches once by running this fork's
-  `install.sh`; after that `flow update` and the desktop updater follow this fork.
+- A machine that still has an upstream install switches once, by accepting the update the
+  fork's desktop app offers at start or by running this fork's `install.sh`; after that
+  `flow update` and the desktop updater follow this fork.
