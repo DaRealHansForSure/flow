@@ -6,6 +6,7 @@ import type {
   ResolvedKeybindingsConfig,
   ScopedThreadRef,
   ThreadLinkedPullRequest,
+  ThreadId,
   ThreadPullRequestLink,
 } from "@t3tools/contracts";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
@@ -22,6 +23,8 @@ import { PullRequestDetailPanel } from "../pullRequest/PullRequestDetailPanel";
 import { PullRequestDetailGhost } from "../pullRequest/PullRequestGhosts";
 import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavailableState";
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
+import { ChatBrainPanel } from "../brain/ChatBrainPanel";
+import type { ChatBrain } from "../brain/useChatBrain";
 
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
@@ -45,6 +48,12 @@ interface RightPanelPullRequestProps {
   readonly linkedPullRequest: ThreadLinkedPullRequest | null;
   readonly branchPullRequest: ThreadLinkedPullRequest | null | undefined;
   readonly onBack: (() => void) | undefined;
+}
+
+/** Flow: the chat's Brain context, kept fresh by the chat view. */
+interface RightPanelBrainProps {
+  readonly threadId: ThreadId | null;
+  readonly chatBrain: ChatBrain;
 }
 
 interface RightPanelFileProps {
@@ -75,6 +84,7 @@ export function RightPanelSurfaceContent(props: {
   readonly terminal: RightPanelTerminalProps;
   readonly pullRequest: RightPanelPullRequestProps;
   readonly files: RightPanelFileProps;
+  readonly brain: RightPanelBrainProps;
 }) {
   const { surface, threadRef, visible } = props;
   if (surface === null) return null;
@@ -165,6 +175,16 @@ export function RightPanelSurfaceContent(props: {
     }
     case "pull-requests":
       return <ThreadPullRequestsPanel threadRef={threadRef} />;
+    // Flow: the Brain tab.
+    case "brain":
+      return (
+        <ChatBrainPanel
+          key={scopedThreadKey(threadRef)}
+          environmentId={props.environmentId}
+          threadId={props.brain.threadId}
+          chatBrain={props.brain.chatBrain}
+        />
+      );
     case "device":
       return (
         <Suspense fallback={null}>

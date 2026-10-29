@@ -21,6 +21,8 @@ const RIGHT_PANEL_KINDS = [
   "terminal",
   "pull-request",
   "pull-requests",
+  // Flow: the chat's Brain context.
+  "brain",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -74,7 +76,9 @@ export type RightPanelSurface =
       url?: string;
       detailTab?: PullRequestDetailTab;
     }
-  | { id: "pull-requests"; kind: "pull-requests" };
+  | { id: "pull-requests"; kind: "pull-requests" }
+  // Flow: one Brain tab per chat.
+  | { id: "brain"; kind: "brain" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 14;
@@ -123,6 +127,8 @@ interface RightPanelStoreState {
     kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request">,
   ) => void;
   openDevice: (ref: ScopedThreadRef, target: DeviceTabTarget, automatic?: boolean) => void;
+  /** Flow: a chat with a Brain starts with its tab, until the user closes it in that chat. */
+  openBrainByDefault: (ref: ScopedThreadRef, revealPanel: boolean) => void;
   renameDevice: (ref: ScopedThreadRef, surfaceId: string, title: string) => void;
   openBrowser: (ref: ScopedThreadRef, tabId: string | null) => void;
   openFile: (ref: ScopedThreadRef, relativePath: string, line?: number) => void;
@@ -213,6 +219,9 @@ const singletonSurface = (
       return { id: "pull-requests", kind };
     case "device":
       return { id: "device", kind };
+    // Flow: the Brain tab.
+    case "brain":
+      return { id: "brain", kind };
   }
 };
 
@@ -390,9 +399,11 @@ const userAction = (
   ...updateThread(state, threadKey, (current) => {
     const next = updater(current);
     if (next === current) return current;
+    // Flow: a Brain tab the user closed is remembered like a dismissed device.
     const removedDevices = current.surfaces.filter(
       (surface) =>
-        surface.kind === "device" && !next.surfaces.some((entry) => entry.id === surface.id),
+        (surface.kind === "device" || surface.kind === "brain") &&
+        !next.surfaces.some((entry) => entry.id === surface.id),
     );
     if (removedDevices.length === 0) return next;
     return {
@@ -669,6 +680,22 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
               },
               existing ?? surface,
             );
+          }),
+        ),
+      openBrainByDefault: (ref, revealPanel) =>
+        set((state) =>
+          automaticUpdate(state, scopedThreadKey(ref), (current) => {
+            const brainShownOrDismissed =
+              current.surfaces.some((surface) => surface.kind === "brain") ||
+              current.dismissedDeviceSurfaceIds?.includes("brain") === true;
+            if (brainShownOrDismissed) {
+              return current;
+            }
+            const surfaces = [...current.surfaces, singletonSurface("brain")];
+            if (current.surfaces.length > 0) {
+              return { ...current, surfaces };
+            }
+            return { ...current, isOpen: revealPanel, surfaces, activeSurfaceId: "brain" };
           }),
         ),
       renameDevice: (ref, surfaceId, title) =>

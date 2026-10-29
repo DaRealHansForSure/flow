@@ -37,6 +37,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Brain next to a chat is now a "Brain" tab in the right panel, so it can be closed
+  like any other tab. A chat with a Brain starts with the tab open, and each chat remembers
+  when you close it. Chats without a Brain show none.
+
 - "No project" is always the first entry in the command palette's project list, ahead of
   the current project.
 

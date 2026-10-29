@@ -28,6 +28,7 @@ import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dn
 import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
+  BrainCircuitIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -555,6 +556,9 @@ function surfaceTitle(
       return `#${surface.number}`;
     case "pull-requests":
       return "Pull requests";
+    // Flow: the Brain tab.
+    case "brain":
+      return "Brain";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -645,6 +649,9 @@ function SurfaceIcon({
       );
     case "pull-requests":
       return <PullRequestGlyph.link className="size-3 shrink-0" />;
+    // Flow: the Brain tab.
+    case "brain":
+      return <BrainCircuitIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
