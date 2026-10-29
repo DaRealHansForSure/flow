@@ -10,6 +10,12 @@ on:
         description: "Desktop version to publish (for example 0.1.0)"
         required: true
         type: string
+  # Flow fork: flow-release.yml publishes this and the service of one version.
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 permissions:
   contents: read

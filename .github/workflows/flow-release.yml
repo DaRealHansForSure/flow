@@ -1,0 +1,34 @@
+name: Flow release
+
+# Flow fork: one run publishes the service (flow-vX.Y.Z) and the desktop app
+# (flow-desktop-vX.Y.Z) of the same version, because every desktop app offers to
+# move the service to exactly its own version. Run it on the release branch, which
+# the service release requires; the two workflows keep their own triggers too.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable version (X.Y.Z) for both the service and the desktop app
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  service:
+    uses: ./.github/workflows/flow-browser-release.yml
+    with:
+      version: ${{ inputs.version }}
+    permissions:
+      contents: write
+    secrets: inherit
+  desktop:
+    # The desktop offers to install this exact service release, so it must exist first.
+    needs: service
+    uses: ./.github/workflows/flow-desktop-release.yml
+    with:
+      version: ${{ inputs.version }}
+    permissions:
+      contents: write
+    secrets: inherit
