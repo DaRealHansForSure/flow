@@ -104,11 +104,6 @@ export PATH="${REPO_ROOT}/node_modules/.bin:${PATH}"
 # Makes Electron print the renderer console (including the [flow-perf] lines of
 # apps/web/src/debug/devPerformanceLog.ts) to stderr, so it lands in LOG_FILE.
 export ELECTRON_ENABLE_LOGGING=1
-# Unbundled dev runs every module through Babel and the React Compiler on first
-# use, so a page opened for the first time took 20 to 40 seconds. Bundled dev
-# (upstream's opt-in, default for --share) pays that once at startup instead.
-# T3CODE_BUNDLED_DEV=0 scripts/fork/dev-flow.sh switches back.
-export T3CODE_BUNDLED_DEV="${T3CODE_BUNDLED_DEV:-1}"
 # The legacy backend makes the dev app run its own server from this checkout
 # instead of attaching to the installed flow.service.
 export FLOW_DESKTOP_LEGACY_BACKEND=1

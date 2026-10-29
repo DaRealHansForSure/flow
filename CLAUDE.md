@@ -74,8 +74,6 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
 - UI changes (`apps/web`) reload in place; desktop changes (`apps/desktop`) restart the
   dev app. The server runs from `apps/server/dist`, built once at launch, so server and
   Brain changes need `dev-flow.sh` restarted.
-- The Dev Flow runs Vite in bundled dev mode (`T3CODE_BUNDLED_DEV=1`): a longer start, but
-  pages open without the 20 to 40 second first-visit compile. `T3CODE_BUNDLED_DEV=0` switches back.
 - Closing the dev window ends the whole session about 15 seconds later; Ctrl+C works too.
 - Everything the Dev Flow prints is also written to `.t3/dev/logs/dev-flow.log` (the
   previous run in `dev-flow.previous.log`). Read that file to see the app's logs; strip
