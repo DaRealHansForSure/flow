@@ -61,10 +61,10 @@ const { logWarning } = DesktopObservability.makeComponentLogger("desktop-attache
 
 const decodeDescriptor = Schema.decodeUnknownOption(ExecutionEnvironmentDescriptor);
 
-export class AttachProbeError extends Schema.TaggedErrorClass<AttachProbeError>()(
-  "AttachProbeError",
-  { detail: Schema.String, cause: Schema.Defect() },
-) {
+export class AttachProbeError extends Schema.TaggedError<AttachProbeError>()("AttachProbeError", {
+  detail: Schema.String,
+  cause: Schema.Defect(),
+}) {
   override get message(): string {
     return this.detail;
   }
@@ -370,11 +370,10 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
   // No-op on the service itself, on purpose. `DesktopApp`'s quit finalizer
   // and `DesktopUpdates`' pre-install stop both skip detached instances;
   // this keeps any future caller honest too.
-  const stop = () =>
-    Effect.gen(function* () {
-      yield* Ref.set(desiredRunning, false);
-      yield* Ref.set(ready, false);
-    });
+  const stop = Effect.fn("desktop.attachedBackend.stop")(function* () {
+    yield* Ref.set(desiredRunning, false);
+    yield* Ref.set(ready, false);
+  });
 
   const buildConfig = (
     httpBaseUrl: URL,
@@ -428,7 +427,7 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
     const current = yield* Ref.get(attached);
     if (Option.isNone(current)) return Option.none<string>();
     return yield* mintCredential({ dataHome: current.value.dataHome }).pipe(
-      Effect.map(Option.some),
+      Effect.asSome,
       Effect.catch((error) =>
         logWarning("could not mint a pairing credential for the attached service", {
           detail: error.detail,

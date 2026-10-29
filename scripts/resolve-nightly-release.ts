@@ -10,7 +10,7 @@ import * as FileSystem from "effect/FileSystem";
 import * as Option from "effect/Option";
 import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
-import { Command, Flag } from "effect/unstable/cli";
+import { Command, Flag } from "effect/cli";
 
 export interface NightlyReleaseMetadata {
   readonly baseVersion: string;
@@ -30,7 +30,7 @@ const DesktopPackageJsonSchema = Schema.Struct({
   version: Schema.NonEmptyString,
 });
 
-export class InvalidDesktopPackageVersionError extends Schema.TaggedErrorClass<InvalidDesktopPackageVersionError>()(
+export class InvalidDesktopPackageVersionError extends Schema.TaggedError<InvalidDesktopPackageVersionError>()(
   "InvalidDesktopPackageVersionError",
   {
     version: Schema.String,
@@ -41,7 +41,7 @@ export class InvalidDesktopPackageVersionError extends Schema.TaggedErrorClass<I
   }
 }
 
-export class NightlyReleaseDesktopPackageError extends Schema.TaggedErrorClass<NightlyReleaseDesktopPackageError>()(
+export class NightlyReleaseDesktopPackageError extends Schema.TaggedError<NightlyReleaseDesktopPackageError>()(
   "NightlyReleaseDesktopPackageError",
   {
     operation: Schema.Literals(["read", "decode"]),
@@ -54,7 +54,7 @@ export class NightlyReleaseDesktopPackageError extends Schema.TaggedErrorClass<N
   }
 }
 
-export class NightlyReleaseGitHubOutputConfigError extends Schema.TaggedErrorClass<NightlyReleaseGitHubOutputConfigError>()(
+export class NightlyReleaseGitHubOutputConfigError extends Schema.TaggedError<NightlyReleaseGitHubOutputConfigError>()(
   "NightlyReleaseGitHubOutputConfigError",
   {
     cause: Schema.Defect(),
@@ -65,7 +65,7 @@ export class NightlyReleaseGitHubOutputConfigError extends Schema.TaggedErrorCla
   }
 }
 
-export class NightlyReleaseGitHubOutputAppendError extends Schema.TaggedErrorClass<NightlyReleaseGitHubOutputAppendError>()(
+export class NightlyReleaseGitHubOutputAppendError extends Schema.TaggedError<NightlyReleaseGitHubOutputAppendError>()(
   "NightlyReleaseGitHubOutputAppendError",
   {
     outputPath: Schema.String,
@@ -97,19 +97,28 @@ export const resolveNightlyTargetVersion = (version: string) => {
   return Effect.succeed(`${major}.${minor}.${Number(patch) + 1}`);
 };
 
+export const PrereleaseChannel = Schema.Literals(["nightly", "preview"]);
+export type PrereleaseChannel = typeof PrereleaseChannel.Type;
+
+const CHANNEL_RELEASE_LABELS: Record<PrereleaseChannel, string> = {
+  nightly: "Nightly",
+  preview: "Preview (maintainer test build, do not install)",
+};
+
 export const resolveNightlyReleaseMetadata = (
   baseVersion: string,
   date: string,
   runNumber: number,
   sha: string,
+  channel: PrereleaseChannel = "nightly",
 ) => {
   const shortSha = sha.slice(0, 12);
-  const version = `${baseVersion}-nightly.${date}.${runNumber}`;
+  const version = `${baseVersion}-${channel}.${date}.${runNumber}`;
   return {
     baseVersion,
     version,
     tag: `v${version}`,
-    name: `${BRAND.name} Nightly ${version} (${shortSha})`,
+    name: `${BRAND.name} ${CHANNEL_RELEASE_LABELS[channel]} ${version} (${shortSha})`,
     shortSha,
   };
 };
@@ -159,7 +168,7 @@ export const writeNightlyReleaseOutput = Effect.fn("writeNightlyReleaseOutput")(
   ] as const;
 
   if (writeGithubOutput) {
-    const githubOutputPath = yield* Config.nonEmptyString("GITHUB_OUTPUT").pipe(
+    const githubOutputPath = yield* Config.NonEmptyString("GITHUB_OUTPUT").pipe(
       Effect.mapError(
         (cause) =>
           new NightlyReleaseGitHubOutputConfigError({
@@ -187,30 +196,36 @@ export const writeNightlyReleaseOutput = Effect.fn("writeNightlyReleaseOutput")(
 const command = Command.make(
   "resolve-nightly-release",
   {
-    date: Flag.string("date").pipe(
+    date: Flag.String("date").pipe(
       Flag.withSchema(DateSchema),
       Flag.withDescription("Nightly build date in YYYYMMDD."),
     ),
-    runNumber: Flag.string("run-number").pipe(
+    runNumber: Flag.String("run-number").pipe(
       Flag.withSchema(RunNumberSchema),
       Flag.withDescription("GitHub Actions run number."),
     ),
-    sha: Flag.string("sha").pipe(
+    sha: Flag.String("sha").pipe(
       Flag.withSchema(ShaSchema),
       Flag.withDescription("Commit sha for the nightly build."),
     ),
-    githubOutput: Flag.boolean("github-output").pipe(
+    channel: Flag.Literals("channel", PrereleaseChannel.literals).pipe(
+      Flag.withDescription("Prerelease channel whose identifier the version carries."),
+      Flag.withDefault("nightly" as const),
+    ),
+    githubOutput: Flag.Boolean("github-output").pipe(
       Flag.withDescription("Write values to GITHUB_OUTPUT instead of stdout."),
       Flag.withDefault(false),
     ),
-    root: Flag.string("root").pipe(
+    root: Flag.String("root").pipe(
       Flag.withDescription("Workspace root used to resolve apps/desktop/package.json."),
       Flag.optional,
     ),
   },
-  ({ date, runNumber, sha, githubOutput, root }) =>
+  ({ date, runNumber, sha, channel, githubOutput, root }) =>
     readDesktopBaseVersion(Option.getOrUndefined(root)).pipe(
-      Effect.map((baseVersion) => resolveNightlyReleaseMetadata(baseVersion, date, runNumber, sha)),
+      Effect.map((baseVersion) =>
+        resolveNightlyReleaseMetadata(baseVersion, date, runNumber, sha, channel),
+      ),
       Effect.flatMap((metadata) => writeNightlyReleaseOutput(metadata, githubOutput)),
     ),
 ).pipe(Command.withDescription("Resolve nightly release version metadata."));

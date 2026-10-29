@@ -2,12 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as ConfigProvider from "effect/ConfigProvider";
-import {
-  HttpClient,
-  HttpClientResponse,
-  HttpServerRequest,
-  HttpServerResponse,
-} from "effect/unstable/http";
+import { HttpClient, HttpClientResponse, HttpServerRequest, HttpServerResponse } from "effect/http";
 import { requestFlowBrowserUpdate } from "./flowBrowserUpdate.ts";
 import { flowBrowserUpdateRoute } from "./http.ts";
 import * as EnvironmentAuth from "./auth/EnvironmentAuth.ts";

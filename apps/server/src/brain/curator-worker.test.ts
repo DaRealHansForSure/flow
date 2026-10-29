@@ -199,4 +199,4 @@ it("captures immediately, curates all documents over private MCP, and advances o
     await worker.close();
     await NodeFSP.rm(directory, { recursive: true, force: true });
   }
-}, 30_000);
+});

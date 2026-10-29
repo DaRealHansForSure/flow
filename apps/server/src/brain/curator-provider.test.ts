@@ -1,5 +1,5 @@
 import { expect, it } from "vite-plus/test";
-import { ProviderInstanceId, ServerSettings } from "@t3tools/contracts";
+import { ProviderDriverKind, ProviderInstanceId, ServerSettings } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
 import {
   selectCuratorModel,
@@ -11,8 +11,8 @@ import { CuratorSessions } from "./curator-sessions.ts";
 
 const decodeSettings = Schema.decodeUnknownSync(ServerSettings);
 const settings = decodeSettings({
-  providers: { opencode: { enabled: true } },
   providerInstances: {
+    opencode: { driver: "opencode", enabled: true },
     "claude-work": { driver: "claudeAgent", enabled: true, config: {} },
   },
   defaultModelSelection: { instanceId: "codex", model: "gpt-5.6-sol" },
@@ -55,17 +55,22 @@ it("runs the agent chosen in Brain settings even while its chat provider is swit
   // OpenCode, Cursor and Grok are off by default; that switch is about chat, not notes.
   const off = {
     ...settings,
-    providers: {
-      ...settings.providers,
-      opencode: { ...settings.providers.opencode, enabled: false },
+    providerInstances: {
+      ...settings.providerInstances,
+      [ProviderInstanceId.make("opencode")]: {
+        driver: ProviderDriverKind.make("opencode"),
+        enabled: false,
+      },
     },
   };
   expect(selectCuratorProvider(off, "opencode").instance.driver).toBe("opencode");
 });
 it("prefers an enabled instance of the chosen agent over a disabled one", () => {
   const two = decodeSettings({
-    providers: { opencode: { enabled: false } },
-    providerInstances: { "opencode-work": { driver: "opencode", enabled: true, config: {} } },
+    providerInstances: {
+      opencode: { driver: "opencode", enabled: false },
+      "opencode-work": { driver: "opencode", enabled: true, config: {} },
+    },
   });
   expect(selectCuratorProvider(two, "opencode").instanceId).toBe("opencode-work");
 });
@@ -89,8 +94,8 @@ it("requests a fresh source window when the Brain switches CLI", async () => {
   }
 });
 it("writes notes with the inexpensive model, not the chat default", () => {
-  expect(selectCuratorModel("claudeAgent")).toBe("claude-haiku-4-5");
-  expect(selectCuratorModel("codex")).toBe("gpt-5.6-luna");
+  expect(selectCuratorModel("claudeAgent")).toBe("claude-haiku-5-5");
+  expect(selectCuratorModel("codex")).toBe("gpt-6-luna");
 });
 it("never guesses an OpenCode model the user may not have", () => {
   expect(selectCuratorModel("opencode", "opencode-go/glm-5.2")).toBe("opencode-go/glm-5.2");

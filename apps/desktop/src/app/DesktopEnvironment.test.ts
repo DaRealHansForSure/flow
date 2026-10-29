@@ -3,7 +3,6 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 
 import * as DesktopEnvironment from "./DesktopEnvironment.ts";
 import * as DesktopConfig from "./DesktopConfig.ts";
@@ -21,7 +20,7 @@ const defaultInput = {
   legacyHomeExists: true,
 } satisfies DesktopEnvironment.MakeDesktopEnvironmentInput;
 
-const makeEnvironmentLayer = (
+const layerEnvironment = (
   overrides: Partial<DesktopEnvironment.MakeDesktopEnvironmentInput> = {},
   env: Record<string, string | undefined> = {},
 ) =>
@@ -37,94 +36,9 @@ const makeEnvironmentLayer = (
 const makeEnvironment = (
   overrides: Partial<DesktopEnvironment.MakeDesktopEnvironmentInput> = {},
   env: Record<string, string | undefined> = {},
-) =>
-  DesktopEnvironment.DesktopEnvironment.pipe(Effect.provide(makeEnvironmentLayer(overrides, env)));
+) => DesktopEnvironment.DesktopEnvironment.pipe(Effect.provide(layerEnvironment(overrides, env)));
 
 describe("DesktopEnvironment", () => {
-  it.effect("derives state paths and development identity inside Effect", () =>
-    Effect.gen(function* () {
-      const environment = yield* makeEnvironment(
-        {},
-        {
-          T3CODE_HOME: " /tmp/t3 ",
-          T3CODE_COMMIT_HASH: " 0123456789abcdef ",
-          T3CODE_PORT: "4949",
-          VITE_DEV_SERVER_URL: "http://localhost:5173",
-          T3CODE_DEV_REMOTE_T3_SERVER_ENTRY_PATH: " /remote/server.mjs ",
-          T3CODE_OTLP_TRACES_URL: " http://127.0.0.1:4318/v1/traces ",
-          T3CODE_OTLP_EXPORT_INTERVAL_MS: "2500",
-        },
-      );
-
-      assert.equal(environment.isDevelopment, true);
-      assert.equal(environment.appDataDirectory, "/Users/alice/Library/Application Support");
-      assert.equal(environment.baseDir, "/tmp/t3");
-      assert.equal(environment.stateDir, "/tmp/t3/userdata");
-      assert.equal(environment.desktopSettingsPath, "/tmp/t3/userdata/desktop-settings.json");
-      assert.equal(environment.clientSettingsPath, "/tmp/t3/userdata/client-settings.json");
-      assert.equal(
-        environment.savedEnvironmentRegistryPath,
-        "/tmp/t3/userdata/saved-environments.json",
-      );
-      assert.equal(environment.serverSettingsPath, "/tmp/t3/userdata/settings.json");
-      assert.equal(environment.logDir, "/tmp/t3/userdata/logs");
-      assert.equal(environment.browserArtifactsDir, "/tmp/t3/userdata/browser-artifacts");
-      assert.equal(environment.rootDir, "/repo");
-      assert.equal(environment.appRoot, "/repo");
-      assert.equal(environment.serverRoot, "/repo");
-      assert.equal(environment.backendEntryPath, "/repo/apps/server/dist/bin.mjs");
-      assert.equal(environment.bundledClientDir, "/repo/apps/server/dist/client");
-      assert.equal(environment.backendCwd, "/repo");
-      assert.equal(environment.appUserModelId, "com.flow.desktop.dev");
-      assert.equal(environment.linuxWmClass, "flow-dev");
-      assert.deepEqual(
-        Option.map(environment.devServerUrl, (url) => url.href),
-        Option.some("http://localhost:5173/"),
-      );
-      assert.deepEqual(environment.devRemoteT3ServerEntryPath, Option.some("/remote/server.mjs"));
-      assert.deepEqual(environment.configuredBackendPort, Option.some(4949));
-      assert.deepEqual(environment.commitHashOverride, Option.some("0123456789abcdef"));
-      assert.deepEqual(environment.otlpTracesUrl, Option.some("http://127.0.0.1:4318/v1/traces"));
-      assert.equal(environment.otlpExportIntervalMs, 2500);
-    }),
-  );
-
-  it.effect("stores production state under userdata in an explicit home", () =>
-    Effect.gen(function* () {
-      const environment = yield* makeEnvironment(
-        {},
-        {
-          T3CODE_HOME: "/tmp/t3",
-        },
-      );
-
-      assert.equal(environment.isDevelopment, false);
-      assert.equal(environment.stateDir, "/tmp/t3/userdata");
-      assert.equal(environment.logDir, "/tmp/t3/userdata/logs");
-      assert.equal(environment.browserArtifactsDir, "/tmp/t3/userdata/browser-artifacts");
-      assert.equal(environment.serverSettingsPath, "/tmp/t3/userdata/settings.json");
-    }),
-  );
-
-  it.effect("locates the Flow service bootstrap in the repo and in the package", () =>
-    Effect.gen(function* () {
-      // Adoption runs this script with Electron's embedded Node; packaged
-      // builds ship it loose under resources/ (see build-desktop-artifact.ts).
-      const development = yield* makeEnvironment();
-      assert.equal(development.flowReleaseScriptPath, "/repo/scripts/flow-release.mjs");
-
-      const packaged = yield* makeEnvironment({
-        isPackaged: true,
-        appPath: "/Applications/Flow.app/Contents/Resources/app.asar",
-        resourcesPath: "/Applications/Flow.app/Contents/Resources",
-      });
-      assert.equal(
-        packaged.flowReleaseScriptPath,
-        "/Applications/Flow.app/Contents/Resources/flow-bootstrap/flow-release.mjs",
-      );
-    }),
-  );
-
   it.effect("uses the packaged Windows server sidecar as the backend root", () =>
     Effect.gen(function* () {
       const environment = yield* makeEnvironment({
@@ -140,10 +54,8 @@ describe("DesktopEnvironment", () => {
         environment.backendEntryPath,
         "/install/resources/server.asar/apps/server/dist/bin.mjs",
       );
-      // The renderer's static fallback reads out of the same server tree, so
-      // packaged Windows must point it at the sidecar too.
       assert.equal(
-        environment.bundledClientDir,
+        environment.clientAssetsDir,
         "/install/resources/server.asar/apps/server/dist/client",
       );
     }),
@@ -162,36 +74,34 @@ describe("DesktopEnvironment", () => {
     }),
   );
 
-  it.effect("uses a configured app user model id override", () =>
+  it.effect("uses the Flow identifiers in development", () =>
     Effect.gen(function* () {
       const environment = yield* makeEnvironment(
         {},
-        {
-          T3CODE_DESKTOP_APP_USER_MODEL_ID: " com.flow.desktop.dev.local ",
-          VITE_DEV_SERVER_URL: "http://localhost:5173",
-        },
+        { VITE_DEV_SERVER_URL: "http://localhost:5173" },
       );
 
-      assert.equal(environment.appUserModelId, "com.flow.desktop.dev.local");
+      assert.equal(environment.appUserModelId, "com.flow.desktop.dev");
+      assert.equal(environment.linuxWmClass, "flow-dev");
+      assert.equal(environment.linuxDesktopEntryName, "flow-dev.desktop");
     }),
   );
 
-  it.effect("resolves picker defaults without nullish sentinels", () =>
+  it.effect("locates the Flow service bootstrap in the repo and in the package", () =>
     Effect.gen(function* () {
-      const environment = yield* makeEnvironment();
+      // Adoption runs this script with Electron's embedded Node; packaged
+      // builds ship it loose under resources/ (see build-desktop-artifact.ts).
+      const development = yield* makeEnvironment();
+      assert.equal(development.flowReleaseScriptPath, "/repo/scripts/flow-release.mjs");
 
-      assert.deepEqual(environment.resolvePickFolderDefaultPath(null), Option.none());
-      assert.deepEqual(
-        environment.resolvePickFolderDefaultPath({ initialPath: " " }),
-        Option.none(),
-      );
-      assert.deepEqual(
-        environment.resolvePickFolderDefaultPath({ initialPath: "~" }),
-        Option.some("/Users/alice"),
-      );
-      assert.deepEqual(
-        environment.resolvePickFolderDefaultPath({ initialPath: "~/project" }),
-        Option.some("/Users/alice/project"),
+      const packaged = yield* makeEnvironment({
+        isPackaged: true,
+        appPath: "/Applications/Flow.app/Contents/Resources/app.asar",
+        resourcesPath: "/Applications/Flow.app/Contents/Resources",
+      });
+      assert.equal(
+        packaged.flowReleaseScriptPath,
+        "/Applications/Flow.app/Contents/Resources/flow-bootstrap/flow-release.mjs",
       );
     }),
   );

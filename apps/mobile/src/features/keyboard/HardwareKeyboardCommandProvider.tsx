@@ -1,6 +1,9 @@
 import { StackActions, useNavigation } from "@react-navigation/native";
-import { resolveThreadReferenceCopyTarget } from "@t3tools/shared/threadReference";
+import { Platform } from "react-native";
+import { resolveThreadReferenceCopyTarget } from "@t3tools/client-runtime/thread-reference";
 import {
+  createContext,
+  use,
   useCallback,
   useEffect,
   useMemo,
@@ -8,14 +11,19 @@ import {
   useState,
   useSyncExternalStore,
   type PropsWithChildren,
+  type ReactNode,
 } from "react";
 
-import { tryCopyTextWithHaptic } from "../../lib/copyTextWithHaptic";
+import { copyThreadReference } from "../../lib/copyThreadReference";
+import {
+  firstWorkspaceDetailOpen,
+  workspaceHasColumns,
+} from "../workspace/workspace-selection-store";
 import { T3KeyboardCommands } from "../../native/T3KeyboardCommands";
-import { useThreadShell } from "../../state/entities";
-import { useEnvironmentServerConfig } from "../../state/entities";
+import { useEnvironmentServerConfig, useThreadShell } from "../../state/entities";
 import type { GitActionProgress } from "../../state/use-vcs-action-state";
 import { GitActionProgressOverlay } from "../threads/GitActionProgressOverlay";
+import { CommandPalette } from "./CommandPalette";
 import {
   dispatchHardwareKeyboardCommand,
   getHardwareKeyboardCommandRegistrationVersion,
@@ -24,6 +32,7 @@ import {
   subscribeToHardwareKeyboardCommandRegistrations,
   type HardwareKeyboardCommand,
 } from "./hardwareKeyboardCommands";
+import { selectWorkspaceDetail } from "../workspace/workspace-detail-selection";
 
 const EMPTY_COPY_FEEDBACK: GitActionProgress = {
   phase: "idle",
@@ -32,13 +41,23 @@ const EMPTY_COPY_FEEDBACK: GitActionProgress = {
 };
 const COPY_FEEDBACK_DISMISS_MS = 3_000;
 
+const CommandPaletteContext = createContext<ReactNode>(null);
+
+/** Render inside the workspace so palette actions share its navigation and pane state. */
+export function HardwareKeyboardCommandOverlay() {
+  return use(CommandPaletteContext);
+}
+
 export function HardwareKeyboardCommandProvider({
   children,
   pathname,
 }: PropsWithChildren<{ readonly pathname: string }>) {
   const navigation = useNavigation();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
   const activeThreadRef = useMemo(() => parseActiveThreadPath(pathname), [pathname]);
   const activeThread = useThreadShell(activeThreadRef);
+  // Fork: with pull requests turned off in the server's settings, copy the thread, not a stored PR.
   const pullRequestsTurnedOff =
     useEnvironmentServerConfig(activeThreadRef?.environmentId ?? null)?.settings
       .pullRequestsEnabled === false;
@@ -49,7 +68,9 @@ export function HardwareKeyboardCommandProvider({
     const storedPullRequestUrl =
       (activeThread?.linkedPullRequest ?? activeThread?.branchPullRequest)?.url ?? null;
     return resolveThreadReferenceCopyTarget({
-      threadId: activeThread?.id ?? activeThreadRef.threadId,
+      threadRef: activeThreadRef,
+      title: activeThread?.title ?? "",
+      pullRequests: pullRequestsTurnedOff ? undefined : activeThread?.pullRequests,
       linkedPullRequestUrl: pullRequestsTurnedOff ? null : storedPullRequestUrl,
     });
   }, [activeThread, activeThreadRef, pullRequestsTurnedOff]);
@@ -73,6 +94,7 @@ export function HardwareKeyboardCommandProvider({
       setCopyFeedback(EMPTY_COPY_FEEDBACK);
     }, COPY_FEEDBACK_DISMISS_MS);
   }, []);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clears the copy feedback timer on unmount
   useEffect(
     () => () => {
       if (copyFeedbackTimerRef.current !== null) {
@@ -89,6 +111,12 @@ export function HardwareKeyboardCommandProvider({
   const enabledCommands = useMemo(() => {
     const commands = new Set<HardwareKeyboardCommand>(getRegisteredHardwareKeyboardCommands());
     commands.add("newTask");
+    commands.add("commandPalette");
+    if (pathname !== "/" && !pathname.startsWith("/threads/")) {
+      for (const command of commands) {
+        if (command.startsWith("thread.jump.")) commands.delete(command);
+      }
+    }
     if (pathname !== "/" || navigation.canGoBack()) commands.add("back");
     if (activeThreadRef !== null) {
       commands.add("files");
@@ -97,25 +125,28 @@ export function HardwareKeyboardCommandProvider({
       if (pathname.split("/")[4] !== "terminal") commands.add("copyThreadReference");
     }
     return [...commands];
-  }, [pathname, registrationVersion, navigation]);
+    // oxlint-disable-next-line react/memo-dependencies -- registrationVersion invalidates the snapshot of the external keyboard-command registry.
+  }, [activeThreadRef, pathname, registrationVersion, navigation]);
 
   const onCommand = useCallback(
     (command: HardwareKeyboardCommand) => {
+      if (command === "commandPalette") {
+        setPaletteOpen(true);
+        return;
+      }
       if (dispatchHardwareKeyboardCommand(command)) return;
 
       if (command === "copyThreadReference") {
         if (copyTarget === null) return;
         const requestId = ++copyRequestIdRef.current;
-        void tryCopyTextWithHaptic(copyTarget.value, {
-          target: copyTarget.clipboardTarget,
-        }).then((didCopy) => {
+        void copyThreadReference(copyTarget).then((didCopy) => {
           if (requestId !== copyRequestIdRef.current) return;
           showCopyFeedback(
             didCopy
               ? {
                   phase: "success",
                   label: copyTarget.successTitle,
-                  description: copyTarget.value,
+                  description: copyTarget.description,
                 }
               : {
                   phase: "error",
@@ -128,10 +159,13 @@ export function HardwareKeyboardCommandProvider({
       }
 
       if (command === "newTask") {
-        navigation.navigate("NewTaskSheet", { screen: "NewTask" });
+        navigation.dispatch(selectWorkspaceDetail({ name: "Thread", params: { draft: {} } }));
         return;
       }
       if (command === "back") {
+        // Beside a visible list, the first detail page has nothing to go back to.
+        if (Platform.OS === "ios" && workspaceHasColumns() && firstWorkspaceDetailOpen(navigation))
+          return;
         if (navigation.canGoBack()) {
           navigation.goBack();
         } else {
@@ -155,12 +189,20 @@ export function HardwareKeyboardCommandProvider({
     [copyTarget, navigation, pathname, showCopyFeedback],
   );
 
+  const palette = useMemo(
+    () =>
+      paletteOpen ? (
+        <CommandPalette pathname={pathname} onClose={closePalette} onCommand={onCommand} />
+      ) : null,
+    [closePalette, onCommand, paletteOpen, pathname],
+  );
+
   return (
-    <>
+    <CommandPaletteContext value={palette}>
       <T3KeyboardCommands enabledCommands={enabledCommands} onCommand={onCommand}>
         {children}
       </T3KeyboardCommands>
       <GitActionProgressOverlay progress={copyFeedback} onDismiss={dismissCopyFeedback} />
-    </>
+    </CommandPaletteContext>
   );
 }

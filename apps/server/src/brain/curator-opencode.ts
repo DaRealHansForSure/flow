@@ -73,11 +73,10 @@ const LIGHT_FAMILY = /(^|-)(haiku|luna|flash)$/;
 const regionOf = (id: string) => /^(us-gov|us|eu|apac|au|jp|ca|global)\./.exec(id)?.[1] ?? "";
 
 /**
- * Notes need a good-enough model, not the user's best one. Stay on the provider and vendor family
- * their own model already proves access to (Bedrock grants access per vendor; a plan serves only
- * its own models) and take that family's newest light sibling: Claude Sonnet becomes Haiku, GLM
- * becomes GLM-Flash. Price cannot rank this: flat-rate plans list every model at zero, and the
- * cheapest metered models are too weak to keep structured notes. No sibling keeps their own model.
+ * The newest light sibling in the provider and vendor family their own model proves access to
+ * (Bedrock grants access per vendor; a plan serves only its own models), else their own model.
+ * Price cannot rank this: flat-rate plans list every model at zero, and the cheapest metered
+ * models are too weak to keep structured notes.
  */
 export function lightSibling(own: string, models: ReadonlyArray<OpenCodeModelInfo>): string {
   const slash = own.indexOf("/");
@@ -88,7 +87,8 @@ export function lightSibling(own: string, models: ReadonlyArray<OpenCodeModelInf
   const vendor = family.split("-")[0];
   const siblings = models.filter(
     (model) =>
-      model.family?.split("-")[0] === vendor &&
+      model.family !== undefined &&
+      model.family.split("-")[0] === vendor &&
       LIGHT_FAMILY.test(model.family) &&
       model.capabilities?.toolcall !== false &&
       model.status !== "deprecated",

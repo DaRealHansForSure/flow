@@ -4,7 +4,7 @@ import {
   type DesktopFlowServiceActionResult,
   type DesktopFlowServiceStatus,
 } from "@t3tools/contracts";
-import { HostProcessPlatform, HostProcessUserId } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -21,12 +21,13 @@ import * as DesktopIpc from "../DesktopIpc.ts";
 
 /** Host facts the plain service module takes as input, plus whatever a test
     overrode. Reading them here keeps that module free of `process`. */
-const resolveInput = (overrides: Partial<FlowService.FlowServiceInput>) =>
-  Effect.gen(function* () {
-    const host = yield* HostProcessPlatform;
-    const uid = yield* HostProcessUserId;
-    return { host, uid: uid ?? 0, ...overrides } satisfies FlowService.FlowServiceInput;
-  });
+const resolveInput = Effect.fn("desktop.flowService.resolveInput")(function* (
+  overrides: Partial<FlowService.FlowServiceInput>,
+) {
+  const host = yield* HostProcess.Platform;
+  const uid = yield* HostProcess.UserId;
+  return { host, uid: uid ?? 0, ...overrides } satisfies FlowService.FlowServiceInput;
+});
 
 const unreadableStatus = (
   input: FlowService.FlowServiceInput,

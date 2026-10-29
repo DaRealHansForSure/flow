@@ -7,7 +7,7 @@ import * as NodeFSP from "node:fs/promises";
 import * as NodePath from "node:path";
 import * as Schema from "effect/Schema";
 import { BrainState, BrainDocument, ChatMemoryList } from "@t3tools/contracts";
-import { McpSchema } from "effect/unstable/ai";
+import { McpSchema } from "effect/ai";
 import type { BrainCommand, BrainTransferRequest } from "@t3tools/contracts";
 import type { BrainSessionContext } from "@flow/brain-runtime";
 import type {

@@ -1,7 +1,7 @@
 import type { DesktopBridge, DesktopFlowServiceStatus } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { Atom } from "effect/unstable/reactivity";
+import { Atom } from "effect/reactivity";
 
 import { appAtomRegistry } from "~/rpc/atomRegistry";
 
@@ -11,7 +11,7 @@ const DESKTOP_FLOW_SERVICE_STALE_TIME_MS = 10_000;
 
 type DesktopFlowServiceBridge = Pick<DesktopBridge, "getFlowServiceStatus">;
 
-class DesktopFlowServiceUnavailableError extends Schema.TaggedErrorClass<DesktopFlowServiceUnavailableError>()(
+class DesktopFlowServiceUnavailableError extends Schema.TaggedError<DesktopFlowServiceUnavailableError>()(
   "DesktopFlowServiceUnavailableError",
   {},
 ) {
@@ -20,7 +20,7 @@ class DesktopFlowServiceUnavailableError extends Schema.TaggedErrorClass<Desktop
   }
 }
 
-class DesktopFlowServiceLoadError extends Schema.TaggedErrorClass<DesktopFlowServiceLoadError>()(
+class DesktopFlowServiceLoadError extends Schema.TaggedError<DesktopFlowServiceLoadError>()(
   "DesktopFlowServiceLoadError",
   { cause: Schema.Defect() },
 ) {

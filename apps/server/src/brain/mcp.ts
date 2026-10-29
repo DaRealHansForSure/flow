@@ -2,9 +2,10 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import { McpSchema, McpServer } from "effect/unstable/ai";
+// oxlint-disable-next-line t3code/no-raw-mcp-registration -- Brain tools are the Brain's runtime catalog, not a typed toolkit; the handler checks the "brain" capability.
+import { McpSchema, McpServer } from "effect/ai";
 import { McpInvocationContext } from "../mcp/McpInvocationContext.ts";
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
+import { makeBrainProjections } from "./brainProjections.ts";
 import { BrainService } from "./BrainService.ts";
 import { originalBrainTools } from "./session-worker.ts";
 import { AnalyticsService } from "../telemetry/AnalyticsService.ts";
@@ -17,20 +18,25 @@ export const BrainToolkitRegistrationLive = Layer.effectDiscard(
   Effect.gen(function* () {
     const registry = yield* McpServer.McpServer;
     const service = yield* BrainService;
-    const projections = yield* ProjectionSnapshotQuery;
+    const projections = yield* makeBrainProjections;
     const analytics = yield* AnalyticsService;
     const tools = yield* Effect.promise(originalBrainTools);
     for (const tool of tools) {
+      // oxlint-disable-next-line t3code/no-raw-mcp-registration -- See the import above.
       yield* registry.addTool({
         tool,
         annotations: Context.empty(),
-        handle: (args: Record<string, unknown>) =>
-          Effect.gen(function* () {
+        handle: Effect.fn("brain.mcpTool")(
+          function* (args: Record<string, unknown>) {
             const scope = yield* Effect.serviceOption(McpInvocationContext);
-            if (Option.isNone(scope) || !scope.value.capabilities.has("brain"))
+            const session = Option.isSome(scope) ? scope.value.thread : undefined;
+            if (
+              session === undefined ||
+              !scope.pipe(Option.exists((context) => context.capabilities.has("brain")))
+            )
               return yield* Effect.fail("This session does not have Brain access.");
             const thread = yield* projections
-              .getThreadShellById(scope.value.threadId)
+              .getThreadShellById(session.threadId)
               .pipe(Effect.mapError(() => "Could not resolve the chat's project."));
             if (Option.isNone(thread)) return yield* Effect.fail("The chat no longer exists.");
             const project = yield* projections
@@ -42,29 +48,29 @@ export const BrainToolkitRegistrationLive = Layer.effectDiscard(
             return yield* Effect.tryPromise({
               try: () =>
                 runtime.callProjectTool(thread.value.projectId, tool.name, args, {
-                  session: scope.value.threadId,
+                  session: session.threadId,
                   ...(workspaceRoot ? { workspaceRoot } : {}),
                   ...(thread.value.branch ? { branch: thread.value.branch } : {}),
                 }),
               catch: (error) =>
                 error instanceof Error ? error.message : "The connected brain is unavailable.",
             });
-          }).pipe(
-            Effect.tap(() =>
-              analytics.record("brain.tool.completed", { tool: tool.name, success: true }),
-            ),
-            Effect.tapError(() =>
-              analytics.record("brain.tool.completed", { tool: tool.name, success: false }),
-            ),
-            Effect.catch((error) =>
-              Effect.succeed(
-                new McpSchema.CallToolResult({
-                  isError: true,
-                  content: [{ type: "text", text: error }],
-                }),
-              ),
+          },
+          Effect.tap(() =>
+            analytics.record("brain.tool.completed", { tool: tool.name, success: true }),
+          ),
+          Effect.tapError(() =>
+            analytics.record("brain.tool.completed", { tool: tool.name, success: false }),
+          ),
+          Effect.catch((error) =>
+            Effect.succeed(
+              new McpSchema.CallToolResult({
+                isError: true,
+                content: [{ type: "text", text: error }],
+              }),
             ),
           ),
+        ),
       });
     }
   }),

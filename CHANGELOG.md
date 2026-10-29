@@ -34,6 +34,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Telemetry is off by default: no usage data, no relay connection traces and no mobile crash
+  reports unless you turn them on (`T3CODE_TELEMETRY_ENABLED=true`, Settings > About >
+  Diagnostics > Send crash reports on mobile). The welcome screen and the telemetry guide
+  say so.
+
+- Synced with T3 Code v0.1.5 (its new chat engine, "No project" chats, Effect 4). The Brain
+  now briefs and records chats through the new engine, and the conversation-notes agent
+  runs `claude`, `codex` or `opencode` directly. Its sessions now appear in that CLI's own
+  history.
+
 - Synced with upstream Flow `release` (flow-v0.1.15): OpenCode CLI capture, notes
   agent on an inexpensive model.
 

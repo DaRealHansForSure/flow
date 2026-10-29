@@ -1,25 +1,21 @@
 import { expect, it } from "@effect/vitest";
-import {
-  EnvironmentId,
-  ProjectId,
-  ProviderInstanceId,
-  ThreadId,
-  type OrchestrationThreadShell,
-} from "@t3tools/contracts";
+import { EnvironmentId, ProjectId, ProviderInstanceId, ThreadId } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
-import { McpSchema, McpServer } from "effect/unstable/ai";
+import { McpSchema, McpServer } from "effect/ai";
 import { BrainService } from "./BrainService.ts";
 import type { BrainRuntime } from "./BrainRuntime.ts";
 import { BrainToolkitRegistrationLive } from "./mcp.ts";
 import { McpInvocationContext } from "../mcp/McpInvocationContext.ts";
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
+import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
+import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
 import * as AnalyticsService from "../telemetry/AnalyticsService.ts";
 
 const client = McpSchema.McpServerClient.of({
   clientId: 1,
   protocolVersion: "2025-06-18",
+  clientCapabilities: {},
+  clientInfo: { name: "brain-test", version: "1" },
   initializePayload: {
     protocolVersion: "2025-06-18",
     capabilities: {},
@@ -27,13 +23,18 @@ const client = McpSchema.McpServerClient.of({
   },
   getClient: Effect.die("unused"),
 });
-const scope = {
-  environmentId: EnvironmentId.make("brain-test"),
+const thread = {
   threadId: ThreadId.make("thread-a"),
   providerSessionId: "session-a",
   providerInstanceId: ProviderInstanceId.make("claude"),
+};
+const scope = {
+  environmentId: EnvironmentId.make("brain-test"),
   capabilities: new Set(["brain"] as const),
   issuedAt: 1,
+  requestNamespace: "brain-test",
+  thread,
+  client: undefined,
 };
 const projectId = ProjectId.make("project-a");
 
@@ -53,17 +54,20 @@ it.effect(
             return { content: [{ type: "text", text: "Only project A's brain" }] };
           },
         } as unknown as BrainRuntime;
-        const projections = {
-          getProjectShellById: () => Effect.succeed(Option.none()),
-          getThreadShellById: (id: ThreadId) => {
-            expect(id).toBe(scope.threadId);
-            return Effect.succeed(Option.some({ projectId } as OrchestrationThreadShell));
+        const threads = {
+          getThreadShell: (id: ThreadId) => {
+            expect(id).toBe(thread.threadId);
+            return Effect.succeed({ projectId });
           },
-        } as unknown as ProjectionSnapshotQuery["Service"];
+        } as unknown as ProjectionStore.ProjectionStoreV2["Service"];
+        const projects = {
+          getShell: () => Effect.succeedNone,
+        } as unknown as ProjectStore.ProjectStoreV2["Service"];
         const layer = BrainToolkitRegistrationLive.pipe(
           Layer.provideMerge(McpServer.McpServer.layer),
           Layer.provideMerge(Layer.succeed(BrainService, { ready: Effect.succeed(runtime) })),
-          Layer.provideMerge(Layer.succeed(ProjectionSnapshotQuery, projections)),
+          Layer.provideMerge(Layer.succeed(ProjectionStore.ProjectionStoreV2, threads)),
+          Layer.provideMerge(Layer.succeed(ProjectStore.ProjectStoreV2, projects)),
           Layer.provideMerge(
             Layer.succeed(
               AnalyticsService.AnalyticsService,
@@ -76,6 +80,7 @@ it.effect(
                     }),
                   ),
                 flush: Effect.void,
+                recordOwners: () => Effect.void,
               }),
             ),
           ),

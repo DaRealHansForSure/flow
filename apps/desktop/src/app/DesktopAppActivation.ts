@@ -1,16 +1,20 @@
-import { BRAND } from "@t3tools/shared/branding";
-// @effect-diagnostics nodeBuiltinImport:off -- Local socket ownership checks need lstat uid and an atomic stale-socket unlink at the Node adapter boundary.
+// @effect-diagnostics nodeBuiltinImport:off -- Local socket ownership checks need lstat, an atomic rename, and a directory watch at the Node adapter boundary.
+import { pipe } from "effect/Function";
+import * as NodeCrypto from "node:crypto";
+import * as NodeFS from "node:fs";
 import * as NodeFSP from "node:fs/promises";
 import * as NodeNet from "node:net";
 import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
 
 import {
   DESKTOP_APP_ACTIVATION_PROTOCOL_VERSION,
   DesktopAppActivationRequest,
   type DesktopAppActivationResponse,
 } from "@t3tools/contracts";
+import { BRAND } from "@t3tools/shared/branding";
 import { resolveDesktopAppControlAddress } from "@t3tools/shared/desktopAppControl";
-import { HostProcessUserId } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -32,7 +36,7 @@ const MAX_REQUEST_BYTES = 64 * 1024;
 const REQUEST_TIMEOUT_MS = 15_000;
 const isDesktopAppActivationRequest = Schema.is(DesktopAppActivationRequest);
 
-export class DesktopAppActivationStartError extends Schema.TaggedErrorClass<DesktopAppActivationStartError>()(
+export class DesktopAppActivationStartError extends Schema.TaggedError<DesktopAppActivationStartError>()(
   "DesktopAppActivationStartError",
   {
     address: Schema.String,
@@ -45,6 +49,7 @@ export class DesktopAppActivationStartError extends Schema.TaggedErrorClass<Desk
 }
 
 interface RunningControlServer {
+  readonly reclaim: () => Promise<void>;
   readonly close: () => Promise<void>;
 }
 
@@ -71,12 +76,11 @@ function requestIdFromUnknown(value: unknown): string {
   return "invalid-request";
 }
 
-async function prepareUnixSocket(input: {
-  readonly address: string;
+async function prepareUnixDirectory(input: {
   readonly directory: string;
   readonly userId: number | undefined;
-}): Promise<void> {
-  await NodeFSP.mkdir(input.directory, { recursive: true, mode: 0o700 });
+}): Promise<boolean> {
+  const created = await NodeFSP.mkdir(input.directory, { recursive: true, mode: 0o700 });
   const stat = await NodeFSP.lstat(input.directory);
   if (!stat.isDirectory() || stat.isSymbolicLink()) {
     throw new Error(`${input.directory} is not a directory.`);
@@ -85,9 +89,21 @@ async function prepareUnixSocket(input: {
     throw new Error(`${input.directory} is owned by another user.`);
   }
   await NodeFSP.chmod(input.directory, 0o700);
-  await NodeFSP.unlink(input.address).catch((error: NodeJS.ErrnoException) => {
-    if (error.code !== "ENOENT") throw error;
-  });
+  return created !== undefined;
+}
+
+async function inodeAt(path: string): Promise<number | null> {
+  return NodeFSP.lstat(path).then(
+    (stat) => stat.ino,
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    },
+  );
+}
+
+function closeServer(server: NodeNet.Server): Promise<void> {
+  return new Promise((resolve) => server.close(() => resolve()));
 }
 
 export async function startDesktopAppControlServer(input: {
@@ -96,17 +112,10 @@ export async function startDesktopAppControlServer(input: {
   readonly userId: number | undefined;
   readonly handle: (request: DesktopAppActivationRequest) => Promise<DesktopAppActivationResponse>;
   readonly cancel: (requestId: string) => void;
+  readonly onReclaimError: (error: unknown) => void;
 }): Promise<RunningControlServer> {
-  if (input.directory !== null) {
-    await prepareUnixSocket({
-      address: input.address,
-      directory: input.directory,
-      userId: input.userId,
-    });
-  }
-
   const sockets = new Set<NodeNet.Socket>();
-  const server = NodeNet.createServer((socket) => {
+  const handleConnection = (socket: NodeNet.Socket) => {
     sockets.add(socket);
     socket.setEncoding("utf8");
     let buffer = "";
@@ -144,8 +153,10 @@ export async function startDesktopAppControlServer(input: {
       }
 
       if (!isDesktopAppActivationRequest(parsed)) {
-        finish(
-          invalidResponse(requestIdFromUnknown(parsed), "The desktop app request is invalid."),
+        pipe(
+          requestIdFromUnknown(parsed),
+          (requestId) => invalidResponse(requestId, "The desktop app request is invalid."),
+          finish,
         );
         return;
       }
@@ -164,40 +175,110 @@ export async function startDesktopAppControlServer(input: {
       sockets.delete(socket);
       if (!responseSent && activeRequestId !== null) input.cancel(activeRequestId);
     });
-  });
+  };
 
-  await new Promise<void>((resolve, reject) => {
-    const onError = (error: Error) => {
-      server.removeListener("listening", onListening);
-      reject(error);
-    };
-    const onListening = () => {
-      server.removeListener("error", onError);
-      resolve();
-    };
-    server.once("error", onError);
-    server.once("listening", onListening);
-    server.listen(input.address);
-  });
+  const listen = (address: string) =>
+    new Promise<NodeNet.Server>((resolve, reject) => {
+      const server = NodeNet.createServer(handleConnection);
+      const onError = (error: Error) => {
+        server.removeListener("listening", onListening);
+        reject(error);
+      };
+      const onListening = () => {
+        server.removeListener("error", onError);
+        resolve(server);
+      };
+      server.once("error", onError);
+      server.once("listening", onListening);
+      server.listen(address);
+    });
 
-  try {
-    if (input.directory !== null) {
-      await NodeFSP.chmod(input.address, 0o600);
+  // Closing unlinks the original bind path, even if another app replaced it. Bind a staging path first.
+
+  const bindUnix = async (directory: string, mode: "take-over" | "claim-free") => {
+    const staging = NodePath.join(directory, `${NodeCrypto.randomBytes(6).toString("hex")}.tmp`);
+    const server = await listen(staging);
+    try {
+      await NodeFSP.chmod(staging, 0o600);
+      const inode = await inodeAt(staging);
+      if (mode === "take-over") {
+        await NodeFSP.rename(staging, input.address);
+      } else {
+        await NodeFSP.link(staging, input.address);
+        await NodeFSP.unlink(staging);
+      }
+      return { server, inode };
+    } catch (error) {
+      await closeServer(server);
+      throw error;
     }
-  } catch (error) {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    throw error;
+  };
+
+  let server: NodeNet.Server;
+  let inode: number | null = null;
+  if (input.directory === null) {
+    server = await listen(input.address);
+  } else {
+    await prepareUnixDirectory({ directory: input.directory, userId: input.userId });
+    ({ server, inode } = await bindUnix(input.directory, "take-over"));
   }
 
   let closed = false;
+  const reclaimOnce = async () => {
+    // Replacing an existing socket would let two apps trade the path indefinitely.
+    if (closed || input.directory === null || (await inodeAt(input.address)) !== null) return;
+    if (await prepareUnixDirectory({ directory: input.directory, userId: input.userId })) {
+      // Directory watches follow inodes, so recreate the watch after directory replacement.
+      watchDirectory(input.directory);
+    }
+    const next = await bindUnix(input.directory, "claim-free").catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === "EEXIST") return null;
+        throw error;
+      },
+    );
+    if (next === null) return;
+    const previous = server;
+    ({ server, inode } = next);
+    previous.close();
+  };
+  let pendingReclaim = Promise.resolve();
+  const reclaim = () => {
+    const run = pendingReclaim.then(reclaimOnce);
+    pendingReclaim = run.catch(() => undefined);
+    return run;
+  };
+  let watcher: NodeFS.FSWatcher | null = null;
+  const watchDirectory = (directory: string) => {
+    watcher?.close();
+    watcher = null;
+    try {
+      watcher = NodeFS.watch(directory, { persistent: false }, () => {
+        reclaim().catch(input.onReclaimError);
+      });
+      watcher.on("error", input.onReclaimError);
+    } catch (error) {
+      input.onReclaimError(error);
+    }
+  };
+  if (input.directory !== null) {
+    watchDirectory(input.directory);
+    // Catch a removal that happened before the watcher started.
+    reclaim().catch(input.onReclaimError);
+  }
+
   return {
+    reclaim,
     close: async () => {
       if (closed) return;
       closed = true;
+      // Reclaim can replace the watcher; close it afterward.
+      await pendingReclaim;
+      watcher?.close();
       for (const socket of sockets) socket.destroy();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await closeServer(server);
       server.removeAllListeners();
-      if (input.directory !== null) {
+      if (inode !== null && (await inodeAt(input.address)) === inode) {
         await NodeFSP.unlink(input.address).catch((error: NodeJS.ErrnoException) => {
           if (error.code !== "ENOENT") throw error;
         });
@@ -217,12 +298,13 @@ export class DesktopAppActivation extends Context.Service<
 
 const { logWarning } = makeComponentLogger("desktop-app-activation");
 
+/** @public */
 export const make = Effect.gen(function* () {
   const desktopEnvironment = yield* DesktopEnvironment.DesktopEnvironment;
   const desktopWindow = yield* DesktopWindow.DesktopWindow;
   const electronWindow = yield* ElectronWindow.ElectronWindow;
   const path = yield* Path.Path;
-  const userId = yield* HostProcessUserId;
+  const userId = yield* HostProcess.UserId;
   const runPromise = Effect.runPromiseWith(yield* Effect.context<never>());
   const address = resolveDesktopAppControlAddress({
     stateDir: path.resolve(desktopEnvironment.stateDir),
@@ -261,6 +343,10 @@ export const make = Effect.gen(function* () {
             userId,
             handle: (request) => broker.request(request),
             cancel: (requestId) => broker.cancel(requestId),
+            onReclaimError: (cause) =>
+              void runPromise(
+                logWarning("failed to restore the desktop app control socket", { cause }),
+              ),
           }),
         catch: (cause) => new DesktopAppActivationStartError({ address: address.address, cause }),
       }),
@@ -303,7 +389,10 @@ export const make = Effect.gen(function* () {
         webContents.send(DESKTOP_APP_ACTIVATION_REQUEST_CHANNEL, request);
       });
     }),
-    complete: (response) => Effect.sync(() => broker.complete(response)),
+    // The IPC handler owns the activation-completion span.
+    complete: Effect.fnUntraced(function* (response) {
+      return yield* Effect.sync(() => broker.complete(response));
+    }),
   });
 });
 

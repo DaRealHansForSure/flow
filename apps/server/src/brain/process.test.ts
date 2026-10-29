@@ -2,7 +2,7 @@
 import { afterEach, expect } from "vite-plus/test";
 import { it } from "@effect/vitest";
 import * as NodeFSP from "node:fs/promises";
-import { HostProcessPlatform } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Effect from "effect/Effect";
 import { run, runStreaming } from "./process.ts";
 const roots: string[] = [];
@@ -11,7 +11,7 @@ afterEach(async () => {
 });
 it.effect("streams activity before completion and cancels the CLI's MCP process group", () =>
   Effect.gen(function* () {
-    const platform = yield* HostProcessPlatform;
+    const platform = yield* HostProcess.Platform;
     if (platform === "win32") return;
     yield* Effect.promise(async () => {
       const root = await NodeFSP.mkdtemp("/tmp/flow-stream-test-");
@@ -66,7 +66,7 @@ it.effect("identifies missing Git without suggesting that gh can replace it", ()
 
 it.effect("identifies repository access failures without exposing Git stderr", () =>
   Effect.gen(function* () {
-    const platform = yield* HostProcessPlatform;
+    const platform = yield* HostProcess.Platform;
     if (platform === "win32") return;
     yield* Effect.promise(async () => {
       const root = await NodeFSP.mkdtemp("/tmp/flow-git-error-");

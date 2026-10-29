@@ -1,18 +1,20 @@
 # Worklog
 
-Updated: 2026-10-29 23:55
+Updated: 2026-10-29 23:15
 
 ## Current focus
 
-- **Topic:** T3 Code v0.1.5 sync (sync/t3-v0.1.5, main checkout, merge in progress)
-- **Goal:** Flow on T3 v0.1.5 with the Brain wired into orchestration-v2, telemetry off
-- **Branch:** sync/t3-v0.1.5
-- **Last step done:** All 243 conflicted files resolved on disk; backup script merged
-- **Next step:** Brain in v2 chats, curator as CLI runner, branding sweep, lockfile, typecheck
-- **Open questions / blockers:** none
+- **Topic:** After the T3 v0.1.5 sync: per-chat Brain on "No project" chats, lint debt
+- **Goal:** Every fork feature works on T3 v0.1.5 and the fork passes T3's lint and knip checks
+- **Branch:** develop (next: feat/no-project-brain, chore/t3-lint-rules)
+- **Last step done:** sync/t3-v0.1.5 merged into develop; server smoke run with Brain ready
+- **Next step:** Port per-chat Brain (d18ed904d, c91d5ae57) onto T3's No project chats
+- **Open questions / blockers:** Codex and OpenCode curator flags unverified (CLIs not
+  installed here); owner to try a real chat in the Dev Flow
 
 ## Finished features
 
+- 2026-10-29 - T3 Code v0.1.5 sync, telemetry opt-in, mobile Brain screen (merged into develop)
 - 2026-10-29 - Brain backup script scripts/fork/backup-brain.sh (merged into develop)
 - 2026-10-29 - Pull requests switch in Settings, server to mobile (merged into develop)
 - 2026-10-29 - Working Dev Flow: CORS, log file, stop on window close (daf73c209)
@@ -22,6 +24,9 @@ Updated: 2026-10-29 23:55
 
 ## History
 
+- 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
+- 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)
+- 2026-10-29 21:30 - Sync: Brain hooks into RunExecutionService via BrainChatTurns reference
 - 2026-10-29 23:55 - backup-brain.sh: dry run lists 2.6G Brain, 5.8G chats; refuses with service up
 - 2026-10-29 22:50 - [flow-perf]: routes 22-40 s on first open, Babel/React Compiler per module
 - 2026-10-29 22:30 - pullRequestsEnabled: server gates, capability folding, web and mobile

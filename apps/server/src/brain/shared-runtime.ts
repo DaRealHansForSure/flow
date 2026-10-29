@@ -13,7 +13,7 @@ import * as NodePath from "node:path";
 import * as NodeHttp from "node:http";
 import * as NodeCrypto from "node:crypto";
 import * as Schema from "effect/Schema";
-import { McpSchema } from "effect/unstable/ai";
+import { McpSchema } from "effect/ai";
 import {
   BrainCommand,
   BrainDocument,
