@@ -184,4 +184,4 @@ it("recovers a partial notes write after the worker dies before its completion r
     }
     await NodeFSP.rm(directory, { recursive: true, force: true });
   }
-}, 30_000);
+});

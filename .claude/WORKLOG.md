@@ -1,18 +1,22 @@
 # Worklog
 
-Updated: 2026-10-29 22:50
+Updated: 2026-10-29 22:48
 
 ## Current focus
 
-- **Topic:** Slow route loads in the Dev Flow: loading indicator, then faster loads
-- **Goal:** No blank content pane; routes open in seconds, not 20-40 s
-- **Branch:** feat/route-loading-indicator
-- **Last step done:** RoutePendingView as router defaultPendingComponent
-- **Next step:** Bundled dev (T3CODE_BUNDLED_DEV=1) in dev-flow.sh against per-module Babel cost
-- **Open questions / blockers:** none
+- **Topic:** T3 Code v0.1.5 sync (sync/t3-v0.1.5, main checkout, merge in progress)
+- **Goal:** Flow on T3 v0.1.5 with the Brain wired into the new chat engine, telemetry off
+- **Branch:** sync/t3-v0.1.5
+- **Last step done:** Typecheck clean (server, web, desktop, packages); Brain in v2 turns
+  (brain/chatTurns.ts), curator as CLI runner, branding sweep, focused tests green
+- **Next step:** Merge commit, then telemetry off, lint debt from T3's new rules (137 in
+  57 Flow files), per-chat Brain on "No project" chats, Dev Flow check
+- **Open questions / blockers:** Codex and OpenCode curator flags unverified (CLIs not
+  installed here); BrainRuntime integration test needs network (GitHub import)
 
 ## Finished features
 
+- 2026-10-29 - Brain backup script scripts/fork/backup-brain.sh (merged into develop)
 - 2026-10-29 - Pull requests switch in Settings, server to mobile (merged into develop)
 - 2026-10-29 - Working Dev Flow: CORS, log file, stop on window close (daf73c209)
 - 2026-10-29 - Dev Flow launcher scripts/fork/dev-flow.sh (35a521f5e)
@@ -21,6 +25,9 @@ Updated: 2026-10-29 22:50
 
 ## History
 
+- 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)
+- 2026-10-29 21:30 - Sync: Brain hooks into RunExecutionService via BrainChatTurns reference
+- 2026-10-29 23:55 - backup-brain.sh: dry run lists 2.6G Brain, 5.8G chats; refuses with service up
 - 2026-10-29 22:50 - [flow-perf]: routes 22-40 s on first open, Babel/React Compiler per module
 - 2026-10-29 22:30 - pullRequestsEnabled: server gates, capability folding, web and mobile
 - 2026-10-29 21:40 - Server traces: chat open 1-50ms server side, slowness is renderer

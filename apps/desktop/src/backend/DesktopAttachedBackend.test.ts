@@ -117,6 +117,7 @@ describe("desktop attached backend", () => {
 
       // The bridge reads the config over a synchronous IPC channel, so it
       // must be runnable with runSync: no minting inside it.
+      // @effect-diagnostics-next-line runEffectInsideEffect:off - The synchronous run is what this asserts.
       const first = Effect.runSync(instance.currentConfig);
       assert.isTrue(Option.isSome(first));
       const config = Option.getOrThrow(first);

@@ -14,8 +14,10 @@ import * as Path from "effect/Path";
 
 import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import * as DesktopConfig from "./DesktopConfig.ts";
+import { resolveLinuxDesktopEntryName } from "./DesktopEarlyElectronStartup.ts";
 import { resolveDesktopBaseDir, resolveDesktopStateDir } from "./DesktopStatePaths.ts";
 import { isNightlyDesktopVersion } from "../updates/updateChannels.ts";
+import type { OtlpProtocol } from "@t3tools/shared/observability";
 
 export interface MakeDesktopEnvironmentInput {
   readonly dirname: string;
@@ -27,11 +29,8 @@ export interface MakeDesktopEnvironmentInput {
   readonly isPackaged: boolean;
   readonly resourcesPath: string;
   readonly runningUnderArm64Translation: boolean;
-  /** Whether `~/.t3/userdata` exists — see `@t3tools/shared/homeBaseDir`. */
+  /** Whether `~/.t3/userdata` exists - see `@t3tools/shared/homeBaseDir`. */
   readonly legacyHomeExists: boolean;
-  /** Synchronous existence probe for the profile folder, made before Electron
-      is ready (see `userDataPath`). main.ts passes `existsSync`. */
-  readonly userDataDirExists?: (path: string) => boolean;
 }
 
 export class DesktopEnvironment extends Context.Service<
@@ -58,46 +57,35 @@ export class DesktopEnvironment extends Context.Service<
     readonly browserArtifactsDir: string;
     readonly rootDir: string;
     readonly appRoot: string;
-    // Root of the tree containing apps/server/dist and node_modules for the
-    // backend. Equals appRoot everywhere except packaged Windows, where the
-    // server tree ships as the resources/server.asar sidecar (see
-    // scripts/build-desktop-artifact.ts) that the asar-aware
-    // ELECTRON_RUN_AS_NODE primary reads in place and the WSL backend
-    // extracts on demand (see DesktopWslServerTree).
     readonly serverRoot: string;
     readonly backendEntryPath: string;
-    // The built web client that ships next to the server in the desktop
-    // artifact. The `flow://app` protocol serves it directly when no Flow
-    // service is reachable, so the window (and the recovery screen) still
-    // renders with nothing to proxy to. Dev never reads it — the renderer
-    // target there is Vite — and the path may not exist in a repo checkout.
-    readonly bundledClientDir: string;
-    // `scripts/flow-release.mjs`, the Flow service bootstrap. First-launch
-    // adoption runs it with Electron's embedded Node to install the
-    // independent Flow release and register it as a login service; the
-    // desktop's own bundled server is never the service. Absent on packaged
-    // Windows, where that bootstrap does not run (see
-    // scripts/build-desktop-artifact.ts).
+    readonly clientAssetsDir: string;
+    // `scripts/flow-release.mjs`, the Flow service bootstrap. First-launch adoption runs it
+    // with Electron's embedded Node to install the Flow release as a login service. Absent
+    // on packaged Windows (see scripts/build-desktop-artifact.ts).
     readonly flowReleaseScriptPath: string;
     readonly backendCwd: string;
     readonly preloadPath: string;
+    readonly compileCachePath: string;
     readonly appUpdateYmlPath: string;
     readonly devServerUrl: Option.Option<URL>;
     readonly devRemoteT3ServerEntryPath: Option.Option<string>;
     readonly configuredBackendPort: Option.Option<number>;
     readonly commitHashOverride: Option.Option<string>;
     readonly otlpTracesUrl: Option.Option<string>;
+    readonly otlpMetricsUrl: Option.Option<string>;
+    readonly otlpLogsUrl: Option.Option<string>;
     readonly otlpExportIntervalMs: number;
+    readonly otlpHeaders: Option.Option<Record<string, string>>;
+    readonly otlpProtocol: OtlpProtocol;
     readonly branding: DesktopAppBranding;
     readonly displayName: string;
     readonly appUserModelId: string;
     readonly linuxDesktopEntryName: string;
     readonly linuxWmClass: string;
     readonly linuxApplicationsDir: string;
+    readonly desktopLauncherPath: Option.Option<string>;
     readonly appImagePath: Option.Option<string>;
-    readonly userDataDirName: string;
-    readonly userDataPath: string;
-    readonly legacyUserDataDirNames: readonly string[];
     readonly defaultDesktopSettings: DesktopAppSettings.DesktopSettings;
     readonly runtimeInfo: DesktopRuntimeInfo;
     readonly resolvePickFolderDefaultPath: (rawOptions: unknown) => Option.Option<string>;
@@ -121,7 +109,7 @@ function resolveDesktopAppStageLabel(input: {
   return isNightlyDesktopVersion(input.appVersion) ? "Nightly" : "Latest";
 }
 
-function resolveDesktopAppBranding(input: {
+export function resolveDesktopAppBranding(input: {
   readonly isDevelopment: boolean;
   readonly appVersion: string;
 }): DesktopAppBranding {
@@ -202,22 +190,6 @@ const make = Effect.fn("desktop.environment.make")(function* (
     joinPath: path.join,
     t3Home: config.t3Home,
   });
-  const userDataDirName = isDevelopment ? "flow-dev" : "flow";
-  // Profiles created under the app's earlier names. An existing one keeps being
-  // used where it is, so an update never loses a login, drafts or settings.
-  const legacyUserDataDirNames = isDevelopment
-    ? ["t3code-dev", "T3 Code (Dev)"]
-    : ["t3code", "T3 Code (Alpha)"];
-  // Decided here, once and synchronously. The Clerk bridge must be created
-  // before Electron's `ready`, and it needs this path first; an async
-  // existence check in between let `ready` win, and the app quit on launch
-  // on a Mac with no earlier profile (Flow 0.1.5).
-  const userDataDirExists = input.userDataDirExists ?? (() => false);
-  const userDataPath =
-    legacyUserDataDirNames
-      .map((name) => path.join(appDataDirectory, name))
-      .find((candidate) => userDataDirExists(candidate)) ??
-    path.join(appDataDirectory, userDataDirName);
   const linuxApplicationsDir = path.join(
     Option.getOrElse(config.xdgDataHome, () => path.join(homeDirectory, ".local", "share")),
     "applications",
@@ -248,14 +220,14 @@ const make = Effect.fn("desktop.environment.make")(function* (
     appRoot,
     serverRoot,
     backendEntryPath: path.join(serverRoot, "apps/server/dist/bin.mjs"),
-    bundledClientDir: path.join(serverRoot, "apps/server/dist/client"),
-    // Packaged builds carry the bootstrap as an extra resource next to the
-    // other staged resources; dev runs the repo's own copy.
+    clientAssetsDir: path.join(serverRoot, "apps/server/dist/client"),
+    // Packaged builds carry the bootstrap as an extra resource; dev runs the repo's copy.
     flowReleaseScriptPath: input.isPackaged
       ? path.join(resourcesPath, FLOW_BOOTSTRAP_RESOURCE_DIR, "flow-release.mjs")
       : path.join(rootDir, "scripts", "flow-release.mjs"),
     backendCwd: input.isPackaged ? homeDirectory : appRoot,
     preloadPath: path.join(input.dirname, "preload.cjs"),
+    compileCachePath: path.join(input.dirname, "compileCache.cjs"),
     appUpdateYmlPath: input.isPackaged
       ? path.join(resourcesPath, "app-update.yml")
       : path.join(input.appPath, "dev-app-update.yml"),
@@ -264,19 +236,21 @@ const make = Effect.fn("desktop.environment.make")(function* (
     configuredBackendPort: config.configuredBackendPort,
     commitHashOverride: config.commitHashOverride,
     otlpTracesUrl: config.otlpTracesUrl,
+    otlpMetricsUrl: config.otlpMetricsUrl,
+    otlpLogsUrl: config.otlpLogsUrl,
     otlpExportIntervalMs: config.otlpExportIntervalMs,
+    otlpHeaders: config.otlpHeaders,
+    otlpProtocol: config.otlpProtocol,
     branding,
     displayName,
     appUserModelId: Option.getOrElse(config.appUserModelIdOverride, () =>
       isDevelopment ? "com.flow.desktop.dev" : "com.flow.desktop",
     ),
-    linuxDesktopEntryName: isDevelopment ? "flow-dev.desktop" : "flow.desktop",
+    linuxDesktopEntryName: resolveLinuxDesktopEntryName(isDevelopment),
     linuxWmClass: isDevelopment ? "flow-dev" : "flow",
     linuxApplicationsDir,
+    desktopLauncherPath: config.desktopLauncherPath,
     appImagePath: config.appImagePath,
-    userDataDirName,
-    userDataPath,
-    legacyUserDataDirNames,
     defaultDesktopSettings: DesktopAppSettings.resolveDefaultDesktopSettings(input.appVersion),
     runtimeInfo: resolveDesktopRuntimeInfo({
       platform: input.platform,

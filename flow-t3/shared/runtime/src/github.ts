@@ -1,4 +1,4 @@
-// @effect-diagnostics globalFetch:off globalDate:off - Standalone Node credential adapter with expiring GitHub tokens.
+// @effect-diagnostics globalFetch:off globalDate:off nodeBuiltinImport:off - Standalone Node credential adapter with expiring GitHub tokens.
 import { createSign } from "node:crypto";
 
 export type GithubCredential =

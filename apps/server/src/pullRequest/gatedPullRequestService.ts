@@ -13,7 +13,7 @@ import { readPullRequestsEnabled } from "./pullRequestsEnabled.ts";
 
 type Service = PullRequestService.PullRequestService["Service"];
 type PullRequestOperation = (
-  input: unknown,
+  ...args: ReadonlyArray<unknown>
 ) => Effect.Effect<unknown, PullRequestService.PullRequestError>;
 
 const TURNED_OFF_DETAIL = "Pull requests are turned off in Settings > Source Control.";
@@ -37,11 +37,14 @@ export const gatePullRequestService = (
   for (const [name, member] of Object.entries(service)) {
     // Every function member is an operation returning Effect<_, PullRequestError>,
     // and PullRequestOperationError is one of those errors, so the wrapper keeps
-    // each signature. The non-function members (refresh and merge streams,
+    // each signature. All arguments pass through: some operations take options or
+    // an inner effect (withRoutingCredential) after their input. The non-function members (refresh and merge streams,
     // refreshAfterTurn) only signal clients to re-read, which these gates refuse.
     if (typeof member === "function") {
-      gated[name] = (input: unknown) =>
-        requireEnabled(name).pipe(Effect.andThen((member as PullRequestOperation)(input)));
+      gated[name] = (...args: ReadonlyArray<unknown>) =>
+        requireEnabled(name).pipe(
+          Effect.andThen(Effect.suspend(() => (member as PullRequestOperation)(...args))),
+        );
     }
   }
   return PullRequestService.PullRequestService.of(gated as Service);

@@ -12,7 +12,7 @@ import {
   EnvironmentHttpApi,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 import * as Option from "effect/Option";
 import {
   annotateEnvironmentRequest,
@@ -21,7 +21,7 @@ import {
 } from "../auth/http.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
+import { makeBrainProjections } from "./brainProjections.ts";
 import { AnalyticsService } from "../telemetry/AnalyticsService.ts";
 
 const ANALYTICS_COMMANDS = new Set([
@@ -43,7 +43,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
   Effect.fnUntraced(function* (handlers) {
     const config = yield* ServerConfig;
     const service = yield* BrainService;
-    const projections = yield* ProjectionSnapshotQuery;
+    const projections = yield* makeBrainProjections;
     const settings = yield* ServerSettingsService;
     const analytics = yield* AnalyticsService;
     return handlers.handle(

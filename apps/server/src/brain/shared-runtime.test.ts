@@ -1,7 +1,7 @@
 // @effect-diagnostics globalDate:off - Assert real transport timestamps against wall time.
 // @effect-diagnostics nodeBuiltinImport:off - Real local transport and persistence test.
 // @effect-diagnostics globalFetch:off - Verify authentication at the HTTP boundary.
-import { it, expect } from "vite-plus/test";
+import { it, expect, vi } from "vite-plus/test";
 import * as NodeFSP from "node:fs/promises";
 const { mkdtemp, mkdir, rm, readFile } = NodeFSP;
 import * as NodeOS from "node:os";
@@ -85,20 +85,25 @@ it("shares tools and capture over authenticated transport while isolating projec
     );
     expect((await a.state(decodeProjectId("unbound"))).workspaces).toEqual([]);
     await close();
-    const capturedAfter = Date.now();
-    await a.captureProjectEvent(project, {
-      context: { session: "same-thread" },
-      receipt: "receipt-1",
-      kind: "user_prompt",
-      data: { text: "remember" },
-    });
+    const capturedAt = new Date("2026-01-02T03:04:05.000Z");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(capturedAt);
+    try {
+      await a.captureProjectEvent(project, {
+        context: { session: "same-thread" },
+        receipt: "receipt-1",
+        kind: "user_prompt",
+        data: { text: "remember" },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
     await a.drainCapture();
     const pendingFiles = await NodeFSP.readdir(join(root, "a", "capture"));
     const pending = JSON.parse(
       await readFile(join(root, "a", "capture", pendingFiles[0]!), "utf8"),
     ) as { capture: BrainCapture };
-    expect(pending.capture.occurredAt).toBeGreaterThanOrEqual(capturedAfter);
-    expect(pending.capture.occurredAt).toBeLessThanOrEqual(Date.now());
+    expect(pending.capture.occurredAt).toBe(capturedAt.getTime());
     await a.close();
     close = await serveSharedBrain(runtime, source);
     a = new SharedBrainRuntime(source, join(root, "a"), "instance-a");

@@ -24,7 +24,7 @@ import * as NodePath from "node:path";
 import * as NodeURL from "node:url";
 import * as Schema from "effect/Schema";
 import { tsxLoader } from "./builder-assets.ts";
-import { McpSchema } from "effect/unstable/ai";
+import { McpSchema } from "effect/ai";
 
 const here = NodePath.dirname(NodeURL.fileURLToPath(import.meta.url));
 const decodeChatMemories = Schema.decodeUnknownSync(ChatMemoryList);
