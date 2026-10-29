@@ -82,6 +82,13 @@ supports approving waiting fork workflows and opening a revert pull request for 
 For Azure DevOps, use the host website to view diffs or change comments. Bitbucket does not support
 reopening a declined pull request.
 
+## Turn pull requests off
+
+If you don't use pull or merge requests, switch off **Settings → Source Control → Pull requests**.
+The server then stops looking up pull requests on GitHub, GitLab and other hosts, threads no longer
+show pull request status, and Git actions offer commit and push without creating a pull request.
+Threads still settle automatically after inactivity. The setting applies to every connected server.
+
 ## Troubleshooting
 
 - **Not authenticated:** run the provider's login command on the server, then rescan. For Bitbucket,
