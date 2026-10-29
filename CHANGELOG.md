@@ -15,6 +15,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/fork/dev-flow.sh`: starts the Dev Flow from the checkout with hot reload on
   isolated data, optionally seeded from a snapshot of the real chats. Its output is also
   written to `.t3/dev/logs/dev-flow.log`, and closing the dev window ends the session.
+- `scripts/fork/backup-brain.sh`: backs up the Brain (store, knowledge graph, agent registry)
+  and the chats into a dated folder with restore steps. `--dry-run` lists what it would copy;
+  it refuses to run while `flow.service` is active unless `--stop-service` is given.
 
 - Renderer performance log (`apps/web/src/debug/devPerformanceLog.ts`): `[flow-perf]` console
   lines for renderer stalls over 100 ms with the scripts behind them, slow or large API
