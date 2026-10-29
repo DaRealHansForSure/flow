@@ -159,6 +159,8 @@ export function useChatBrain(input: {
   const brain = chatBrainWorkspace(response, threadId, projectId);
   const hasBrain = brain !== undefined;
   const updating = response?.chatMemories?.status === "extracting";
+  const loading =
+    response === null && failure === null && environmentId !== null && projectId !== null;
   const threadKey = threadRef ? scopedThreadKey(threadRef) : null;
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- publishes the chat's Brain status to the header button and command palette
@@ -167,9 +169,12 @@ export function useChatBrain(input: {
       return;
     }
     const { setStatus } = useChatBrainStatusStore.getState();
-    setStatus(threadKey, hasBrain || failure !== null ? { updating, failure } : null);
+    setStatus(
+      threadKey,
+      hasBrain || failure !== null || loading ? { updating, failure, loading } : null,
+    );
     return () => setStatus(threadKey, null);
-  }, [threadKey, hasBrain, updating, failure]);
+  }, [threadKey, hasBrain, updating, failure, loading]);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- announces a new Brain failure once, as soon as the poll sees it
   useEffect(() => {
