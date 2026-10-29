@@ -1,25 +1,17 @@
-// lib/docker.mjs — FalkorDB provisioning for `flow up`.
-//
-// The ONLY thing Flow runs in Docker is FalkorDB (its graph database). Flow's
-// own services (gateway / orchestrator / dashboard) run natively via `flow up`.
-// If you already run FalkorDB — a container from a previous run, a native
-// build, Colima/OrbStack, or a remote instance via FALKOR_HOST — Flow uses it
-// and never touches Docker at all.
-//
-// Container: flow-falkordb (per FalkorDB port; FALKOR_CONTAINER overrides)
-// Image: falkordb/falkordb:latest   Port: FALKOR_PORT (default 6379)
+// FalkorDB provisioning for `flow up`, the only thing Flow runs in Docker. An
+// existing FalkorDB (a container, a native build, or FALKOR_HOST) is used as is.
+// Container flow-falkordb (FALKOR_CONTAINER overrides), image
+// falkordb/falkordb:latest, port FALKOR_PORT (default 6379).
 
-import { spawnSync } from "node:child_process";
-import { createConnection } from "node:net";
+import * as NodeChildProcess from "node:child_process";
+import * as NodeNet from "node:net";
 
 const IMAGE = "falkordb/falkordb:latest";
 const HOST = process.env.FALKOR_HOST ?? "localhost";
 const PORT = Number(process.env.FALKOR_PORT ?? 6379);
-// One container per FalkorDB port, so an isolated test deployment (a shifted
-// FALKOR_PORT) gets its OWN fresh graph store instead of silently reusing the
-// default container: with a single hardcoded name, `docker inspect` below would
-// find the running default and return early — the gateway would then connect to
-// an empty port. FALKOR_CONTAINER overrides the name explicitly.
+// One container per FalkorDB port, so a test deployment on a shifted
+// FALKOR_PORT gets its own store; one shared name would let `docker inspect`
+// find the default container and leave the gateway on an empty port.
 const CONTAINER_NAME =
   process.env.FALKOR_CONTAINER ?? (PORT === 6379 ? "flow-falkordb" : `flow-falkordb-${PORT}`);
 
@@ -32,7 +24,7 @@ function isLocalHost(h) {
 }
 
 function docker(args, opts = {}) {
-  return spawnSync("docker", args, { encoding: "utf-8", ...opts });
+  return NodeChildProcess.spawnSync("docker", args, { encoding: "utf-8", ...opts });
 }
 
 function dockerInstalled() {
@@ -46,7 +38,7 @@ function dockerDaemonUp() {
 // Is something already accepting connections on FalkorDB's port?
 function portOpen(host, port, timeoutMs = 500) {
   return new Promise((resolve) => {
-    const sock = createConnection({ host, port });
+    const sock = NodeNet.createConnection({ host, port });
     let settled = false;
     const done = (v) => {
       if (settled) return;
@@ -78,7 +70,7 @@ async function ensureImage() {
   if (have.status === 0) return;
 
   console.log(`  downloading FalkorDB image (first run, a few hundred MB)…`);
-  const pull = spawnSync("docker", ["pull", IMAGE], {
+  const pull = NodeChildProcess.spawnSync("docker", ["pull", IMAGE], {
     encoding: "utf-8",
     stdio: ["ignore", "inherit", "pipe"], // progress → terminal, errors → captured
   });
@@ -121,11 +113,7 @@ function notReadyError() {
 
 /**
  * Ensure a FalkorDB is reachable for the gateway before services start.
- * Returns a status string the caller uses only for a one-line log:
- *   "external" — user manages it (remote FALKOR_HOST, or already on the port)
- *   "running"  — the flow-falkordb container was already up
- *   "started"  — the flow-falkordb container existed and we started it
- *   "launched" — we created the flow-falkordb container
+ * Returns "external", "running", "started" or "launched" for a one-line log.
  * Throws SetupError (friendly, no stack) when Docker is needed but unavailable.
  */
 export async function ensureFalkordb() {
@@ -153,12 +141,9 @@ export async function ensureFalkordb() {
     );
   }
 
-  // 4) Make sure the image is present BEFORE `docker run`. Two reasons:
-  //    (a) a first-run pull is ~hundreds of MB — inside a silent spawnSync the
-  //        user stares at nothing for minutes; an explicit pull shows progress.
-  //    (b) when a run-triggered pull fails, docker's stderr STARTS with the
-  //        informational "Unable to find image … locally" line — reporting that
-  //        first line hides the real cause (network, Docker Hub rate limit).
+  // 4) Pull the image BEFORE `docker run`: an explicit pull shows progress for
+  //    hundreds of MB, and a run-triggered pull's stderr starts with "Unable to
+  //    find image locally", which would hide the real cause of a failure.
   await ensureImage();
 
   // Container already exists? inspect exits non-zero ONLY for "no such

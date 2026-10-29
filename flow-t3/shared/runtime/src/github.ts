@@ -1,5 +1,5 @@
 // @effect-diagnostics globalFetch:off globalDate:off nodeBuiltinImport:off - Standalone Node credential adapter with expiring GitHub tokens.
-import { createSign } from "node:crypto";
+import * as NodeCrypto from "node:crypto";
 
 export type GithubCredential =
   | { kind: "public" }
@@ -27,7 +27,7 @@ export class GithubConnection implements GithubAccess {
     const now = Math.floor(Date.now() / 1000);
     const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
     const unsigned = `${encode({ alg: "RS256", typ: "JWT" })}.${encode({ iat: now - 60, exp: now + 540, iss: this.credential.appId })}`;
-    const signer = createSign("RSA-SHA256");
+    const signer = NodeCrypto.createSign("RSA-SHA256");
     signer.update(unsigned);
     const jwt = `${unsigned}.${signer.sign(this.credential.privateKey, "base64url")}`;
     const response = await fetch(

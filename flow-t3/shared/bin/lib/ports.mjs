@@ -1,15 +1,7 @@
-// lib/ports.mjs — Port allocation logic for multi-project setup.
-//
-// Base ports (from spec):
-//   gateway      7433 + 10 * projectIndex
-//   orchestrator 7500 + 10 * projectIndex
-//   dashboard    7600  (ONE dashboard for the whole deployment; the per-index
-//                       dashboard slot is still allocated for legacy cleanup)
-//
-// projectIndex is the ordinal position of the project in the sorted project list.
-//
-// FLOW_PORT_OFFSET shifts every base — for running a second deployment (e.g.
-// tests) beside a live one without port collisions.
+// Ports per project: gateway 7433 and orchestrator 7500, plus 10 * the project's
+// index in the sorted project list. One dashboard at 7600 for the deployment
+// (the per-index slot stays allocated for legacy cleanup). FLOW_PORT_OFFSET
+// shifts every base so a second deployment can run beside a live one.
 
 const OFFSET = Number(process.env.FLOW_PORT_OFFSET ?? 0) || 0;
 

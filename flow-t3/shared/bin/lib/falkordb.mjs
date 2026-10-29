@@ -28,11 +28,9 @@ export async function deleteProjectGraph({ graph, host = "localhost", port = 637
     const connection = await db.connection;
     await connection.del(`flow:graph-version:${graph}`);
     await connection.del(`flow:embed-stamp:${graph}`);
-    // Tombstone: FalkorDB auto-creates a graph on first query, so a client
-    // that survives the delete (an in-flight indexer CLI) would silently
-    // resurrect it as an untracked orphan. The gateway refuses writes to
-    // tombstoned graphs; `flow up` clears the tombstone when the graph name
-    // is legitimately used again.
+    // Tombstone: FalkorDB recreates a graph on first query, so a surviving
+    // client would resurrect it as an orphan. The gateway refuses writes to
+    // tombstoned graphs; `flow up` clears the tombstone on legitimate reuse.
     await connection.set(`flow:graph-deleted:${graph}`, new Date().toISOString());
     return { existed };
   } finally {
