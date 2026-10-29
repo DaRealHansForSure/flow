@@ -14,7 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Flow and T3 Code, upstream naming, and the owner's working rules.
 - `scripts/fork/dev-flow.sh`: starts the Dev Flow from the checkout with hot reload on
   isolated data, optionally seeded from a snapshot of the real chats. Its output is also
-  written to `.t3/dev/logs/dev-flow.log`.
+  written to `.t3/dev/logs/dev-flow.log`, and closing the dev window ends the session.
 
 ### Changed
 
