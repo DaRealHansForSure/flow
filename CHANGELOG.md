@@ -75,8 +75,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   tab.
 
 - FORK.md explains what this fork changes, and the README and user guides match it: Linux
-  downloads, opt-in telemetry, the Brain tab, per-chat Brains and the Auto-Docs and Auto-Skills
-  switches.
+  downloads, opt-in telemetry, the Brain tab and its status colours, per-chat Brains, the notes
+  agent switches and the desktop app keeping the service at its version.
 
 - In a chat without a Brain, the right panel lists "Brain" greyed out with a hint instead of
   leaving it out.

@@ -55,10 +55,11 @@ curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/inst
   <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-linux.svg" alt="Download Flow for Linux (x64 AppImage)" width="194"></a>
 </p>
 
-<p align="center"><sub>Desktop app for Linux x64 (AppImage) · auto-updating · <a href="https://github.com/DaRealHansForSure/flow/releases/latest">checksums</a> · no macOS or Windows desktop build</sub></p>
+<p align="center"><sub>Desktop app for Linux x64 (AppImage) · sets up the <code>flow</code> command and service on first start · auto-updating · <a href="https://github.com/DaRealHansForSure/flow/releases/latest">checksums</a> · no macOS or Windows desktop build</sub></p>
 
 Both share one local Flow service and one Brain, and coding agents you run outside
-Flow keep their Brain when the app is closed. See [Install Flow](./docs/user/install.md)
+Flow keep their Brain when the app is closed. The desktop app keeps that service at its
+own version and asks before it updates it. See [Install Flow](./docs/user/install.md)
 and [Run Flow in the background](./docs/user/local-instances.md).
 
 ## Why Flow

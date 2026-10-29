@@ -24,7 +24,10 @@ This is the T3 Cloud boot service. It is separate from the Flow service
 (`com.flow.service` on macOS, `flow.service` on Linux) described in
 [Run Flow in a browser](./local-instances.md), which is installed and removed with
 `flow service install` and `flow service uninstall`. The two can be installed at
-the same time and neither command affects the other.
+the same time and neither command affects the other. The Flow desktop app sets up
+the Flow service on its first start when none is installed, and asks before it
+updates that service to its own version ([Updating Flow](./updating.md#desktop-updater));
+it never touches the T3 Cloud boot service.
 
 `t3 update` downloads the newest release on your channel and switches `t3`
 and the service to it. Restarting interrupts running agent turns, terminals,

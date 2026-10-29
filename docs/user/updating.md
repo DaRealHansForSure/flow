@@ -59,10 +59,23 @@ are not changed beneath their running servers. Updating preserves application da
 
 ## Desktop updater
 
-Packaged desktop builds inherit T3's background checks and user-triggered
-download/install through Electron. That is separate from the browser release
-installer. See the maintainer [release guidance](../operations/release.md) for
-Flow desktop distribution requirements.
+The desktop app checks this fork's releases in the background and offers its own
+updates, which you download and install from the app. The Flow service keeps
+updating itself as described above, but each desktop release also brings its
+matching service.
+
+When the app starts and finds an older service, or one installed from another
+Flow repository, it asks whether to update the service to the app's version. The
+question says whether chats are running, since the restart interrupts them.
+**Update now** installs that version and restarts the service while the window
+shows each step; if a step fails, **Try again** repeats the update and **Later**
+returns to the service as it was. **Later** in the question leaves the service
+alone and asks again at the next start. The app never moves the service to an
+older version, and your projects, chats and Brain stay where they are.
+
+Development builds of the app never check or change the installed service. See
+the maintainer [release guidance](../operations/release.md) for Flow desktop
+distribution requirements.
 
 ## Upstream T3 Code installations
 

@@ -87,12 +87,16 @@ Use a different `--prefix` if you want to retain both launchers.
 ## Desktop
 
 Prefer a native window? Download the Flow desktop app for Linux x64 (AppImage) from the
-links in the [README](../../README.md#install). It updates itself.
+links in the [README](../../README.md#install). The AppImage is all you need: on a computer
+without Flow, its first start installs the Flow service and the `flow` command, which can take
+a few minutes. The app and the service then update from this fork's releases, and the app
+asks before it moves the service to its own version (see
+[Updating Flow](./updating.md#desktop-updater)).
 
 The desktop app connects to the same local Flow service as the `flow` command, so
 installing both is fine: quitting the app leaves the service, its Brain, and your
 connected coding agents running. Manage the service from
-**Settings → Connections → Flow service** in the app, or with `flow service` in a
+**Settings → Connections → Service** in the app, or with `flow service` in a
 terminal.
 
 T3 Code's npm package and desktop package-manager installs are upstream T3 releases
