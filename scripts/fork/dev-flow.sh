@@ -4,8 +4,9 @@
 # running in it) is never touched.
 #
 # Usage: scripts/fork/dev-flow.sh [--seed]
-#   --seed  copy a snapshot of your real chats into ~/.flow-dev first (only when
-#           it has no database yet; the live database is opened read-only)
+#   --seed  copy a snapshot of your real chats and your real Brain into
+#           ~/.flow-dev first (each only when the Dev Flow has none yet; the live
+#           data is only read)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -13,8 +14,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # directory is not inside a git work tree.
 DEV_HOME="${FLOW_DEV_HOME:-${HOME}/.flow-dev}"
 LEGACY_DEV_HOME="${REPO_ROOT}/.t3/dev"
-LIVE_DATABASE="${HOME}/.t3/userdata/state.sqlite"
+LIVE_HOME="${HOME}/.t3"
+LIVE_DATABASE="${LIVE_HOME}/userdata/state.sqlite"
+LIVE_BRAIN="${LIVE_HOME}/userdata/brain"
 DEV_DATABASE="${DEV_HOME}/userdata/state.sqlite"
+DEV_BRAIN="${DEV_HOME}/userdata/brain"
 LOG_DIRECTORY="${DEV_HOME}/logs"
 LOG_FILE="${LOG_DIRECTORY}/dev-flow.log"
 
@@ -78,11 +82,62 @@ seed_dev_database() {
     echo "dev-flow: seeded ${DEV_DATABASE} from ${LIVE_DATABASE}."
 }
 
+# Copies the real Brain: its store with consistent database snapshots, and its
+# knowledge graph. Paths to the store in the Brain's own index files are rewritten,
+# so the Dev Flow never writes into the real Brain. Text that merely mentions a path
+# (notes, transcripts) is left as it is.
+seed_dev_brain() {
+    if [[ -e "${DEV_BRAIN}/workspaces.json" ]]; then
+        echo "dev-flow: ${DEV_BRAIN} already has a Brain, not seeding again."
+        return
+    fi
+    if [[ ! -e "${LIVE_BRAIN}/workspaces.json" ]]; then
+        echo "dev-flow: no Brain at ${LIVE_BRAIN}, the Dev Flow starts without one."
+        return
+    fi
+    mkdir -p "${DEV_BRAIN}"
+    rsync -a --exclude 'flow.db' --exclude 'flow.db-wal' --exclude 'flow.db-shm' \
+        --exclude 'cloud-instance' "${LIVE_BRAIN}/" "${DEV_BRAIN}/"
+    local workspace
+    for workspace in "${LIVE_BRAIN}"/workspaces/*/; do
+        local name
+        name="$(basename "${workspace}")"
+        if [[ -e "${workspace}flow.db" ]]; then
+            node -e '
+                const { DatabaseSync } = require("node:sqlite");
+                const [source, target] = process.argv.slice(1);
+                new DatabaseSync(source, { readOnly: true }).exec(`VACUUM INTO '"'"'${target}'"'"'`);
+            ' "${workspace}flow.db" "${DEV_BRAIN}/workspaces/${name}/flow.db"
+        fi
+    done
+    local index_file
+    for index_file in "${DEV_BRAIN}/workspaces.json" "${DEV_BRAIN}"/workspaces/*/repos.json; do
+        if [[ -e "${index_file}" ]]; then
+            sed -i "s#${LIVE_BRAIN}#${DEV_BRAIN}#g" "${index_file}"
+        fi
+    done
+    local live_graph dev_graph
+    live_graph="$(brain_graph_dir "${LIVE_HOME}")"
+    dev_graph="$(brain_graph_dir "${DEV_HOME}")"
+    if [[ -d "${live_graph}" ]]; then
+        # The Dev Flow's own graph belongs to its empty Brain; the copy replaces it.
+        rm -rf "${dev_graph}"
+        mkdir -p "${dev_graph}"
+        rsync -a --exclude '*.sock' "${live_graph}/" "${dev_graph}/"
+    fi
+    echo "dev-flow: seeded ${DEV_BRAIN} and ${dev_graph} from your real Brain."
+}
+
 migrate_legacy_dev_home
 start_log
 
 if [[ "${1:-}" == "--seed" ]]; then
+    if pgrep -f -- "--home-dir ${DEV_HOME}" > /dev/null; then
+        echo "dev-flow: a Dev Flow is still running; close it, then seed again." >&2
+        exit 1
+    fi
     seed_dev_database
+    seed_dev_brain
 fi
 
 # True while the dev app runs inside the runner's process group. Limiting the
