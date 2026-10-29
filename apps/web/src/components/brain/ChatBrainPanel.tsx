@@ -81,7 +81,6 @@ export function ChatBrainPanel({
         <div className="mb-3 flex items-center gap-2">
           <BrainCircuitIcon className="size-4 text-primary" />
           <h2 className="text-sm font-semibold">Flow</h2>
-          <span className="ml-auto text-xs text-muted-foreground">Your context</span>
         </div>
         {error && (
           <p role="alert" className="mb-3 text-xs text-destructive">

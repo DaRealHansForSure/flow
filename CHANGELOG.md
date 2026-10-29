@@ -60,6 +60,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Clickable controls everywhere show the hand cursor, including plain buttons such as the Brain
+  tab's arrows; the Brain tab no longer shows a "Your context" label.
+
 - The Brain entry at the top of the sidebar turns amber while the Brain starts and red when it
   fails, with the reason on hover.
 
