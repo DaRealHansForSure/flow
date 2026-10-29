@@ -105,8 +105,9 @@ const inlineButtonVariants = cva(
         default: "text-foreground",
         muted: "text-muted-foreground hover:text-foreground",
         destructive: "text-destructive/80 hover:text-destructive",
+        // Flow: the new-chat headline's project picker reads as a link in the accent colour.
         picker:
-          "gap-1 text-foreground decoration-from-font underline-offset-4 data-popup-open:underline",
+          "gap-1 text-primary decoration-from-font underline-offset-4 data-popup-open:underline",
       },
     },
   },
