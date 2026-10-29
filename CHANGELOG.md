@@ -21,6 +21,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   responses, and how long each route change (opening a chat) takes. On in dev builds,
   elsewhere via `localStorage.setItem("flow:perf-log", "1")`.
 
+- Settings > Source Control > Pull requests: turns every pull/merge request feature off. The
+  server stops PR lookups (no more `glab`/`gh` calls or warnings), threads show no PR status,
+  git actions offer commit and push without a PR, and the Pull Requests page disappears, on
+  web, desktop and mobile.
+
 ### Changed
 
 - Synced with upstream Flow `release` (flow-v0.1.15): OpenCode CLI capture, notes

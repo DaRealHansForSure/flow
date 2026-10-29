@@ -9,6 +9,7 @@ import {
 import { FolderGit2Icon, TerminalIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useEnvironment, usePrimaryEnvironmentId } from "../state/environments";
+import { usePullRequestsTurnedOff } from "../hooks/usePullRequestsTurnedOff";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
 import { useEnvironmentQuery } from "../state/query";
 import { linkedPullRequestDetailAtom, useSharedPullRequestSummary } from "../state/pullRequests";
@@ -49,8 +50,9 @@ export function useLinkedThreadPullRequest(
   linkedPullRequest: ThreadLinkedPullRequest | null | undefined,
   enabled = true,
 ): LinkedThreadPullRequestStatus | null {
+  const pullRequestsTurnedOff = usePullRequestsTurnedOff(environmentId);
   const queried = useEnvironmentQuery(
-    !enabled || environmentId === null || linkedPullRequest == null
+    !enabled || pullRequestsTurnedOff || environmentId === null || linkedPullRequest == null
       ? null
       : linkedPullRequestDetailAtom({
           environmentId,
@@ -65,7 +67,7 @@ export function useLinkedThreadPullRequest(
 
   return useMemo(
     () =>
-      detail === null
+      detail === null || pullRequestsTurnedOff
         ? null
         : {
             pr: pullRequestDetailToVcsStatus(detail),
@@ -75,7 +77,7 @@ export function useLinkedThreadPullRequest(
               baseUrl: "",
             },
           },
-    [detail],
+    [detail, pullRequestsTurnedOff],
   );
 }
 
