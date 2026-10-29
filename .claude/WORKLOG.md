@@ -1,14 +1,15 @@
 # Worklog
 
-Updated: 2026-10-29 23:15
+Updated: 2026-10-30 00:30
 
 ## Current focus
 
 - **Topic:** After the T3 v0.1.5 sync: per-chat Brain on "No project" chats, lint debt
 - **Goal:** Every fork feature works on T3 v0.1.5 and the fork passes T3's lint and knip checks
-- **Branch:** develop (next: feat/no-project-brain, chore/t3-lint-rules)
-- **Last step done:** sync/t3-v0.1.5 merged into develop; server smoke run with Brain ready
-- **Next step:** Port per-chat Brain (d18ed904d, c91d5ae57) onto T3's No project chats
+- **Branch:** chore/t3-lint-rules
+- **Last step done:** Fork code passes T3's lint and knip; pre-commit runs fmt, lint, knip again
+- **Next step:** Merge chore/t3-lint-rules into develop; rewrite the four react-test-renderer
+  Brain tests as browser tests
 - **Open questions / blockers:** Codex and OpenCode curator flags unverified (CLIs not
   installed here); owner to try a real chat in the Dev Flow
 
@@ -24,6 +25,7 @@ Updated: 2026-10-29 23:15
 
 ## History
 
+- 2026-10-30 00:30 - Lint and knip clean for fork code; orchestrator, graph-gateway, flow/ left out of lint
 - 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
 - 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)
 - 2026-10-29 21:30 - Sync: Brain hooks into RunExecutionService via BrainChatTurns reference
