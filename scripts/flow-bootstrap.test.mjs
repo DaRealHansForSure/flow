@@ -197,8 +197,12 @@ esac
         "/bin/bash",
         [
           NodePath.join(root, "install.sh"),
-          ...["--cloud", "https://brain.example", "--cloud-brain", "brain-1"],
-          ...["--enrollment", credential],
+          "--cloud",
+          "https://brain.example",
+          "--cloud-brain",
+          "brain-1",
+          "--enrollment",
+          credential,
         ],
         {
           env: {

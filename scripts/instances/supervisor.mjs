@@ -85,11 +85,10 @@ async function readControlBody(request) {
 export async function supervise(directory) {
   const managed = process.env.FLOW_SERVICE_MANAGED === "1";
   if (managed && process.env.FLOW_RELEASE_HOME) {
-    // A service manager restarts this process in place, so nothing runs `flow
-    // restart`'s release selection first and the instance would keep launching
-    // the release it was pinned to. Selection happens before the lock is taken
-    // because it takes that same lock to rewrite config.json, and it declines
-    // (leaving the pinned release) while another supervisor owns the instance.
+    // A service manager restarts this process in place without `flow restart`'s
+    // release selection, so it runs here. It comes before the lock because it
+    // takes that lock to rewrite config.json, and declines while another
+    // supervisor owns the instance.
     const pinned = await json(join(directory, "config.json"));
     if (pinned && !pinned.dev)
       try {

@@ -163,7 +163,7 @@ const command = (state, action) =>
     headers: { authorization: `Bearer ${state.token}` },
   });
 
-test("a supervisor whose instance already has an owner exits 0", { timeout: 30000 }, async (t) => {
+test("a supervisor whose instance already has an owner exits 0", async (t) => {
   const { DatabaseSync } = await import("node:sqlite");
   const { directory } = await fixture(t);
   const owner = new DatabaseSync(join(directory, "supervisor-lock.sqlite"));
@@ -185,7 +185,7 @@ test("a supervisor whose instance already has an owner exits 0", { timeout: 3000
   }
 });
 
-test("an intentional stop exits 0 so the service stays stopped", { timeout: 60000 }, async (t) => {
+test("an intentional stop exits 0 so the service stays stopped", async (t) => {
   const { supervise, runtime, directory } = await fixture(t);
   const supervisor = supervise();
   const state = await runtime();
@@ -195,135 +195,107 @@ test("an intentional stop exits 0 so the service stays stopped", { timeout: 6000
   await assert.rejects(NodeFSP.stat(join(directory, "runtime.json")), { code: "ENOENT" });
 });
 
-test(
-  "an owned process dying exits 1 so the service is restarted",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, runtime, started } = await fixture(t);
-    const supervisor = supervise();
-    await runtime();
-    // Only the pid the fake server reported is signalled.
-    process.kill((await started).pid, "SIGKILL");
-    const [code] = await once(supervisor, "exit");
-    assert.equal(code, 1);
-  },
-);
+test("an owned process dying exits 1 so the service is restarted", async (t) => {
+  const { supervise, runtime, started } = await fixture(t);
+  const supervisor = supervise();
+  await runtime();
+  // Only the pid the fake server reported is signalled.
+  process.kill((await started).pid, "SIGKILL");
+  const [code] = await once(supervisor, "exit");
+  assert.equal(code, 1);
+});
 
-test(
-  "a managed update restart exits 1 instead of spawning a replacement",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, runtime, prepare, releaseHome } = await fixture(t, {
-      release: true,
-      managed: true,
-      current: "flow-v1.0.0",
-    });
-    const supervisor = supervise();
-    const state = await runtime();
-    await prepare("flow-v1.1.0");
-    const applied = await command(state, "apply-update");
-    assert.equal(applied.ok, true);
-    assert.equal((await applied.json()).readyVersion, "1.1.0");
-    const [code] = await once(supervisor, "exit");
-    assert.equal(code, 1);
-    // spawnReleaseCommand would have opened this log; the manager restarts instead.
-    await assert.rejects(NodeFSP.stat(join(releaseHome, "update.log")), { code: "ENOENT" });
-  },
-);
+test("a managed update restart exits 1 instead of spawning a replacement", async (t) => {
+  const { supervise, runtime, prepare, releaseHome } = await fixture(t, {
+    release: true,
+    managed: true,
+    current: "flow-v1.0.0",
+  });
+  const supervisor = supervise();
+  const state = await runtime();
+  await prepare("flow-v1.1.0");
+  const applied = await command(state, "apply-update");
+  assert.equal(applied.ok, true);
+  assert.equal((await applied.json()).readyVersion, "1.1.0");
+  const [code] = await once(supervisor, "exit");
+  assert.equal(code, 1);
+  // spawnReleaseCommand would have opened this log; the manager restarts instead.
+  await assert.rejects(NodeFSP.stat(join(releaseHome, "update.log")), { code: "ENOENT" });
+});
 
-test(
-  "a managed supervisor serves the release the manager restarted it into",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, runtime, started, config, releaseHome } = await fixture(t, {
-      release: true,
-      managed: true,
-    });
-    supervise();
-    await runtime();
-    // Nothing runs `flow restart` between the update and this process, so the
-    // supervisor itself must re-point the instance at `current`.
-    const selected = join(releaseHome, "releases/flow-v1.1.0");
-    assert.equal((await started).entry, entryOf(selected));
-    assert.equal((await config()).code, selected);
-  },
-);
+test("a managed supervisor serves the release the manager restarted it into", async (t) => {
+  const { supervise, runtime, started, config, releaseHome } = await fixture(t, {
+    release: true,
+    managed: true,
+  });
+  supervise();
+  await runtime();
+  // Nothing runs `flow restart` between the update and this process, so the
+  // supervisor itself must re-point the instance at `current`.
+  const selected = join(releaseHome, "releases/flow-v1.1.0");
+  assert.equal((await started).entry, entryOf(selected));
+  assert.equal((await config()).code, selected);
+});
 
-test(
-  "an unmanaged release instance keeps the release it was started with",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, runtime, started, config, releaseHome } = await fixture(t, {
-      release: true,
-    });
-    supervise();
-    await runtime();
-    // `flow restart` owns release selection here, and it did not run.
-    const pinned = join(releaseHome, "releases/flow-v1.0.0");
-    assert.equal((await started).entry, entryOf(pinned));
-    assert.equal((await config()).code, pinned);
-  },
-);
+test("an unmanaged release instance keeps the release it was started with", async (t) => {
+  const { supervise, runtime, started, config, releaseHome } = await fixture(t, {
+    release: true,
+  });
+  supervise();
+  await runtime();
+  // `flow restart` owns release selection here, and it did not run.
+  const pinned = join(releaseHome, "releases/flow-v1.0.0");
+  assert.equal((await started).entry, entryOf(pinned));
+  assert.equal((await config()).code, pinned);
+});
 
-test(
-  "a managed instance pinned outside the release tree stays stopped and says why",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, home } = await fixture(t, {
-      release: true,
-      managed: true,
-      pinnedToSource: true,
-    });
-    const supervisor = supervise();
-    let stderr = "";
-    supervisor.stderr.on("data", (part) => (stderr += part));
-    const [code] = await once(supervisor, "exit");
-    // Staying stopped is the loud outcome: KeepAlive={SuccessfulExit:false} does
-    // not respawn, and the code the containment check rejected never ran.
-    assert.equal(code, 0);
-    assert.match(stderr, /Flow service will not start: .*Run `flow service install`/s);
-    await assert.rejects(NodeFSP.stat(join(home, "userdata/server-runtime.json")), {
-      code: "ENOENT",
-    });
-  },
-);
+test("a managed instance pinned outside the release tree stays stopped and says why", async (t) => {
+  const { supervise, home } = await fixture(t, {
+    release: true,
+    managed: true,
+    pinnedToSource: true,
+  });
+  const supervisor = supervise();
+  let stderr = "";
+  supervisor.stderr.on("data", (part) => (stderr += part));
+  const [code] = await once(supervisor, "exit");
+  // Staying stopped is the loud outcome: KeepAlive={SuccessfulExit:false} does
+  // not respawn, and the code the containment check rejected never ran.
+  assert.equal(code, 0);
+  assert.match(stderr, /Flow service will not start: .*Run `flow service install`/s);
+  await assert.rejects(NodeFSP.stat(join(home, "userdata/server-runtime.json")), {
+    code: "ENOENT",
+  });
+});
 
-test(
-  "a recorded network access choice starts the server on every interface",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, runtime, started } = await fixture(t, { networkAccess: true });
-    supervise();
-    const state = await runtime();
-    assert.equal((await started).host, "0.0.0.0");
-    const status = await (await command(state, "status")).json();
-    assert.equal(status.networkAccess, true);
-  },
-);
+test("a recorded network access choice starts the server on every interface", async (t) => {
+  const { supervise, runtime, started } = await fixture(t, { networkAccess: true });
+  supervise();
+  const state = await runtime();
+  assert.equal((await started).host, "0.0.0.0");
+  const status = await (await command(state, "status")).json();
+  assert.equal(status.networkAccess, true);
+});
 
-test(
-  "network access is recorded for the next start, not applied in place",
-  { timeout: 60000 },
-  async (t) => {
-    const { supervise, runtime, started, config } = await fixture(t);
-    supervise();
-    const state = await runtime();
-    assert.equal((await started).host, "127.0.0.1");
-    const enable = await fetch(`${state.controlUrl}/network-access`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${state.token}` },
-      body: JSON.stringify({ enabled: true }),
-    });
-    assert.equal(enable.status, 200);
-    // The running server keeps its loopback bind until it is restarted.
-    assert.deepEqual(await enable.json(), { networkAccess: true, active: false });
-    assert.equal((await config()).networkAccess, true);
-    const malformed = await fetch(`${state.controlUrl}/network-access`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${state.token}` },
-      body: JSON.stringify({ enabled: "yes" }),
-    });
-    assert.equal(malformed.status, 400);
-    assert.equal((await config()).networkAccess, true);
-  },
-);
+test("network access is recorded for the next start, not applied in place", async (t) => {
+  const { supervise, runtime, started, config } = await fixture(t);
+  supervise();
+  const state = await runtime();
+  assert.equal((await started).host, "127.0.0.1");
+  const enable = await fetch(`${state.controlUrl}/network-access`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${state.token}` },
+    body: JSON.stringify({ enabled: true }),
+  });
+  assert.equal(enable.status, 200);
+  // The running server keeps its loopback bind until it is restarted.
+  assert.deepEqual(await enable.json(), { networkAccess: true, active: false });
+  assert.equal((await config()).networkAccess, true);
+  const malformed = await fetch(`${state.controlUrl}/network-access`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${state.token}` },
+    body: JSON.stringify({ enabled: "yes" }),
+  });
+  assert.equal(malformed.status, 400);
+  assert.equal((await config()).networkAccess, true);
+});

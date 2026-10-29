@@ -155,7 +155,7 @@ test("stops only containers matching both the legacy name and database image", a
 });
 test(
   "stale port records never terminate a listener outside the verified legacy checkout",
-  { skip: NodeOS.platform() !== "darwin", timeout: 10_000 },
+  { skip: NodeOS.platform() !== "darwin" },
   async (t) => {
     const { home, write } = await fixture(t),
       root = join(home, ".flow/checkouts/flow");

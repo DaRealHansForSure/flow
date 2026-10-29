@@ -1,14 +1,8 @@
 #!/usr/bin/env node
-// Publishing a Flow release uploads ~1 GB, and GitHub's upload service is not
-// reliable at that size: single requests return HTTP 400/500, and a slow day
-// can spend a job's whole time budget on one file. So every asset is uploaded
-// on its own, an asset already stored with the identical contents is left
-// alone (a rerun resumes instead of starting over), and a versioned release
-// stays a draft until it holds exactly what was built.
-//
-// "Identical" means the SHA-256 GitHub stores, never the byte size: an updater
-// manifest is the same size at every version, so comparing sizes silently kept
-// a rolling feed pointing at the previous release.
+// GitHub's upload service is unreliable at a release's ~1 GB, so each asset is
+// uploaded alone, one already stored with identical contents is skipped (a
+// rerun resumes), and a versioned release stays a draft until complete.
+// Identical means GitHub's stored SHA-256: updater manifests keep their size.
 import * as NodeCrypto from "node:crypto";
 import * as NodeFS from "node:fs";
 import * as NodeFSP from "node:fs/promises";
@@ -23,11 +17,10 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const runGh = async (args) =>
   (await execFile("gh", args, { maxBuffer: 16 * 1024 * 1024 })).stdout;
 
-/** What the release already holds, or null when it does not exist yet.
-    A versioned release is a draft while it is being filled, and GitHub's
-    `releases/tags/<tag>` never returns drafts, so the id comes from
-    `gh release view`, which does see them. The release is then read by id
-    through the API, the only place that reports each asset's stored digest. */
+/** What the release already holds, or null when it does not exist yet. The id
+    comes from `gh release view`, since `releases/tags/<tag>` never returns
+    drafts; reading by id through the API is the only place that reports each
+    asset's stored digest. */
 export async function storedRelease(tag, gh) {
   let id;
   try {
@@ -66,7 +59,6 @@ export async function publishReleaseAssets(input) {
     generateNotes = false,
     target,
     latest = false,
-    prerelease = false,
     // A rolling feed is updated in place: installed apps read it, so new files
     // land before stale ones are removed and it is never empty mid-publish.
     rolling = false,

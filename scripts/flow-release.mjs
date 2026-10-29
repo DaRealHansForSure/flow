@@ -207,11 +207,10 @@ export async function pointCurrent(home, target, win = windows) {
   await fs.rename(link, current);
 }
 
-/** Recreate the directory links a Windows bundle records instead of shipping
-    (see bundle-links.mjs for why). Safe to repeat: a release is verified where
-    it is staged and linked again once renamed into place, because a junction
-    does not follow its directory. Lives here, not beside recordLinks, because
-    this file is also shipped alone as the desktop apps' bootstrap. */
+/** Recreate the directory links a Windows bundle records (see bundle-links.mjs).
+    Safe to repeat: a junction does not follow a renamed directory, so links are
+    restored again once the release is in place. Lives here because this file
+    also ships alone as the desktop apps' bootstrap. */
 export const linkManifest = "flow-links.json";
 export async function restoreLinks(root, type = "junction") {
   const links = await json(join(root, linkManifest));
@@ -349,10 +348,9 @@ export async function update(home, checkOnly = false) {
 }
 
 // One Flow install per machine, in the folder install.sh and the desktop apps
-// have always used. The retired Cloud CLI installed elsewhere; its hooks and
-// service unit record absolute paths, so such an install is adopted where it
-// is rather than moved. Desktop apps resolve the same way
-// (apps/desktop/src/backend/serviceDiscovery.ts), as does install.sh.
+// use (apps/desktop/src/backend/serviceDiscovery.ts resolves the same way). A
+// retired Cloud CLI install is adopted where it is, since its hooks and service
+// unit record absolute paths.
 export const releaseHomeNames = ["flow-browser", "flow-cloud-cli"];
 export async function resolveReleaseHome(env = process.env, homeDirectory = homedir()) {
   if (env.FLOW_RELEASE_HOME) return resolve(env.FLOW_RELEASE_HOME);
@@ -478,11 +476,10 @@ export const brainStore = (dataHome) =>
     createHash("sha256").update(join(dataHome, "userdata/brain")).digest("hex").slice(0, 12),
   );
 
-/** Delete this installation from disk. Without `purge` the program goes and
-    every data home stays, including one that lives inside the installation.
-    With `purge` the conversations, Brains and agent registrations go too —
-    nothing restores them. Retired backups are always kept: they are the only
-    copy of files Flow changed outside itself. */
+/** Delete this installation from disk. Without `purge` every data home stays,
+    even one inside the installation; with it, conversations, Brains and agent
+    registrations go for good. Retired backups are always kept: they are the
+    only copy of files Flow changed outside itself. */
 export async function removeInstallation(
   home,
   {

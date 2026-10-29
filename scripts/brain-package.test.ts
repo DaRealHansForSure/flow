@@ -100,8 +100,9 @@ it.layer(NodeServices.layer)("packaged Brain startup", (it) => {
 });
 
 it.layer(NodeServices.layer)("packaged archive discovery", (it) => {
-  for (const platform of ["mac", "linux"] as const) {
-    it.effect(`finds the ${platform} archive beside installer files`, () =>
+  it.effect.each(["mac", "linux"] as const)(
+    "finds the %s archive beside installer files",
+    (platform) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
@@ -127,6 +128,5 @@ it.layer(NodeServices.layer)("packaged archive discovery", (it) => {
         }).pipe(Effect.flip);
         assert.equal(error._tag, "BundleNotSelfContainedError");
       }).pipe(Effect.scoped),
-    );
-  }
+  );
 });
