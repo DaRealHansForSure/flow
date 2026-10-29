@@ -42,8 +42,11 @@ These rules come from the owner and override the upstream guidance above where t
 - **Logical commits.** One commit per coherent change, with a conventional title
   (`fix(service): ...`). Never mix unrelated changes in one commit, and never bundle a
   sync, a refactor and a fix together.
-- **Sensible branches.** Name each branch for the change it carries (`fix/service-network-access`),
-  one concern per branch, cut from `develop`. Do not commit work directly to `develop` or `main`.
+- **One branch per topic, not per commit.** A branch carries one feature or piece of
+  work (`feat/dev-flow`, `fix/service-network-access`) as several logical commits, cut
+  from `develop` and merged once with `--no-ff` when the topic is done. Follow-up fixes
+  to unmerged work go onto the same branch. Do not commit work directly to `develop` or
+  `main`, and delete a topic branch once it is merged.
 - **Tests only when they pay.** Run tests after a big feature is complete or when the owner
   asks, not after every small edit. Typecheck and lint the touched scope before committing.
 - **CHANGELOG.md.** Every user-visible fork change gets a line under `[Unreleased]` in the
@@ -68,7 +71,15 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
 
 - Needs `pnpm install` and, on Ubuntu, `sudo apt install libsecret-1-dev` once; the
   launcher checks both. The first start builds everything and takes about two minutes.
-- UI changes reload in place; desktop and server changes restart the dev app.
+- UI changes (`apps/web`) reload in place; desktop changes (`apps/desktop`) restart the
+  dev app. The server runs from `apps/server/dist`, built once at launch, so server and
+  Brain changes need `dev-flow.sh` restarted.
+- Closing the dev window ends the whole session about 15 seconds later; Ctrl+C works too.
+- Everything the Dev Flow prints is also written to `.t3/dev/logs/dev-flow.log` (the
+  previous run in `dev-flow.previous.log`). Read that file to see the app's logs; strip
+  colour codes with `sed 's/\x1b\[[0-9;]*m//g'`.
+- `glab` / "No unknown source control provider" warnings in the log are harmless: they
+  come from PR lookups for seeded GitLab or remote-less projects.
 - The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `.t3/dev`. Never
   point dev at `~/.t3`, and never attach it to the installed service.
 - Agent chats live in `flow.service`. Stopping or restarting it, installing a release,
