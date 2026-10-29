@@ -91,6 +91,14 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
 - For longer tasks an agent works in a git worktree, so neither side switches branches
   under the other.
 
+## Backing up the Brain
+
+`scripts/fork/backup-brain.sh --dry-run` lists what a backup holds: the Brain store
+(`<home>/userdata/brain`), its knowledge graph (`~/.flow-brain/<hash>`, named after the
+store path), the agent registry (`~/.flow`) and the chats. A real run needs the service
+stopped, so quit the app and pass `--stop-service`; that ends every running chat. The
+backup lands in `~/Backups/flow-<date>-<time>` with a `RESTORE.txt`.
+
 ## Syncing with upstream
 
 Sync every week or two. Seven weeks of drift once gave 227 conflicting files.
