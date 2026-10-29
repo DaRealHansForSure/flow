@@ -56,6 +56,24 @@ These rules come from the owner and override the upstream guidance above where t
   layout; braces stay mandatory on every block you write.
 - **No co-author trailers** in commit messages, and never push without the owner's word.
 
+## Developing Flow with Flow
+
+The installed Flow (AppImage plus `flow.service`, data in `~/.t3`) is the stable tool the
+owner works and chats in. The Dev Flow runs from this checkout next to it:
+
+```bash
+scripts/fork/dev-flow.sh          # desktop app with hot reload, data in .t3/dev
+scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats (about 3 GB)
+```
+
+- UI changes reload in place; desktop and server changes restart the dev app.
+- The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `.t3/dev`. Never
+  point dev at `~/.t3`, and never attach it to the installed service.
+- Agent chats live in `flow.service`. Stopping or restarting it, installing a release,
+  or toggling its network access ends every running chat, including the one doing the work.
+- For longer tasks an agent works in a git worktree, so neither side switches branches
+  under the other.
+
 ## Syncing with upstream
 
 Sync every week or two. Seven weeks of drift once gave 227 conflicting files.

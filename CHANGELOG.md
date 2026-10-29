@@ -12,6 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - CLAUDE.md guide for maintaining the fork: remotes, branches, syncing with upstream
   Flow and T3 Code, upstream naming, and the owner's working rules.
+- `scripts/fork/dev-flow.sh`: starts the Dev Flow from the checkout with hot reload on
+  isolated data, optionally seeded from a snapshot of the real chats.
 
 ### Changed
 
