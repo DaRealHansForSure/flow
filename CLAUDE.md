@@ -92,6 +92,13 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
   or toggling its network access ends every running chat, including the one doing the work.
 - For longer tasks an agent works in a git worktree, so neither side switches branches
   under the other.
+- Agents run inside `flow.service` and inherit its `FLOW_RELEASE_HOME`,
+  `FLOW_INSTANCE_HOME` and `FLOW_SERVICE_MANAGED`, which point at the real installation.
+  Never run the release and service tests (`scripts/flow-*.test.mjs`,
+  `scripts/instances/*.test.mjs`, `scripts/retire-legacy-flow.test.mjs`) from an agent
+  chat: twice they restarted `flow.service` and ended every chat. Run them only with
+  those variables removed: `env -u FLOW_RELEASE_HOME -u FLOW_INSTANCE_HOME -u
+  FLOW_SERVICE_MANAGED node --test <file>`.
 
 ## Backing up the Brain
 
