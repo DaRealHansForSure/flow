@@ -66,6 +66,8 @@ scripts/fork/dev-flow.sh          # desktop app with hot reload, data in .t3/dev
 scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats (about 3 GB)
 ```
 
+- Needs `pnpm install` and, on Ubuntu, `sudo apt install libsecret-1-dev` once; the
+  launcher checks both. The first start builds everything and takes about two minutes.
 - UI changes reload in place; desktop and server changes restart the dev app.
 - The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `.t3/dev`. Never
   point dev at `~/.t3`, and never attach it to the installed service.
