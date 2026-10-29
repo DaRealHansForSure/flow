@@ -1,8 +1,6 @@
-// Plain-JS siblings of apps/server/src/cloud/bootService.ts:64-160 (the T3 Cloud
-// boot service, a different unit with its own label). They are duplicated rather
-// than imported because this bootstrap layer must not depend on the Effect
-// server package, and because Flow's unit runs a supervisor, not a server.
-//
+// Plain-JS siblings of apps/server/src/cloud/bootService.ts (the T3 Cloud boot
+// unit), duplicated because this bootstrap layer must not depend on the Effect
+// server package and Flow's unit runs a supervisor, not a server.
 // A plan is { label, nodePath, args, env, logPath, workingDirectory }.
 
 /** systemd expands `%` specifiers, including in unquoted append-log paths. */
@@ -21,13 +19,10 @@ const escapeXmlText = (value) =>
 
 /** Pure renderer: a launch agent cannot rely on the user's shell or PATH. */
 export function renderLaunchdPlist(plan) {
-  // KeepAlive={SuccessfulExit:false} is the exit-code protocol's other half: the
-  // supervisor exits 0 when an owner exists or the user stopped it, and 1 when
-  // it should be restarted (see supervisor.mjs). ThrottleInterval bounds a crash
-  // loop; ExitTimeOut 90 matches systemd's default TimeoutStopSec, because a
-  // stop queued behind an update handoff outlasts launchd's 5s default and would
-  // otherwise be SIGKILLed mid-handoff. ProcessType Interactive opts out of
-  // background-job resource throttling.
+  // KeepAlive={SuccessfulExit:false}: the supervisor exits 1 to be restarted
+  // (see supervisor.mjs). ExitTimeOut 90 matches systemd's TimeoutStopSec, as a
+  // stop behind an update handoff outlasts launchd's 5s default and would be
+  // SIGKILLed. ProcessType Interactive opts out of background throttling.
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">`,

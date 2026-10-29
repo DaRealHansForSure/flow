@@ -1,14 +1,14 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
 
 // Reuse only the explicitly named personal remote. Discovery still rechecks
 // both endpoint identities and credentials before any setup files are written.
 export function savedRemoteBinding(flowDir, project, repoDir) {
   function read(name) {
-    try { return JSON.parse(readFileSync(join(flowDir, name), "utf8")); }
+    try { return JSON.parse(NodeFS.readFileSync(NodePath.join(flowDir, name), "utf8")); }
     catch (error) {
       if (error.code === "ENOENT") return {};
-      throw new Error(`Cannot read Flow ${name}; repair the personal configuration before setup.`);
+      throw new Error(`Cannot read Flow ${name}; repair the personal configuration before setup.`, { cause: error });
     }
   }
   const entry = read("config.json").projects?.[project];

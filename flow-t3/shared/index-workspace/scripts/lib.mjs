@@ -1,35 +1,35 @@
-import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import * as NodeChildProcess from "node:child_process";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
+import * as NodeURL from "node:url";
 
-export const WORKSPACE = dirname(dirname(fileURLToPath(import.meta.url)));
-export const REPOS_DIR = join(WORKSPACE, "repos");
-export const REGISTRY_PATH = join(WORKSPACE, "repos.json");
+export const WORKSPACE = NodePath.dirname(NodePath.dirname(NodeURL.fileURLToPath(import.meta.url)));
+export const REPOS_DIR = NodePath.join(WORKSPACE, "repos");
+export const REGISTRY_PATH = NodePath.join(WORKSPACE, "repos.json");
 export const GATEWAY_URL = process.env.GRAPH_GATEWAY_URL ?? "http://127.0.0.1:7433";
 export const MODEL = process.env.GRAPH_BUILDER_MODEL ?? "opencode/deepseek-v4-flash-free";
 
 export function loadRegistry() {
   try {
-    return JSON.parse(readFileSync(REGISTRY_PATH, "utf8"));
+    return JSON.parse(NodeFS.readFileSync(REGISTRY_PATH, "utf8"));
   } catch {
     return { repos: [] };
   }
 }
 
 export function saveRegistry(registry) {
-  writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2) + "\n");
+  NodeFS.writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2) + "\n");
 }
 
 export function git(cwd, ...args) {
-  return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+  return NodeChildProcess.execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 }
 
 export async function assertGatewayUp() {
   try {
     const res = await fetch(`${GATEWAY_URL}/health`);
     if (!res.ok) throw new Error(`status ${res.status}`);
-  } catch (err) {
+  } catch {
     console.error(`graph-gateway is not reachable at ${GATEWAY_URL} — start it first (cd graph-gateway && npm run dev)`);
     process.exit(1);
   }
@@ -39,7 +39,7 @@ export async function assertGatewayUp() {
 // its output. Returns true on success.
 export function runBuilder(prompt) {
   console.log(`\n→ opencode run --agent graph-builder -m ${MODEL}\n`);
-  const res = spawnSync("opencode", ["run", "--agent", "graph-builder", "-m", MODEL, "--dir", WORKSPACE, prompt], {
+  const res = NodeChildProcess.spawnSync("opencode", ["run", "--agent", "graph-builder", "-m", MODEL, "--dir", WORKSPACE, prompt], {
     stdio: "inherit",
     env: { ...process.env, GRAPH_GATEWAY_URL: GATEWAY_URL },
   });

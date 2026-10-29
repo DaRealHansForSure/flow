@@ -14,8 +14,8 @@
 
 import * as NodeFS from "node:fs";
 import * as NodeFSP from "node:fs/promises";
-import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
 
 export type ServiceStatus =
   | "not-configured"
@@ -44,26 +44,27 @@ export interface ServiceDiscoveryResult {
   readonly reason?: string;
 }
 
-// The one Flow install on this machine, shared by the desktop apps, the `flow`
-// command and install.sh. Port of `resolveReleaseHome` in
-// `scripts/flow-release.mjs`; keep the folder order identical. The retired
-// Cloud CLI installed elsewhere, and its hooks and service unit record absolute
-// paths, so such an install is adopted where it is, never moved.
-export const FLOW_RELEASE_HOME_NAMES = ["flow-browser", "flow-cloud-cli"] as const;
+// The one Flow install on this machine, shared by the desktop apps, `flow` and
+// install.sh. Port of `resolveReleaseHome` in `scripts/flow-release.mjs`; keep
+// the folder order identical. A retired Cloud CLI install is adopted where it
+// is, since its hooks and service unit record absolute paths.
+const FLOW_RELEASE_HOME_NAMES = ["flow-browser", "flow-cloud-cli"] as const;
 
 export const resolveFlowReleaseHome = ({
   env = process.env,
-  homeDirectory = homedir(),
+  homeDirectory = NodeOS.homedir(),
   exists = NodeFS.existsSync,
 }: {
   readonly env?: NodeJS.ProcessEnv;
   readonly homeDirectory?: string;
   readonly exists?: (path: string) => boolean;
 } = {}): string => {
-  if (env.FLOW_RELEASE_HOME) return resolve(env.FLOW_RELEASE_HOME);
-  const share = join(homeDirectory, ".local/share");
-  const installed = FLOW_RELEASE_HOME_NAMES.find((name) => exists(join(share, name, "current")));
-  return join(share, installed ?? FLOW_RELEASE_HOME_NAMES[0]);
+  if (env.FLOW_RELEASE_HOME) return NodePath.resolve(env.FLOW_RELEASE_HOME);
+  const share = NodePath.join(homeDirectory, ".local/share");
+  const installed = FLOW_RELEASE_HOME_NAMES.find((name) =>
+    exists(NodePath.join(share, name, "current")),
+  );
+  return NodePath.join(share, installed ?? FLOW_RELEASE_HOME_NAMES[0]);
 };
 
 /** Hosts the Flow CLI is built for; mirrors the gate in `flow-release.mjs`.
@@ -71,31 +72,22 @@ export const resolveFlowReleaseHome = ({
 export const flowServiceSupportsHost = (platform: string, arch: string): boolean =>
   (platform === "darwin" && arch === "arm64") || (platform === "linux" && arch === "x64");
 
-// Where the desktop's service lives, and the single source of truth for it:
-// first-launch adoption installs into this registry (DesktopServiceAdoption)
-// and attaching reads from it, so the two can never point at different
-// installations. Whichever of the app or the CLI was installed first, both
-// resolve the same home and so share one service.
-//
-// The registry is `<release home>/instance-home` (`flow-release.mjs` defaults
-// FLOW_INSTANCE_HOME to exactly that before handing off to the launcher).
-// There is deliberately no fallback to `launcher.mjs`'s own
-// `~/.local/share/flow-app` default: that is the registry a *source checkout*
-// manages, and silently attaching to it would let a dev tree and a release
-// fight over one app. A developer who wants that registry sets
-// FLOW_INSTANCE_HOME, which is what `flow dev` already does.
+// The desktop's service registry, `<release home>/instance-home` as in
+// `flow-release.mjs`: adoption installs into it and attaching reads it, so the
+// app and the CLI share one service. No fallback to the source checkout's
+// `~/.local/share/flow-app`; `flow dev` sets FLOW_INSTANCE_HOME for that.
 export const desktopServiceRegistryRoot = ({
   env = process.env,
-  homeDirectory = homedir(),
+  homeDirectory = NodeOS.homedir(),
   exists = NodeFS.existsSync,
 }: {
   readonly env?: NodeJS.ProcessEnv;
   readonly homeDirectory?: string;
   readonly exists?: (path: string) => boolean;
 } = {}): string =>
-  resolve(
+  NodePath.resolve(
     env.FLOW_INSTANCE_HOME ||
-      join(resolveFlowReleaseHome({ env, homeDirectory, exists }), "instance-home"),
+      NodePath.join(resolveFlowReleaseHome({ env, homeDirectory, exists }), "instance-home"),
   );
 
 const readJson = async (path: string): Promise<unknown> => {
@@ -136,11 +128,10 @@ export const fetchEnvironmentDescriptor = async (
   return (await response.json()) as unknown;
 };
 
-/** The control endpoint of a live supervisor, or null when no supervisor has
-    published one. Same-user file trust, the model `flow` itself uses: whoever
-    can read `runtime.json` is already the owner of this installation. The
-    token stays inside this module's callers — it is never part of a discovery
-    result, and never crosses the IPC boundary. */
+/** The control endpoint of a live supervisor, or null when none is published.
+    Same-user file trust, as `flow` uses: whoever reads `runtime.json` owns this
+    install. The token never enters a discovery result or crosses the IPC
+    boundary. */
 export const readServiceControl = async ({
   registryRoot,
   name = "primary",
@@ -148,10 +139,10 @@ export const readServiceControl = async ({
   readonly registryRoot: string;
   readonly name?: string;
 }): Promise<{ readonly url: URL; readonly token: string } | null> => {
-  const directory = join(resolve(registryRoot), "instances", name);
+  const directory = NodePath.join(NodePath.resolve(registryRoot), "instances", name);
   let runtime: unknown;
   try {
-    runtime = await readJson(join(directory, "runtime.json"));
+    runtime = await readJson(NodePath.join(directory, "runtime.json"));
   } catch {
     return null;
   }
@@ -182,12 +173,12 @@ export const discoverService = async ({
   timeoutMs = 3_000,
   fetch: fetchImpl = globalThis.fetch,
 }: DiscoverServiceInput): Promise<ServiceDiscoveryResult> => {
-  const directory = join(resolve(registryRoot), "instances", name);
+  const directory = NodePath.join(NodePath.resolve(registryRoot), "instances", name);
   let config: unknown;
   let runtime: unknown;
   try {
-    config = await readJson(join(directory, "config.json"));
-    runtime = await readJson(join(directory, "runtime.json"));
+    config = await readJson(NodePath.join(directory, "config.json"));
+    runtime = await readJson(NodePath.join(directory, "runtime.json"));
   } catch {
     return { status: "invalid", reason: "Unreadable service metadata." };
   }

@@ -1,3 +1,4 @@
+/* oxlint-disable t3code/require-disposable-render -- Still on react-test-renderer, which T3 v0.1.5 removed; it needs a rewrite as a browser test. */
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 import type { BrainCommand, BrainResponse } from "@t3tools/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";

@@ -1,29 +1,17 @@
 #!/usr/bin/env node
 import { agentHome } from './agent-home.mjs';
-// flow-hook — the one capture shim behind every harness's hook line.
-//
-// Contract with the harnesses: this file's PATH AND ARGUMENTS are frozen the
-// day they're written into a tool's config (Codex re-requires /hooks trust on
-// any definition change). All evolving logic lives here, in the versioned
-// script — updating Flow updates capture for every repo on the machine with
-// zero per-repo edits.
-//
-// Contract with the user's session: NEVER break it. Any failure — no config,
-// no network, bad JSON — exits 0 silently (best-effort breadcrumb in
-// ~/.flow/logs/hook.log). Hard wall-clock cap so a slow server can't stall a
-// SessionEnd (Claude Code allows 1.5s there).
-//
-// Zero dependencies; stock Node 22.
+// The capture shim behind every harness's hook line. Its path and arguments are
+// frozen once written (Codex re-trusts on any change), so all logic lives here.
+// It must never break the session: any failure exits 0, logs to
+// ~/.flow/logs/hook.log, and a wall-clock cap keeps SessionEnd under 1.5s.
 
-import { readFileSync, appendFileSync, mkdirSync, statSync, writeFileSync, openSync, readSync, fstatSync, closeSync, constants } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
 
 const VERSION = "1";
 const FLOW_DIR = agentHome();
 const DEADLINE_MS = 2500;
 
-// ---------------------------------------------------------------------------
 // args: --harness <dialect> --project <name> --repo <name> --remote <name>
 const args = {};
 for (let i = 2; i < process.argv.length - 1; i++) {
@@ -33,13 +21,13 @@ for (let i = 2; i < process.argv.length - 1; i++) {
 
 function logLine(msg) {
   try {
-    const dir = join(FLOW_DIR, "logs");
-    mkdirSync(dir, { recursive: true });
-    const p = join(dir, "hook.log");
+    const dir = NodePath.join(FLOW_DIR, "logs");
+    NodeFS.mkdirSync(dir, { recursive: true });
+    const p = NodePath.join(dir, "hook.log");
     try {
-      if (statSync(p).size > 512 * 1024) writeFileSync(p, ""); // crude rotation
+      if (NodeFS.statSync(p).size > 512 * 1024) NodeFS.writeFileSync(p, ""); // crude rotation
     } catch {}
-    appendFileSync(p, `${new Date().toISOString()} [${args.harness ?? "?"}] ${msg}\n`);
+    NodeFS.appendFileSync(p, `${new Date().toISOString()} [${args.harness ?? "?"}] ${msg}\n`);
   } catch {}
 }
 
@@ -49,7 +37,6 @@ async function readStdin() {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-// ---------------------------------------------------------------------------
 // Client-side redaction — transcripts carry raw tool output; secrets must die
 // on the laptop, before any upload. Values are masked, shapes preserved.
 const SECRET_PATTERNS = [
@@ -95,13 +82,13 @@ function copilotTranscriptLines(payload, tail = true) {
   if (typeof path !== "string" || !path) return [];
   let fd;
   try {
-    fd = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK);
-    const stat = fstatSync(fd);
+    fd = NodeFS.openSync(path, NodeFS.constants.O_RDONLY | NodeFS.constants.O_NONBLOCK);
+    const stat = NodeFS.fstatSync(fd);
     if (!stat.isFile()) return [];
     const length = Math.min(stat.size, tail ? 256 * 1024 : 8192);
     const offset = tail ? stat.size - length : 0;
     const buf = Buffer.alloc(length);
-    const count = readSync(fd, buf, 0, length, offset);
+    const count = NodeFS.readSync(fd, buf, 0, length, offset);
     const lines = buf.subarray(0, count).toString("utf8").split("\n");
     if (offset) lines.shift(); // first line may start mid-record
     return lines.flatMap((line) => {
@@ -110,7 +97,7 @@ function copilotTranscriptLines(payload, tail = true) {
   } catch {
     return [];
   } finally {
-    if (fd !== undefined) closeSync(fd);
+    if (fd !== undefined) NodeFS.closeSync(fd);
   }
 }
 
@@ -146,7 +133,6 @@ function antigravityTurn(payload) {
   return { prompt, answer };
 }
 
-// ---------------------------------------------------------------------------
 async function main() {
   // Sessions Flow itself runs are already captured by the ACP runtime —
   // uploading them again would double-distill every Flow-driven session.
@@ -172,10 +158,10 @@ async function main() {
   // folder the event belongs to, and an unbound folder is simply skipped.
   const remoteName = args.remote ?? "local";
   let cfg = {};
-  try { cfg = JSON.parse(readFileSync(join(FLOW_DIR, "config.json"), "utf8")); } catch {}
+  try { cfg = JSON.parse(NodeFS.readFileSync(NodePath.join(FLOW_DIR, "config.json"), "utf8")); } catch {}
   const projectEntry = args.project
     ? cfg.projects?.[args.project]
-    : { connector: join(FLOW_DIR, "bin", "agent-connector.mjs") };
+    : { connector: NodePath.join(FLOW_DIR, "bin", "agent-connector.mjs") };
   const remote = args.project && projectEntry && !projectEntry.connector
     ? { url: projectEntry.orchestratorUrl, token: projectEntry.token }
     : args.project ? cfg.remotes?.[remoteName] : undefined;

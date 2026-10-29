@@ -42,7 +42,7 @@ export function BrainPage({
   onCreate?: () => void;
 }) {
   return (
-    <SidebarInset className="h-dvh min-h-0 overflow-hidden bg-background text-foreground">
+    <SidebarInset className="h-dvh min-h-0 overflow-hidden">
       <WorkspacePageHeader electron={isElectron} className="border-b border-border/50">
         <BrainCircuit size={16} className="text-muted-foreground" />
         <span className="text-sm">Brain</span>

@@ -235,7 +235,7 @@ export function SidebarBrainLink() {
         onClick={() => {
           if (isMobile) setOpenMobile(false);
         }}
-        className="relative isolate flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 text-sm font-medium text-white outline-none hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative isolate flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 text-sm font-medium text-white outline-none hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       >
         <span aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <StageBackdropButtonArt variant="dev" />

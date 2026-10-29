@@ -1,9 +1,7 @@
 // Question-driven graph enrichment:
 //   node scripts/enrich.mjs "how are credits deducted when a scrape runs?"
-// Runs a graph-builder session focused on one question or known gap. This is
-// the loop that improves the graph over time: unanswered/thin questions come
-// in, the builder investigates across all connected repos, and the findings
-// become permanent graph structure.
+// Runs a graph-builder session on one question or known gap across all
+// connected repos; its findings become permanent graph structure.
 
 import { assertGatewayUp, runBuilder } from "./lib.mjs";
 

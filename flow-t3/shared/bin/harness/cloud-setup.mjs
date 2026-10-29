@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import * as NodeFSP from 'node:fs/promises';
 import { request } from './capture-replay.mjs';
 
 /** Connect through the local runtime so capture and curation retain their normal owner. */
@@ -19,13 +19,13 @@ export async function connectCloud({ endpoint, tokenFile, enrollmentFile, stateD
     const response = await fetcher(new URL('/auth/enroll', url), {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30000),
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: (await readFile(enrollmentFile, 'utf8')).trim() }),
+      body: JSON.stringify({ token: (await NodeFSP.readFile(enrollmentFile, 'utf8')).trim() }),
     });
     const grant = await response.json();
     if (!response.ok || (brainId && grant.brainId !== brainId) || typeof grant.token !== 'string')
       throw Error('Setup prompt expired, was already used, or belongs to another Brain. Copy a new prompt.');
     token = grant.token;
-  } else token = (await readFile(tokenFile, 'utf8')).trim();
+  } else token = (await NodeFSP.readFile(tokenFile, 'utf8')).trim();
   if (!token) throw Error('The Cloud connection credential is empty.');
   // Verify the intended remote identity before persisting any local connection.
   const response = await fetcher(new URL('/v1/brain', url), {

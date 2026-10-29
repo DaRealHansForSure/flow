@@ -1117,19 +1117,10 @@ export const LINUX_BROWSER_SECRET_EXTRA_RESOURCES = [
   { from: "apps/desktop/prod-resources/browser-secret", to: "browser-secret" },
 ] as const;
 
-// `scripts/flow-release.mjs` is the Flow service bootstrap: first-launch
-// adoption runs it with Electron's embedded Node to install the independent
-// Flow release (which self-updates on its own train) and register it as a
-// login service. It must ship as a loose file rather than from app.asar
-// because it is executed as a script by a separate Node process.
-//
-// Its static imports are all Node built-ins, so the script alone is enough.
-// Every dynamic import resolves inside the installed release tree, not next
-// to this bootstrap.
-//
-// Windows is deliberately left out: flow-release.mjs refuses to run anywhere
-// but Apple Silicon macOS and Linux x64, so a Windows desktop never adopts a
-// service.
+// `scripts/flow-release.mjs` is the Flow service bootstrap that first-launch
+// adoption runs with Electron's Node, so it ships loose, outside app.asar. Its
+// static imports are Node built-ins and its dynamic ones resolve in the release.
+// Windows is left out: flow-release.mjs runs only on Apple Silicon and Linux x64.
 export const FLOW_BOOTSTRAP_RESOURCE_DIR = "flow-bootstrap";
 export const FLOW_BOOTSTRAP_SCRIPTS = ["flow-release.mjs"] as const;
 export const FLOW_BOOTSTRAP_EXTRA_RESOURCES = [
@@ -2306,12 +2297,10 @@ export const verifyPackagedBundleIsSelfContained = Effect.fn("verifyPackagedBund
         });
       }
 
-      // --version exercises the eagerly loaded module graph, which is where a
-      // missing dependency shows up, without starting a server or touching disk
-      // state. It does not cover lazily imported externals: node-pty is checked
-      // by the WSL preflight probe at runtime, while ffi-rs, @ff-labs/fff-node
-      // and the bun adapters are covered by the shared runtime-external closure
-      // and emitted-bundle checks.
+      // --version loads the eager module graph, where a missing dependency shows
+      // up, without starting a server. Lazy externals are covered elsewhere:
+      // node-pty by the WSL preflight probe, ffi-rs, @ff-labs/fff-node and the
+      // bun adapters by the runtime-external closure and emitted-bundle checks.
       yield* runCommand(
         ChildProcess.make(
           input.electronExecutable ?? process.execPath,

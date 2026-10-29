@@ -33,9 +33,7 @@ function getDesktopFlowServiceBridge(): DesktopFlowServiceBridge | undefined {
   return typeof window === "undefined" ? undefined : window.desktopBridge;
 }
 
-export function createDesktopFlowServiceAtom(
-  getBridge: () => DesktopFlowServiceBridge | undefined,
-) {
+function createDesktopFlowServiceAtom(getBridge: () => DesktopFlowServiceBridge | undefined) {
   const loadDesktopFlowServiceStatus = Effect.fn("loadDesktopFlowServiceStatus")(function* () {
     const getStatus = getBridge()?.getFlowServiceStatus;
     // Absent on browser hosts and on desktop shells older than the service

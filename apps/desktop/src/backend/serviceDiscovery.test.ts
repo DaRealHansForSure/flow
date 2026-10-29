@@ -1,9 +1,9 @@
 // @effect-diagnostics nodeBuiltinImport:off - mirrors the fixture layout of scripts/instances/service-discovery.test.mjs against the real filesystem.
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { once } from "node:events";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import * as NodeHttp from "node:http";
+import * as NodeEvents from "node:events";
+import * as NodeFSP from "node:fs/promises";
+import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
 
 import { afterEach, assert, describe, expect, it } from "@effect/vitest";
 
@@ -18,33 +18,33 @@ afterEach(async () => {
 // Same shape scripts/instances/service-discovery.test.mjs builds, so the port
 // and the canonical module are exercised against identical on-disk input.
 async function fixture() {
-  const home = await mkdtemp(join(tmpdir(), "flow-desktop-discovery-"));
-  cleanups.push(() => rm(home, { recursive: true, force: true }));
-  const registryRoot = join(home, "instance-home");
-  const directory = join(registryRoot, "instances/primary");
-  await mkdir(join(directory, "data"), { recursive: true });
+  const home = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "flow-desktop-discovery-"));
+  cleanups.push(() => NodeFSP.rm(home, { recursive: true, force: true }));
+  const registryRoot = NodePath.join(home, "instance-home");
+  const directory = NodePath.join(registryRoot, "instances/primary");
+  await NodeFSP.mkdir(NodePath.join(directory, "data"), { recursive: true });
   const config = {
     version: 1,
     id: "environment",
     name: "primary",
     mode: "isolated",
     dev: false,
-    home: join(directory, "data"),
-    code: join(home, "releases/old-running-version"),
+    home: NodePath.join(directory, "data"),
+    code: NodePath.join(home, "releases/old-running-version"),
   };
   const save = (file: string, data: unknown) =>
-    writeFile(join(directory, file), JSON.stringify(data));
+    NodeFSP.writeFile(NodePath.join(directory, file), JSON.stringify(data));
   await save("config.json", config);
   return { home, registryRoot, directory, config, save };
 }
 
 async function live(
   f: Awaited<ReturnType<typeof fixture>>,
-  handler: (request: IncomingMessage, response: ServerResponse) => void,
+  handler: (request: NodeHttp.IncomingMessage, response: NodeHttp.ServerResponse) => void,
 ) {
-  const server = createServer(handler);
+  const server = NodeHttp.createServer(handler);
   server.listen(0, "127.0.0.1");
-  await once(server, "listening");
+  await NodeEvents.EventEmitter.once(server, "listening");
   cleanups.push(() => new Promise((resolve) => server.close(() => resolve(undefined))));
   const address = server.address();
   const port = typeof address === "object" && address !== null ? address.port : 0;
@@ -58,7 +58,7 @@ async function live(
 
 describe("desktop service discovery", () => {
   it("reports an absent installation without creating it", async () => {
-    const root = join(tmpdir(), `flow-desktop-missing-${String(process.pid)}`);
+    const root = NodePath.join(NodeOS.tmpdir(), `flow-desktop-missing-${String(process.pid)}`);
     const result = await discoverService({ registryRoot: root });
     expect(result.status).toBe("not-configured");
   });
@@ -74,9 +74,9 @@ describe("desktop service discovery", () => {
 
   it("disqualifies corrupt, homeless and unsupported metadata", async () => {
     const f = await fixture();
-    await writeFile(join(f.directory, "config.json"), "{");
+    await NodeFSP.writeFile(NodePath.join(f.directory, "config.json"), "{");
     assert.equal((await discoverService({ registryRoot: f.registryRoot })).status, "invalid");
-    await f.save("config.json", { ...f.config, home: join(f.home, "moved-away") });
+    await f.save("config.json", { ...f.config, home: NodePath.join(f.home, "moved-away") });
     assert.equal((await discoverService({ registryRoot: f.registryRoot })).status, "invalid");
     await f.save("config.json", { ...f.config, version: 2 });
     assert.equal((await discoverService({ registryRoot: f.registryRoot })).status, "incompatible");

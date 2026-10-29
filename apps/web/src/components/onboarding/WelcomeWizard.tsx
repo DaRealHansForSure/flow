@@ -41,7 +41,7 @@ import {
   MonitorIcon,
   TerminalIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { brainCommand } from "../../state/brain";
 import { connectCloudCommand, connectCloudOutcome, connectCloudReady } from "../brain/connectCloud";
@@ -848,6 +848,7 @@ export function ConnectedAgentsStep({
     return () => {
       active = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- readAttempt is the Retry trigger that reads the Brains again.
   }, [environmentId, executeBrain, readAttempt]);
   const createBrain = async () => {
     if (busy || !name.trim()) return;
@@ -1582,26 +1583,24 @@ function ImportStep({
     };
   }, []);
 
-  const candidates: readonly ImportCandidate[] = useMemo(() => {
-    const suggested = scans.flatMap((scan) =>
-      (scan.data?.candidates ?? [])
-        .filter((candidate) => isSuggestedBrainProject(candidate.path, chosenFolders))
-        .filter(
-          (candidate) =>
-            !chosenProjects.some(
-              (project) =>
-                project.environmentId === scan.environmentId &&
-                projectIsWithinFolder(candidate.path, project.path),
-            ),
-        )
-        .map((candidate) => ({
-          ...candidate,
-          environmentId: scan.environmentId,
-          key: onboardingProjectKey(scan.environmentId, candidate.path),
-        })),
-    );
-    return [...chosenProjects, ...suggested];
-  }, [scans, chosenFolders, chosenProjects]);
+  const suggestedCandidates: readonly ImportCandidate[] = scans.flatMap((scan) =>
+    (scan.data?.candidates ?? [])
+      .filter((candidate) => isSuggestedBrainProject(candidate.path, chosenFolders))
+      .filter(
+        (candidate) =>
+          !chosenProjects.some(
+            (project) =>
+              project.environmentId === scan.environmentId &&
+              projectIsWithinFolder(candidate.path, project.path),
+          ),
+      )
+      .map((candidate) => ({
+        ...candidate,
+        environmentId: scan.environmentId,
+        key: onboardingProjectKey(scan.environmentId, candidate.path),
+      })),
+  );
+  const candidates: readonly ImportCandidate[] = [...chosenProjects, ...suggestedCandidates];
   const selectedKeys = selectedPaths;
   const selected = candidates.filter((candidate) => selectedKeys.has(candidate.key));
   const canImport = selected.every((candidate) =>
@@ -1617,37 +1616,31 @@ function ImportStep({
    * A connected remote Brain already indexes its team's repositories, so the
    * local clones of those repositories are what this computer needs set up.
    */
-  const remoteSourceMatches = useMemo(
-    () =>
-      scans.map((scan) => {
-        const choice = brainChoices.get(scan.environmentId);
-        const sources = choice?.sources ?? [];
-        const scanned = scan.data;
-        if (sources.length === 0 || scanned === null)
-          return { scan, brainId: null, matched: [], unmatched: [] as readonly string[] };
-        const knownProjects = projects
-          .filter((project) => project.environmentId === scan.environmentId)
-          .map((project) => ({
-            path: project.workspaceRoot,
-            title: project.title,
-            projectId: project.id,
-          }));
-        const chosen = chosenProjects.filter(
-          (project) => project.environmentId === scan.environmentId,
-        );
-        return {
-          scan,
-          brainId: choice?.id ?? null,
-          ...matchRemoteBrainSources(
-            sources,
-            scanned.candidates,
-            [...chosen, ...knownProjects],
-            chosenFolders,
-          ),
-        };
-      }),
-    [scans, brainChoices, projects, chosenProjects, chosenFolders],
-  );
+  const remoteSourceMatches = scans.map((scan) => {
+    const choice = brainChoices.get(scan.environmentId);
+    const sources = choice?.sources ?? [];
+    const scanned = scan.data;
+    if (sources.length === 0 || scanned === null)
+      return { scan, brainId: null, matched: [], unmatched: [] as readonly string[] };
+    const knownProjects = projects
+      .filter((project) => project.environmentId === scan.environmentId)
+      .map((project) => ({
+        path: project.workspaceRoot,
+        title: project.title,
+        projectId: project.id,
+      }));
+    const chosen = chosenProjects.filter((project) => project.environmentId === scan.environmentId);
+    return {
+      scan,
+      brainId: choice?.id ?? null,
+      ...matchRemoteBrainSources(
+        sources,
+        scanned.candidates,
+        [...chosen, ...knownProjects],
+        chosenFolders,
+      ),
+    };
+  });
   // Preselect once per connected Brain; later renders must not undo unchecks.
   const preselectedBrainsRef = useRef(new Set<string>());
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- selects the local clones of a connected Brain's repositories once per Brain
@@ -2251,29 +2244,27 @@ function CodingToolsStep({
   const [tools, setTools] = useState<BrainAgentTools | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const run = useCallback(
-    async (operation: "status" | "install") => {
-      if (!environmentId) return;
-      setBusy(true);
-      setError("");
-      const result = await executeBrain({
-        environmentId,
-        input: { action: "agentTools", operation },
-      });
-      setBusy(false);
-      if (result._tag !== "Success" || result.value.error || !result.value.agentTools) {
-        setError(
-          (result._tag === "Success" && result.value.error) ||
-            "Could not check the coding agents on this computer.",
-        );
-        return;
-      }
-      setTools(result.value.agentTools);
-    },
-    [environmentId, executeBrain],
-  );
+  const run = async (operation: "status" | "install") => {
+    if (!environmentId) return;
+    setBusy(true);
+    setError("");
+    const result = await executeBrain({
+      environmentId,
+      input: { action: "agentTools", operation },
+    });
+    setBusy(false);
+    if (result._tag !== "Success" || result.value.error || !result.value.agentTools) {
+      setError(
+        (result._tag === "Success" && result.value.error) ||
+          "Could not check the coding agents on this computer.",
+      );
+      return;
+    }
+    setTools(result.value.agentTools);
+  };
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- checks which coding agents are connected when the finish step opens
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- The status read's result lands asynchronously from the server.
     void run("status");
   }, [run]);
 

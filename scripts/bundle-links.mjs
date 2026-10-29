@@ -1,10 +1,7 @@
-// Directory links inside a Windows bundle. pnpm links workspace packages with
-// junctions, and a junction stores an absolute path: archived as-is it would
-// point into the build machine. Copying the targets instead is not an option,
-// because Node refuses to strip types from TypeScript under node_modules and
-// the server runs its workspace packages from source. So the build records
-// every link and removes it, and the installer recreates them wherever the
-// release ends up (restoreLinks in flow-release.mjs).
+// pnpm's workspace junctions store absolute paths into the build machine, and
+// copying targets fails because Node will not strip types under node_modules.
+// So the build records and removes every link, and the installer recreates them
+// where the release lands (restoreLinks in flow-release.mjs).
 import * as NodeFSP from "node:fs/promises";
 import * as NodePath from "node:path";
 import { linkManifest } from "./flow-release.mjs";

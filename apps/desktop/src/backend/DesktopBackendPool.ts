@@ -141,18 +141,10 @@ export interface AttachFailureRecovery {
 }
 
 /**
- * The attached primary's preflight-failure handler.
- *
- * `not-installed` is the one failure with an automatic recovery: this desktop
- * is the first launch after the service model landed, so it installs the Flow
- * release and registers the service (see DesktopServiceAdoption), then returns
- * true to ask the attached instance for one more attach attempt. Adoption runs
- * at most once per session - a second `not-installed` after a completed
- * adoption means something is wrong that re-running would not fix.
- *
- * Every other kind stays inert on purpose: starting or updating the service is
- * the service layer's job, and a private child would compete with it for the
- * instance lock.
+ * The attached primary's preflight-failure handler. Only `not-installed`
+ * recovers on its own: it adopts the service (DesktopServiceAdoption) at most
+ * once per session and returns true for one more attach attempt. Other kinds
+ * stay inert: starting or updating the service is the service layer's job.
  */
 export const makeAttachFailureHandler = Effect.fn("desktop.backendPool.makeAttachFailureHandler")(
   function* (recovery: AttachFailureRecovery) {
@@ -276,18 +268,10 @@ export const layer = Layer.effect(
       },
     );
 
-    // The primary backend is the `flow` service the app attaches to. The old
-    // private-child backend stays available behind FLOW_DESKTOP_LEGACY_BACKEND
-    // for exactly one release as the migration rollback, then this branch and
-    // `makeLegacyPrimary` go away.
-    // Either the env var (a developer or an operator choosing the rollback for
-    // every launch) or a one-shot marker the recovery screen left behind
-    // ("Continue with the built-in server"). The marker is consumed as it is
-    // read, so the next ordinary launch attaches again and the choice is never
-    // a mode the user cannot leave.
-    // Intel Macs and Windows have no Flow CLI build, so there is no service to
-    // attach to or install; without this they would land on the recovery
-    // screen at every launch.
+    // The primary attaches to the `flow` service. The private-child backend is
+    // the one-release rollback: FLOW_DESKTOP_LEGACY_BACKEND, or a one-shot marker
+    // from the recovery screen, consumed on read so the next launch attaches.
+    // Intel Macs and Windows have no Flow CLI build, so no service to attach to.
     const hostPlatform = yield* HostProcess.Platform;
     const hostArchitecture = yield* HostProcess.Architecture;
     const hostUserId = yield* HostProcess.UserId;

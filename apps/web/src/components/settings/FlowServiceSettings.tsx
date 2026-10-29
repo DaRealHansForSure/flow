@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { useEnvironmentQuery } from "~/state/query";
 import { desktopFlowServiceAtom, refreshDesktopFlowService } from "~/state/desktopFlowService";
@@ -41,25 +41,22 @@ export function FlowServiceSettings({
   const [pendingAction, setPendingAction] = useState<"stop" | "restart" | null>(null);
   const [isStopDialogOpen, setIsStopDialogOpen] = useState(false);
 
-  const runAction = useCallback(
-    async (action: "stop" | "restart") => {
-      const call = action === "stop" ? bridge?.stopFlowService : bridge?.restartFlowService;
-      if (!call) return;
-      setPendingAction(action);
-      setActionError(null);
-      try {
-        setActionError(describeFlowServiceActionResult(await call()));
-      } catch (cause) {
-        setActionError(cause instanceof Error ? cause.message : String(cause));
-      } finally {
-        setPendingAction(null);
-        // The service may take a moment to settle, but the panel must not show
-        // a state the user just changed, so re-read immediately either way.
-        refreshDesktopFlowService();
-      }
-    },
-    [bridge],
-  );
+  const runAction = async (action: "stop" | "restart") => {
+    const call = action === "stop" ? bridge?.stopFlowService : bridge?.restartFlowService;
+    if (!call) return;
+    setPendingAction(action);
+    setActionError(null);
+    try {
+      setActionError(describeFlowServiceActionResult(await call()));
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setPendingAction(null);
+      // The service may take a moment to settle, but the panel must not show
+      // a state the user just changed, so re-read immediately either way.
+      refreshDesktopFlowService();
+    }
+  };
 
   if (!canManage) {
     return (
@@ -89,7 +86,7 @@ export function FlowServiceSettings({
         }
         control={
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{view?.stateLabel ?? "—"}</span>
+            <span className="text-sm text-muted-foreground">{view?.stateLabel ?? "-"}</span>
             <Button
               size="sm"
               variant="outline"

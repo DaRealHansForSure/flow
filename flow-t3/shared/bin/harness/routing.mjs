@@ -1,8 +1,7 @@
-// harness/routing.mjs — the when→which table every connected coding agent reads.
-// The MCP server sends it to folders bound to a Brain and the installed skill
-// repeats it. It lives with the harness files because install copies those
-// into the agent home as one flat directory. Agents Flow hosts itself get the same table from the orchestrator's
-// graph-preamble.ts; apps/server's chat-context test keeps the two identical.
+// The when-to-use-which table every connected coding agent reads, sent by the
+// MCP server and repeated by the skill. It sits with the harness files, which
+// install copies flat. Hosted agents get the same table from graph-preamble.ts;
+// apps/server's chat-context test keeps the two identical.
 export const FLOW_ROUTING = `Call orient first, and again after context compaction.
 Every [id] you are given — by orient, find_entity or search_knowledge — opens with get_entity.
 

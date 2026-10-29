@@ -1,4 +1,3 @@
-/* eslint-disable t3code/no-global-process-runtime -- Standalone Node bootstrap runs before workspace Effect services exist. */
 import * as NodeFSP from "node:fs/promises";
 const { mkdir, readFile, writeFile, rename, rm } = NodeFSP;
 import * as NodePath from "node:path";
@@ -177,7 +176,6 @@ export async function uninstallService(options = {}) {
 }
 
 export async function serviceStatus(options = {}) {
-  const { host = platform() } = options;
   const plan = await servicePlan(options);
   const service = await managedService(options);
   return {

@@ -13,11 +13,9 @@ import * as FlowService from "../../backend/flowService.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 
-// The Flow service outlives the app, so Settings needs to describe it and act
-// on it. All three methods fail soft: a status read reports whatever it could
-// learn, and an action reports why it did not happen. Nothing here rejects at
-// the renderer — a settings panel that vanishes on a bad read is a worse answer
-// than one that says the service is unreachable.
+// The Flow service outlives the app, so Settings describes it and acts on it.
+// All methods fail soft and never reject at the renderer: a status read reports
+// what it learned and an action reports why it did not happen.
 
 /** Host facts the plain service module takes as input, plus whatever a test
     overrode. Reading them here keeps that module free of `process`. */

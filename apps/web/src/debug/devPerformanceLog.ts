@@ -1,10 +1,7 @@
-// Fork-only diagnostics for "the app feels slow": logs what blocks the renderer,
-// how long route changes (opening a chat) take, and slow or large API responses.
-// Every line starts with LOG_PREFIX, so it can be grepped out of the Dev Flow log
-// (scripts/fork/dev-flow.sh forwards the renderer console there).
-//
-// On by default in development builds. Any other build turns it on with
-// `localStorage.setItem("flow:perf-log", "1")` and a reload.
+// Fork-only slowness diagnostics: renderer stalls, route timings, slow or large API
+// responses. Lines start with LOG_PREFIX so they can be grepped from the Dev Flow log.
+// On in development builds; elsewhere `localStorage.setItem("flow:perf-log", "1")`
+// and a reload turn it on.
 
 import type { AnyRouter } from "@tanstack/react-router";
 

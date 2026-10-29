@@ -16,15 +16,10 @@ import * as ElectronShell from "../../electron/ElectronShell.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 
-// The four things the in-window recovery screen can do when the desktop could
-// not attach to the Flow service. Like the Settings panel next door, every
-// method fails soft: a screen whose only job is to get the user unstuck must
-// never be the thing that throws.
-//
-// None of these starts a server of ours. Retry re-runs the attach (which may
-// adopt again), open-in-browser hands the *running* service to the browser,
-// and the legacy relaunch is the one path back to a private child — explicitly
-// chosen by the user, for one launch.
+// The recovery screen's actions when the desktop could not attach to the Flow
+// service. Every method fails soft: the screen that gets the user unstuck must
+// never throw. None starts a server of ours; only the legacy relaunch, chosen
+// by the user for one launch, goes back to a private child.
 
 const failed = (detail: string): DesktopFlowServiceRecoveryResult => ({ ok: false, detail });
 const succeeded: DesktopFlowServiceRecoveryResult = { ok: true, detail: null };

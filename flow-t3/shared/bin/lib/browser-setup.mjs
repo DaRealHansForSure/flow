@@ -1,8 +1,8 @@
-import { randomBytes, createHash } from "node:crypto";
-import { hostname } from "node:os";
-import { basename } from "node:path";
-import { spawn } from "node:child_process";
-import { createInterface } from "node:readline/promises";
+import * as NodeCrypto from "node:crypto";
+import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
+import * as NodeChildProcess from "node:child_process";
+import * as NodeReadlinePromises from "node:readline/promises";
 import { connectionUrl, discoverRemote } from "./remote-setup.mjs";
 export function setupTarget(value) {
   const url = new URL(connectionUrl(value));
@@ -31,7 +31,7 @@ export async function reuseBrowserConnection(value, saved, discover = discoverRe
 export async function browserSetup(value, repoDir, defaults, all, saved = null) {
   const { project, origin } = setupTarget(value);
   if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error("Browser setup requires an interactive terminal for local workspace approval.");
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const rl = NodeReadlinePromises.createInterface({ input: process.stdin, output: process.stdout });
   let harnesses;
   try {
     console.log(`\nConnect ${repoDir} to ${origin}/${project}\nDetected/selected tools: ${defaults.join(", ") || "none"}\nAvailable: ${all.join(", ")}\nThis installs project knowledge access and workspace session capture. It does not enable remote execution.`);
@@ -45,12 +45,13 @@ export async function browserSetup(value, repoDir, defaults, all, saved = null) 
     console.log("Reusing the saved authorized connection; browser approval is not needed.");
     return { ...reused, harnesses, repoDir };
   }
-  const secret = randomBytes(32).toString("hex");
-  const { ticket, code } = await post(origin, { action: "start", project, machine: hostname(), workspace: basename(repoDir), challenge: createHash("sha256").update(secret).digest("hex") });
+  const secret = NodeCrypto.randomBytes(32).toString("hex");
+  const { ticket, code } = await post(origin, { action: "start", project, machine: NodeOS.hostname(), workspace: NodePath.basename(repoDir), challenge: NodeCrypto.createHash("sha256").update(secret).digest("hex") });
   const url = `${origin}/connect?ticket=${encodeURIComponent(ticket)}`;
   console.log(`\nConfirm code ${code} in your browser. Approve only if it matches.\n${url}\nWaiting for browser approval…`);
+  // oxlint-disable-next-line t3code/no-global-process-runtime -- Plain Node CLI outside the Effect runtime, so HostProcess is not available.
   const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "explorer.exe" : "xdg-open";
-  const child = spawn(command, [url], { stdio: "ignore", detached: true });
+  const child = NodeChildProcess.spawn(command, [url], { stdio: "ignore", detached: true });
   child.on("error", () => console.log("Open the URL above in your browser.")); child.unref();
   const deadline = Date.now() + 10 * 60_000;
   while (Date.now() < deadline) {
@@ -64,5 +65,5 @@ export async function browserSetup(value, repoDir, defaults, all, saved = null) 
   throw new Error("Setup expired; run the command again.");
 }
 export async function completeBrowserSetup(connection, harnesses) {
-  await post(connection.origin, { action: "complete", harnesses, workspace: basename(connection.repoDir), machine: hostname(), workspaceId: createHash("sha256").update(connection.token + connection.repoDir).digest("hex") }, connection.token);
+  await post(connection.origin, { action: "complete", harnesses, workspace: NodePath.basename(connection.repoDir), machine: NodeOS.hostname(), workspaceId: NodeCrypto.createHash("sha256").update(connection.token + connection.repoDir).digest("hex") }, connection.token);
 }

@@ -1,13 +1,9 @@
 import { PRIMARY_LOCAL_ENVIRONMENT_ID, type DesktopAttachFailure } from "@t3tools/contracts";
 
 /**
- * Why the desktop could not attach to the Flow service, if that is what
- * happened. The desktop bridge parks the failure on the primary bootstrap with
- * null endpoints, so this is a synchronous read of a fact the main process
- * already decided — the renderer never probes for it.
- *
- * Null everywhere else: browser hosts have no bridge, and a desktop that
- * attached has no failure to report.
+ * Why the desktop could not attach to the Flow service, read synchronously from
+ * the primary bootstrap where the main process parked it; the renderer never
+ * probes. Null in browsers and on a desktop that attached.
  */
 export function readPrimaryAttachFailure(): DesktopAttachFailure | null {
   const bootstraps = window.desktopBridge?.getLocalEnvironmentBootstraps() ?? [];

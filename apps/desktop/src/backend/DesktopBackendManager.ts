@@ -81,10 +81,8 @@ export interface PreflightFailure {
   readonly fatal: boolean;
   readonly retryLimit?: number;
   // Set only by an attached backend (DesktopAttachedBackend.ts), where the
-  // failure is about the *service* rather than this app's ability to spawn a
-  // child. `reason` stays the human sentence; `kind` is what the UI branches
-  // on to offer the right recovery (update, start the service, install it,
-  // retry).
+  // failure is about the *service*, not spawning a child. `reason` stays the
+  // human sentence; the UI branches on `kind` to offer the right recovery.
   readonly attach?: AttachFailure;
 }
 
@@ -247,11 +245,10 @@ export interface DesktopBackendInstance {
   readonly start: Effect.Effect<void>;
   readonly stop: (options?: { readonly timeout?: Duration.Duration }) => Effect.Effect<void>;
   readonly currentConfig: Effect.Effect<Option.Option<DesktopBackendStartConfig>>;
-  // Mints a single-use bootstrap credential for this instance's server on
-  // request; `DesktopLocalEnvironmentAuth` exchanges it for the renderer's
-  // bearer. Only backends that cannot carry a token in their config (the
-  // attached Flow service) implement it: `currentConfig` must stay synchronous
-  // because the renderer bridge reads it over a sync IPC channel.
+  // Mints a single-use bootstrap credential that `DesktopLocalEnvironmentAuth`
+  // exchanges for the renderer's bearer. Only the attached Flow service needs
+  // it: `currentConfig` must stay synchronous, as the renderer bridge reads it
+  // over a sync IPC channel, so it cannot mint.
   readonly mintBootstrapCredential?: Effect.Effect<Option.Option<string>>;
   // Where this instance's server currently answers, or None when it has none
   // (not started, or attach failed). Cheap and side-effect free on purpose:
