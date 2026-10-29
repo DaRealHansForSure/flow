@@ -2591,3 +2591,15 @@ code {
     animation: none;
   }
 }
+
+/* Flow: clickable controls show the hand cursor, including plain buttons outside components/ui.
+   Utilities such as cursor-default still win, since they come after the base layer. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  label[for] {
+    cursor: pointer;
+  }
+}
