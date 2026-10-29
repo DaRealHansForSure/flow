@@ -1,5 +1,5 @@
 import { useProjectBrainSetup } from "./brain/useProjectBrainSetup";
-import { ChatBrainPanel } from "./brain/ChatBrainPanel";
+import { useChatBrain } from "./brain/useChatBrain";
 import { workspaceAreaProps } from "../lib/workspaceFocus";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
@@ -1076,6 +1076,20 @@ export default function ChatView(props: ChatViewProps) {
       ? scopeProjectRef(activeThreadEnvironmentId, activeThreadProjectId)
       : null;
   const activeProject = useProject(activeProjectRef);
+  // Flow: the chat's Brain context, shown in the right panel's Brain tab.
+  const brainThreadId = isServerThread && activeThreadRef ? activeThreadRef.threadId : null;
+  const chatBrain = useChatBrain({
+    threadRef: activeThreadRef,
+    environmentId: activeProjectRef?.environmentId ?? null,
+    threadId: brainThreadId,
+    projectId: activeProjectRef?.projectId ?? null,
+    revealPanelByDefault: !shouldUsePlanSidebarSheet,
+  });
+  const openBrainSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "brain");
+    }
+  });
   const activeProjectSettings = resolveProjectSettings(
     settings,
     activeProject?.id ?? null,
@@ -3172,6 +3186,7 @@ export default function ChatView(props: ChatViewProps) {
         onOpenFile: openFileSurfaceStable,
         onPendingChange: handleFilePendingChangeStable,
       }}
+      brain={{ threadId: brainThreadId, chatBrain }}
     />
   ) : null;
   const panelToggleControlProps = {
@@ -3275,8 +3290,7 @@ export default function ChatView(props: ChatViewProps) {
           />
         </header>
 
-        {/* Chat and its visible Flow context. */}
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
+        <div className="relative flex min-h-0 min-w-0 flex-1">
           <ThreadFindCanvas
             findOptions={{
               skills: timelineSkills,
@@ -3818,14 +3832,6 @@ export default function ChatView(props: ChatViewProps) {
               onPrepared={handlePreparedPullRequestThreadStable}
             />
           </ThreadFindCanvas>
-          {activeThreadRef && activeProjectRef ? (
-            <ChatBrainPanel
-              key={`${activeThreadRef.environmentId}:${activeProjectRef.projectId}:${activeThreadRef.threadId}:${isServerThread}`}
-              environmentId={activeThreadRef.environmentId}
-              threadId={isServerThread ? activeThreadRef.threadId : null}
-              projectId={activeProjectRef.projectId}
-            />
-          ) : null}
         </div>
 
         <ChatTerminalDrawers
@@ -3891,6 +3897,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequest={addPullRequestSurfaceStable}
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
+          onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}

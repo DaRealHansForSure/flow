@@ -1,20 +1,22 @@
 # Worklog
 
-Updated: 2026-10-29 23:58
+Updated: 2026-10-30 00:40
 
 ## Current focus
 
-- **Topic:** Auto-Docs and Auto-Skills switches for the Brain's notes agent
-- **Goal:** Turn either output off globally, with per-project overrides that inherit when unset
-- **Branch:** feat/curation-switches (worktree .t3/worktrees/curation-switches)
-- **Last step done:** Settings, curator enforcement (prompt, refusing write tool, renewal on
-  change) and the web switches in Settings > General > Brain and project settings
-- **Next step:** Owner review, one check in the Dev Flow, then merge into develop with --no-ff
-- **Open questions / blockers:** Mobile has no rows for the switches yet (server enforces
-  them); 9 tests in orchestrator test/curation.test.ts already fail on develop (memory writes)
+- **Topic:** First own release of the fork after the T3 v0.1.5 sync
+- **Goal:** Owner runs Flow service and desktop built from DaRealHansForSure/flow
+- **Branch:** develop (all topics merged, nothing pushed)
+- **Last step done:** Brain tab, close confirmation, Auto-Docs/Auto-Skills switches, lint
+  and knip cleanup, Linux-only release workflows, fork as update source merged
+- **Next step:** Owner tries the Dev Flow; then push, tag flow-v0.2.0 and
+  flow-desktop-v0.2.0, back up, move the stale statev2.sqlite aside, install from the fork
+- **Open questions / blockers:** Codex/OpenCode notes-agent flags untested; four Brain web
+  tests need a rewrite without react-test-renderer; 9 old curation tests fail
 
 ## Finished features
 
+- 2026-10-30 - Brain tab, close confirmation, Auto-Docs/Auto-Skills switches, lint cleanup (develop)
 - 2026-10-29 - T3 Code v0.1.5 sync, telemetry opt-in, mobile Brain screen (merged into develop)
 - 2026-10-29 - Brain backup script scripts/fork/backup-brain.sh (merged into develop)
 - 2026-10-29 - Pull requests switch in Settings, server to mobile (merged into develop)
@@ -25,7 +27,7 @@ Updated: 2026-10-29 23:58
 
 ## History
 
-- 2026-10-29 23:58 - Auto-Docs/Auto-Skills switches: settings, curator gate, web rows
+- 2026-10-30 00:10 - Brain moved into the right panel as a tab; header button with update dot
 - 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
 - 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)
 - 2026-10-29 21:30 - Sync: Brain hooks into RunExecutionService via BrainChatTurns reference

@@ -239,11 +239,15 @@ brain. Choose another brain, use **New brain** to create and connect one, or sel
 to disconnect. One brain is shared by all checkouts of the same repository, including checkouts
 added later. If older checkouts used different brains, choose one for the project to resolve the conflict.
 
-In a chat with no connected brain, you can also use **Connect brain** in the Flow side panel
-to choose or create one for the project. Before the first message in an unconfigured project,
-Flow offers the same choice. **Continue without a brain** is remembered for the project across
-chats and devices. Chats then run without Flow orientation or memory capture; you can connect
-a brain later from the side panel or project settings.
+Before the first message in an unconfigured project, Flow offers the same choice. **Continue
+without a brain** is remembered for the project across chats and devices. Chats then run
+without Flow orientation or memory capture; you can connect a brain later in project settings.
+
+In a chat with a brain, the **Brain** tab of the right panel shows the graph, Auto-Docs and the
+conversation notes. A new chat opens it by itself. Close it like any other tab and that chat
+keeps it closed; the Brain button in the chat header, the panel's new-tab menu or **Show Brain
+for this chat** in the command palette bring it back. A dot on the button means the brain is
+updating the chat's notes. Chats without a brain show neither tab nor button.
 
 Choose a brain for the project to give its chats Flow's graph, memory, and committed-source
 access. The next regular message automatically supplies Flow's orientation, including in an
@@ -311,6 +315,6 @@ includes a skill catalog, and agents can use `list_skills` and `read_skill` to f
 procedure. **Download SKILL.md** saves a portable copy. Downloading does not install the skill
 into a provider's local skill directory or slash menu.
 
-The chat panel and Brain page read from the selected brain. Switching brains changes the
+The Brain tab and Brain page read from the selected brain. Switching brains changes the
 available documents; disconnecting stops further capture and reads. Indexed source references
 may describe an older revision than the current checkout.

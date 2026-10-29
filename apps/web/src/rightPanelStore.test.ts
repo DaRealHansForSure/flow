@@ -217,6 +217,60 @@ describe("rightPanelStore", () => {
     },
   );
 
+  // Flow: the Brain tab a chat starts with.
+  it.each(["one", "all", "others", "right"])(
+    "opens the Brain tab once per chat and keeps it closed across reload after closing %s",
+    (mode) => {
+      const store = useRightPanelStore.getState();
+      store.openBrainByDefault(refA, true);
+      expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("brain");
+
+      store.open(refA, "files");
+      store.moveSurface(refA, "brain", 1);
+      store.activateSurface(refA, "brain");
+      if (mode === "one") store.closeSurface(refA, "brain");
+      if (mode === "all") store.closeAllSurfaces(refA);
+      if (mode === "others") store.closeOtherSurfaces(refA, "files");
+      if (mode === "right") store.closeSurfacesToRight(refA, "files");
+      const persisted = JSON.parse(
+        JSON.stringify({ byThreadKey: useRightPanelStore.getState().byThreadKey }),
+      );
+      useRightPanelStore.setState(migratePersistedRightPanelState(persisted));
+      store.openBrainByDefault(refA, true);
+      const hasBrainTab = () =>
+        selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA).surfaces.some(
+          (surface) => surface.kind === "brain",
+        );
+      expect(hasBrainTab()).toBe(false);
+
+      store.toggle(refA, "brain");
+      expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("brain");
+      store.toggle(refA, "brain");
+      expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBeNull();
+      expect(hasBrainTab()).toBe(true);
+    },
+  );
+
+  it("adds the default Brain tab behind a tab the user opened, and only reveals an empty panel", () => {
+    const store = useRightPanelStore.getState();
+    store.openFile(refA, "src/app.ts");
+    store.openBrainByDefault(refA, true);
+    expect(selectActiveRightPanelSurface(useRightPanelStore.getState().byThreadKey, refA)?.id).toBe(
+      "file:src/app.ts",
+    );
+    expect(
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA).surfaces.map(
+        (surface) => surface.id,
+      ),
+    ).toEqual(["file:src/app.ts", "brain"]);
+
+    store.openBrainByDefault(refB, false);
+    const sheetChat = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB);
+    expect(sheetChat.isOpen).toBe(false);
+    expect(sheetChat.surfaces).toEqual([{ id: "brain", kind: "brain" }]);
+    expect(store.getUserActionRevision(refB)).toBe(0);
+  });
+
   const completedDiff = { kind: "diff", turnId: RunId.make("turn-1") } as const;
   const linkedPullRequest = pullRequestSurface({
     projectId: "project-a",

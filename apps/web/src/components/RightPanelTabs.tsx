@@ -28,6 +28,7 @@ import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dn
 import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
+  BrainCircuitIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -130,6 +131,8 @@ export interface RightPanelTabsProps {
   onAddPullRequest: () => void;
   onAddPullRequests: () => void;
   onAddDevice: () => void;
+  /** Flow: offered only in a chat with a Brain. */
+  onAddBrain?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -272,6 +275,23 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
   );
 }
 
+/** Flow: the Brain entry of the surface launchers, present only when the chat has a Brain. */
+function brainSurfaceActions(onAddBrain: (() => void) | undefined) {
+  if (onAddBrain === undefined) {
+    return [];
+  }
+  return [
+    {
+      label: "Brain",
+      icon: BrainCircuitIcon,
+      shortcut: "R",
+      available: true,
+      disabledReason: "Available in a chat with a Brain.",
+      onClick: onAddBrain,
+    },
+  ];
+}
+
 function SurfaceMenuItem(props: {
   available: boolean;
   disabledReason?: string;
@@ -304,6 +324,7 @@ function RightPanelEmptyState(props: {
   onAddPullRequest: () => void;
   onAddPullRequests: () => void;
   onAddDevice: () => void;
+  onAddBrain: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -372,6 +393,8 @@ function RightPanelEmptyState(props: {
       disabledReason: SURFACE_UNAVAILABLE_HINTS.device,
       onClick: props.onAddDevice,
     },
+    // Flow: the Brain tab, left out entirely in a chat without a Brain.
+    ...brainSurfaceActions(props.onAddBrain),
   ] as const;
 
   type SurfaceAction = (typeof actions)[number];
@@ -555,6 +578,9 @@ function surfaceTitle(
       return `#${surface.number}`;
     case "pull-requests":
       return "Pull requests";
+    // Flow: the Brain tab.
+    case "brain":
+      return "Brain";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -645,6 +671,9 @@ function SurfaceIcon({
       );
     case "pull-requests":
       return <PullRequestGlyph.link className="size-3 shrink-0" />;
+    // Flow: the Brain tab.
+    case "brain":
+      return <BrainCircuitIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -1066,6 +1095,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       disabledReason: SURFACE_DISABLED_REASONS.device,
       onClick: props.onAddDevice,
     },
+    // Flow: the Brain tab, left out entirely in a chat without a Brain.
+    ...brainSurfaceActions(props.onAddBrain),
   ] as const;
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1440,6 +1471,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddPullRequest={props.onAddPullRequest}
             onAddPullRequests={props.onAddPullRequests}
             onAddDevice={props.onAddDevice}
+            onAddBrain={props.onAddBrain}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}

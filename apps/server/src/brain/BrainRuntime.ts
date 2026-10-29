@@ -676,9 +676,11 @@ export class BrainRuntime {
       this.checkingClis = undefined;
     }
   }
-  async state(projectId?: ProjectId, metadataOnly = false): Promise<BrainState> {
+  /** With threadId, a project's workspaces narrow to that chat's own Brain choice (fork). */
+  async state(projectId?: ProjectId, metadataOnly = false, threadId?: string): Promise<BrainState> {
     // Provider installation can finish after the shared Brain runtime starts.
     await this.refreshClis();
+    const selectedBrainId = this.selectedBrainId(projectId, threadId);
     if (this.db && !this.db.isRunning)
       this.database = {
         status: "error",
@@ -694,10 +696,7 @@ export class BrainRuntime {
       clis: this.clis,
       workspaces: await Promise.all(
         this.workspaces
-          .filter(
-            (workspace) =>
-              projectId === undefined || this.projectBrainId(projectId) === workspace.id,
-          )
+          .filter((workspace) => projectId === undefined || workspace.id === selectedBrainId)
           .map(async (workspace) => {
             let result: BrainWorkspace = { ...workspace, knowledge: emptyKnowledge() };
             if (workspace.remote) {
@@ -1323,6 +1322,15 @@ export class BrainRuntime {
       return choice ?? undefined;
     }
     return this.projectBrainId(projectId);
+  }
+  private selectedBrainId(projectId: ProjectId | undefined, threadId: string | undefined) {
+    if (projectId === undefined) {
+      return undefined;
+    }
+    if (threadId === undefined) {
+      return this.projectBrainId(projectId);
+    }
+    return this.threadBrainId(projectId, threadId);
   }
   /** Gives one chat its own Brain, or none with null, regardless of its project (fork). */
   bindThread(threadId: string, workspaceId: string | null | undefined) {

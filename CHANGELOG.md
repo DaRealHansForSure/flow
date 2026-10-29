@@ -50,6 +50,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Flow installs and updates from this fork (DaRealHansForSure/flow): the `flow` CLI,
   `install.sh` / `install.ps1` and the app's links point here instead of samyakkkk/flow.
 
+- The Brain next to a chat is now a "Brain" tab in the right panel, so it can be closed
+  like any other tab. A chat with a Brain starts with the tab open, and each chat remembers
+  when you close it. A Brain button in the chat header opens it (a dot on it while the Brain
+  updates the chat's notes), as do the panel's new-tab menu and the command palette. Chats
+  without a Brain show neither tab nor button.
+
 - "No project" is always the first entry in the command palette's project list, ahead of
   the current project.
 
@@ -67,6 +73,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   agent on an inexpensive model.
 
 ### Fixed
+
+- A chat that picked its own Brain shows that Brain next to it, and a "No Brain" chat shows
+  none, instead of the project's Brain.
 
 - "No project" chats now show in the Dev Flow: its data moved from `.t3/dev` inside the
   checkout to `~/.flow-dev`. `dev-flow.sh` moves an existing `.t3/dev` there once, with its
