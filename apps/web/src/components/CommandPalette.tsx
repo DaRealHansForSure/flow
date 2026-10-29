@@ -794,9 +794,8 @@ function OpenCommandPaletteDialog(props: {
     );
     if (scratchTargetEnvironmentId === null) return projectItems;
 
-    const noProjectIndex = pickerProjects[0] !== undefined && isScratch(pickerProjects[0]) ? 0 : 1;
+    // Flow: "No project" always leads the list, ahead of the current project.
     return [
-      ...projectItems.slice(0, noProjectIndex),
       {
         kind: "action" as const,
         value: "new-thread-in:no-project",
@@ -806,7 +805,7 @@ function OpenCommandPaletteDialog(props: {
         shortcutCommand: "chat.newWithoutProject" as const,
         run: () => startScratchThread(scratchTargetEnvironmentId),
       },
-      ...projectItems.slice(noProjectIndex),
+      ...projectItems,
     ];
   })();
 

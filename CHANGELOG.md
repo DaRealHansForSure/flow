@@ -37,6 +37,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- "No project" is always the first entry in the command palette's project list, ahead of
+  the current project.
+
 - Telemetry is off by default: no usage data, no relay connection traces and no mobile crash
   reports unless you turn them on (`T3CODE_TELEMETRY_ENABLED=true`, Settings > About >
   Diagnostics > Send crash reports on mobile). The welcome screen and the telemetry guide
