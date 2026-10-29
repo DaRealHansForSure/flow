@@ -8,7 +8,8 @@ and installing from a checkout. Desktop downloads are in the
 
 ## Requirements
 
-- An Apple Silicon Mac running macOS 15 or newer, or Ubuntu 24.04-compatible Linux x64, with an internet connection.
+- Ubuntu 24.04-compatible Linux x64 with an internet connection. Windows x64 can install Flow
+  with `install.ps1` from the [README](../../README.md#install) to use a Brain hosted elsewhere.
 - A supported provider account; configure its CLI and login in Flow's provider settings.
 
 Flow includes its own Node runtime and ready-built dependencies. You do not need
@@ -17,7 +18,7 @@ Node, npm, Homebrew, Docker, Git, or a compiler to install it.
 ## Install with bash
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/samyakkkk/flow/release/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.sh | bash
 ```
 
 The installer verifies the release archive's SHA-256 checksum and installs the
@@ -28,7 +29,7 @@ automatically on first use.
 When you run it in a terminal, the installer starts Flow and opens it in your
 browser. Afterwards `flow` starts or reuses that service and opens it again;
 `flow --no-open` prints the link instead, for a machine without a browser.
-Installing does not add a desktop app — the signed [desktop app](https://github.com/samyakkkk/flow/releases)
+Installing does not add a desktop app: the [desktop app](https://github.com/DaRealHansForSure/flow/releases)
 is a separate download, and both use the same local service and Brain.
 
 The optional terminal command is installed in `~/.local/bin`. Add that directory
@@ -64,15 +65,14 @@ Create projects in the app and choose their Brain. See
 
 ## Install from a checkout
 
-For development, or Linux x64 where the ready-built installer is not yet available,
-install Node.js 24.13.1+ within 24.x and Git, then run:
+For development, install Node.js 24.13.1+ within 24.x and Git, then run:
 
 Linux Brain support requires Ubuntu 24.04 or compatible system libraries
 (glibc 2.38 and GLIBCXX_3.4.32 or newer). Debian 12 is not supported by the
 bundled native database.
 
 ```bash
-git clone --branch main-v2 --single-branch https://github.com/samyakkkk/flow.git
+git clone --branch main --single-branch https://github.com/DaRealHansForSure/flow.git
 cd flow
 bash scripts/install-flow.sh
 export PATH="$HOME/.local/bin:$PATH"
@@ -86,9 +86,8 @@ Use a different `--prefix` if you want to retain both launchers.
 
 ## Desktop
 
-Prefer a native window? Download the Flow desktop app for macOS (Apple Silicon or
-Intel) or Linux x64 from the links in the [README](../../README.md#install). It is
-signed, notarized, and updates itself.
+Prefer a native window? Download the Flow desktop app for Linux x64 (AppImage) from the
+links in the [README](../../README.md#install). It updates itself.
 
 The desktop app connects to the same local Flow service as the `flow` command, so
 installing both is fine: quitting the app leaves the service, its Brain, and your

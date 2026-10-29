@@ -2,8 +2,8 @@
 
 ## GitHub release installation
 
-Flow checks for a stable GitHub release at startup and every six hours while
-running. Bundled Mac installations download and verify a ready-built package in
+Flow checks this fork's GitHub releases for a stable release at startup and every
+six hours while running. Bundled installations download and verify a ready-built package in
 a new directory. They do not run npm or build the app during updates.
 
 When the update is prepared, **Update ready** appears in the browser app's
@@ -43,12 +43,12 @@ earlier installers added, since `flow` now opens your browser directly.
 ## Source-checkout installation
 
 The checkout launcher installed by `scripts/install-flow.sh` does not use GitHub
-release updates. From your Flow checkout on `main-v2`, finish active work, then
+release updates. From your Flow checkout on `main`, finish active work, then
 run each command only after the previous one succeeds:
 
 ```bash
 flow stop
-git pull --ff-only origin main-v2
+git pull --ff-only origin main
 bash scripts/install-flow.sh
 flow
 ```

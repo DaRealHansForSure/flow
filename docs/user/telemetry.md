@@ -11,7 +11,8 @@ include the provider, model, reasoning effort, permission mode, turn result, dur
 channel, and main-agent token totals when available. Flow also records Brain setup, repository
 indexing outcomes, anonymous tool usage, and background curation health. The same switch turns
 on relay connection traces to Axiom, which diagnose T3 Connect connectivity, in builds that carry
-a tracing endpoint.
+a tracing endpoint. A server that the `flow` command or the Flow service starts does not receive
+this variable, so both stay off there.
 
 Events do not include prompts, responses, file contents, authentication tokens, conversation IDs,
 raw provider events, or child-agent output. Child-agent token use is excluded from the totals.
@@ -20,9 +21,9 @@ Relay tracing stays off when `T3CODE_OTEL_SDK_DISABLED` or `OTEL_SDK_DISABLED` t
 OpenTelemetry export off. The web app in a browser, including one the `t3` CLI opens, does not
 read these variables.
 
-The desktop app reads `T3CODE_TELEMETRY_ENABLED` from your shell profile (for example
-`~/.zshrc`) on macOS and Linux, so export it there and restart the app. On Windows, set it as a
-user environment variable.
+When the desktop app starts its own server instead of using the Flow service, it reads
+`T3CODE_TELEMETRY_ENABLED` from your shell profile (for example `~/.zshrc`) on macOS and Linux,
+so export it there and restart the app. On Windows, set it as a user environment variable.
 
 ## Mobile app crash reports
 

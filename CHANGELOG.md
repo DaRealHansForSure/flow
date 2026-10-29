@@ -50,6 +50,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- FORK.md explains what this fork changes, and the README and user guides match it: Linux
+  downloads, opt-in telemetry, the Brain tab, per-chat Brains and the Auto-Docs and Auto-Skills
+  switches.
+
 - In a chat without a Brain, the right panel lists "Brain" greyed out with a hint instead of
   leaving it out.
 
