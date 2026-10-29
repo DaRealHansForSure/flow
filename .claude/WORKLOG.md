@@ -1,18 +1,19 @@
 # Worklog
 
-Updated: 2026-10-29 22:30
+Updated: 2026-10-29 22:50
 
 ## Current focus
 
-- **Topic:** Pull requests can be turned off (Settings > Source Control)
-- **Goal:** One switch stops all PR/MR lookups and hides PR features everywhere
-- **Branch:** feat/pull-request-toggle
-- **Last step done:** Contracts, server gates, client-runtime, web, mobile, docs; focused tests pass
-- **Next step:** Owner tries the switch in the Dev Flow (restart dev-flow.sh); then merge into develop
-- **Open questions / blockers:** Older servers (installed 0.1.15) ignore the setting until updated
+- **Topic:** Slow route loads in the Dev Flow: loading indicator, then faster loads
+- **Goal:** No blank content pane; routes open in seconds, not 20-40 s
+- **Branch:** feat/route-loading-indicator
+- **Last step done:** RoutePendingView as router defaultPendingComponent
+- **Next step:** Bundled dev (T3CODE_BUNDLED_DEV=1) in dev-flow.sh against per-module Babel cost
+- **Open questions / blockers:** none
 
 ## Finished features
 
+- 2026-10-29 - Pull requests switch in Settings, server to mobile (merged into develop)
 - 2026-10-29 - Working Dev Flow: CORS, log file, stop on window close (daf73c209)
 - 2026-10-29 - Dev Flow launcher scripts/fork/dev-flow.sh (35a521f5e)
 - 2026-10-29 - Service network access fix - merged into develop
@@ -20,6 +21,7 @@ Updated: 2026-10-29 22:30
 
 ## History
 
+- 2026-10-29 22:50 - [flow-perf]: routes 22-40 s on first open, Babel/React Compiler per module
 - 2026-10-29 22:30 - pullRequestsEnabled: server gates, capability folding, web and mobile
 - 2026-10-29 21:40 - Server traces: chat open 1-50ms server side, slowness is renderer
 - 2026-10-29 21:05 - One branch per topic; per-commit branches regrouped
