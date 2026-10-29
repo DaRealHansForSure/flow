@@ -1,7 +1,7 @@
 // Fork-only: the chat header's way into the Brain tab. It behaves like T3's diff toggle:
 // opens or focuses the tab, and a press while the tab is showing hides the panel. While
-// the tab is not showing, a static dot says the Brain is writing this chat's notes; a red
-// icon says the Brain failed to answer.
+// the tab is not showing, a static dot says the Brain is writing this chat's notes. An amber
+// icon says the Brain has not answered yet, a red one that it failed to answer.
 
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
@@ -23,8 +23,13 @@ export function BrainHeaderButton({ threadRef }: { readonly threadRef: ScopedThr
   }
   const showUpdateDot = status.updating && !brainShowing && status.failure === null;
   let label = "Show Brain";
+  let iconClassName = "size-4";
   if (status.failure !== null) {
     label = `Brain unavailable: ${status.failure}`;
+    iconClassName = "size-4 text-destructive";
+  } else if (status.loading) {
+    label = "Brain is loading";
+    iconClassName = "size-4 text-warning";
   } else if (brainShowing) {
     label = "Hide Brain";
   } else if (showUpdateDot) {
@@ -41,9 +46,7 @@ export function BrainHeaderButton({ threadRef }: { readonly threadRef: ScopedThr
           variant="ghost"
           size="sm"
         >
-          <BrainCircuitIcon
-            className={status.failure === null ? "size-4" : "size-4 text-destructive"}
-          />
+          <BrainCircuitIcon className={iconClassName} />
         </Toggle>
         {showUpdateDot ? (
           <span

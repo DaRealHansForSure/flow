@@ -9,10 +9,12 @@ interface ChatBrainStatus {
   readonly updating: boolean;
   /** Why the Brain did not answer for this chat; null while it answers. */
   readonly failure: string | null;
+  /** True until the Brain's first answer for this chat arrived. */
+  readonly loading: boolean;
 }
 
 interface ChatBrainStatusStoreState {
-  /** Only chats with a Brain, or whose Brain failed to answer, have an entry. */
+  /** Chats with a Brain, a Brain still loading, or a Brain that failed to answer. */
   readonly byThreadKey: Readonly<Record<string, ChatBrainStatus>>;
   readonly setStatus: (threadKey: string, status: ChatBrainStatus | null) => void;
   /** The failure last announced per environment, so one outage raises one toast. */
@@ -33,7 +35,11 @@ export const useChatBrainStatusStore = create<ChatBrainStatusStoreState>()((set)
         const { [threadKey]: _removed, ...rest } = state.byThreadKey;
         return { byThreadKey: rest };
       }
-      if (current?.updating === status.updating && current.failure === status.failure) {
+      if (
+        current?.updating === status.updating &&
+        current.failure === status.failure &&
+        current.loading === status.loading
+      ) {
         return state;
       }
       return { byThreadKey: { ...state.byThreadKey, [threadKey]: status } };
