@@ -20,6 +20,7 @@ import {
   BrainState,
   ChatMemoryList,
   ProjectId,
+  type BrainChatCurationOutput,
 } from "@t3tools/contracts";
 import type { BrainRuntime } from "./BrainRuntime.ts";
 import {
@@ -36,7 +37,7 @@ export type BrainClient = Pick<
   | "projectBrainId"
   | "threadBrainId"
   | "bindThread"
-  | "setThreadNotesAgent"
+  | "setThreadCurationChoice"
   | "callProjectTool"
   | "captureProjectEvent"
   | "bindProject"
@@ -189,7 +190,7 @@ export async function serveSharedBrain(
             !input.command ||
             input.command.action === "bindProject" ||
             input.command.action === "bindThread" ||
-            input.command.action === "setChatNotesAgent"
+            input.command.action === "setChatCurationOutput"
           )
             throw Error("Project and chat bindings belong to the calling instance");
           result = await runtime.command(input.command);
@@ -358,9 +359,13 @@ export class SharedBrainRuntime implements BrainClient {
     return pending;
   }
   /** The choice stays with this instance, which owns the chat; the source only gets the result. */
-  setThreadNotesAgent(threadId: string, enabled: boolean | undefined) {
+  setThreadCurationChoice(
+    threadId: string,
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ) {
     const pending = this.writes.then(() =>
-      this.projectBindings.setThreadNotesAgent(threadId, enabled),
+      this.projectBindings.setThreadCurationChoice(threadId, output, enabled),
     );
     this.writes = pending.catch(() => {});
     return pending;

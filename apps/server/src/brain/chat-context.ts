@@ -1,5 +1,12 @@
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
-import type { ChatAttachment, ProjectId, ServerSettings, ThreadId } from "@t3tools/contracts";
+import type {
+  BrainChatCuration,
+  BrainChatCurationChoice,
+  ChatAttachment,
+  ProjectId,
+  ServerSettings,
+  ThreadId,
+} from "@t3tools/contracts";
 import type { BrainCurationOutputs } from "@flow/brain-runtime";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import * as Effect from "effect/Effect";
@@ -8,6 +15,7 @@ import { makeBrainProjections } from "./brainProjections.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
 import type { BrainCapture } from "./session-worker.ts";
+import type { ChatCurationChoices } from "./project-bindings.ts";
 
 export interface BrainChatContext {
   readonly bindingKey: string;
@@ -125,7 +133,7 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
     const outputs = resolveChatCurationOutputs(
       settings,
       thread.value.projectId,
-      runtime.projectBindings?.threadNotesAgent(threadId),
+      runtime.projectBindings?.threadCurationChoices(threadId) ?? {},
     );
     yield* Effect.tryPromise({
       try: () =>
@@ -144,20 +152,43 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
   return capture;
 });
 /**
- * What the notes agent maintains for one chat: the chat's own Notes agent choice wins over the
- * global setting, and Auto-Docs and Auto-Skills come from the chat's project settings.
+ * What the notes agent maintains for one chat. The chat's own choice wins; without one the
+ * notes agent follows the global setting, and Auto-Docs and Auto-Skills follow the chat's
+ * project settings, which fall back to the global ones.
  */
+export function resolveChatCuration(
+  settings: ServerSettings,
+  projectId: ProjectId,
+  chatChoices: ChatCurationChoices,
+): BrainChatCuration {
+  const projectSettings = resolveProjectSettings(settings, projectId).settings;
+  return {
+    notesAgent: resolveChatCurationChoice(settings.brainNotesAgent, chatChoices.notesAgent),
+    autoDocs: resolveChatCurationChoice(projectSettings.brainAutoDocs, chatChoices.autoDocs),
+    autoSkills: resolveChatCurationChoice(projectSettings.brainAutoSkills, chatChoices.autoSkills),
+  };
+}
+/** The chat's curation as the Brain worker takes it with captures and chat reads. */
 export function resolveChatCurationOutputs(
   settings: ServerSettings,
   projectId: ProjectId,
-  chatNotesAgent: boolean | undefined,
+  chatChoices: ChatCurationChoices,
 ): Required<BrainCurationOutputs> {
-  const projectSettings = resolveProjectSettings(settings, projectId).settings;
+  const curation = resolveChatCuration(settings, projectId, chatChoices);
   return {
-    docs: projectSettings.brainAutoDocs,
-    skills: projectSettings.brainAutoSkills,
-    notesAgent: chatNotesAgent ?? settings.brainNotesAgent,
+    docs: curation.autoDocs.enabled,
+    skills: curation.autoSkills.enabled,
+    notesAgent: curation.notesAgent.enabled,
   };
+}
+function resolveChatCurationChoice(
+  inherited: boolean,
+  choice: boolean | undefined,
+): BrainChatCurationChoice {
+  if (choice === undefined) {
+    return { enabled: inherited, inherited };
+  }
+  return { enabled: choice, inherited, choice };
 }
 /** Preserve attachment-only requests without copying their binary contents into Brain capture. */
 export function formatBrainUserPrompt(message: {

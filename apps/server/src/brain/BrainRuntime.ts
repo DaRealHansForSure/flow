@@ -27,6 +27,7 @@ import {
   type BrainSource,
   type BrainWorkspace,
   type BrainKnowledge,
+  type BrainChatCurationOutput,
   type ProjectId,
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
@@ -970,7 +971,7 @@ export class BrainRuntime {
     )
       throw new Error("This Brain is moving to Cloud. Reconnect to retry if the transfer failed.");
     if (command.action === "read") return null;
-    if (command.action === "readChat" || command.action === "setChatNotesAgent")
+    if (command.action === "readChat" || command.action === "setChatCurationOutput")
       throw new Error("Chat must be resolved by the server.");
     if (command.action === "readDocument")
       throw new Error("Document reads must be resolved by the server.");
@@ -1349,11 +1350,18 @@ export class BrainRuntime {
     this.commands = result.catch(() => {});
     return result;
   }
-  /** Turns the notes agent on or off for one chat; undefined follows the setting again (fork). */
-  setThreadNotesAgent(threadId: string, enabled: boolean | undefined) {
+  /**
+   * Turns the notes agent, Auto-Docs or Auto-Skills on or off for one chat; undefined follows
+   * the project or global setting again (fork).
+   */
+  setThreadCurationChoice(
+    threadId: string,
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ) {
     const result = this.commands.then(async () => {
       if (this.closed) throw new Error("Brain runtime is shutting down.");
-      await this.projectBindings.setThreadNotesAgent(threadId, enabled);
+      await this.projectBindings.setThreadCurationChoice(threadId, output, enabled);
     });
     this.commands = result.catch(() => {});
     return result;

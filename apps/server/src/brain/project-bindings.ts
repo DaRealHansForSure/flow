@@ -3,7 +3,7 @@ import * as NodeFSP from "node:fs/promises";
 import * as NodePath from "node:path";
 import * as NodeCrypto from "node:crypto";
 import * as Schema from "effect/Schema";
-import type { ProjectId } from "@t3tools/contracts";
+import type { BrainChatCurationOutput, ProjectId } from "@t3tools/contracts";
 
 const decode = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.NullOr(Schema.String)));
 type Project = {
@@ -13,9 +13,20 @@ type Project = {
 };
 
 const threadKey = (threadId: string) => `thread:${threadId}`;
-const threadNotesAgentKey = (threadId: string) => `notes-agent:thread:${threadId}`;
-const NOTES_AGENT_ON = "on";
-const NOTES_AGENT_OFF = "off";
+// The notes agent's key predates the others; stored choices keep working under it.
+const CURATION_CHOICE_PREFIXES: Record<BrainChatCurationOutput, string> = {
+  notesAgent: "notes-agent",
+  autoDocs: "auto-docs",
+  autoSkills: "auto-skills",
+};
+const CURATION_OUTPUTS = Object.keys(CURATION_CHOICE_PREFIXES) as BrainChatCurationOutput[];
+const threadCurationKey = (threadId: string, output: BrainChatCurationOutput) =>
+  `${CURATION_CHOICE_PREFIXES[output]}:thread:${threadId}`;
+const CHOICE_ON = "on";
+const CHOICE_OFF = "off";
+
+/** A chat's own curation choices; a missing output follows its project or the global setting. */
+export type ChatCurationChoices = Partial<Record<BrainChatCurationOutput, boolean>>;
 
 /** A repository's brain is independent of its checkout ids. Null records an explicit disconnect. */
 export class ProjectBrainBindings {
@@ -129,28 +140,44 @@ export class ProjectBrainBindings {
     await this.persist({ ...rest, [threadKey(threadId)]: workspace });
   }
   /**
-   * A chat's own Notes agent choice (fork): true or false, or undefined when the chat follows
-   * the global setting. Kept beside the chat's Brain choice, on the instance that owns the chat.
+   * A chat's own choice for one curation output (fork): true or false, or undefined when the
+   * chat follows its project or the global setting. Kept beside the chat's Brain choice, on
+   * the instance that owns the chat.
    */
-  threadNotesAgent(threadId: string): boolean | undefined {
-    const choice = this.choices[threadNotesAgentKey(threadId)];
-    if (choice === NOTES_AGENT_ON) {
+  threadCurationChoice(threadId: string, output: BrainChatCurationOutput): boolean | undefined {
+    const choice = this.choices[threadCurationKey(threadId, output)];
+    if (choice === CHOICE_ON) {
       return true;
     }
-    if (choice === NOTES_AGENT_OFF) {
+    if (choice === CHOICE_OFF) {
       return false;
     }
     return undefined;
   }
-  /** Records a chat's Notes agent choice; undefined forgets it so the chat follows the setting. */
-  async setThreadNotesAgent(threadId: string, enabled: boolean | undefined) {
-    const { [threadNotesAgentKey(threadId)]: _previous, ...rest } = this.choices;
+  /** All of a chat's own curation choices. */
+  threadCurationChoices(threadId: string): ChatCurationChoices {
+    const choices: ChatCurationChoices = {};
+    for (const output of CURATION_OUTPUTS) {
+      const choice = this.threadCurationChoice(threadId, output);
+      if (choice !== undefined) {
+        choices[output] = choice;
+      }
+    }
+    return choices;
+  }
+  /** Records a chat's choice for one output; undefined forgets it so the chat follows again. */
+  async setThreadCurationChoice(
+    threadId: string,
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ) {
+    const key = threadCurationKey(threadId, output);
+    const { [key]: _previous, ...rest } = this.choices;
     if (enabled === undefined) {
       await this.persist(rest);
       return;
     }
-    const choice = enabled ? NOTES_AGENT_ON : NOTES_AGENT_OFF;
-    await this.persist({ ...rest, [threadNotesAgentKey(threadId)]: choice });
+    await this.persist({ ...rest, [key]: enabled ? CHOICE_ON : CHOICE_OFF });
   }
   private async persist(next: Record<string, string | null>) {
     await NodeFSP.mkdir(this.directory, { recursive: true });

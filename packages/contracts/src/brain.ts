@@ -173,6 +173,25 @@ export const BrainState = Schema.Struct({
   workspaces: Schema.Array(BrainWorkspace),
 });
 export type BrainState = typeof BrainState.Type;
+/** Fork: what the notes agent maintains, each switchable per chat. */
+export const BrainChatCurationOutput = Schema.Literals(["notesAgent", "autoDocs", "autoSkills"]);
+export type BrainChatCurationOutput = typeof BrainChatCurationOutput.Type;
+/**
+ * One output for one chat: whether it is on, what Default gives (the project or global
+ * setting), and the chat's own choice when it has one.
+ */
+export const BrainChatCurationChoice = Schema.Struct({
+  enabled: Schema.Boolean,
+  inherited: Schema.Boolean,
+  choice: Schema.optionalKey(Schema.Boolean),
+});
+export type BrainChatCurationChoice = typeof BrainChatCurationChoice.Type;
+export const BrainChatCuration = Schema.Struct({
+  notesAgent: BrainChatCurationChoice,
+  autoDocs: BrainChatCurationChoice,
+  autoSkills: BrainChatCurationChoice,
+});
+export type BrainChatCuration = typeof BrainChatCuration.Type;
 export const ChatMemoryList = Schema.Struct({
   revision: Schema.optionalKey(Schema.String),
   consultedNodeIds: Schema.optionalKey(Schema.Array(Schema.String)),
@@ -191,13 +210,8 @@ export const ChatMemoryList = Schema.Struct({
   extractionIssue: Schema.optionalKey(BrainAgentIssue),
   /** The agent on this computer that writes this conversation's notes. */
   curatorCli: Schema.optionalKey(BrainCli),
-  /**
-   * Fork: whether the notes agent runs for this chat, and the chat's own choice; without a
-   * choice the chat follows the global Notes agent setting.
-   */
-  notesAgent: Schema.optionalKey(
-    Schema.Struct({ enabled: Schema.Boolean, choice: Schema.optionalKey(Schema.Boolean) }),
-  ),
+  /** Fork: what the notes agent maintains for this chat, and the chat's own choices. */
+  curation: Schema.optionalKey(BrainChatCuration),
 });
 export type ChatMemoryList = typeof ChatMemoryList.Type;
 export const BrainHarness = Schema.Literals([
@@ -292,12 +306,13 @@ export const BrainCommand = Schema.Union([
     threadId: ThreadId,
   }),
   /**
-   * Fork: turns the notes agent on or off for one chat; leaving enabled out follows the global
-   * setting again. Replies like readChat.
+   * Fork: turns the notes agent, Auto-Docs or Auto-Skills on or off for one chat; leaving
+   * enabled out follows the project or global setting again. Replies like readChat.
    */
   Schema.Struct({
-    action: Schema.Literal("setChatNotesAgent"),
+    action: Schema.Literal("setChatCurationOutput"),
     threadId: ThreadId,
+    output: BrainChatCurationOutput,
     enabled: Schema.optionalKey(Schema.Boolean),
   }),
   Schema.Struct({ action: Schema.Literal("create"), name: Schema.String, cli: BrainCli }),

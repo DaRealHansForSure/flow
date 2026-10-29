@@ -1,6 +1,11 @@
 import { BrainIcon } from "./BrainIcon";
 import { useState } from "react";
-import type { ChatMemoryList, EnvironmentId, ThreadId } from "@t3tools/contracts";
+import type {
+  BrainChatCurationChoice,
+  ChatMemoryList,
+  EnvironmentId,
+  ThreadId,
+} from "@t3tools/contracts";
 import {
   BrainCircuitIcon,
   ChevronDownIcon,
@@ -37,7 +42,7 @@ export function ChatBrainPanel({
   threadId: ThreadId | null;
   chatBrain: ChatBrain;
 }) {
-  const { response, brain, error, changedIds, savedNow, setNotesAgent } = chatBrain;
+  const { response, brain, error, changedIds, savedNow, setCurationOutput } = chatBrain;
   const [notesExpanded, setNotesExpanded] = useState(true);
   const [brainExpanded, setBrainExpanded] = useState(false);
   const [view, setView] = useState<string | null>(null);
@@ -51,7 +56,7 @@ export function ChatBrainPanel({
     setGraphAutoExpanded(true);
     setBrainExpanded(true);
   }
-  const notesAgentOff = notes?.notesAgent?.enabled === false;
+  const notesAgentOff = notes?.curation?.notesAgent.enabled === false;
   const memoryStatus = chatNotesStatus({
     hasBrain: brain !== undefined,
     notes,
@@ -245,8 +250,11 @@ export function ChatBrainPanel({
               </button>
             )}
           </div>
-          {brain && threadId && notes?.notesAgent ? (
-            <ChatNotesAgentControl notesAgent={notes.notesAgent} onChange={setNotesAgent} />
+          {brain && threadId && notes?.curation ? (
+            <ChatNotesAgentControl
+              notesAgent={notes.curation.notesAgent}
+              onChange={(enabled) => setCurationOutput("notesAgent", enabled)}
+            />
           ) : null}
           {notesExpanded && (
             <>
@@ -367,8 +375,8 @@ function ChatNotesAgentControl({
   notesAgent,
   onChange,
 }: {
-  readonly notesAgent: NonNullable<ChatMemoryList["notesAgent"]>;
-  readonly onChange: ChatBrain["setNotesAgent"];
+  readonly notesAgent: BrainChatCurationChoice;
+  readonly onChange: (enabled: boolean | undefined) => Promise<string | null>;
 }) {
   const [pendingChoice, setPendingChoice] = useState<NotesAgentChoice | null>(null);
   const savedChoice = notesAgentChoice(notesAgent.choice);
@@ -387,7 +395,7 @@ function ChatNotesAgentControl({
   };
   let hint = "Only for this chat.";
   if (shownChoice === "default") {
-    hint = notesAgent.enabled ? "Follows Settings: on." : "Follows Settings: off.";
+    hint = notesAgent.inherited ? "Follows Settings: on." : "Follows Settings: off.";
   }
   return (
     <div className="flex items-center gap-2 px-2 pb-1">

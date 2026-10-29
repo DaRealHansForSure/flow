@@ -348,3 +348,46 @@ NodeTest.test("a chat that starts with the notes agent off gets no notes until i
   NodeAssert.match(calls[0]!.input, /Notes are wanted now/);
   f.close();
 });
+
+NodeTest.test(
+  "Auto-Docs and Auto-Skills turned off for one chat by a read reach its next run, also after a restart",
+  async () => {
+    const calls: BrainCuratorRun[] = [];
+    const run = async (request: BrainCuratorRun) => {
+      calls.push(request);
+      return result;
+    };
+    const f = fixture(run);
+    f.add("Original task.", true);
+    await f.coordinator.flush();
+    // A chat read carries the chat's own choices without a new capture.
+    f.coordinator.configure("chat-a", { docs: false, skills: false, notesAgent: true });
+    f.coordinator.close();
+
+    const restarted = new CurationCoordinator(f.store, {
+      run,
+      endpoint: "http://localhost:1",
+      token: "private",
+      cwd: "/tmp",
+      intervalMs: 60000,
+    });
+    const insert = f.db.prepare("INSERT INTO t3_capture VALUES (?, ?, 'user_prompt', ?, ?)");
+    insert.run(2, "chat-a", JSON.stringify({ text: "Next step in the first chat." }), 2000);
+    insert.run(3, "chat-b", JSON.stringify({ text: "A second chat." }), 3000);
+    restarted.capture("chat-a", "flow", 2, true);
+    restarted.capture("chat-b", "flow", 3, true, { docs: true, skills: true, notesAgent: true });
+    await restarted.flush();
+    const firstChat = calls.filter((call) => call.sessionId === "chat-a");
+    const secondChat = calls.filter((call) => call.sessionId === "chat-b");
+    NodeAssert.equal(firstChat.length, 2);
+    NodeAssert.match(firstChat[0]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.match(firstChat[1]!.input, /Next step in the first chat/);
+    NodeAssert.doesNotMatch(firstChat[1]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.doesNotMatch(firstChat[1]!.instructions, /^AUTO-SKILLS$/m);
+    NodeAssert.equal(secondChat.length, 1);
+    NodeAssert.match(secondChat[0]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.match(secondChat[0]!.instructions, /^AUTO-SKILLS$/m);
+    restarted.close();
+    f.db.close();
+  },
+);
