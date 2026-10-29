@@ -68,7 +68,11 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
 
 - Needs `pnpm install` and, on Ubuntu, `sudo apt install libsecret-1-dev` once; the
   launcher checks both. The first start builds everything and takes about two minutes.
-- UI changes reload in place; desktop and server changes restart the dev app.
+- UI changes (`apps/web`) reload in place; desktop changes (`apps/desktop`) restart the
+  dev app. The server runs from `apps/server/dist`, built once at launch, so server and
+  Brain changes need `dev-flow.sh` restarted.
+- `glab` / "No unknown source control provider" warnings in the log are harmless: they
+  come from PR lookups for seeded GitLab or remote-less projects.
 - The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `.t3/dev`. Never
   point dev at `~/.t3`, and never attach it to the installed service.
 - Agent chats live in `flow.service`. Stopping or restarting it, installing a release,

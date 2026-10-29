@@ -1,14 +1,14 @@
 # Worklog
 
-Updated: 2026-10-29 20:15
+Updated: 2026-10-29 20:35
 
 ## Current focus
 
 - **Topic:** Dev Flow launcher for developing Flow next to the installed Flow
 - **Goal:** One command starts the Dev Flow from develop with hot reload on .t3/dev
 - **Branch:** develop (f8b99c86f), Dev Flow starts from here
-- **Last step done:** feat/dev-flow-launcher merged into develop
-- **Next step:** Owner runs scripts/fork/dev-flow.sh --seed on develop; then fork releases or T3 port
+- **Last step done:** Dev Flow CORS fix (c96cc2b5c): flow-dev://app allowed by the server
+- **Next step:** Owner restarts scripts/fork/dev-flow.sh on develop and checks the window loads
 - **Open questions / blockers:** Fork releases needed before the service fix reaches the installed app
 
 ## Finished features
@@ -19,6 +19,7 @@ Updated: 2026-10-29 20:15
 
 ## History
 
+- 2026-10-29 20:35 - Dev Flow ran; server CORS lacked flow-dev://app, fixed
 - 2026-10-29 20:10 - docs and fix branches merged into develop
 - 2026-10-29 19:55 - Supervisor networkAccess, /network-access, desktop follows attached service
 - 2026-10-29 19:45 - CHANGELOG.md and worklog started on develop
