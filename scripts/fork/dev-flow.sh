@@ -101,6 +101,9 @@ fi
 # dev-runner spawns `vp`, which only the repo's own node_modules provides; `vp run`
 # and `pnpm run` add this to PATH, a direct call has to do it itself.
 export PATH="${REPO_ROOT}/node_modules/.bin:${PATH}"
+# Makes Electron print the renderer console (including the [flow-perf] lines of
+# apps/web/src/debug/devPerformanceLog.ts) to stderr, so it lands in LOG_FILE.
+export ELECTRON_ENABLE_LOGGING=1
 # The legacy backend makes the dev app run its own server from this checkout
 # instead of attaching to the installed flow.service.
 export FLOW_DESKTOP_LEGACY_BACKEND=1
