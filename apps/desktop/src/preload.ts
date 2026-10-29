@@ -187,6 +187,9 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     ipcRenderer.invoke(IpcChannels.OPEN_FLOW_SERVICE_IN_BROWSER_CHANNEL),
   relaunchWithLegacyBackend: () =>
     ipcRenderer.invoke(IpcChannels.RELAUNCH_WITH_LEGACY_BACKEND_CHANNEL),
+  getFlowServiceUpdate: () => ipcRenderer.invoke(IpcChannels.GET_FLOW_SERVICE_UPDATE_CHANNEL),
+  retryFlowServiceUpdate: () => ipcRenderer.invoke(IpcChannels.RETRY_FLOW_SERVICE_UPDATE_CHANNEL),
+  skipFlowServiceUpdate: () => ipcRenderer.invoke(IpcChannels.SKIP_FLOW_SERVICE_UPDATE_CHANNEL),
   getWslState: () => ipcRenderer.invoke(IpcChannels.GET_WSL_STATE_CHANNEL),
   setWslBackendEnabled: (enabled) =>
     ipcRenderer.invoke(IpcChannels.SET_WSL_BACKEND_ENABLED_CHANNEL, enabled),

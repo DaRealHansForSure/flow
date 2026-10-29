@@ -152,5 +152,10 @@ app's update feed is the repository its release workflow runs in.
 - Service (browser and CLI) releases: pushing to the `release` branch runs
   `flow-browser-release.yml`, which publishes the next `flow-vX.Y.Z`.
 - Desktop releases: pushing a `flow-desktop-vX.Y.Z` tag runs `flow-desktop-release.yml`.
-- A machine that still has an upstream install switches once by running this fork's
-  `install.sh`; after that `flow update` and the desktop updater follow this fork.
+- Both at once: run `flow-release.yml` on the `release` branch with a `version`. It publishes
+  `flow-vX.Y.Z` and then `flow-desktop-vX.Y.Z` from the same commit. Release this way: every
+  desktop app offers to move the service to exactly its own version, so that service release
+  must exist.
+- A machine that still has an upstream install switches once, by accepting the update the
+  fork's desktop app offers at start or by running this fork's `install.sh`; after that
+  `flow update` and the desktop updater follow this fork.

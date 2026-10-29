@@ -45,6 +45,8 @@ import * as DesktopAssets from "./app/DesktopAssets.ts";
 import * as DesktopBackendConfiguration from "./backend/DesktopBackendConfiguration.ts";
 import * as DesktopBackendPool from "./backend/DesktopBackendPool.ts";
 import * as DesktopLocalEnvironmentAuth from "./backend/DesktopLocalEnvironmentAuth.ts";
+import * as DesktopServiceSync from "./backend/DesktopServiceSync.ts";
+import * as DesktopServiceSyncState from "./backend/DesktopServiceSyncState.ts";
 import * as DesktopNetworkInterfaces from "./backend/DesktopNetworkInterfaces.ts";
 import * as DesktopEnvironment from "./app/DesktopEnvironment.ts";
 import * as DesktopLifecycle from "./app/DesktopLifecycle.ts";
@@ -188,6 +190,8 @@ const layerDesktopAppActivation = DesktopAppActivation.layer.pipe(
 );
 
 const layerDesktopBackend = DesktopBackendPool.layer.pipe(
+  // Flow: the pool parks the primary while the app updates the service.
+  Layer.provideMerge(DesktopServiceSyncState.layer),
   Layer.provideMerge(DesktopAppIdentity.layer),
   Layer.provideMerge(DesktopBackendConfiguration.layer),
   Layer.provideMerge(DesktopShellEnvironment.layer),
@@ -218,6 +222,10 @@ const layerDesktopApplication = Layer.mergeAll(
   Layer.provideMerge(DesktopUpdates.layer),
   Layer.provideMerge(layerDesktopWslBackend),
   Layer.provideMerge(layerDesktopLocalEnvironmentAuth),
+  // Flow: keeps the service at this app's version.
+  Layer.provideMerge(
+    DesktopServiceSync.layer.pipe(Layer.provideMerge(layerDesktopLocalEnvironmentAuth)),
+  ),
 );
 
 // Clerk resolves userData before Electron is ready, so it gets the synchronous FileSystem.

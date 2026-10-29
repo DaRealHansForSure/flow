@@ -1,18 +1,21 @@
 # Worklog
 
-Updated: 2026-10-30 00:40
+Updated: 2026-10-30 00:50
 
 ## Current focus
 
-- **Topic:** First own release of the fork after the T3 v0.1.5 sync
-- **Goal:** Owner runs Flow service and desktop built from DaRealHansForSure/flow
-- **Branch:** develop (all topics merged, nothing pushed)
-- **Last step done:** Brain tab, close confirmation, Auto-Docs/Auto-Skills switches, lint
-  and knip cleanup, Linux-only release workflows, fork as update source merged
-- **Next step:** Owner tries the Dev Flow; then push, tag flow-v0.2.0 and
-  flow-desktop-v0.2.0, back up, move the stale statev2.sqlite aside, install from the fork
-- **Open questions / blockers:** Codex/OpenCode notes-agent flags untested; four Brain web
-  tests need a rewrite without react-test-renderer; 9 old curation tests fail
+- **Topic:** The app keeps the Flow service at its own version (all-in-one AppImage)
+- **Goal:** Every AppImage brings its matching service; one release run publishes both
+- **Branch:** feat/app-keeps-service-current (worktree .t3/worktrees/service-sync), not merged
+- **Last step done:** install-version in flow-release.mjs with repository in receipts;
+  desktop version check, native question with running chats, parked update screen with
+  retry; flow-release.yml runs the service and desktop release of one version
+- **Next step:** Owner review, merge --no-ff into develop; first real check is a release run
+  of flow-release.yml on `release`, then an AppImage start on the machine with the upstream
+  0.1.15 service (offers the switch to the fork)
+- **Open questions / blockers:** An older service that fails to attach as `incompatible`
+  gets no update offer yet; window.test.ts relay telemetry case fails on develop already;
+  four Brain web tests need a rewrite without react-test-renderer
 
 ## Finished features
 
@@ -27,6 +30,7 @@ Updated: 2026-10-30 00:40
 
 ## History
 
+- 2026-10-30 00:50 - Service version sync: decision, wording, update runner tested with fakes only
 - 2026-10-30 00:10 - Brain moved into the right panel as a tab; header button with update dot
 - 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
 - 2026-10-29 22:45 - Sync: tests ran only after server pinned catalog typescript (one vitest copy)

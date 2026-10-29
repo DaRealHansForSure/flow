@@ -1,4 +1,8 @@
-import type { DesktopAttachFailure, DesktopFlowServiceAdoption } from "@t3tools/contracts";
+import type {
+  DesktopAttachFailure,
+  DesktopFlowServiceAdoption,
+  DesktopFlowServiceUpdate,
+} from "@t3tools/contracts";
 import { useEffect, useState } from "react";
 
 import { APP_DISPLAY_NAME } from "../../branding";
@@ -50,6 +54,40 @@ function useAdoptionJournal(active: boolean): DesktopFlowServiceAdoption | null 
   return adoption;
 }
 
+// Flow: the service update the app is running. Polled while the window is parked
+// for it; once the update is done the window reloads onto the new service.
+function useServiceUpdate(active: boolean): DesktopFlowServiceUpdate | null {
+  const [update, setUpdate] = useState<DesktopFlowServiceUpdate | null>(null);
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the service update over the desktop bridge while the window is parked for it.
+  useEffect(() => {
+    const read = window.desktopBridge?.getFlowServiceUpdate;
+    if (!active || !read) return;
+    let cancelled = false;
+    const load = () => {
+      void read().then(
+        (next) => {
+          if (cancelled) return;
+          if (next?.outcome === "updated") {
+            window.location.reload();
+            return;
+          }
+          setUpdate(next);
+        },
+        () => undefined,
+      );
+    };
+    load();
+    const timer = window.setInterval(load, ADOPTION_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [active]);
+
+  return update;
+}
+
 export function FlowServiceRecoverySurface({
   failure,
 }: {
@@ -59,12 +97,14 @@ export function FlowServiceRecoverySurface({
   // Adoption is the only thing that progresses without the user, so it is the
   // only thing worth re-reading.
   const adoption = useAdoptionJournal(failure.kind === "not-installed");
+  const update = useServiceUpdate(failure.kind === "updating");
   const [pending, setPending] = useState<FlowServiceRecoveryAction | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const view = describeFlowServiceRecovery({
     failure,
     adoption,
+    update,
     canCheckForUpdates: typeof bridge?.checkForUpdate === "function",
   });
 
@@ -76,7 +116,10 @@ export function FlowServiceRecoverySurface({
       setActionError(message);
       // A successful retry re-attaches in the main process; the renderer only
       // learns about it by booting again against a live server.
-      if (message === null && (action === "retry" || action === "start-service")) {
+      if (
+        message === null &&
+        (action === "retry" || action === "start-service" || action === "skip-update")
+      ) {
         window.location.reload();
       }
     };
@@ -126,6 +169,25 @@ export function FlowServiceRecoverySurface({
           (result) =>
             finish(result.ok ? null : (result.detail ?? "The browser could not be opened.")),
           () => fail("The browser could not be opened."),
+        );
+        return;
+      }
+      case "retry-update": {
+        const retryUpdate = bridge?.retryFlowServiceUpdate;
+        if (!retryUpdate) return fail("This app cannot update the service.");
+        void retryUpdate().then(
+          (result) => finish(result.ok ? null : (result.detail ?? "The update did not start.")),
+          () => fail("The update did not start."),
+        );
+        return;
+      }
+      case "skip-update": {
+        const skipUpdate = bridge?.skipFlowServiceUpdate;
+        if (!skipUpdate) return fail("This app cannot go back to the current service.");
+        void skipUpdate().then(
+          (result) =>
+            finish(result.ok ? null : (result.detail ?? "The current service did not answer.")),
+          () => fail("The current service did not answer."),
         );
         return;
       }

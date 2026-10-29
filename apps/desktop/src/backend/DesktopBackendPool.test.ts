@@ -22,6 +22,7 @@ import * as DesktopServerExposure from "./DesktopServerExposure.ts";
 import * as DesktopWslEnvironment from "../wsl/DesktopWslEnvironment.ts";
 import * as DesktopBackendConfiguration from "./DesktopBackendConfiguration.ts";
 import * as DesktopBackendPool from "./DesktopBackendPool.ts";
+import * as DesktopServiceSyncState from "./DesktopServiceSyncState.ts";
 import type * as DesktopServiceAdoption from "./DesktopServiceAdoption.ts";
 import type { DesktopBackendSnapshot, DesktopBackendStartConfig } from "./DesktopBackendManager.ts";
 
@@ -54,6 +55,7 @@ function layerPool(labelRef: Ref.Ref<string>): Layer.Layer<DesktopBackendPool.De
     Layer.provideMerge(
       Layer.mergeAll(
         FileSystem.layerNoop({}),
+        DesktopServiceSyncState.layer,
         Layer.succeed(
           ChildProcessSpawner.ChildProcessSpawner,
           ChildProcessSpawner.make(() => Effect.die("unexpected child process spawn")),

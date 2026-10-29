@@ -22,6 +22,11 @@ import {
   retryFlowServiceAttach,
 } from "./methods/flowServiceRecovery.ts";
 import {
+  getFlowServiceUpdate,
+  retryFlowServiceUpdate,
+  skipFlowServiceUpdate,
+} from "./methods/flowServiceUpdate.ts";
+import {
   getAdvertisedEndpoints,
   getServerExposureState,
   setServerExposureMode,
@@ -150,6 +155,9 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(getFlowServiceAdoption);
   yield* ipc.handle(openFlowServiceInBrowser);
   yield* ipc.handle(relaunchWithLegacyBackend);
+  yield* ipc.handle(getFlowServiceUpdate);
+  yield* ipc.handle(retryFlowServiceUpdate);
+  yield* ipc.handle(skipFlowServiceUpdate);
 
   yield* ipc.handle(getWslState);
   yield* ipc.handle(setWslBackendEnabled);

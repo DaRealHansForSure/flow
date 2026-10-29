@@ -11,6 +11,12 @@ on:
         description: Optional stable version (X.Y.Z); defaults to next patch
         required: false
         type: string
+  # Flow fork: flow-release.yml publishes this and the desktop app of one version.
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -93,7 +99,7 @@ jobs:
         run: node scripts/build-browser-bundle.mjs "$RUNNER_TEMP/flow-source" "$GITHUB_WORKSPACE/release-browser" "$FLOW_VERSION"
       - name: Verify CLI and Brain behavior with the bundled runtime
         working-directory: ${{ runner.temp }}/flow-source
-        run: runtime/bin/node --test scripts/cli-brains.test.mjs flow-t3/shared/bin/test/*.test.mjs
+        run: runtime/bin/node --test scripts/cli-brains.test.mjs scripts/install-version.test.mjs flow-t3/shared/bin/test/*.test.mjs
       - name: Smoke test installation beside another flow command
         shell: bash
         run: |

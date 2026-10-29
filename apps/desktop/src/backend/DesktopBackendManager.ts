@@ -88,7 +88,13 @@ export interface PreflightFailure {
 
 // Why an attached backend could not be used. Ordered from "the service is
 // there but we must not talk to it" to "there is no service at all".
-export type AttachFailureKind = "incompatible" | "stopped" | "not-installed" | "unreachable";
+// Flow: `updating` parks the window while the app moves the service to its version.
+export type AttachFailureKind =
+  | "incompatible"
+  | "stopped"
+  | "not-installed"
+  | "unreachable"
+  | "updating";
 
 export interface AttachFailure {
   readonly kind: AttachFailureKind;
