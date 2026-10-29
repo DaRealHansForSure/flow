@@ -54,19 +54,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Flow fork: no macOS builds; this fork ships Linux.
         include:
-          - label: macOS arm64
-            runner: macos-15
-            platform: mac
-            target: dmg
-            arch: arm64
-            rust_target: aarch64-apple-darwin
-          - label: macOS x64
-            runner: macos-15
-            platform: mac
-            target: dmg
-            arch: x64
-            rust_target: x86_64-apple-darwin
           - label: Linux x64
             runner: ubuntu-24.04
             platform: linux
