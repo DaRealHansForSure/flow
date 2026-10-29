@@ -1,7 +1,11 @@
-import type { BrainCuratorResult, BrainCuratorRunner } from "../../../runtime/src/contracts.js";
+import type {
+  BrainCurationOutputs,
+  BrainCuratorResult,
+  BrainCuratorRunner,
+} from "../../../runtime/src/contracts.js";
 import { CurationStore } from "./store.js";
 import { CuratorTools, type CuratorSourceReader } from "./tools.js";
-import { CURATOR_INSTRUCTIONS } from "./prompt.js";
+import { curatedOutputNames, curatorInstructions } from "./prompt.js";
 import {
   normalizeTranscript,
   record,
@@ -21,6 +25,8 @@ type Pending = {
   started: boolean;
   failures: number;
   lastStartedAt: number;
+  /** The outputs the curator's current native context was instructed with. */
+  outputs?: BrainCurationOutputs;
 };
 export interface CoordinatorOptions {
   run: BrainCuratorRunner;
@@ -51,8 +57,17 @@ export class CurationCoordinator {
     private options: CoordinatorOptions,
   ) {}
 
-  capture(sessionId: string, repo: string | null, sequence: number, closed = false): void {
+  capture(
+    sessionId: string,
+    repo: string | null,
+    sequence: number,
+    closed = false,
+    outputs?: BrainCurationOutputs,
+  ): void {
     if (this.closed) return;
+    if (outputs) {
+      this.store.setCurationOutputs(sessionId, outputs);
+    }
     const saved = this.store.session(sessionId);
     if (sequence <= saved.lastSeq) return;
     const source = this.store.readCapture(sessionId, sequence - 1, sequence)[0];
@@ -173,9 +188,13 @@ export class CurationCoordinator {
       // Transcript/evidence has a strict 150K character ceiling. Also renew on
       // accumulated visible prompts/tool exchanges, before they crowd the model.
       const notes = this.store.get(`notes:${sessionId}`);
+      const outputs = this.store.curationOutputs(sessionId);
+      const instructions = curatorInstructions(outputs);
       const associated = this.store
         .list({ sessionId })
-        .filter((doc) => doc.kind === "doc" || doc.kind === "skill")
+        .filter(
+          (doc) => (doc.kind === "doc" && outputs.docs) || (doc.kind === "skill" && outputs.skills),
+        )
         .slice(0, 30);
       const catalog = associated.length
         ? `Documents already associated with this chat (read/search before editing):\n${JSON.stringify(associated.map(({ id, kind, name, description, revision }) => ({ id, kind, name, description, revision })))}`
@@ -191,8 +210,12 @@ export class CurationCoordinator {
         .join("\n\n");
       // Leave room for notes, the catalog and subsequent tool exchanges. A full
       // original window must not force renewal again on the very next checkpoint.
+      // A switched setting needs fresh instructions, not a delta in the old native context.
+      const outputsChanged =
+        state.outputs?.docs !== outputs.docs || state.outputs?.skills !== outputs.skills;
       const renew =
         !state.started ||
+        outputsChanged ||
         delta.omitted ||
         !state.budget.canAppend(delta.characters + 8000) ||
         state.contextCharacters + header.length + delta.characters + 8000 > 145_000;
@@ -202,7 +225,7 @@ export class CurationCoordinator {
           : "";
       const sourceBudget =
         TRANSCRIPT_TARGET_CHARS -
-        CURATOR_INSTRUCTIONS.length -
+        instructions.length -
         header.length -
         savedNotes.length -
         1200;
@@ -214,13 +237,13 @@ export class CurationCoordinator {
         : delta;
       if (renew) {
         state.budget.reset(window.characters);
-        state.contextCharacters = CURATOR_INSTRUCTIONS.length;
+        state.contextCharacters = instructions.length;
       } else state.budget.append(window.characters);
       const input = [
         header,
         renew
           ? "This is a renewed bounded context for the same logical conversation. Recover earlier details with search_transcript/read_evidence as needed."
-          : "Continue the same conversation's notes, Auto-Docs, and Auto-Skills using the new source below.",
+          : `Continue the same conversation's ${curatedOutputNames(outputs)} using the new source below.`,
         savedNotes,
         window.omitted
           ? `Earlier source has been omitted from this window; the earliest included reference is E${window.firstSeq}. It remains retrievable.`
@@ -235,12 +258,13 @@ export class CurationCoordinator {
         checkpoint,
         state.budget,
         this.options.sourceReader,
+        outputs,
       );
       this.activeTools.set(sessionId, tools);
       const result = await this.options.run({
         sessionId,
         input,
-        instructions: CURATOR_INSTRUCTIONS,
+        instructions,
         endpoint: `${this.options.endpoint}/v1/curator/mcp/${encodeURIComponent(sessionId)}`,
         token: this.options.token,
         cwd: this.options.cwd,
@@ -255,6 +279,7 @@ export class CurationCoordinator {
         return;
       }
       state.started = true;
+      state.outputs = outputs;
       state.failures = 0;
       state.contextCharacters +=
         input.length + tools.exchangedCharacters + result.assistantCharacters;

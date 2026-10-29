@@ -27,6 +27,7 @@ import {
   type BrainCapture,
   type BrainSessionContext,
 } from "./session-worker.ts";
+import type { BrainCurationOutputs } from "@flow/brain-runtime";
 export type BrainClient = Pick<
   BrainRuntime,
   | "projectBindings"
@@ -57,6 +58,7 @@ const Capture = Schema.Struct({
   kind: Schema.Literals(["user_prompt", "update", "error", "created", "graph"]),
   data: Schema.Unknown,
   closed: Schema.optionalKey(Schema.Boolean),
+  outputs: Schema.optionalKey(Schema.Struct({ docs: Schema.Boolean, skills: Schema.Boolean })),
 });
 const Request = Schema.Struct({
   method: Schema.Literals([
@@ -95,7 +97,15 @@ const decodeChatMemories = Schema.decodeUnknownSync(ChatMemoryList);
 const decodeDescriptor = Schema.decodeUnknownSync(
   Schema.fromJsonString(Schema.Struct({ url: Schema.String, token: Schema.String })),
 );
-export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) {
+/**
+ * `globalCurationOutputs` reads this machine's Auto-Docs and Auto-Skills switches for
+ * conversations from external coding agents, which belong to no Flow project.
+ */
+export async function serveSharedBrain(
+  runtime: BrainRuntime,
+  stateDir: string,
+  globalCurationOutputs?: () => Promise<BrainCurationOutputs>,
+) {
   const token = NodeCrypto.randomBytes(32).toString("hex");
   const server = NodeHttp.createServer(async (request, response) => {
     response.setHeader("content-type", "application/json");
@@ -135,9 +145,11 @@ export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) 
               : hook.events;
           if (!events.length && hook.closed)
             events.push({ kind: "update", data: { sessionUpdate: "turn_complete" } });
+          const outputs = await globalCurationOutputs?.();
           for (const [index, event] of events.entries()) {
             await runtime.captureBrainEvent(input.workspace, {
               ...event,
+              ...(outputs ? { outputs } : {}),
               context: {
                 ...input.context,
                 session: `${input.instance}:${input.hook.harness}:${hook.externalId}`,

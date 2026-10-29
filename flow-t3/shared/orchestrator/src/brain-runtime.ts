@@ -8,7 +8,7 @@ import { CurationStore } from "./curation/store.js";
 import { registerCuratorMcp } from "./curation/tools.js";
 import { CurationPublicTools } from "./curation/public-tools.js";
 import type { BrainContributor, BrainDocumentSync, BrainDocumentSyncAck } from "./curation/types.js";
-import type { BrainCuratorReply, BrainCuratorRun } from "../../runtime/src/contracts.js";
+import type { BrainCurationOutputs, BrainCuratorReply, BrainCuratorRun } from "../../runtime/src/contracts.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { sessionContext, type SessionContext } from "../../graph-gateway/src/session-context.js";
@@ -79,7 +79,7 @@ if (process.argv.includes("--catalog")) {
       const r = row as { seq: number; kind: import("./agents/runtime.js").SessionEvent["kind"]; data: string; ts: number };
       return { ...r, data: JSON.parse(r.data) };
     }) : undefined);
-  const capture = db.transaction((input: { context: SessionContext; receipt: string; occurredAt?: number; kind: string; data: unknown; closed?: boolean }) => {
+  const capture = db.transaction((input: { context: SessionContext; receipt: string; occurredAt?: number; kind: string; data: unknown; closed?: boolean; outputs?: BrainCurationOutputs }) => {
     const id = `t3-${input.context.session}`;
     const now = Date.now();
     const occurredAt = typeof input.occurredAt === "number" && Number.isFinite(input.occurredAt) && input.occurredAt > 0
@@ -224,7 +224,7 @@ if (process.argv.includes("--catalog")) {
           }
         }
         if (process.env.FLOW_DISTILLER !== "0" && input.kind !== "graph") {
-          curator.capture(stored.id,input.context.repo ?? null,stored.sequence,Boolean(input.closed));
+          curator.capture(stored.id,input.context.repo ?? null,stored.sequence,Boolean(input.closed),input.outputs);
         }
         result = { stored: true, sequence: stored.sequence };
       } else if (message.method === "drain") {
