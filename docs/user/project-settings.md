@@ -280,6 +280,12 @@ Auto-Skills describe procedures that were actually demonstrated, such as reprodu
 and verifying its fix. Related documents are refined as later conversations add evidence. Notes
 always have a section; Auto-Docs and Auto-Skills appear when the chat has contributed them.
 
+To stop this background work, turn off **Settings → General → Brain → Notes agent**, or choose
+**Off** under **Notes agent** in a chat's **Brain** tab for that chat only; **Default** follows
+Settings. The chat keeps its brain briefing and tools, and its messages are still recorded, so
+turning the agent back on catches up on what it missed. The **Auto-Docs** and **Auto-Skills**
+switches beside it limit what the agent writes besides notes, and a project can override them.
+
 Notes update after completed turns and about every 60 seconds while new activity arrives.
 Busy extraction coalesces later activity into a follow-up. The panel shows pending work or an
 extraction error rather than reporting that unavailable processing succeeded. Captured activity
