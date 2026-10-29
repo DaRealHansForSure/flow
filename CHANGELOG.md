@@ -39,6 +39,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   writes besides conversation notes. Each project inherits them and can override them in its
   project settings; existing docs and skills stay available and searchable.
 
+- Notes agent switch in Settings > General > Brain, and Default / On / Off for one chat in the
+  chat's Brain tab. Off, the notes agent writes no notes, Auto-Docs or Auto-Skills for the chat,
+  which keeps its Brain briefing and tools; its messages are still recorded, so turning the
+  agent back on catches up. Auto-Docs and Auto-Skills are greyed out while it is off.
+
 - A loading indicator in the content pane while a page or chat is still loading, instead of
   an empty pane.
 

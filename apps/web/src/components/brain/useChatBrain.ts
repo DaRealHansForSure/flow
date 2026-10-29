@@ -12,7 +12,7 @@ import type {
 } from "@t3tools/contracts";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import { retainChatContextOnError } from "@t3tools/client-runtime/state/brain";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useRightPanelStore } from "../../rightPanelStore";
 import { brainCommand } from "../../state/brain";
@@ -31,6 +31,11 @@ export interface ChatBrain {
   /** Notes and documents that changed in the last few seconds, for a short highlight. */
   readonly changedIds: readonly string[];
   readonly savedNow: boolean;
+  /**
+   * Turns the notes agent on or off for this chat, or back to the global setting with
+   * undefined. Resolves with an error message, or null once the server has saved it.
+   */
+  readonly setNotesAgent: (enabled: boolean | undefined) => Promise<string | null>;
 }
 
 /**
@@ -53,6 +58,8 @@ export function useChatBrain(input: {
   const [error, setError] = useState(false);
   const [changedIds, setChangedIds] = useState<readonly string[]>([]);
   const [savedNow, setSavedNow] = useState(false);
+  // The chat being polled, so a reply that lands after switching chats is not shown.
+  const polledKey = useRef(sourceKey);
   if (loadedKey !== sourceKey) {
     setLoadedKey(sourceKey);
     setResponse(null);
@@ -73,6 +80,7 @@ export function useChatBrain(input: {
     let previousNotes: Map<string, string> | undefined;
     let highlightTimer: ReturnType<typeof setTimeout>;
     let delay = LONG_POLL_DELAY_MS;
+    polledKey.current = sourceKey;
     const refresh = async () => {
       if (disposed || pending || document.visibilityState === "hidden") {
         return;
@@ -145,7 +153,7 @@ export function useChatBrain(input: {
       clearTimeout(highlightTimer);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [environmentId, threadId, projectId, execute]);
+  }, [environmentId, threadId, projectId, execute, sourceKey]);
 
   const brain = chatBrainWorkspace(response, threadId, projectId);
   const hasBrain = brain !== undefined;
@@ -170,7 +178,32 @@ export function useChatBrain(input: {
     useRightPanelStore.getState().openBrainByDefault(threadRef, revealPanelByDefault);
   }, [threadRef, hasBrain, revealPanelByDefault]);
 
-  return { response, brain, error, changedIds, savedNow };
+  const setNotesAgent = async (enabled: boolean | undefined): Promise<string | null> => {
+    if (environmentId === null || threadId === null) {
+      return "Send a first message before choosing the notes agent for this chat.";
+    }
+    const requestedKey = sourceKey;
+    const result = await execute({
+      environmentId,
+      input: {
+        action: "setChatNotesAgent",
+        threadId,
+        ...(enabled === undefined ? {} : { enabled }),
+      },
+    });
+    if (result._tag === "Failure") {
+      return "The notes agent setting could not be saved.";
+    }
+    if (result.value.error) {
+      return result.value.error;
+    }
+    if (polledKey.current === requestedKey) {
+      setResponse(result.value);
+    }
+    return null;
+  };
+
+  return { response, brain, error, changedIds, savedNow, setNotesAgent };
 }
 
 function chatBrainWorkspace(
