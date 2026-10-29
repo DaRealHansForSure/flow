@@ -1244,6 +1244,9 @@ export const ServerSettings = Schema.Struct({
   // Fork setting: off turns every pull/merge request feature off, on the server
   // (background lookups, PR-based settling, PR requests) and in every client.
   pullRequestsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  // Fork setting: off stops the Brain's notes agent for every chat that does not choose for
+  // itself. Captures are still recorded, so turning it back on catches up; nothing is deleted.
+  brainNotesAgent: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   // Fork settings: off stops the Brain's notes agent from creating or updating Auto-Docs or
   // Auto-Skills. Conversation notes are always kept and existing documents stay readable.
   brainAutoDocs: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
@@ -1593,6 +1596,7 @@ export const ServerSettingsPatch = Schema.Struct({
   sidebarAutoSettleKeepPullRequests: Schema.optionalKey(Schema.Boolean),
   sidebarAutoSettleOnMerge: Schema.optionalKey(Schema.Boolean),
   pullRequestsEnabled: Schema.optionalKey(Schema.Boolean),
+  brainNotesAgent: Schema.optionalKey(Schema.Boolean),
   brainAutoDocs: Schema.optionalKey(Schema.Boolean),
   brainAutoSkills: Schema.optionalKey(Schema.Boolean),
   autoResumeLimitedThreads: Schema.optionalKey(Schema.Boolean),
