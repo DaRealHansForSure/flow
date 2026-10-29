@@ -1,35 +1,37 @@
 # Product usage data
 
-The Flow server sends product usage events to Flow's PostHog project, associated with a hashed
-account or installation identifier. To count how many installations one person uses, the server
-also sends hashed account identifiers: your T3 Connect account, your OpenAI and Claude accounts when
-you are signed in, and a random identifier for each device that connects. Events include the
-provider, model, reasoning effort, permission mode, turn result, duration, release channel, and
-main-agent token totals when available. Flow also records Brain setup, repository indexing
-outcomes, anonymous tool usage, and background curation health.
+Flow sends no product usage data and no relay connection traces unless you turn them on.
+
+To turn them on, set `T3CODE_TELEMETRY_ENABLED=true` in the server's environment before
+starting it. The server then sends product usage events to Flow's PostHog project, associated
+with a hashed account or installation identifier. To count how many installations one person
+uses, it also sends hashed account identifiers: your T3 Connect account, your OpenAI and Claude
+accounts when you are signed in, and a random identifier for each device that connects. Events
+include the provider, model, reasoning effort, permission mode, turn result, duration, release
+channel, and main-agent token totals when available. Flow also records Brain setup, repository
+indexing outcomes, anonymous tool usage, and background curation health. The same switch turns
+on relay connection traces to Axiom, which diagnose T3 Connect connectivity, in builds that carry
+a tracing endpoint.
 
 Events do not include prompts, responses, file contents, authentication tokens, conversation IDs,
 raw provider events, or child-agent output. Child-agent token use is excluded from the totals.
 
-T3 Code also sends relay connection traces to Axiom to diagnose T3 Connect connectivity.
+Relay tracing stays off when `T3CODE_OTEL_SDK_DISABLED` or `OTEL_SDK_DISABLED` turns
+OpenTelemetry export off. The web app in a browser, including one the `t3` CLI opens, does not
+read these variables.
 
-To disable product events and relay tracing, set `T3CODE_TELEMETRY_ENABLED=false` in the server's
-environment before starting it. Relay tracing also stops when `T3CODE_OTEL_SDK_DISABLED` or
-`OTEL_SDK_DISABLED` turns OpenTelemetry export off. The web app in a browser, including one the
-`t3` CLI opens, does not read these variables.
-
-The desktop app reads `T3CODE_TELEMETRY_ENABLED` from your shell profile (for example `~/.zshrc`) on macOS and
-Linux, so export it there and restart the app. On Windows, set it as a user environment variable.
+The desktop app reads `T3CODE_TELEMETRY_ENABLED` from your shell profile (for example
+`~/.zshrc`) on macOS and Linux, so export it there and restart the app. On Windows, set it as a
+user environment variable.
 
 ## Mobile app crash reports
 
-When the iOS or Android app crashes or hits an error, it sends a report to T3 Code: the error
-message, the stack trace, the app version, and the device model and OS version. Each launch also
-sends startup timings, and every report carries a random ID for the install. Reports go through
-the T3 Connect relay to Axiom. They do not include your threads, prompts, or connection details,
-but an error message can quote a value the app was handling.
-
-To stop sending them, turn off **Send crash reports** in **Settings > About T3 Code > Diagnostics**.
+The iOS and Android app sends no crash reports unless you turn on **Send crash reports** in
+**Settings > About > Diagnostics**. A report holds the error message, the stack trace, the app
+version, and the device model and OS version; each launch then also sends startup timings, and
+every report carries a random ID for the install. Reports go through the T3 Connect relay to
+Axiom. They do not include your threads, prompts, or connection details, but an error message
+can quote a value the app was handling.
 
 ## Export diagnostics to your own receiver
 

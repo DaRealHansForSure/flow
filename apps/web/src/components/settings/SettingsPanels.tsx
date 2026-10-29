@@ -1,3 +1,4 @@
+import { BRAND } from "@t3tools/shared/branding";
 import { useAtomValue } from "@effect/atom-react";
 import { NotificationSettings } from "./NotificationSettings";
 import { PRIVACY_POLICY_URL } from "../../legalLinks";
@@ -2005,7 +2006,7 @@ export function AboutSettingsPanel() {
       <SettingsSection id="legal" title="Legal">
         <SettingsRow
           {...searchableSetting("privacy-policy")}
-          description="How we handle your data, including the anonymous usage data T3 Code collects."
+          description={`T3 Code's privacy policy, which this fork is based on. ${BRAND.name} sends no usage data unless you set T3CODE_TELEMETRY_ENABLED.`}
           control={
             <Button
               render={<a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer noopener" />}
