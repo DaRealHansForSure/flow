@@ -63,8 +63,8 @@ FLOW_ASSET="flow-browser-$FLOW_TARGET.tar.gz"
 # The copy attached to a release is pinned to it; the repository copy follows the latest CLI release.
 FLOW_VERSION='__FLOW_CLI_VERSION__'
 case "$FLOW_VERSION" in
-  *[!0-9.]*|'') FLOW_URL=https://github.com/samyakkkk/flow/releases/latest/download ;;
-  *) FLOW_URL="https://github.com/samyakkkk/flow/releases/download/flow-v$FLOW_VERSION" ;;
+  *[!0-9.]*|'') FLOW_URL=https://github.com/DaRealHansForSure/flow/releases/latest/download ;;
+  *) FLOW_URL="https://github.com/DaRealHansForSure/flow/releases/download/flow-v$FLOW_VERSION" ;;
 esac
 printf 'Downloading the Flow CLI (Node is included)…\n'
 curl --fail --show-error --location --retry 2 --connect-timeout 20 --max-time 900 \
@@ -82,7 +82,7 @@ if [ "$FLOW_TARGET" = darwin-arm64 ]; then
   # The standalone cleanup also supports released bundles that predate it.
   FLOW_CLEANUP_SHA=429207617d3c3a7cd73e007a1e8afa4e6d0a8d2cbf5b68fd4403d756ba15e05b
   curl --fail --silent --show-error --location --retry 2 --connect-timeout 20 --max-time 60 \
-    https://raw.githubusercontent.com/samyakkkk/flow/9a8481fdc6b87e4fe492d44ddfa686d2f966ef3a/scripts/retire-legacy-flow.mjs \
+    https://raw.githubusercontent.com/DaRealHansForSure/flow/9a8481fdc6b87e4fe492d44ddfa686d2f966ef3a/scripts/retire-legacy-flow.mjs \
     --output "$FLOW_INSTALL_TEMP/retire-legacy-flow.mjs"
   printf '%s  retire-legacy-flow.mjs\n' "$FLOW_CLEANUP_SHA" > "$FLOW_INSTALL_TEMP/cleanup.sha256"
   (cd "$FLOW_INSTALL_TEMP" && $FLOW_SHASUM -c cleanup.sha256)

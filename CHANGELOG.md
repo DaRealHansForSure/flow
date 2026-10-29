@@ -41,6 +41,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Flow installs and updates from this fork (DaRealHansForSure/flow): the `flow` CLI,
+  `install.sh` / `install.ps1` and the app's links point here instead of samyakkkk/flow.
+
 - "No project" is always the first entry in the command palette's project list, ahead of
   the current project.
 

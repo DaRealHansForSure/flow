@@ -26,7 +26,7 @@ Brain instead of asking you to explain the codebase and its decisions again.
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/samyakkkk/flow/release/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.sh | bash
 ```
 
 <p align="center"><sub>Apple Silicon macOS 15+ or Linux x64 · installs the <code>flow</code> command and Flow's local service</sub></p>
@@ -34,30 +34,30 @@ curl -fsSL https://raw.githubusercontent.com/samyakkkk/flow/release/install.sh |
 Windows x64, in PowerShell. Windows connects to a Brain hosted on Flow Cloud or another computer; it does not host one:
 
 ```powershell
-irm https://raw.githubusercontent.com/samyakkkk/flow/release/install.ps1 | iex
+irm https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.ps1 | iex
 ```
 
 Joining your team's Cloud Brain? Copy the command from its dashboard instead: it is the same installer with your Brain and a one-time setup credential on the end, so one paste installs Flow and connects it.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/samyakkkk/flow/release/install.sh | bash -s -- --cloud https://brain.example.com --cloud-brain <id> --enrollment <credential>
+curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.sh | bash -s -- --cloud https://brain.example.com --cloud-brain <id> --enrollment <credential>
 ```
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/samyakkkk/flow/release/install.ps1))) -Cloud https://brain.example.com -CloudBrain <id> -Enrollment <credential>
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.ps1))) -Cloud https://brain.example.com -CloudBrain <id> -Enrollment <credential>
 ```
 
 <p align="center"><strong>or</strong></p>
 
 <p align="center">
-  <a href="https://github.com/samyakkkk/flow/releases/download/flow-desktop-v0.1.6/Flow-0.1.6-arm64.dmg"><img src="./docs/images/download-macos-apple-silicon.svg" alt="Download Flow for macOS (Apple Silicon)" width="194"></a>
+  <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-macos-apple-silicon.svg" alt="Download Flow for macOS (Apple Silicon)" width="194"></a>
   &nbsp;
-  <a href="https://github.com/samyakkkk/flow/releases/download/flow-desktop-v0.1.6/Flow-0.1.6-x64.dmg"><img src="./docs/images/download-macos-intel.svg" alt="Download Flow for macOS (Intel)" width="194"></a>
+  <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-macos-intel.svg" alt="Download Flow for macOS (Intel)" width="194"></a>
   &nbsp;
-  <a href="https://github.com/samyakkkk/flow/releases/download/flow-desktop-v0.1.6/Flow-0.1.6-x86_64.AppImage"><img src="./docs/images/download-linux.svg" alt="Download Flow for Linux (x64 AppImage)" width="194"></a>
+  <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-linux.svg" alt="Download Flow for Linux (x64 AppImage)" width="194"></a>
 </p>
 
-<p align="center"><sub>Flow 0.1.6 · signed, notarized, auto-updating · <a href="https://github.com/samyakkkk/flow/releases/tag/flow-desktop-v0.1.6">checksums</a> · Windows planned</sub></p>
+<p align="center"><sub>Flow 0.1.6 · signed, notarized, auto-updating · <a href="https://github.com/DaRealHansForSure/flow/releases/latest">checksums</a> · Windows planned</sub></p>
 
 Both share one local Flow service and one Brain, and coding agents you run outside
 Flow keep their Brain when the app is closed. See [Install Flow](./docs/user/install.md)
@@ -165,7 +165,7 @@ and read [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 Flow is early. Expect rough edges and frequent changes. Small fixes are welcome;
 please report problems and propose changes in
-[GitHub Issues](https://github.com/samyakkkk/flow/issues).
+[GitHub Issues](https://github.com/DaRealHansForSure/flow/issues).
 
 ## Built on T3 Code
 

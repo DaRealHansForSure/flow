@@ -144,7 +144,12 @@ Upstream's naming is inconsistent; this is what each name means in practice:
 
 ## Releases
 
-The installer and the updater download from samyakkkk/flow (`install.sh:66`,
-`scripts/flow-release.mjs:19`). Fork changes to the installed app, the service or the
-supervisor reach this machine only once those point at DaRealHansForSure/flow and
-releases are published from this fork.
+Installed Flow updates from this fork: the `flow` CLI and `install.sh` / `install.ps1`
+download from DaRealHansForSure/flow releases (`scripts/flow-release.mjs`), and the desktop
+app's update feed is the repository its release workflow runs in.
+
+- Service (browser and CLI) releases: pushing to the `release` branch runs
+  `flow-browser-release.yml`, which publishes the next `flow-vX.Y.Z`.
+- Desktop releases: pushing a `flow-desktop-vX.Y.Z` tag runs `flow-desktop-release.yml`.
+- A machine that still has an upstream install switches once by running this fork's
+  `install.sh`; after that `flow update` and the desktop updater follow this fork.

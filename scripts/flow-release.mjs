@@ -16,7 +16,8 @@ const { spawn } = NodeChildProcess;
 import * as NodeSqlite from "node:sqlite";
 const { DatabaseSync } = NodeSqlite;
 
-const repository = "samyakkkk/flow";
+// Flow fork: releases and updates come from this fork.
+const repository = "DaRealHansForSure/flow";
 const tagPattern = /^flow-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const assetName = "flow-source.tar.gz";
 const macAssetName = "flow-browser-darwin-arm64.tar.gz";

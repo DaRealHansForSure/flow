@@ -1,4 +1,4 @@
-# Installs the Flow CLI on Windows:  irm https://raw.githubusercontent.com/samyakkkk/flow/release/install.ps1 | iex
+# Installs the Flow CLI on Windows:  irm https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.ps1 | iex
 #
 # Flow on Windows runs the server and the browser UI and connects to a Brain
 # hosted elsewhere (Flow Cloud or another computer). It does not host a Brain:
@@ -6,7 +6,7 @@
 #
 # A Cloud dashboard hands out this installer with its own options, so one paste
 # installs Flow and connects it to that Brain:
-#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/samyakkkk/flow/release/install.ps1))) -Cloud URL -CloudBrain ID -Enrollment CREDENTIAL
+#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.ps1))) -Cloud URL -CloudBrain ID -Enrollment CREDENTIAL
 param([string]$Cloud = '', [string]$CloudBrain = '', [string]$Enrollment = '')
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue' # Invoke-WebRequest is many times slower with its progress bar.
@@ -34,8 +34,8 @@ $env:FLOW_RELEASE_HOME = $releaseHome
 $asset = 'flow-browser-win32-x64.tar.gz'
 # The copy attached to a release is pinned to it; the repository copy follows the latest CLI release.
 $version = '__FLOW_CLI_VERSION__'
-$url = if ($version -match '^[0-9.]+$') { "https://github.com/samyakkkk/flow/releases/download/flow-v$version" }
-  else { 'https://github.com/samyakkkk/flow/releases/latest/download' }
+$url = if ($version -match '^[0-9.]+$') { "https://github.com/DaRealHansForSure/flow/releases/download/flow-v$version" }
+  else { 'https://github.com/DaRealHansForSure/flow/releases/latest/download' }
 
 $temp = Join-Path $releaseHome ".bootstrap.$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
 New-Item -ItemType Directory -Force -Path (Join-Path $temp 'bundle') | Out-Null
