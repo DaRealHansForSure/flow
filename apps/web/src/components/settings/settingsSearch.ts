@@ -1136,7 +1136,16 @@ export const SETTINGS_SEARCH_ITEMS = [
       "flow service background login launchd systemd start stop restart supervisor persistent capture brain quit",
     ],
   },
-  // Fork settings: what the Brain's notes agent maintains besides conversation notes.
+  // Fork settings: whether the Brain's notes agent runs, and what it maintains besides notes.
+  {
+    id: "brain-notes-agent",
+    title: "Notes agent",
+    to: "/settings/general",
+    scope: "environment-defaults",
+    searchTerms: [
+      "brain notes agent curator conversation notes auto-docs auto-skills disable turn off pause chat",
+    ],
+  },
   {
     id: "brain-auto-docs",
     title: "Auto-Docs",

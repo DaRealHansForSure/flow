@@ -558,7 +558,10 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.enableAgentBrowserAccess !== DEFAULT_UNIFIED_SETTINGS.enableAgentBrowserAccess
       ? ["Agent browser access"]
       : []),
-    // Fork: the Brain's Auto-Docs and Auto-Skills switches.
+    // Fork: the Brain's Notes agent, Auto-Docs and Auto-Skills switches.
+    ...(settings.brainNotesAgent !== DEFAULT_UNIFIED_SETTINGS.brainNotesAgent
+      ? ["Notes agent"]
+      : []),
     ...(settings.brainAutoDocs !== DEFAULT_UNIFIED_SETTINGS.brainAutoDocs ? ["Auto-Docs"] : []),
     ...(settings.brainAutoSkills !== DEFAULT_UNIFIED_SETTINGS.brainAutoSkills
       ? ["Auto-Skills"]
@@ -686,6 +689,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       browserAutoShowFloatingPreview: DEFAULT_UNIFIED_SETTINGS.browserAutoShowFloatingPreview,
       pullRequestLinksOpenInApp: DEFAULT_UNIFIED_SETTINGS.pullRequestLinksOpenInApp,
       enableAgentBrowserAccess: DEFAULT_UNIFIED_SETTINGS.enableAgentBrowserAccess,
+      brainNotesAgent: DEFAULT_UNIFIED_SETTINGS.brainNotesAgent,
       brainAutoDocs: DEFAULT_UNIFIED_SETTINGS.brainAutoDocs,
       brainAutoSkills: DEFAULT_UNIFIED_SETTINGS.brainAutoSkills,
     });
@@ -1613,7 +1617,7 @@ export function ThreadsSettingsPanel() {
 
       <ProjectDefaultsSettings category="general" />
 
-      {/* Fork: Auto-Docs and Auto-Skills switches for the Brain's notes agent. */}
+      {/* Fork: the Brain's notes agent with its Auto-Docs and Auto-Skills switches. */}
       <BrainCurationSettings />
 
       {!isProjectScope ? (

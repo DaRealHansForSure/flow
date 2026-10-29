@@ -1,5 +1,6 @@
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
-import type { ChatAttachment, ThreadId } from "@t3tools/contracts";
+import type { ChatAttachment, ProjectId, ServerSettings, ThreadId } from "@t3tools/contracts";
+import type { BrainCurationOutputs } from "@flow/brain-runtime";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
@@ -121,12 +122,16 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
     const settings = yield* serverSettings.getSettings.pipe(
       Effect.mapError(() => "Could not read the Brain settings for capture."),
     );
-    const projectSettings = resolveProjectSettings(settings, thread.value.projectId).settings;
+    const outputs = resolveChatCurationOutputs(
+      settings,
+      thread.value.projectId,
+      runtime.projectBindings?.threadNotesAgent(threadId),
+    );
     yield* Effect.tryPromise({
       try: () =>
         runtime.captureProjectEvent(thread.value.projectId, {
           ...event,
-          outputs: { docs: projectSettings.brainAutoDocs, skills: projectSettings.brainAutoSkills },
+          outputs,
           context: {
             session: threadId,
             ...(workspaceRoot ? { workspaceRoot } : {}),
@@ -138,6 +143,22 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
   });
   return capture;
 });
+/**
+ * What the notes agent maintains for one chat: the chat's own Notes agent choice wins over the
+ * global setting, and Auto-Docs and Auto-Skills come from the chat's project settings.
+ */
+export function resolveChatCurationOutputs(
+  settings: ServerSettings,
+  projectId: ProjectId,
+  chatNotesAgent: boolean | undefined,
+): Required<BrainCurationOutputs> {
+  const projectSettings = resolveProjectSettings(settings, projectId).settings;
+  return {
+    docs: projectSettings.brainAutoDocs,
+    skills: projectSettings.brainAutoSkills,
+    notesAgent: chatNotesAgent ?? settings.brainNotesAgent,
+  };
+}
 /** Preserve attachment-only requests without copying their binary contents into Brain capture. */
 export function formatBrainUserPrompt(message: {
   readonly text: string;

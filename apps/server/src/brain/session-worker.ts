@@ -10,6 +10,7 @@ import { brainResourceEnvironment } from "@flow/brain-runtime";
 import type {
   BrainSessionContext,
   BrainCapture,
+  BrainCurationOutputs,
   BrainCuratorRun,
   BrainCuratorRunner,
 } from "@flow/brain-runtime";
@@ -205,8 +206,8 @@ export async function startSessionWorker(
     async call(name: string, args: Record<string, unknown>, context: BrainSessionContext) {
       return decodeResult(await request("call", { name, arguments: args, context }));
     },
-    memories: async (session: string, revision?: string) =>
-      decodeChatMemories(await request("chatMemories", { session, revision })),
+    memories: async (session: string, revision?: string, outputs?: BrainCurationOutputs) =>
+      decodeChatMemories(await request("chatMemories", { session, revision, outputs })),
     document: async (id: string) => decodeDocument(await request("documents", { id })),
     knowledge: async () => decodeKnowledge(await request("knowledge", {})),
     exportBrain: (path: string) => request("exportBrain", { path }),

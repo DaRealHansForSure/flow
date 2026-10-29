@@ -79,4 +79,8 @@ export interface CurationSession {
   updatedAt: number;
 }
 /** A chat whose host never reported its settings keeps every output, as before the switches. */
-export const ALL_CURATION_OUTPUTS: BrainCurationOutputs = { docs: true, skills: true };
+export const ALL_CURATION_OUTPUTS: Required<BrainCurationOutputs> = {
+  docs: true,
+  skills: true,
+  notesAgent: true,
+};

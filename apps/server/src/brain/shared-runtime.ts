@@ -36,6 +36,7 @@ export type BrainClient = Pick<
   | "projectBrainId"
   | "threadBrainId"
   | "bindThread"
+  | "setThreadNotesAgent"
   | "callProjectTool"
   | "captureProjectEvent"
   | "bindProject"
@@ -51,6 +52,11 @@ const Context = Schema.Struct({
   branch: Schema.optionalKey(Schema.String),
   workspaceRoot: Schema.optionalKey(Schema.String),
 });
+const CurationOutputs = Schema.Struct({
+  docs: Schema.Boolean,
+  skills: Schema.Boolean,
+  notesAgent: Schema.optionalKey(Schema.Boolean),
+});
 const Capture = Schema.Struct({
   context: Context,
   receipt: Schema.String,
@@ -58,7 +64,7 @@ const Capture = Schema.Struct({
   kind: Schema.Literals(["user_prompt", "update", "error", "created", "graph"]),
   data: Schema.Unknown,
   closed: Schema.optionalKey(Schema.Boolean),
-  outputs: Schema.optionalKey(Schema.Struct({ docs: Schema.Boolean, skills: Schema.Boolean })),
+  outputs: Schema.optionalKey(CurationOutputs),
 });
 const Request = Schema.Struct({
   method: Schema.Literals([
@@ -84,6 +90,7 @@ const Request = Schema.Struct({
   ),
   metadataOnly: Schema.optional(Schema.Boolean),
   revision: Schema.optionalKey(Schema.String),
+  outputs: Schema.optionalKey(CurationOutputs),
   workspace: Schema.optionalKey(Schema.String),
   name: Schema.optionalKey(Schema.String),
   args: Schema.optional(Schema.Record(Schema.String, Schema.Unknown)),
@@ -98,8 +105,8 @@ const decodeDescriptor = Schema.decodeUnknownSync(
   Schema.fromJsonString(Schema.Struct({ url: Schema.String, token: Schema.String })),
 );
 /**
- * `globalCurationOutputs` reads this machine's Auto-Docs and Auto-Skills switches for
- * conversations from external coding agents, which belong to no Flow project.
+ * `globalCurationOutputs` reads this machine's Notes agent, Auto-Docs and Auto-Skills switches
+ * for conversations from external coding agents, which belong to no Flow project.
  */
 export async function serveSharedBrain(
   runtime: BrainRuntime,
@@ -181,7 +188,8 @@ export async function serveSharedBrain(
           if (
             !input.command ||
             input.command.action === "bindProject" ||
-            input.command.action === "bindThread"
+            input.command.action === "bindThread" ||
+            input.command.action === "setChatNotesAgent"
           )
             throw Error("Project and chat bindings belong to the calling instance");
           result = await runtime.command(input.command);
@@ -200,6 +208,7 @@ export async function serveSharedBrain(
             input.workspace,
             `${input.instance}:${input.context.session}`,
             input.revision,
+            input.outputs,
           );
           break;
         case "document":
@@ -348,11 +357,24 @@ export class SharedBrainRuntime implements BrainClient {
     this.writes = pending.catch(() => {});
     return pending;
   }
-  async chatMemories(projectId: ProjectId, session: string, revision?: string) {
+  /** The choice stays with this instance, which owns the chat; the source only gets the result. */
+  setThreadNotesAgent(threadId: string, enabled: boolean | undefined) {
+    const pending = this.writes.then(() =>
+      this.projectBindings.setThreadNotesAgent(threadId, enabled),
+    );
+    this.writes = pending.catch(() => {});
+    return pending;
+  }
+  async chatMemories(
+    projectId: ProjectId,
+    session: string,
+    revision?: string,
+    outputs?: BrainCurationOutputs,
+  ) {
     const workspace = this.threadBrainId(projectId, session);
     if (!workspace) return { memories: [], status: "disabled" as const };
     const result = decodeChatMemories(
-      await this.request("memories", { workspace, context: { session }, revision }),
+      await this.request("memories", { workspace, context: { session }, revision, outputs }),
     );
     if (this.threadBrainId(projectId, session) !== workspace)
       throw Error("The project’s brain changed. Retry the request.");

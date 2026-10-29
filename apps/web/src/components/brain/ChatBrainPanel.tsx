@@ -1,6 +1,6 @@
 import { BrainIcon } from "./BrainIcon";
 import { useState } from "react";
-import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
+import type { ChatMemoryList, EnvironmentId, ThreadId } from "@t3tools/contracts";
 import {
   BrainCircuitIcon,
   ChevronDownIcon,
@@ -20,8 +20,12 @@ import {
 import { BrainGraph } from "./BrainGraph";
 import { BrainDocumentDialog, BrainDocumentLibrary } from "./BrainDocuments";
 import { ConversationNotesPreview } from "./ConversationNotesPreview";
+import { Toggle, ToggleGroup } from "../ui/toggle-group";
+import { toastManager } from "../ui/toast";
 import { cliName } from "./BrainControls";
 import type { ChatBrain } from "./useChatBrain";
+
+type NotesAgentChoice = "default" | "on" | "off";
 
 /** The Brain tab of a chat's right panel; the chat view keeps its context fresh. */
 export function ChatBrainPanel({
@@ -33,7 +37,7 @@ export function ChatBrainPanel({
   threadId: ThreadId | null;
   chatBrain: ChatBrain;
 }) {
-  const { response, brain, error, changedIds, savedNow } = chatBrain;
+  const { response, brain, error, changedIds, savedNow, setNotesAgent } = chatBrain;
   const [notesExpanded, setNotesExpanded] = useState(true);
   const [brainExpanded, setBrainExpanded] = useState(false);
   const [view, setView] = useState<string | null>(null);
@@ -47,20 +51,13 @@ export function ChatBrainPanel({
     setGraphAutoExpanded(true);
     setBrainExpanded(true);
   }
-  const memoryStatus = !brain
-    ? "This chat has no Brain."
-    : notes?.status === "extracting"
-      ? "Updating notes, auto-docs, and skills…"
-      : notes?.status === "error"
-        ? // A recognised cause (signed out, usage limit) says what to do; Flow retries either way.
-          (notes.extractionIssue?.message ?? "Extraction needs attention. Flow will retry.")
-        : notes?.status === "disabled"
-          ? "Automatic extraction is disabled."
-          : savedNow
-            ? "Saved just now"
-            : notes?.notes
-              ? "Saved automatically from this conversation"
-              : "Ready for conversation notes";
+  const notesAgentOff = notes?.notesAgent?.enabled === false;
+  const memoryStatus = chatNotesStatus({
+    hasBrain: brain !== undefined,
+    notes,
+    notesAgentOff,
+    savedNow,
+  });
   const notesAgent =
     brain && notes?.curatorCli ? (
       <>
@@ -249,6 +246,9 @@ export function ChatBrainPanel({
               </button>
             )}
           </div>
+          {brain && threadId && notes?.notesAgent ? (
+            <ChatNotesAgentControl notesAgent={notes.notesAgent} onChange={setNotesAgent} />
+          ) : null}
           {notesExpanded && (
             <>
               {notes?.notes ? (
@@ -271,7 +271,7 @@ export function ChatBrainPanel({
               <p
                 role="status"
                 className={
-                  notes?.extractionIssue
+                  notes?.extractionIssue && !notesAgentOff
                     ? "px-2 py-2 text-2xs text-destructive"
                     : "px-2 py-2 text-2xs text-muted-foreground"
                 }
@@ -328,4 +328,102 @@ export function ChatBrainPanel({
       </Dialog>
     </>
   );
+}
+
+/** The one-line state of the chat's conversation notes under the notes preview. */
+function chatNotesStatus(input: {
+  readonly hasBrain: boolean;
+  readonly notes: ChatMemoryList | undefined;
+  readonly notesAgentOff: boolean;
+  readonly savedNow: boolean;
+}): string {
+  const { hasBrain, notes, notesAgentOff, savedNow } = input;
+  if (!hasBrain) {
+    return "This chat has no Brain.";
+  }
+  if (notesAgentOff) {
+    return "The notes agent is off for this chat. Its messages are still recorded and are caught up when it is turned back on.";
+  }
+  if (notes?.status === "extracting") {
+    return "Updating notes, auto-docs, and skills…";
+  }
+  if (notes?.status === "error") {
+    // A recognised cause (signed out, usage limit) says what to do; Flow retries either way.
+    return notes.extractionIssue?.message ?? "Extraction needs attention. Flow will retry.";
+  }
+  if (notes?.status === "disabled") {
+    return "Automatic extraction is disabled.";
+  }
+  if (savedNow) {
+    return "Saved just now";
+  }
+  if (notes?.notes) {
+    return "Saved automatically from this conversation";
+  }
+  return "Ready for conversation notes";
+}
+
+/** The chat's own Notes agent choice: follow Settings, or on or off for this chat only. */
+function ChatNotesAgentControl({
+  notesAgent,
+  onChange,
+}: {
+  readonly notesAgent: NonNullable<ChatMemoryList["notesAgent"]>;
+  readonly onChange: ChatBrain["setNotesAgent"];
+}) {
+  const [pendingChoice, setPendingChoice] = useState<NotesAgentChoice | null>(null);
+  const savedChoice = notesAgentChoice(notesAgent.choice);
+  const shownChoice = pendingChoice ?? savedChoice;
+  const select = (choice: NotesAgentChoice) => {
+    if (choice === shownChoice) {
+      return;
+    }
+    setPendingChoice(choice);
+    void onChange(notesAgentEnabled(choice)).then((failure) => {
+      setPendingChoice(null);
+      if (failure) {
+        toastManager.add({ type: "error", title: "Notes agent not changed", description: failure });
+      }
+    });
+  };
+  let hint = "Only for this chat.";
+  if (shownChoice === "default") {
+    hint = notesAgent.enabled ? "Follows Settings: on." : "Follows Settings: off.";
+  }
+  return (
+    <div className="flex items-center gap-2 px-2 pb-1">
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs">Notes agent</span>
+        <span className="block text-2xs text-muted-foreground">{hint}</span>
+      </span>
+      <ToggleGroup
+        aria-label="Notes agent for this chat"
+        value={[shownChoice]}
+        onValueChange={(next) => {
+          const choice = next[0];
+          if (choice === "default" || choice === "on" || choice === "off") {
+            select(choice);
+          }
+        }}
+      >
+        <Toggle value="default">Default</Toggle>
+        <Toggle value="on">On</Toggle>
+        <Toggle value="off">Off</Toggle>
+      </ToggleGroup>
+    </div>
+  );
+}
+
+function notesAgentChoice(choice: boolean | undefined): NotesAgentChoice {
+  if (choice === undefined) {
+    return "default";
+  }
+  return choice ? "on" : "off";
+}
+
+function notesAgentEnabled(choice: NotesAgentChoice): boolean | undefined {
+  if (choice === "default") {
+    return undefined;
+  }
+  return choice === "on";
 }
