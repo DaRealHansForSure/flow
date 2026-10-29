@@ -4,7 +4,7 @@
 
 import { create } from "zustand";
 
-export interface ChatBrainStatus {
+interface ChatBrainStatus {
   /** True while the Brain updates this chat's notes, Auto-Docs and skills. */
   readonly updating: boolean;
 }
