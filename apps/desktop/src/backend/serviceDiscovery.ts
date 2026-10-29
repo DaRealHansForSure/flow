@@ -48,7 +48,7 @@ export interface ServiceDiscoveryResult {
 // install.sh. Port of `resolveReleaseHome` in `scripts/flow-release.mjs`; keep
 // the folder order identical. A retired Cloud CLI install is adopted where it
 // is, since its hooks and service unit record absolute paths.
-export const FLOW_RELEASE_HOME_NAMES = ["flow-browser", "flow-cloud-cli"] as const;
+const FLOW_RELEASE_HOME_NAMES = ["flow-browser", "flow-cloud-cli"] as const;
 
 export const resolveFlowReleaseHome = ({
   env = process.env,

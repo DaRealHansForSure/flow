@@ -15,7 +15,7 @@ import * as yauzl from "yauzl";
 // We extract only native assets and license notices; Python is never executed.
 const MAC_BINARY_URL =
   "https://files.pythonhosted.org/packages/0e/43/39d8cf13964784447676d24f0cefa3bdc99c10e647c71e6a4172d302dcac/falkordblite-0.10.0-cp312-cp312-macosx_10_13_x86_64.macosx_15_0_arm64.whl";
-export const MAC_BINARY_SHA256 = "741fda166170513db1815d5369870e47d44da2e9b85320fddbc50c88a7338d51";
+const MAC_BINARY_SHA256 = "741fda166170513db1815d5369870e47d44da2e9b85320fddbc50c88a7338d51";
 const ASSETS = new Map([
   ["redislite/bin/redis-server", "bin/redis-server"],
   ["redislite/bin/falkordb.so", "bin/falkordb.so"],

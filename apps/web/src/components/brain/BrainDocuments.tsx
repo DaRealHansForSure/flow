@@ -28,7 +28,7 @@ import {
   DialogPanel,
 } from "../ui/dialog";
 
-export function documentLifecycle(document: BrainDocumentSummary): string {
+function documentLifecycle(document: BrainDocumentSummary): string {
   if (document.status === "resolved") return "Resolved · lesson retained";
   if (document.lifecycle === "temporal") return "Time-sensitive context";
   if (document.lifecycle === "issue") return "Open issue";

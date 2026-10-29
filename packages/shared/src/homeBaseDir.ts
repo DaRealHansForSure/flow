@@ -7,8 +7,8 @@
 
 export type JoinPath = (first: string, ...segments: string[]) => string;
 
-export const LEGACY_BASE_DIR_NAME = ".t3";
-export const DEFAULT_BASE_DIR_NAME = ".flow";
+const LEGACY_BASE_DIR_NAME = ".t3";
+const DEFAULT_BASE_DIR_NAME = ".flow";
 
 /** The path whose existence means "an install already lives at `~/.t3`". */
 export const legacyBaseDirProbePath = (homeDirectory: string, joinPath: JoinPath): string =>

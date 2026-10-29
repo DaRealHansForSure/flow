@@ -32,7 +32,7 @@ import { desktopServiceRegistryRoot, discoverService } from "./serviceDiscovery.
     Consumed (and deleted) by the backend pool before it decides which primary
     to build, so "continue with the built-in server" survives exactly one
     relaunch and never becomes a sticky mode the user cannot leave. */
-export const LEGACY_BACKEND_MARKER_FILE = "legacy-backend-once";
+const LEGACY_BACKEND_MARKER_FILE = "legacy-backend-once";
 
 const MINT_TIMEOUT_MS = 20_000;
 

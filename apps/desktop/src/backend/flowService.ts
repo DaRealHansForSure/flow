@@ -30,8 +30,8 @@ import {
 
 // Kept in sync with `scripts/instances/service.mjs`; the label is part of the
 // on-disk contract, so both sides must name it identically.
-export const LAUNCHD_LABEL = "com.flow.service";
-export const SYSTEMD_UNIT = "flow.service";
+const LAUNCHD_LABEL = "com.flow.service";
+const SYSTEMD_UNIT = "flow.service";
 
 const CONTROL_TIMEOUT_MS = 5_000;
 const RUNNER_TIMEOUT_MS = 10_000;
@@ -140,7 +140,7 @@ const readUnit = async (path: string): Promise<string | null> => {
 
 /** launchd plist `ProgramArguments`, or a systemd `ExecStart=` line. Only the
     launch argv is parsed; nothing else in the unit is interpreted here. */
-export const parseUnitArguments = (unit: string, host: NodeJS.Platform): readonly string[] => {
+const parseUnitArguments = (unit: string, host: NodeJS.Platform): readonly string[] => {
   if (host === "darwin") {
     const block = /<key>ProgramArguments<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(unit);
     if (!block) return [];

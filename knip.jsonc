@@ -108,7 +108,13 @@
       // UI component modules are copied and adapted as cohesive sets. Keep their
       // named subcomponents even before they have callers; the file audit still
       // reports an entire component module when nothing imports it.
-      "ignoreIssues": { "src/components/ui/*.tsx": ["exports", "nsExports", "duplicates"] },
+      "ignoreIssues": {
+        "src/components/ui/*.tsx": ["exports", "nsExports", "duplicates"],
+        // Flow: the fork's sidebar and onboarding stopped calling T3's
+        // SidebarStageBackdrop and splitOnboardingProjectPath; T3 still does.
+        "src/components/SidebarStageBackdrop.tsx": ["exports"],
+        "src/onboarding/projectImport.logic.ts": ["exports"],
+      },
     },
     "apps/marketing": {
       // `astro check` runs from the typecheck task in vite.config.ts, which knip does not read.

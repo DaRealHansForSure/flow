@@ -45,8 +45,8 @@ import {
   type ServiceDiscoveryResult,
 } from "./serviceDiscovery.ts";
 
-export const ADOPTION_JOURNAL_VERSION = 1;
-export const ADOPTION_JOURNAL_FILE = "service-adoption.json";
+const ADOPTION_JOURNAL_VERSION = 1;
+const ADOPTION_JOURNAL_FILE = "service-adoption.json";
 
 // The supervisor's own readiness deadline is 120s; anything shorter would
 // report a slow first boot (brain runtime, embedding model) as a broken

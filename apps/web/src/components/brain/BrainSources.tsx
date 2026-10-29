@@ -282,7 +282,7 @@ export function BrainSources({
   );
 }
 
-export function BrainSourceList({
+function BrainSourceList({
   sources,
   workspaceId,
   send,

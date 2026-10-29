@@ -20,11 +20,6 @@ export const AgentSessionImportSource = Schema.Struct({
 });
 export type AgentSessionImportSource = typeof AgentSessionImportSource.Type;
 
-/** Imported message ids retain their origin after event metadata is projected into SQLite. */
-export function isImportedAgentSessionMessageId(messageId: string): boolean {
-  return messageId.startsWith("import:");
-}
-
 /** Optional user-selected folders to discover projects without existing agent history. */
 export const AgentSessionScanInput = Schema.Struct({
   roots: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
