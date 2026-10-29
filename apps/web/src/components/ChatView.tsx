@@ -1085,6 +1085,11 @@ export default function ChatView(props: ChatViewProps) {
     projectId: activeProjectRef?.projectId ?? null,
     revealPanelByDefault: !shouldUsePlanSidebarSheet,
   });
+  const openBrainSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "brain");
+    }
+  });
   const activeProjectSettings = resolveProjectSettings(
     settings,
     activeProject?.id ?? null,
@@ -3892,6 +3897,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequest={addPullRequestSurfaceStable}
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
+          onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}

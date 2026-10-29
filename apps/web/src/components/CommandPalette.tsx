@@ -110,6 +110,7 @@ import { filesystemEnvironment, useFilesystemReadAccess } from "../state/filesys
 import { projectEnvironment } from "../state/projects";
 import { brainCommand } from "../state/brain";
 import { useProjectBrainChoice } from "./brain/useProjectBrainChoice";
+import { useChatBrainStatusStore } from "./brain/chatBrainStatusStore";
 import { useEnvironmentQuery } from "../state/query";
 import { serverEnvironment } from "../state/server";
 import { threadEnvironment } from "../state/threads";
@@ -625,6 +626,10 @@ function OpenCommandPaletteDialog(props: {
   const activeThreadKey = activeThread
     ? scopedThreadKey(scopeThreadRef(activeThread.environmentId, activeThread.id))
     : null;
+  // Flow: the Brain tab is offered only for a chat with a Brain.
+  const activeThreadHasBrain = useChatBrainStatusStore(
+    (state) => activeThreadKey !== null && state.byThreadKey[activeThreadKey] !== undefined,
+  );
   const supportsThreadFind =
     environments.find((environment) => environment.environmentId === activeThread?.environmentId)
       ?.serverConfig?.threadFind === true;
@@ -1328,6 +1333,21 @@ function OpenCommandPaletteDialog(props: {
       icon: <PullRequestGlyph.link className={ITEM_ICON_CLASS} />,
       run: async () => {
         useRightPanelStore.getState().open(threadRef, "pull-requests");
+      },
+    });
+  }
+
+  // Flow: opens the chat's Brain tab.
+  if (activeThread !== null && activeThreadHasBrain) {
+    const threadRef = scopeThreadRef(activeThread.environmentId, activeThread.id);
+    actionItems.push({
+      kind: "action",
+      value: "action:open-thread-brain",
+      searchTerms: ["brain", "notes", "conversation notes", "auto-docs", "memory", "panel"],
+      title: "Show Brain for this chat",
+      icon: <BrainCircuit className={ITEM_ICON_CLASS} />,
+      run: async () => {
+        useRightPanelStore.getState().open(threadRef, "brain");
       },
     });
   }
