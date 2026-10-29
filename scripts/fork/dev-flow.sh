@@ -37,6 +37,13 @@ if [[ "${1:-}" == "--seed" ]]; then
 fi
 
 cd "${REPO_ROOT}"
+if [[ ! -x "${REPO_ROOT}/node_modules/.bin/vp" ]]; then
+    echo "dev-flow: dependencies are missing, run 'pnpm install' first." >&2
+    exit 1
+fi
+# dev-runner spawns `vp`, which only the repo's own node_modules provides; `vp run`
+# and `pnpm run` add this to PATH, a direct call has to do it itself.
+export PATH="${REPO_ROOT}/node_modules/.bin:${PATH}"
 # The legacy backend makes the dev app run its own server from this checkout
 # instead of attaching to the installed flow.service.
 export FLOW_DESKTOP_LEGACY_BACKEND=1
