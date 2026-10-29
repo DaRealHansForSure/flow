@@ -16,6 +16,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   isolated data, optionally seeded from a snapshot of the real chats. Its output is also
   written to `.t3/dev/logs/dev-flow.log`, and closing the dev window ends the session.
 
+- Renderer performance log (`apps/web/src/debug/devPerformanceLog.ts`): `[flow-perf]` console
+  lines for renderer stalls over 100 ms with the scripts behind them, slow or large API
+  responses, and how long each route change (opening a chat) takes. On in dev builds,
+  elsewhere via `localStorage.setItem("flow:perf-log", "1")`.
+
 ### Changed
 
 - Synced with upstream Flow `release` (flow-v0.1.15): OpenCode CLI capture, notes
