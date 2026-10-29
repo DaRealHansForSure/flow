@@ -2560,6 +2560,13 @@ export const make = Effect.gen(function* () {
           (input.action === "create_pr" &&
             (!initialStatus.hasUpstream || initialStatus.aheadCount > 0));
         const wantsPr = input.action === "create_pr" || input.action === "commit_push_pr";
+        if (wantsPr && !(yield* readPullRequestsEnabled(serverSettingsService))) {
+          return yield* new GitManagerError({
+            operation: "runStackedAction",
+            cwd: input.cwd,
+            detail: "Pull requests are turned off in Settings > Source Control.",
+          });
+        }
 
         if (input.featureBranch && !wantsCommit) {
           return yield* new GitManagerError({
