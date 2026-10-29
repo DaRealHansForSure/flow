@@ -3,8 +3,8 @@
 // Clones the branch into repos/, registers it in repos.json, and runs a
 // graph-builder session to index it into the existing graph.
 
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
 import {
   REPOS_DIR, assertGatewayUp, fullIndexPrompt, git, loadRegistry, runBuilder, saveRegistry,
 } from "./lib.mjs";
@@ -19,7 +19,7 @@ if (!url) {
 }
 
 const name = url.replace(/\/+$/, "").split("/").pop().replace(/\.git$/, "");
-const dest = join(REPOS_DIR, name);
+const dest = NodePath.join(REPOS_DIR, name);
 const registry = loadRegistry();
 
 if (registry.repos.some((r) => r.name === name)) {
@@ -27,7 +27,7 @@ if (registry.repos.some((r) => r.name === name)) {
   process.exit(1);
 }
 
-if (!existsSync(dest)) {
+if (!NodeFS.existsSync(dest)) {
   console.log(`Cloning ${url}${branchArg ? ` (branch ${branchArg})` : ""} → repos/${name}`);
   const cloneArgs = ["clone", "--single-branch", ...(branchArg ? ["--branch", branchArg] : []), url, dest];
   git(REPOS_DIR, ...cloneArgs);
