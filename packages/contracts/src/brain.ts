@@ -275,6 +275,15 @@ export const BrainCommand = Schema.Union([
     workspaceId: Schema.NullOr(Schema.String),
     projectId: ProjectId,
   }),
+  /**
+   * Fork: one chat's own Brain, overriding its project's. null means no Brain;
+   * leaving workspaceId out forgets the choice so the chat follows its project.
+   */
+  Schema.Struct({
+    action: Schema.Literal("bindThread"),
+    workspaceId: Schema.optionalKey(Schema.NullOr(Schema.String)),
+    threadId: ThreadId,
+  }),
   Schema.Struct({ action: Schema.Literal("create"), name: Schema.String, cli: BrainCli }),
   Schema.Struct({ action: Schema.Literal("configure"), workspaceId: Schema.String, cli: BrainCli }),
   /** Choose the agent on this computer that writes conversation notes. */

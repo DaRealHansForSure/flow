@@ -13,6 +13,9 @@ import { primaryServerKeybindingsAtom } from "~/state/server";
 import { useNewThreadHandler } from "~/hooks/useHandleNewThread";
 import { useScratchProject } from "~/hooks/useScratchProject";
 import { isTriagePrompt } from "~/hooks/useStartTriage";
+import { brainCommand } from "~/state/brain";
+import { useAtomCommand } from "~/state/use-atom-command";
+import { ScratchBrainPicker } from "./ScratchBrainPicker";
 import { useClientSettings } from "~/hooks/useSettings";
 import { hasExplicitComposerModelSelection } from "~/lib/chatThreadActions";
 import {
@@ -183,11 +186,31 @@ export function DraftHeroHeadline({
       : null;
   };
   // Retargeting an empty draft would overwrite the project's draft and strand browser tabs.
+  // Fork: the Brain picked for a chat without a project, saved for the draft's
+  // future chat id. Moving the draft to a real project forgets it again.
+  const draftThreadId = useComposerDraftStore((store) =>
+    draftId ? (store.getDraftSession(draftId)?.threadId ?? null) : null,
+  );
+  const [scratchBrainId, setScratchBrainId] = useState<string | null>(null);
+  const scratchBrainChosenRef = useRef(false);
+  const executeBrainCommand = useAtomCommand(brainCommand, { reportFailure: false });
   const selectProject = (project: (typeof projects)[number], logicalProjectKey: string) => {
     if (!draftId) {
       return;
     }
     pendingScratchRef.current = null;
+    const movesToRealProject = !isScratchProject(
+      project,
+      scratchWorkspaceRootFor(project.environmentId),
+    );
+    if (movesToRealProject && scratchBrainChosenRef.current && draftThreadId !== null) {
+      scratchBrainChosenRef.current = false;
+      setScratchBrainId(null);
+      void executeBrainCommand({
+        environmentId: project.environmentId,
+        input: { action: "bindThread", threadId: draftThreadId },
+      });
+    }
     const currentDraft = getComposerDraft(draftId);
     if (!composerDraftHasUserContent(currentDraft)) {
       void openProjectDraft(scopeProjectRef(project.environmentId, project.id));
@@ -399,7 +422,24 @@ export function DraftHeroHeadline({
       )}
       {scratchWorkspaceRoot === null ? null : (
         <p className="mt-2 flex h-6 w-full items-center justify-center text-sm">
-          {isScratchDraft ? projectSelector : orStartWithoutProject}
+          {isScratchDraft ? (
+            <span className="flex items-center gap-2">
+              {projectSelector}
+              {activeProject !== null && draftThreadId !== null ? (
+                <ScratchBrainPicker
+                  environmentId={activeProject.environmentId}
+                  threadId={draftThreadId}
+                  selectedBrainId={scratchBrainId}
+                  onSelectedBrainIdChange={(brainId) => {
+                    scratchBrainChosenRef.current = true;
+                    setScratchBrainId(brainId);
+                  }}
+                />
+              ) : null}
+            </span>
+          ) : (
+            orStartWithoutProject
+          )}
         </p>
       )}
     </div>

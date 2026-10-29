@@ -32,6 +32,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A loading indicator in the content pane while a page or chat is still loading, instead of
   an empty pane.
 
+- A chat without a project picks its own Brain or "No Brain" on the new-chat screen; the
+  choice stays with the chat.
+
 ### Changed
 
 - Telemetry is off by default: no usage data, no relay connection traces and no mobile crash

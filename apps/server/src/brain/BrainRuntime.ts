@@ -972,8 +972,8 @@ export class BrainRuntime {
       throw new Error("Document reads must be resolved by the server.");
     if (command.action === "listGithubRepositories" || command.action === "listGithubBranches")
       return null;
-    if (command.action === "bindProject")
-      throw new Error("Project connections must be resolved by the server.");
+    if (command.action === "bindProject" || command.action === "bindThread")
+      throw new Error("Project and chat connections must be resolved by the server.");
     if (command.action === "start") {
       await this.start();
       return null;
@@ -1316,6 +1316,26 @@ export class BrainRuntime {
   projectBrainId(projectId: ProjectId) {
     return this.projectBindings.resolve(projectId, (id) => this.legacyProjectBrainId(id));
   }
+  /** The chat's own Brain choice when it has one, otherwise its project's (fork). */
+  threadBrainId(projectId: ProjectId, threadId: string) {
+    const choice = this.projectBindings.threadChoice(threadId);
+    if (choice !== undefined) {
+      return choice ?? undefined;
+    }
+    return this.projectBrainId(projectId);
+  }
+  /** Gives one chat its own Brain, or none with null, regardless of its project (fork). */
+  bindThread(threadId: string, workspaceId: string | null | undefined) {
+    const result = this.commands.then(async () => {
+      if (this.closed) throw new Error("Brain runtime is shutting down.");
+      if (workspaceId) {
+        this.workspace(workspaceId);
+      }
+      await this.projectBindings.bindThread(threadId, workspaceId);
+    });
+    this.commands = result.catch(() => {});
+    return result;
+  }
   private async sessionWorker(workspace: Workspace) {
     let pending = this.sessionWorkers.get(workspace.id);
     if (pending && !(await pending).alive) {
@@ -1421,10 +1441,11 @@ export class BrainRuntime {
     await NodeFSP.rename(temp, file);
   }
   async chatMemories(projectId: ProjectId, session: string, revision?: string) {
-    const workspace = this.workspaces.find((entry) => entry.id === this.projectBrainId(projectId));
+    const workspaceId = this.threadBrainId(projectId, session);
+    const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) return { memories: [], status: "disabled" as const };
     const result = await this.brainMemories(workspace.id, session, revision);
-    if (this.projectBrainId(projectId) !== workspace.id)
+    if (this.threadBrainId(projectId, session) !== workspace.id)
       throw new Error("The project's brain changed. Retry the request.");
     return result;
   }
@@ -1498,10 +1519,11 @@ export class BrainRuntime {
     args: Record<string, unknown>,
     context: BrainSessionContext,
   ) {
-    const workspace = this.workspaces.find((entry) => entry.id === this.projectBrainId(projectId));
+    const workspaceId = this.threadBrainId(projectId, context.session);
+    const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) throw new Error("This project has no connected brain");
     const result = await this.callBrainTool(workspace.id, name, args, context);
-    if (this.projectBrainId(projectId) !== workspace.id)
+    if (this.threadBrainId(projectId, context.session) !== workspace.id)
       throw new Error("The project's brain changed.");
     return result;
   }
@@ -1564,7 +1586,8 @@ export class BrainRuntime {
     return result;
   }
   async captureProjectEvent(projectId: ProjectId, input: BrainCapture) {
-    const workspace = this.workspaces.find((entry) => entry.id === this.projectBrainId(projectId));
+    const workspaceId = this.threadBrainId(projectId, input.context.session);
+    const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) return;
     return this.captureBrainEvent(workspace.id, input);
   }
