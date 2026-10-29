@@ -1,18 +1,19 @@
 # Worklog
 
-Updated: 2026-10-29 20:10
+Updated: 2026-10-29 20:15
 
 ## Current focus
 
 - **Topic:** Dev Flow launcher for developing Flow next to the installed Flow
 - **Goal:** One command starts the Dev Flow from develop with hot reload on .t3/dev
-- **Branch:** feat/dev-flow-launcher (from develop)
-- **Last step done:** scripts/fork/dev-flow.sh and CLAUDE.md section written
-- **Next step:** Merge feat/dev-flow-launcher into develop; owner runs scripts/fork/dev-flow.sh --seed
+- **Branch:** develop (f8b99c86f), Dev Flow starts from here
+- **Last step done:** feat/dev-flow-launcher merged into develop
+- **Next step:** Owner runs scripts/fork/dev-flow.sh --seed on develop; then fork releases or T3 port
 - **Open questions / blockers:** Fork releases needed before the service fix reaches the installed app
 
 ## Finished features
 
+- 2026-10-29 - Dev Flow launcher scripts/fork/dev-flow.sh (35a521f5e)
 - 2026-10-29 - Service network access fix - merged into develop
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
