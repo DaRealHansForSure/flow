@@ -23,6 +23,70 @@ export function extractFenceTitle(meta: string | undefined): string | null {
   return meta.split(/\s+/).find((candidate) => FENCE_FILENAME_TOKEN_REGEX.test(candidate)) ?? null;
 }
 
+const DOWNLOAD_FILE_STEM = "snippet";
+const DOWNLOAD_FALLBACK_EXTENSION = "txt";
+
+// Languages whose files go by a fixed name rather than an extension.
+const DOWNLOAD_FILE_NAMES_BY_LANGUAGE = new Map([
+  ["dockerfile", "Dockerfile"],
+  ["makefile", "Makefile"],
+]);
+
+const DOWNLOAD_EXTENSIONS_BY_LANGUAGE = new Map([
+  ["sh", "sh"],
+  ["bash", "sh"],
+  ["zsh", "sh"],
+  ["shell", "sh"],
+  ["shellscript", "sh"],
+  ["fish", "fish"],
+  ["powershell", "ps1"],
+  ["pwsh", "ps1"],
+  ["ts", "ts"],
+  ["typescript", "ts"],
+  ["tsx", "tsx"],
+  ["js", "js"],
+  ["javascript", "js"],
+  ["jsx", "jsx"],
+  ["json", "json"],
+  ["jsonc", "json"],
+  ["yaml", "yaml"],
+  ["yml", "yml"],
+  ["py", "py"],
+  ["python", "py"],
+  ["go", "go"],
+  ["rs", "rs"],
+  ["rust", "rs"],
+  ["sql", "sql"],
+  ["md", "md"],
+  ["markdown", "md"],
+  ["diff", "diff"],
+  ["patch", "patch"],
+  ["toml", "toml"],
+  ["ini", "ini"],
+  ["xml", "xml"],
+  ["html", "html"],
+  ["css", "css"],
+  ["scss", "scss"],
+  ["mermaid", "mmd"],
+]);
+
+export function codeBlockDownloadFileName(language: string, fenceTitle: string | null): string {
+  const normalizedLanguage = language.toLowerCase();
+  const fixedFileName = DOWNLOAD_FILE_NAMES_BY_LANGUAGE.get(normalizedLanguage);
+  const extension =
+    DOWNLOAD_EXTENSIONS_BY_LANGUAGE.get(normalizedLanguage) ?? DOWNLOAD_FALLBACK_EXTENSION;
+  const titleFileName = fenceTitle?.split(/[\\/]/).at(-1)?.trim();
+
+  if (titleFileName) {
+    const titleHasExtension = titleFileName.includes(".");
+    if (titleHasExtension || fixedFileName !== undefined) {
+      return titleFileName;
+    }
+    return `${titleFileName}.${extension}`;
+  }
+  return fixedFileName ?? `${DOWNLOAD_FILE_STEM}.${extension}`;
+}
+
 export function extractPreCodeMeta(node: unknown): string | undefined {
   const children = (
     node as

@@ -1,5 +1,5 @@
 import { Check, Copy } from "lucide";
-import { PlayIcon, WrapTextIcon } from "lucide-react";
+import { DownloadIcon, PlayIcon, WrapTextIcon } from "lucide-react";
 import { toHtml } from "hast-util-to-html";
 import React, { use, useEffect, useState, type ReactNode } from "react";
 
@@ -22,6 +22,7 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { HighlightedCodeLines } from "./HighlightedCodeLines";
 import {
+  codeBlockDownloadFileName,
   createHighlightCacheKey,
   estimateHighlightedSize,
   extractFenceLanguage,
@@ -36,6 +37,17 @@ const highlightedCodeCache = new LRUCache<string>(
   MAX_HIGHLIGHT_CACHE_ENTRIES,
   MAX_HIGHLIGHT_CACHE_MEMORY_BYTES,
 );
+
+// The desktop main window has no download handler, so Electron shows its Save dialog.
+function downloadCodeBlock(fileName: string, code: string): void {
+  const url = URL.createObjectURL(new Blob([code], { type: "text/plain;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  // Delay revocation so the browser can open the download stream.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
 
 const THREAD_FIND_IGNORE_PROPS = {
   "data-thread-find-ignore": "",
@@ -180,6 +192,40 @@ export function MarkdownCodeBlock({
 
   const handleCopy = () => copyToClipboard(code);
 
+  const handleDownload = () => {
+    try {
+      downloadCodeBlock(codeBlockDownloadFileName(language, fenceTitle), code);
+    } catch (cause) {
+      reportMarkdownActionFailure(
+        {
+          operation: "download-code-block",
+          language,
+          ...(fenceTitle ? { fenceTitle } : {}),
+        },
+        cause,
+      );
+    }
+  };
+
+  const downloadButton = (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost-muted"
+            size="icon-xs"
+            onClick={handleDownload}
+            aria-label="Download"
+          />
+        }
+      >
+        <DownloadIcon className="size-3" />
+      </TooltipTrigger>
+      <TooltipPopup side="top">Download</TooltipPopup>
+    </Tooltip>
+  );
+
   const copyButton = (
     <Tooltip>
       <TooltipTrigger
@@ -204,6 +250,7 @@ export function MarkdownCodeBlock({
       <div className="my-[0.65rem] border border-transparent" data-language={language}>
         <div className="flex items-center justify-end gap-0.5 pt-1.5 pr-1.5 select-none">
           {viewToggle}
+          {downloadButton}
           {copyButton}
         </div>
         {children}
@@ -258,6 +305,7 @@ export function MarkdownCodeBlock({
             </Tooltip>
           ) : null}
           {viewToggle}
+          {downloadButton}
           {copyButton}
         </span>
       }
