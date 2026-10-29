@@ -52,6 +52,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- "No project" chats now show in the Dev Flow: its data moved from `.t3/dev` inside the
+  checkout to `~/.flow-dev`. `dev-flow.sh` moves an existing `.t3/dev` there once, with its
+  Brain graph.
+
 - The web build (and with it the Dev Flow) no longer stops at T3's third-party license check:
   the Brain packages and their redis, bezier-js and reflink dependencies have notices.
 

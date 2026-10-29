@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # Starts the Dev Flow: the desktop app from this checkout with hot reload, on its
-# own server and its own data in .t3/dev, so the installed Flow (and the chat
+# own server and its own data in ~/.flow-dev, so the installed Flow (and the chat
 # running in it) is never touched.
 #
 # Usage: scripts/fork/dev-flow.sh [--seed]
-#   --seed  copy a snapshot of your real chats into .t3/dev first (only when
-#           .t3/dev has no database yet; the live database is opened read-only)
+#   --seed  copy a snapshot of your real chats into ~/.flow-dev first (only when
+#           it has no database yet; the live database is opened read-only)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DEV_HOME="${REPO_ROOT}/.t3/dev"
+# Outside the checkout: T3 offers "No project" chats only when the data
+# directory is not inside a git work tree.
+DEV_HOME="${FLOW_DEV_HOME:-${HOME}/.flow-dev}"
+LEGACY_DEV_HOME="${REPO_ROOT}/.t3/dev"
 LIVE_DATABASE="${HOME}/.t3/userdata/state.sqlite"
 DEV_DATABASE="${DEV_HOME}/userdata/state.sqlite"
 LOG_DIRECTORY="${DEV_HOME}/logs"
@@ -32,6 +35,30 @@ start_log() {
     echo "dev-flow: $(date '+%Y-%m-%d %H:%M:%S') logging to ${LOG_FILE}"
 }
 
+# The Brain's graph folder is named after the Brain store path, so it moves too.
+brain_graph_dir() {
+    printf '%s/.flow-brain/%s' "${HOME}" "$(printf '%s' "$1/userdata/brain" | sha256sum | cut -c1-12)"
+}
+
+# Moves the data of an earlier Dev Flow from .t3/dev to DEV_HOME, once.
+migrate_legacy_dev_home() {
+    if [[ -e "${DEV_HOME}" || ! -d "${LEGACY_DEV_HOME}" ]]; then
+        return
+    fi
+    if pgrep -f -- "--home-dir ${LEGACY_DEV_HOME}" > /dev/null; then
+        echo "dev-flow: an earlier Dev Flow still uses ${LEGACY_DEV_HOME}; close it, then start again." >&2
+        exit 1
+    fi
+    echo "dev-flow: moving the Dev Flow data from ${LEGACY_DEV_HOME} to ${DEV_HOME}"
+    mv "${LEGACY_DEV_HOME}" "${DEV_HOME}"
+    local legacy_graph new_graph
+    legacy_graph="$(brain_graph_dir "${LEGACY_DEV_HOME}")"
+    new_graph="$(brain_graph_dir "${DEV_HOME}")"
+    if [[ -d "${legacy_graph}" && ! -e "${new_graph}" ]]; then
+        mv "${legacy_graph}" "${new_graph}"
+    fi
+}
+
 seed_dev_database() {
     if [[ -e "${DEV_DATABASE}" ]]; then
         echo "dev-flow: ${DEV_DATABASE} already exists, not seeding again."
@@ -51,6 +78,7 @@ seed_dev_database() {
     echo "dev-flow: seeded ${DEV_DATABASE} from ${LIVE_DATABASE}."
 }
 
+migrate_legacy_dev_home
 start_log
 
 if [[ "${1:-}" == "--seed" ]]; then
