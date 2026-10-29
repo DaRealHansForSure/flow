@@ -1,5 +1,7 @@
 /** Settings pages a Settings row opens. */
 export const SETTINGS_PAGE_TARGETS = [
+  // Fork: the Flow Brain page.
+  "SettingsBrain",
   "SettingsEnvironments",
   "SettingsNotifications",
   "SettingsThreads",

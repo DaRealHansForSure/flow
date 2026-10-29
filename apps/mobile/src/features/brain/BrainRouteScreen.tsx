@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { retainChatContextOnError } from "@t3tools/client-runtime/state/brain";
+import { maskMarkdownFrontmatter } from "@t3tools/shared/markdownFrontmatter";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import {
   AppState,
@@ -12,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Markdown } from "react-native-nitro-markdown";
 import {
   ThreadId,
   type BrainDocument,
@@ -20,13 +20,15 @@ import {
   type BrainResponse,
   type EnvironmentId,
 } from "@t3tools/contracts";
-import { AppText as Text } from "../../components/AppText";
-import { AndroidScreenHeader } from "../../components/AndroidScreenHeader";
+import { AppText as Text } from "../../components/ui/AppText";
+import { AndroidScreenHeader } from "../../components/ui/AndroidScreenHeader";
 import { NativeStackScreenOptions } from "../../native/StackHeader";
+import { SelectableMarkdownText } from "../../native/SelectableMarkdownText";
 import { useEnvironments } from "../../state/environments";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { brainCommand } from "../../state/brain";
 import { tryCopyTextWithHaptic } from "../../lib/copyTextWithHaptic";
+import { tryOpenExternalUrl } from "../../lib/openExternalUrl";
 import { useMarkdownPreviewStyles } from "../files/FileMarkdownPreview";
 
 type Params = { environmentId?: string; threadId?: string } | undefined;
@@ -72,6 +74,7 @@ function BrainScreenContent({
   const [tab, setTab] = useState<"graph" | "skill" | "memory">("graph");
   const reload = useRef<() => void>(() => {});
   const [selected, setSelected] = useState<BrainDocumentSummary | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- polls the environment's brain on a timer and an AppState listener while mounted
   useEffect(() => {
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -464,6 +467,7 @@ function MobileBrainDocumentContent({
   const [copied, setCopied] = useState(false);
   const id = document?.id,
     revision = document?.revision;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- fetches the opened document's revision from the environment and drops the reply after close
   useEffect(() => {
     let disposed = false;
     if (!id) return;
@@ -555,22 +559,25 @@ function MobileBrainDocumentContent({
                   </Text>
                 </>
               )}
-              <Markdown
-                options={{ gfm: true }}
-                renderers={styles.renderers}
-                styles={styles.styles}
-                theme={styles.theme}
-              >
-                {loaded.kind === "skill"
-                  ? loaded.text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "")
-                  : loaded.text}
-              </Markdown>
+              <SelectableMarkdownText
+                markdown={documentMarkdown(loaded)}
+                textStyle={styles.nativeTextStyle}
+                onLinkPress={(href) => void tryOpenExternalUrl(href, "markdown-link")}
+              />
             </>
           )}
         </ScrollView>
       </View>
     </Modal>
   );
+}
+
+/** A skill's SKILL.md frontmatter is metadata, so the reader skips it. */
+function documentMarkdown(document: BrainDocument): string {
+  if (document.kind === "skill") {
+    return maskMarkdownFrontmatter(document.text);
+  }
+  return document.text;
 }
 
 function CloudBrainSignIn({
