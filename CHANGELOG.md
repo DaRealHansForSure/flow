@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `dev-flow.sh --seed` also copies your real Brain (store and knowledge graph) into the Dev
+  Flow, so it looks like your real setup; the copy's paths point at the Dev Flow's own data.
+
 - CLAUDE.md guide for maintaining the fork: remotes, branches, syncing with upstream
   Flow and T3 Code, upstream naming, and the owner's working rules.
 - `scripts/fork/dev-flow.sh`: starts the Dev Flow from the checkout with hot reload on

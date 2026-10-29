@@ -66,7 +66,7 @@ owner works and chats in. The Dev Flow runs from this checkout next to it:
 
 ```bash
 scripts/fork/dev-flow.sh          # desktop app with hot reload, data in ~/.flow-dev
-scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats (about 3 GB)
+scripts/fork/dev-flow.sh --seed   # copy snapshots of the real chats and Brain (about 6 GB)
 ```
 
 - Needs `pnpm install` and, on Ubuntu, `sudo apt install libsecret-1-dev` once; the
