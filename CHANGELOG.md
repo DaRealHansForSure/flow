@@ -50,6 +50,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- When the Brain fails to answer, the chat's Brain button turns red with the reason and a
+  "Brain unavailable" toast appears once, instead of the error showing only inside the Brain
+  tab.
+
 - In a chat without a Brain, the right panel lists "Brain" greyed out with a hint instead of
   leaving it out.
 
