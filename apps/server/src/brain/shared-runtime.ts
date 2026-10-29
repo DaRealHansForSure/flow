@@ -33,6 +33,8 @@ export type BrainClient = Pick<
   | "chatMemories"
   | "brainDocument"
   | "projectBrainId"
+  | "threadBrainId"
+  | "bindThread"
   | "callProjectTool"
   | "captureProjectEvent"
   | "bindProject"
@@ -164,8 +166,12 @@ export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) 
           result = await runtime.listGithubBranches(input.name, input.workspace);
           break;
         case "command":
-          if (!input.command || input.command.action === "bindProject")
-            throw Error("Project bindings belong to the calling instance");
+          if (
+            !input.command ||
+            input.command.action === "bindProject" ||
+            input.command.action === "bindThread"
+          )
+            throw Error("Project and chat bindings belong to the calling instance");
           result = await runtime.command(input.command);
           break;
         case "call":
@@ -313,13 +319,30 @@ export class SharedBrainRuntime implements BrainClient {
   projectBrainId(project: ProjectId) {
     return this.projectBindings.resolve(project, (id) => this.bindings[id]);
   }
+  /** The chat's own Brain choice when it has one, otherwise its project's (fork). */
+  threadBrainId(project: ProjectId, threadId: string) {
+    const choice = this.projectBindings.threadChoice(threadId);
+    if (choice !== undefined) {
+      return choice ?? undefined;
+    }
+    return this.projectBrainId(project);
+  }
+  bindThread(threadId: string, workspace: string | null | undefined) {
+    const pending = this.writes.then(async () => {
+      if (workspace && !(await this.state()).workspaces.some((w) => w.id === workspace))
+        throw Error("Brain is not available on the source instance");
+      await this.projectBindings.bindThread(threadId, workspace);
+    });
+    this.writes = pending.catch(() => {});
+    return pending;
+  }
   async chatMemories(projectId: ProjectId, session: string, revision?: string) {
-    const workspace = this.projectBrainId(projectId);
+    const workspace = this.threadBrainId(projectId, session);
     if (!workspace) return { memories: [], status: "disabled" as const };
     const result = decodeChatMemories(
       await this.request("memories", { workspace, context: { session }, revision }),
     );
-    if (this.projectBrainId(projectId) !== workspace)
+    if (this.threadBrainId(projectId, session) !== workspace)
       throw Error("The project’s brain changed. Retry the request.");
     return result;
   }
@@ -356,12 +379,12 @@ export class SharedBrainRuntime implements BrainClient {
     args: Record<string, unknown>,
     context: BrainSessionContext,
   ) {
-    const workspace = this.projectBrainId(project);
+    const workspace = this.threadBrainId(project, context.session);
     if (!workspace) throw Error("This project has no connected shared brain");
     return decodeToolResult(await this.request("call", { workspace, name, args, context }));
   }
   async captureProjectEvent(project: ProjectId, capture: BrainCapture) {
-    const workspace = this.projectBrainId(project);
+    const workspace = this.threadBrainId(project, capture.context.session);
     if (!workspace) return;
     capture = { ...capture, occurredAt: capture.occurredAt ?? Date.now() };
     this.sequence = Math.max(this.sequence + 1, Date.now() * 1000);

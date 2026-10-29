@@ -28,6 +28,7 @@ const ANALYTICS_COMMANDS = new Set([
   "start",
   "refreshGithub",
   "bindProject",
+  "bindThread",
   "create",
   "configure",
   "import",
@@ -219,6 +220,8 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
                 workspaceId: command.workspaceId,
                 bind: () => runtime.bindProject(project.value, command.workspaceId),
               });
+            } else if (command.action === "bindThread") {
+              await runtime.bindThread(command.threadId, command.workspaceId);
             } else if (command.action === "listGithubRepositories") {
               repositories = await runtime.listGithubRepositories(command.workspaceId);
             } else if (command.action === "listGithubBranches") {
@@ -231,6 +234,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
             state: await runtime.state(
               undefined,
               command.action === "bindProject" ||
+                command.action === "bindThread" ||
                 (command.action === "read" && command.metadataOnly === true),
             ),
             error,

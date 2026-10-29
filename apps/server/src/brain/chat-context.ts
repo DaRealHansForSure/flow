@@ -36,7 +36,7 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
       const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
       const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
       if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
-      const bindingKey = runtime.projectBrainId(thread.value.projectId) ?? "";
+      const bindingKey = runtime.threadBrainId(thread.value.projectId, threadId) ?? "";
       if (bindingKey === previousBinding) return { bindingKey };
       if (!bindingKey)
         return {
@@ -67,7 +67,7 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
         return yield* Effect.fail(
           "Flow orient failed. Retry when the connected brain is available.",
         );
-      if (runtime.projectBrainId(thread.value.projectId) !== bindingKey)
+      if (runtime.threadBrainId(thread.value.projectId, threadId) !== bindingKey)
         return yield* Effect.fail(
           "The project's brain changed while preparing context. Retry the message.",
         );
@@ -109,10 +109,10 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
     const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
     const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
     if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
-    if (!runtime.projectBrainId(thread.value.projectId)) return;
+    if (!runtime.threadBrainId(thread.value.projectId, threadId)) return;
     if (
       expectedBinding !== undefined &&
-      (runtime.projectBrainId(thread.value.projectId) ?? "") !== expectedBinding
+      (runtime.threadBrainId(thread.value.projectId, threadId) ?? "") !== expectedBinding
     )
       return;
     yield* Effect.tryPromise({

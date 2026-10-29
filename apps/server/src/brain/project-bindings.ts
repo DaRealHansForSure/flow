@@ -12,6 +12,8 @@ type Project = {
   repositoryIdentity?: { canonicalKey: string } | null | undefined;
 };
 
+const threadKey = (threadId: string) => `thread:${threadId}`;
+
 /** A repository's brain is independent of its checkout ids. Null records an explicit disconnect. */
 export class ProjectBrainBindings {
   private projects = new Map<ProjectId, string>();
@@ -102,6 +104,26 @@ export class ProjectBrainBindings {
   }
   async bind(id: ProjectId, workspace: string | null) {
     await this.persist({ ...this.choices, [this.key(id)]: workspace });
+  }
+  /**
+   * A chat's own Brain choice (fork): a Brain id, null for an explicit "no
+   * Brain", or undefined when the chat follows its project.
+   */
+  threadChoice(threadId: string): string | null | undefined {
+    const key = threadKey(threadId);
+    if (!Object.hasOwn(this.choices, key)) {
+      return undefined;
+    }
+    return this.choices[key] ?? null;
+  }
+  /** Records a chat's Brain (null for none); undefined forgets it so the chat follows its project. */
+  async bindThread(threadId: string, workspace: string | null | undefined) {
+    const { [threadKey(threadId)]: _previous, ...rest } = this.choices;
+    if (workspace === undefined) {
+      await this.persist(rest);
+      return;
+    }
+    await this.persist({ ...rest, [threadKey(threadId)]: workspace });
   }
   private async persist(next: Record<string, string | null>) {
     await NodeFSP.mkdir(this.directory, { recursive: true });

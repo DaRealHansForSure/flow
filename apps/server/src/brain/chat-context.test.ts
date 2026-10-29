@@ -121,6 +121,7 @@ it.effect(
       const orientText = "Original curated orientation\n" + "x".repeat(30000);
       const runtime = {
         projectBrainId: () => binding,
+        threadBrainId: () => binding,
         callProjectTool: async (
           project: ProjectId,
           name: string,

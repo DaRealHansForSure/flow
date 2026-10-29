@@ -75,3 +75,37 @@ it("requires one explicit choice for conflicting legacy checkouts and keeps othe
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+it("keeps each chat's own Brain choice, including no Brain, across restarts", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "brain-thread-bindings-"));
+  try {
+    const bindings = new ProjectBrainBindings(directory);
+    await bindings.initialize();
+    expect(bindings.threadChoice("chat-a")).toBeUndefined();
+    await bindings.bindThread("chat-a", "brain-1");
+    await bindings.bindThread("chat-b", null);
+    const restarted = new ProjectBrainBindings(directory);
+    await restarted.initialize();
+    expect(restarted.threadChoice("chat-a")).toBe("brain-1");
+    // An explicit "no Brain" stays distinct from "follow the project".
+    expect(restarted.threadChoice("chat-b")).toBeNull();
+    expect(restarted.threadChoice("chat-c")).toBeUndefined();
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("forgets a chat's choice so it follows its project again", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "brain-thread-forget-"));
+  try {
+    const bindings = new ProjectBrainBindings(directory);
+    await bindings.initialize();
+    await bindings.bindThread("chat-a", "brain-1");
+    await bindings.bindThread("chat-a", undefined);
+    const restarted = new ProjectBrainBindings(directory);
+    await restarted.initialize();
+    expect(restarted.threadChoice("chat-a")).toBeUndefined();
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
