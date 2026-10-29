@@ -52,6 +52,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The web build (and with it the Dev Flow) no longer stops at T3's third-party license check:
+  the Brain packages and their redis, bezier-js and reflink dependencies have notices.
+
 - The Dev Flow window no longer fails with "Failed to fetch": the server's development
   CORS list now allows the Flow desktop origins (`flow://app`, `flow-dev://app`).
 - Settings > Network access now reaches the Flow service: the service listens on every
