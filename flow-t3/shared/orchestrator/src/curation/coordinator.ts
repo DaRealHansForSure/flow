@@ -68,6 +68,11 @@ export class CurationCoordinator {
     if (outputs) {
       this.store.setCurationOutputs(sessionId, outputs);
     }
+    // The capture is already stored; its cursor stays put so turning the agent on catches up.
+    if (!this.isNotesAgentOn(sessionId)) {
+      this.pause(sessionId);
+      return;
+    }
     const saved = this.store.session(sessionId);
     if (sequence <= saved.lastSeq) return;
     const source = this.store.readCapture(sessionId, sequence - 1, sequence)[0];
@@ -107,8 +112,36 @@ export class CurationCoordinator {
     }
   }
 
+  /**
+   * Applies the settings a chat's host resolved for it. Switching the notes agent off stops
+   * further runs; switching it back on catches up on everything captured in between.
+   */
+  configure(sessionId: string, outputs: BrainCurationOutputs): void {
+    if (this.closed) return;
+    const previous = this.store.curationOutputs(sessionId);
+    const next = { ...outputs, notesAgent: outputs.notesAgent ?? true };
+    const unchanged =
+      previous.docs === next.docs &&
+      previous.skills === next.skills &&
+      previous.notesAgent === next.notesAgent;
+    if (unchanged) {
+      return;
+    }
+    this.store.setCurationOutputs(sessionId, next);
+    if (!next.notesAgent) {
+      this.pause(sessionId);
+      return;
+    }
+    if (!previous.notesAgent) {
+      this.catchUp(sessionId);
+    }
+  }
+
   /** Enroll an older captured chat when it is opened, without sweeping every archive. */
   open(sessionId: string, enabled = true): void {
+    if (!this.isNotesAgentOn(sessionId)) {
+      return;
+    }
     if (
       this.store.session(sessionId).updatedAt ||
       (!enabled && this.store.get(`notes:${sessionId}`))
@@ -129,8 +162,49 @@ export class CurationCoordinator {
     if (enabled) this.capture(sessionId, repository, last.seq, true);
   }
 
+  private isNotesAgentOn(sessionId: string): boolean {
+    return this.store.curationOutputs(sessionId).notesAgent;
+  }
+
+  /** Drops a waiting checkpoint; a run already in progress finishes and is not followed up. */
+  private pause(sessionId: string): void {
+    const state = this.sessions.get(sessionId);
+    if (!state) {
+      return;
+    }
+    if (state.timer) {
+      clearTimeout(state.timer);
+      state.timer = undefined;
+    }
+    state.immediate = false;
+  }
+
+  /** Resumes a chat from its saved cursor through its latest capture. */
+  private catchUp(sessionId: string): void {
+    const rows = this.store.readCapture(sessionId);
+    const last = rows.at(-1);
+    if (!last || last.seq <= this.store.session(sessionId).lastSeq) {
+      return;
+    }
+    const repo = record(rows.find((row) => row.kind === "created")?.data).repo;
+    const repository = typeof repo === "string" ? repo : null;
+    const first = rows.find(
+      (row) => row.kind === "user_prompt" && typeof record(row.data).text === "string",
+    );
+    if (first) {
+      this.store.bootstrap(
+        { sessionId, repo: repository, after: 0, through: first.seq },
+        record(first.data).text as string,
+      );
+    }
+    this.capture(sessionId, repository, last.seq, true);
+  }
+
   private schedule(sessionId: string, state: Pending): void {
     if (state.running || this.closed) return;
+    if (!this.isNotesAgentOn(sessionId)) {
+      return;
+    }
     if (state.immediate) {
       if (state.timer) clearTimeout(state.timer);
       state.timer = undefined;
@@ -150,6 +224,9 @@ export class CurationCoordinator {
 
   private start(sessionId: string, state: Pending): void {
     if (this.closed || state.running) return;
+    if (!this.isNotesAgentOn(sessionId)) {
+      return;
+    }
     this.store.setSession(sessionId, "extracting");
     // Serialize model work across chats. Source capture and first notes stay immediate.
     const job = this.queue.then(() => this.extract(sessionId, state));
@@ -177,6 +254,11 @@ export class CurationCoordinator {
   private async extract(sessionId: string, state: Pending): Promise<void> {
     state.lastStartedAt = Date.now();
     try {
+      // Switched off while this run waited behind another chat's.
+      if (!this.isNotesAgentOn(sessionId)) {
+        this.store.setSession(sessionId, "idle");
+        return;
+      }
       const after = this.store.session(sessionId).lastSeq;
       const through = state.through;
       const fresh = normalizeTranscript(this.store.readCapture(sessionId, after, through));

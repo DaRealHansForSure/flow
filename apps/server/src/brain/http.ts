@@ -22,6 +22,7 @@ import {
 import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
 import { makeBrainProjections } from "./brainProjections.ts";
+import { resolveChatCurationOutputs } from "./chat-context.ts";
 import { AnalyticsService } from "../telemetry/AnalyticsService.ts";
 
 const ANALYTICS_COMMANDS = new Set([
@@ -156,7 +157,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
           if (Option.isSome(selectedProject))
             runtime.projectBindings.register(selectedProject.value);
         }
-        if (command.action === "readChat") {
+        if (command.action === "readChat" || command.action === "setChatNotesAgent") {
           const thread = yield* projections
             .getThreadShellById(command.threadId)
             .pipe(Effect.catch((error) => failEnvironmentInternal("internal_error", error)));
@@ -166,15 +167,37 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
             .getProjectShellById(thread.value.projectId)
             .pipe(Effect.catch((error) => failEnvironmentInternal("internal_error", error)));
           if (Option.isSome(chatProject)) runtime.projectBindings.register(chatProject.value);
+          const currentSettings = yield* settings.getSettings.pipe(
+            Effect.catch((error) => failEnvironmentInternal("internal_error", error)),
+          );
           return yield* Effect.tryPromise(async () => {
             try {
+              if (command.action === "setChatNotesAgent") {
+                await runtime.setThreadNotesAgent(command.threadId, command.enabled);
+              }
+              // Sent on every read too, so a changed global setting reaches chats with no new capture.
+              const outputs = resolveChatCurationOutputs(
+                currentSettings,
+                thread.value.projectId,
+                runtime.projectBindings.threadNotesAgent(command.threadId),
+              );
+              const memories = await runtime.chatMemories(
+                thread.value.projectId,
+                command.threadId,
+                command.action === "readChat" ? command.revision : undefined,
+                outputs,
+              );
+              // Read again: a long poll may have waited while the chat's choice changed.
+              const choice = runtime.projectBindings.threadNotesAgent(command.threadId);
               return {
                 state: await runtime.state(thread.value.projectId, false, command.threadId),
-                chatMemories: await runtime.chatMemories(
-                  thread.value.projectId,
-                  command.threadId,
-                  command.revision,
-                ),
+                chatMemories: {
+                  ...memories,
+                  notesAgent: {
+                    enabled: choice ?? currentSettings.brainNotesAgent,
+                    ...(choice === undefined ? {} : { choice }),
+                  },
+                },
                 error: null,
                 createdWorkspaceId: null,
               };

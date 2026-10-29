@@ -279,7 +279,72 @@ NodeTest.test(
     NodeAssert.doesNotMatch(calls[1]!.instructions, /^AUTO-DOCS$/m);
     NodeAssert.equal(calls[2]!.renew, true);
     NodeAssert.match(calls[2]!.instructions, /^AUTO-DOCS$/m);
-    NodeAssert.deepEqual(f.store.curationOutputs("chat-a"), { docs: true, skills: true });
+    NodeAssert.deepEqual(f.store.curationOutputs("chat-a"), {
+      docs: true,
+      skills: true,
+      notesAgent: true,
+    });
     f.close();
   },
 );
+
+NodeTest.test(
+  "a chat with the notes agent off never runs, also after a restart, and catches up when turned on",
+  async () => {
+    const calls: BrainCuratorRun[] = [];
+    const run = async (request: BrainCuratorRun) => {
+      calls.push(request);
+      return result;
+    };
+    const f = fixture(run);
+    f.add("Original task with the agent on.", true);
+    await f.coordinator.flush();
+    NodeAssert.equal(calls.length, 1);
+    f.coordinator.configure("chat-a", { docs: true, skills: true, notesAgent: false });
+    f.add("Captured while the agent is off.", true);
+    f.add("Still off, no settings sent.", true);
+    f.coordinator.open("chat-a");
+    await f.coordinator.flush();
+    NodeAssert.equal(calls.length, 1);
+    NodeAssert.equal(f.store.session("chat-a").lastSeq, 1);
+    f.coordinator.close();
+
+    const restarted = new CurationCoordinator(f.store, {
+      run,
+      endpoint: "http://localhost:1",
+      token: "private",
+      cwd: "/tmp",
+      intervalMs: 60000,
+    });
+    restarted.recover();
+    await restarted.flush();
+    NodeAssert.equal(calls.length, 1);
+    restarted.configure("chat-a", { docs: true, skills: true, notesAgent: true });
+    await restarted.flush();
+    NodeAssert.equal(calls.length, 2);
+    NodeAssert.match(calls[1]!.input, /Previously processed through E1; new source ends at E3/);
+    NodeAssert.match(calls[1]!.input, /Captured while the agent is off/);
+    NodeAssert.match(calls[1]!.input, /Still off, no settings sent/);
+    NodeAssert.equal(f.store.session("chat-a").lastSeq, 3);
+    restarted.close();
+    f.db.close();
+  },
+);
+
+NodeTest.test("a chat that starts with the notes agent off gets no notes until it is turned on", async () => {
+  const calls: BrainCuratorRun[] = [];
+  const f = fixture(async (request) => {
+    calls.push(request);
+    return result;
+  });
+  f.add("A private chat.", true, { docs: true, skills: true, notesAgent: false });
+  await f.coordinator.flush();
+  NodeAssert.equal(calls.length, 0);
+  NodeAssert.equal(f.store.get("notes:chat-a"), undefined);
+  f.add("Notes are wanted now.", true, { docs: true, skills: true, notesAgent: true });
+  await f.coordinator.flush();
+  NodeAssert.equal(calls.length, 1);
+  NodeAssert.match(calls[0]!.input, /A private chat/);
+  NodeAssert.match(calls[0]!.input, /Notes are wanted now/);
+  f.close();
+});

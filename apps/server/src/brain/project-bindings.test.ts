@@ -76,7 +76,7 @@ it("requires one explicit choice for conflicting legacy checkouts and keeps othe
   }
 });
 
-it("keeps each chat's own Brain choice, including no Brain, across restarts", async () => {
+it("keeps each chat's own Brain and Notes agent choices, including no Brain, across restarts", async () => {
   const directory = await mkdtemp(join(tmpdir(), "brain-thread-bindings-"));
   try {
     const bindings = new ProjectBrainBindings(directory);
@@ -84,9 +84,14 @@ it("keeps each chat's own Brain choice, including no Brain, across restarts", as
     expect(bindings.threadChoice("chat-a")).toBeUndefined();
     await bindings.bindThread("chat-a", "brain-1");
     await bindings.bindThread("chat-b", null);
+    await bindings.setThreadNotesAgent("chat-a", false);
+    await bindings.setThreadNotesAgent("chat-b", true);
     const restarted = new ProjectBrainBindings(directory);
     await restarted.initialize();
     expect(restarted.threadChoice("chat-a")).toBe("brain-1");
+    expect(restarted.threadNotesAgent("chat-a")).toBe(false);
+    expect(restarted.threadNotesAgent("chat-b")).toBe(true);
+    expect(restarted.threadNotesAgent("chat-c")).toBeUndefined();
     // An explicit "no Brain" stays distinct from "follow the project".
     expect(restarted.threadChoice("chat-b")).toBeNull();
     expect(restarted.threadChoice("chat-c")).toBeUndefined();
@@ -95,16 +100,19 @@ it("keeps each chat's own Brain choice, including no Brain, across restarts", as
   }
 });
 
-it("forgets a chat's choice so it follows its project again", async () => {
+it("forgets a chat's choices so it follows its project and the setting again", async () => {
   const directory = await mkdtemp(join(tmpdir(), "brain-thread-forget-"));
   try {
     const bindings = new ProjectBrainBindings(directory);
     await bindings.initialize();
     await bindings.bindThread("chat-a", "brain-1");
+    await bindings.setThreadNotesAgent("chat-a", false);
     await bindings.bindThread("chat-a", undefined);
+    await bindings.setThreadNotesAgent("chat-a", undefined);
     const restarted = new ProjectBrainBindings(directory);
     await restarted.initialize();
     expect(restarted.threadChoice("chat-a")).toBeUndefined();
+    expect(restarted.threadNotesAgent("chat-a")).toBeUndefined();
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

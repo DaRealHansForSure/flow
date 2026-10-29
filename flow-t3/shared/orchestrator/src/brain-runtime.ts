@@ -204,6 +204,12 @@ if (process.argv.includes("--catalog")) {
         result = await (await integration()).action(String(message.params.action));
       } else if (message.method === "chatMemories") {
         const sessionId = `t3-${String(message.params.session)}`;
+        // The host resolves the chat's settings on every read, so a switch made while the chat
+        // had nothing new to capture still applies, and turning the agent on catches up.
+        const outputs = message.params.outputs as BrainCurationOutputs | undefined;
+        if (outputs && process.env.FLOW_DISTILLER !== "0") {
+          curator.configure(sessionId, outputs);
+        }
         result = readMemories(sessionId);
         if (message.params.revision && (result as { revision: string }).revision === message.params.revision) {
           const until = Date.now() + 20_000;
@@ -216,7 +222,11 @@ if (process.argv.includes("--catalog")) {
       } else if (message.method === "capture") {
         const input = message.params as Parameters<typeof capture>[0];
         const stored = capture(input);
-        if (input.kind === "user_prompt") {
+        if (input.outputs) {
+          documents.setCurationOutputs(stored.id, input.outputs);
+        }
+        // With the notes agent off for this chat, not even the first-prompt notes are written.
+        if (input.kind === "user_prompt" && documents.curationOutputs(stored.id).notesAgent) {
           const text=(input.data as {text?:unknown}).text;
           if (typeof text === "string") {
             documents.bootstrap({sessionId:stored.id,repo:input.context.repo??null,after:0,through:stored.sequence},text);

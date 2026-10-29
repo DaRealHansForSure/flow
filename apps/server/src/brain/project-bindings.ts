@@ -13,6 +13,9 @@ type Project = {
 };
 
 const threadKey = (threadId: string) => `thread:${threadId}`;
+const threadNotesAgentKey = (threadId: string) => `notes-agent:thread:${threadId}`;
+const NOTES_AGENT_ON = "on";
+const NOTES_AGENT_OFF = "off";
 
 /** A repository's brain is independent of its checkout ids. Null records an explicit disconnect. */
 export class ProjectBrainBindings {
@@ -124,6 +127,30 @@ export class ProjectBrainBindings {
       return;
     }
     await this.persist({ ...rest, [threadKey(threadId)]: workspace });
+  }
+  /**
+   * A chat's own Notes agent choice (fork): true or false, or undefined when the chat follows
+   * the global setting. Kept beside the chat's Brain choice, on the instance that owns the chat.
+   */
+  threadNotesAgent(threadId: string): boolean | undefined {
+    const choice = this.choices[threadNotesAgentKey(threadId)];
+    if (choice === NOTES_AGENT_ON) {
+      return true;
+    }
+    if (choice === NOTES_AGENT_OFF) {
+      return false;
+    }
+    return undefined;
+  }
+  /** Records a chat's Notes agent choice; undefined forgets it so the chat follows the setting. */
+  async setThreadNotesAgent(threadId: string, enabled: boolean | undefined) {
+    const { [threadNotesAgentKey(threadId)]: _previous, ...rest } = this.choices;
+    if (enabled === undefined) {
+      await this.persist(rest);
+      return;
+    }
+    const choice = enabled ? NOTES_AGENT_ON : NOTES_AGENT_OFF;
+    await this.persist({ ...rest, [threadNotesAgentKey(threadId)]: choice });
   }
   private async persist(next: Record<string, string | null>) {
     await NodeFSP.mkdir(this.directory, { recursive: true });

@@ -2,7 +2,11 @@ import { projectRepositories, hasProjectRepositorySource } from "./project-repos
 import type { GithubAccess } from "../../../../flow-t3/shared/runtime/src/github.ts";
 import { cloudSignInTarget, signInToCloud, CloudClient } from "./cloud-client.ts";
 import { ProjectBrainBindings } from "./project-bindings.ts";
-import { brainResourceEnvironment, type BrainCuratorRunner } from "@flow/brain-runtime";
+import {
+  brainResourceEnvironment,
+  type BrainCurationOutputs,
+  type BrainCuratorRunner,
+} from "@flow/brain-runtime";
 // @effect-diagnostics globalTimers:off - Native capture retry lifecycle is owned and stopped by this runtime.
 import {
   originalBrainTools,
@@ -966,7 +970,8 @@ export class BrainRuntime {
     )
       throw new Error("This Brain is moving to Cloud. Reconnect to retry if the transfer failed.");
     if (command.action === "read") return null;
-    if (command.action === "readChat") throw new Error("Chat must be resolved by the server.");
+    if (command.action === "readChat" || command.action === "setChatNotesAgent")
+      throw new Error("Chat must be resolved by the server.");
     if (command.action === "readDocument")
       throw new Error("Document reads must be resolved by the server.");
     if (command.action === "listGithubRepositories" || command.action === "listGithubBranches")
@@ -1344,6 +1349,15 @@ export class BrainRuntime {
     this.commands = result.catch(() => {});
     return result;
   }
+  /** Turns the notes agent on or off for one chat; undefined follows the setting again (fork). */
+  setThreadNotesAgent(threadId: string, enabled: boolean | undefined) {
+    const result = this.commands.then(async () => {
+      if (this.closed) throw new Error("Brain runtime is shutting down.");
+      await this.projectBindings.setThreadNotesAgent(threadId, enabled);
+    });
+    this.commands = result.catch(() => {});
+    return result;
+  }
   private async sessionWorker(workspace: Workspace) {
     let pending = this.sessionWorkers.get(workspace.id);
     if (pending && !(await pending).alive) {
@@ -1448,23 +1462,36 @@ export class BrainRuntime {
     await NodeFSP.writeFile(temp, JSON.stringify(registry));
     await NodeFSP.rename(temp, file);
   }
-  async chatMemories(projectId: ProjectId, session: string, revision?: string) {
+  /** `outputs` are the chat's resolved notes agent settings, applied before reading. */
+  async chatMemories(
+    projectId: ProjectId,
+    session: string,
+    revision?: string,
+    outputs?: BrainCurationOutputs,
+  ) {
     const workspaceId = this.threadBrainId(projectId, session);
     const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) return { memories: [], status: "disabled" as const };
-    const result = await this.brainMemories(workspace.id, session, revision);
+    const result = await this.brainMemories(workspace.id, session, revision, outputs);
     if (this.threadBrainId(projectId, session) !== workspace.id)
       throw new Error("The project's brain changed. Retry the request.");
     return result;
   }
-  async brainMemories(workspaceId: string, session: string, revision?: string) {
+  async brainMemories(
+    workspaceId: string,
+    session: string,
+    revision?: string,
+    outputs?: BrainCurationOutputs,
+  ) {
     const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) throw new Error("Brain is not available");
     if (workspace.migration) throw new Error("Brain is moving to Cloud.");
     if (workspace.remote) {
       // This chat's extraction state lives here. A remote fetch must not delay
       // note retrieval; the shared library and graph use the cloud connection.
-      const local = await (await this.sessionWorker(workspace)).memories(session, revision);
+      const local = await (
+        await this.sessionWorker(workspace)
+      ).memories(session, revision, outputs);
       const syncError = this.documentSyncErrors.get(workspace.id);
       return {
         ...(await this.withNotesAgent(workspace, local)),
@@ -1477,7 +1504,7 @@ export class BrainRuntime {
       };
     }
     const worker = await this.sessionWorker(workspace);
-    return this.withNotesAgent(workspace, await worker.memories(session, revision));
+    return this.withNotesAgent(workspace, await worker.memories(session, revision, outputs));
   }
   private async withNotesAgent(
     workspace: Workspace,

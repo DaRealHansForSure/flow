@@ -121,8 +121,10 @@ it.effect(
       let fail = false;
       let captures = 0;
       let lastCapture: BrainCapture | undefined;
+      let chatNotesAgent: boolean | undefined;
       const orientText = "Original curated orientation\n" + "x".repeat(30000);
       const runtime = {
+        projectBindings: { register: () => {}, threadNotesAgent: () => chatNotesAgent },
         projectBrainId: () => binding,
         threadBrainId: () => binding,
         callProjectTool: async (
@@ -163,6 +165,7 @@ it.effect(
         Effect.provideService(ProjectStore.ProjectStoreV2, projects),
         Effect.provide(
           ServerSettingsService.layerTest({
+            brainNotesAgent: false,
             brainAutoDocs: false,
             projectSettingsOverrides: {
               [projectId]: { brainAutoDocs: true, brainAutoSkills: false },
@@ -199,11 +202,20 @@ it.effect(
         "team",
       );
       expect(captures).toBe(1);
-      expect(lastCapture?.outputs).toEqual({ docs: true, skills: false });
+      expect(lastCapture?.outputs).toEqual({ docs: true, skills: false, notesAgent: false });
+      // The chat's own choice beats the global switch, which it otherwise follows.
+      chatNotesAgent = true;
+      yield* capture(
+        threadId,
+        { receipt: "event-1b", kind: "update", data: { sessionUpdate: "turn_complete" } },
+        "team",
+      );
+      expect(lastCapture?.outputs).toEqual({ docs: true, skills: false, notesAgent: true });
+      chatNotesAgent = undefined;
       binding = undefined;
       expect((yield* load(threadId, "team")).context).toContain("disconnected");
       yield* capture(threadId, { receipt: "event-2", kind: "user_prompt", data: {} }, "team");
-      expect(captures).toBe(1);
+      expect(captures).toBe(2);
       binding = "team";
       fail = true;
       expect(yield* load(threadId).pipe(Effect.flip)).toContain("orient failed");

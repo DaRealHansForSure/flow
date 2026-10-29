@@ -89,7 +89,11 @@ export class BrainService extends Context.Service<
           try: () =>
             serveSharedBrain(runtime, config.stateDir, async () => {
               const settings = await run(providerSettings.getSettings);
-              return { docs: settings.brainAutoDocs, skills: settings.brainAutoSkills };
+              return {
+                docs: settings.brainAutoDocs,
+                skills: settings.brainAutoSkills,
+                notesAgent: settings.brainNotesAgent,
+              };
             }),
           catch: (cause) =>
             new BrainServiceError({

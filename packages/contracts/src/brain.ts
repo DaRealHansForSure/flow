@@ -191,6 +191,13 @@ export const ChatMemoryList = Schema.Struct({
   extractionIssue: Schema.optionalKey(BrainAgentIssue),
   /** The agent on this computer that writes this conversation's notes. */
   curatorCli: Schema.optionalKey(BrainCli),
+  /**
+   * Fork: whether the notes agent runs for this chat, and the chat's own choice; without a
+   * choice the chat follows the global Notes agent setting.
+   */
+  notesAgent: Schema.optionalKey(
+    Schema.Struct({ enabled: Schema.Boolean, choice: Schema.optionalKey(Schema.Boolean) }),
+  ),
 });
 export type ChatMemoryList = typeof ChatMemoryList.Type;
 export const BrainHarness = Schema.Literals([
@@ -283,6 +290,15 @@ export const BrainCommand = Schema.Union([
     action: Schema.Literal("bindThread"),
     workspaceId: Schema.optionalKey(Schema.NullOr(Schema.String)),
     threadId: ThreadId,
+  }),
+  /**
+   * Fork: turns the notes agent on or off for one chat; leaving enabled out follows the global
+   * setting again. Replies like readChat.
+   */
+  Schema.Struct({
+    action: Schema.Literal("setChatNotesAgent"),
+    threadId: ThreadId,
+    enabled: Schema.optionalKey(Schema.Boolean),
   }),
   Schema.Struct({ action: Schema.Literal("create"), name: Schema.String, cli: BrainCli }),
   Schema.Struct({ action: Schema.Literal("configure"), workspaceId: Schema.String, cli: BrainCli }),
