@@ -42,6 +42,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - On Windows and Linux, closing the desktop window asks "Quit Flow?" before the app quits;
   "Don't ask again" or Settings > General > Confirm before closing turns it off.
 
+- Every desktop release brings its matching Flow service: at start the app offers to update an
+  older service, or one installed from another repository, to its own version, says how many
+  chats are running, and shows the progress with a retry. "Later" asks again at the next start;
+  the service is never downgraded.
+
 ### Changed
 
 - Releases build for Linux only: the macOS service bundle and the macOS desktop builds are

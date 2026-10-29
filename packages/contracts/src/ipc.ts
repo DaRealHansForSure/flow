@@ -377,6 +377,8 @@ export const DesktopAttachFailureKindSchema = Schema.Literals([
   "stopped",
   "not-installed",
   "unreachable",
+  // Flow: the app is moving the service to its own version (DesktopServiceSync.ts).
+  "updating",
 ]);
 export type DesktopAttachFailureKind = typeof DesktopAttachFailureKindSchema.Type;
 
@@ -720,6 +722,31 @@ export interface DesktopFlowServiceAdoption {
 
 export const DesktopFlowServiceAdoptionSchema = Schema.Struct({
   outcome: DesktopFlowServiceAdoptionOutcomeSchema,
+  steps: Schema.Array(DesktopFlowServiceAdoptionStepSchema),
+  failure: Schema.NullOr(Schema.Struct({ step: Schema.String, message: Schema.String })),
+});
+
+/**
+ * Flow: the app bringing the service to its own version, step by step, as the
+ * recovery screen shows it while the window is parked off the service.
+ */
+export const DesktopFlowServiceUpdateOutcomeSchema = Schema.Literals([
+  "in-progress",
+  "updated",
+  "failed",
+]);
+export type DesktopFlowServiceUpdateOutcome = typeof DesktopFlowServiceUpdateOutcomeSchema.Type;
+
+export interface DesktopFlowServiceUpdate {
+  outcome: DesktopFlowServiceUpdateOutcome;
+  targetVersion: string;
+  steps: readonly DesktopFlowServiceAdoptionStep[];
+  failure: { step: string; message: string } | null;
+}
+
+export const DesktopFlowServiceUpdateSchema = Schema.Struct({
+  outcome: DesktopFlowServiceUpdateOutcomeSchema,
+  targetVersion: Schema.String,
   steps: Schema.Array(DesktopFlowServiceAdoptionStepSchema),
   failure: Schema.NullOr(Schema.Struct({ step: Schema.String, message: Schema.String })),
 });
@@ -1272,6 +1299,11 @@ export interface DesktopBridge {
   openFlowServiceInBrowser?: () => Promise<DesktopFlowServiceRecoveryResult>;
   /** Quits and relaunches with the built-in server instead of the service. */
   relaunchWithLegacyBackend?: () => Promise<DesktopFlowServiceRecoveryResult>;
+  /** Flow: the running service update, or null when none was started this session. */
+  getFlowServiceUpdate?: () => Promise<DesktopFlowServiceUpdate | null>;
+  retryFlowServiceUpdate?: () => Promise<DesktopFlowServiceRecoveryResult>;
+  /** Flow: gives up on a failed update and reattaches to the service that is there. */
+  skipFlowServiceUpdate?: () => Promise<DesktopFlowServiceRecoveryResult>;
   getWslState: () => Promise<DesktopWslState>;
   setWslBackendEnabled: (enabled: boolean) => Promise<DesktopWslState>;
   setWslDistro: (distro: string | null) => Promise<DesktopWslState>;

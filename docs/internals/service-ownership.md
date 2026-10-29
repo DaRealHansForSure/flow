@@ -196,8 +196,12 @@ adoption creates and the one attach finds cannot diverge.
 `FLOW_RELEASE_HOME` and started through that release's own `flow service install` — never the
 desktop's bundled `apps/server/dist/bin.mjs`
 ([`DesktopServiceAdoption.ts:5-12`](../../apps/desktop/src/backend/DesktopServiceAdoption.ts)).
-The release self-updates, so the two update trains stay decoupled: a desktop update cannot move
-the service backwards, and a service update need not wait for an app release. That carries a
+The release self-updates, so a service update need not wait for an app release, and a desktop
+update can never move the service backwards. In this fork each app release also brings its
+matching service: after attaching, the desktop offers to move an older service, or one installed
+from another repository, to exactly its own version, asks first, and parks the window on its
+bundled client while it installs and restarts
+([`ServiceVersionSync.ts`](../../apps/desktop/src/backend/ServiceVersionSync.ts)). That carries a
 release-order rule — **a Flow release containing the service layer must be published before a
 desktop release that defaults to attached mode**, because adoption runs the published release's
 installer, not the code it shipped with.

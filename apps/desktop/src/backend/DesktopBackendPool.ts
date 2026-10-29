@@ -23,6 +23,8 @@ import * as DesktopBackendConfiguration from "./DesktopBackendConfiguration.ts";
 import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import * as DesktopServerExposure from "./DesktopServerExposure.ts";
 import * as DesktopServiceAdoption from "./DesktopServiceAdoption.ts";
+import * as DesktopServiceSyncState from "./DesktopServiceSyncState.ts";
+import * as ServiceVersionSync from "./ServiceVersionSync.ts";
 import * as FlowService from "./flowService.ts";
 import * as FlowServiceRecovery from "./flowServiceRecovery.ts";
 import { flowServiceSupportsHost } from "./serviceDiscovery.ts";
@@ -395,7 +397,14 @@ export const layer = Layer.effect(
           .pipe(Effect.andThen(electronApp.quit)),
     });
 
-    const primary = yield* legacyPrimaryRequested ? makeLegacyPrimary : makeAttachedPrimary;
+    // Flow: an attached primary steps aside while the app updates the service.
+    const serviceSyncState = yield* DesktopServiceSyncState.DesktopServiceSyncState;
+    const primary = legacyPrimaryRequested
+      ? yield* makeLegacyPrimary
+      : ServiceVersionSync.parkWhileUpdating(
+          yield* makeAttachedPrimary,
+          DesktopServiceSyncState.isParked(serviceSyncState),
+        );
 
     const instancesRef = yield* SynchronizedRef.make<
       ReadonlyMap<BackendInstanceId, RegisteredInstance>

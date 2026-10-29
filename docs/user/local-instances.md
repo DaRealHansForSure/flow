@@ -56,6 +56,13 @@ The Flow desktop app connects to this same service, so quitting the app leaves
 your background work, indexing and captured agent sessions running. To stop or
 restart the service from the app, use **Settings → Connections → Flow service**.
 
+Each desktop app release brings its matching service. When the app starts and
+finds an older service, or one installed from another Flow repository, it asks
+whether to update the service to the app's version and says how many chats are
+running, since the restart interrupts them. **Later** leaves the service as it
+is and asks again at the next start. The app never moves the service to an older
+version, and your data stays where it is.
+
 ## Development
 
 ```sh

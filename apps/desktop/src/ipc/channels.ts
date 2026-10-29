@@ -76,6 +76,10 @@ export const RETRY_FLOW_SERVICE_ATTACH_CHANNEL = "desktop:retry-flow-service-att
 export const GET_FLOW_SERVICE_ADOPTION_CHANNEL = "desktop:get-flow-service-adoption";
 export const OPEN_FLOW_SERVICE_IN_BROWSER_CHANNEL = "desktop:open-flow-service-in-browser";
 export const RELAUNCH_WITH_LEGACY_BACKEND_CHANNEL = "desktop:relaunch-with-legacy-backend";
+// Flow: the app keeps the service at its own version.
+export const GET_FLOW_SERVICE_UPDATE_CHANNEL = "desktop:get-flow-service-update";
+export const RETRY_FLOW_SERVICE_UPDATE_CHANNEL = "desktop:retry-flow-service-update";
+export const SKIP_FLOW_SERVICE_UPDATE_CHANNEL = "desktop:skip-flow-service-update";
 export const GET_WSL_STATE_CHANNEL = "desktop:get-wsl-state";
 export const SET_WSL_BACKEND_ENABLED_CHANNEL = "desktop:set-wsl-backend-enabled";
 export const SET_WSL_DISTRO_CHANNEL = "desktop:set-wsl-distro";
