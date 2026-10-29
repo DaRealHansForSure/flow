@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `dev-flow.sh --seed --force` deletes the Dev Flow's chats and Brain and copies both fresh
+  from your real data.
+
 - `dev-flow.sh --seed` also copies your real Brain (store and knowledge graph) into the Dev
   Flow, so it looks like your real setup; the copy's paths point at the Dev Flow's own data.
 
