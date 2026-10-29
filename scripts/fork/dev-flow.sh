@@ -12,6 +12,19 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEV_HOME="${REPO_ROOT}/.t3/dev"
 LIVE_DATABASE="${HOME}/.t3/userdata/state.sqlite"
 DEV_DATABASE="${DEV_HOME}/userdata/state.sqlite"
+LOG_DIRECTORY="${DEV_HOME}/logs"
+LOG_FILE="${LOG_DIRECTORY}/dev-flow.log"
+
+# Mirrors everything this run prints into LOG_FILE, so an agent can read the app's
+# logs while the owner develops. The previous run is kept as dev-flow.previous.log.
+start_log() {
+    mkdir -p "${LOG_DIRECTORY}"
+    if [[ -e "${LOG_FILE}" ]]; then
+        mv "${LOG_FILE}" "${LOG_DIRECTORY}/dev-flow.previous.log"
+    fi
+    exec > >(tee -a "${LOG_FILE}") 2>&1
+    echo "dev-flow: $(date '+%Y-%m-%d %H:%M:%S') logging to ${LOG_FILE}"
+}
 
 seed_dev_database() {
     if [[ -e "${DEV_DATABASE}" ]]; then
@@ -31,6 +44,8 @@ seed_dev_database() {
     ' "${LIVE_DATABASE}" "${DEV_DATABASE}"
     echo "dev-flow: seeded ${DEV_DATABASE} from ${LIVE_DATABASE}."
 }
+
+start_log
 
 if [[ "${1:-}" == "--seed" ]]; then
     seed_dev_database

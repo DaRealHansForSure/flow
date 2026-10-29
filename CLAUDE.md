@@ -71,6 +71,9 @@ scripts/fork/dev-flow.sh --seed   # first run: copy a snapshot of the real chats
 - UI changes (`apps/web`) reload in place; desktop changes (`apps/desktop`) restart the
   dev app. The server runs from `apps/server/dist`, built once at launch, so server and
   Brain changes need `dev-flow.sh` restarted.
+- Everything the Dev Flow prints is also written to `.t3/dev/logs/dev-flow.log` (the
+  previous run in `dev-flow.previous.log`). Read that file to see the app's logs; strip
+  colour codes with `sed 's/\x1b\[[0-9;]*m//g'`.
 - `glab` / "No unknown source control provider" warnings in the log are harmless: they
   come from PR lookups for seeded GitLab or remote-less projects.
 - The Dev Flow runs its own server (`FLOW_DESKTOP_LEGACY_BACKEND=1`) on `.t3/dev`. Never
