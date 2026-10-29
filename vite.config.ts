@@ -191,6 +191,11 @@ export default defineConfig({
   },
   lint: {
     ignorePatterns: [
+      // Flow: the historical copy and the preserved Brain services keep their own
+      // conventions during integration, as they do for fmt.
+      "flow/**",
+      "flow-t3/shared/orchestrator/**",
+      "flow-t3/shared/graph-gateway/**",
       ".repos",
       ".repos/**",
       "infra/task-cache/vendor/**",
