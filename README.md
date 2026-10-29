@@ -23,13 +23,15 @@ Brain instead of asking you to explain the codebase and its decisions again.
   <img src="./docs/images/flow-workspace.webp" alt="Flow workspace with an agent session, Auto-Skills, and conversation notes" width="1200">
 </p>
 
+This is the DaRealHansForSure/flow fork of Flow. [FORK.md](./FORK.md) explains what it changes.
+
 ## Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.sh | bash
 ```
 
-<p align="center"><sub>Apple Silicon macOS 15+ or Linux x64 · installs the <code>flow</code> command and Flow's local service</sub></p>
+<p align="center"><sub>Linux x64 (Ubuntu 24.04 or compatible) · installs the <code>flow</code> command and Flow's local service</sub></p>
 
 Windows x64, in PowerShell. Windows connects to a Brain hosted on Flow Cloud or another computer; it does not host one:
 
@@ -50,14 +52,10 @@ curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/inst
 <p align="center"><strong>or</strong></p>
 
 <p align="center">
-  <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-macos-apple-silicon.svg" alt="Download Flow for macOS (Apple Silicon)" width="194"></a>
-  &nbsp;
-  <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-macos-intel.svg" alt="Download Flow for macOS (Intel)" width="194"></a>
-  &nbsp;
   <a href="https://github.com/DaRealHansForSure/flow/releases/latest"><img src="./docs/images/download-linux.svg" alt="Download Flow for Linux (x64 AppImage)" width="194"></a>
 </p>
 
-<p align="center"><sub>Flow 0.1.6 · signed, notarized, auto-updating · <a href="https://github.com/DaRealHansForSure/flow/releases/latest">checksums</a> · Windows planned</sub></p>
+<p align="center"><sub>Desktop app for Linux x64 (AppImage) · auto-updating · <a href="https://github.com/DaRealHansForSure/flow/releases/latest">checksums</a> · no macOS or Windows desktop build</sub></p>
 
 Both share one local Flow service and one Brain, and coding agents you run outside
 Flow keep their Brain when the app is closed. See [Install Flow](./docs/user/install.md)
@@ -82,7 +80,8 @@ inside every chat.
   inspect diffs, use integrated terminals, and restore checkpointed workspace
   state.
 - **Local by default.** Your projects, provider credentials, agent processes, and
-  local Brain stay on the machine that owns the workspace.
+  local Brain stay on the machine that owns the workspace. Flow sends no usage data
+  unless you [turn it on](./docs/user/telemetry.md).
 - **Remote ready.** Connect from another browser, desktop, or phone while execution
   remains on the host machine.
 

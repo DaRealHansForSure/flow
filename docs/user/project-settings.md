@@ -243,6 +243,9 @@ Before the first message in an unconfigured project, Flow offers the same choice
 without a brain** is remembered for the project across chats and devices. Chats then run
 without Flow orientation or memory capture; you can connect a brain later in project settings.
 
+A chat without a project starts with no brain. To give it one, pick a brain from the **No Brain**
+menu on the new-chat screen before you send the first message; the chat keeps that choice.
+
 In a chat with a brain, the **Brain** tab of the right panel shows the graph, Auto-Docs and the
 conversation notes. A new chat opens it by itself. Close it like any other tab and that chat
 keeps it closed; the Brain button in the chat header, the panel's new-tab menu or **Show Brain
@@ -270,7 +273,7 @@ be connected from this page yet.
 
 ### Conversation notes, Auto-Docs, and Auto-Skills
 
-The chat's **Flow** panel starts conversation notes with your first message. As you work,
+The chat's **Brain** tab starts conversation notes with your first message. As you work,
 Flow maintains a readable account of the task, progress, corrections, and unfinished work so
 an agent can recover after compaction. Your agent can retrieve it with `get_chat_memories`.
 
@@ -280,8 +283,13 @@ Auto-Skills describe procedures that were actually demonstrated, such as reprodu
 and verifying its fix. Related documents are refined as later conversations add evidence. Notes
 always have a section; Auto-Docs and Auto-Skills appear when the chat has contributed them.
 
+To stop the notes agent from writing Auto-Docs or Auto-Skills, turn them off in
+**Settings → General → Brain**. A project inherits these switches and can override them in the
+**Brain** section of its settings. Conversation notes are kept either way, and existing documents
+stay available and searchable.
+
 Notes update after completed turns and about every 60 seconds while new activity arrives.
-Busy extraction coalesces later activity into a follow-up. The panel shows pending work or an
+Busy extraction coalesces later activity into a follow-up. The tab shows pending work or an
 extraction error rather than reporting that unavailable processing succeeded. Captured activity
 is retained locally for retry; incomplete or truncated tool output can limit the conclusions.
 
@@ -293,9 +301,9 @@ Codex extraction requires a ChatGPT subscription. OpenCode extraction requires a
 without a Server URL or remote organization configuration so background sessions can be isolated.
 The main conversation can use a different provider.
 
-Background sessions stay out of your chat list and normal native conversation history. They reuse
-context between checkpoints and renew it as it grows or when you change the Brain's CLI, retaining
-saved notes and access to earlier evidence.
+Background sessions stay out of your chat list, but the CLI keeps them in its own session
+history. They reuse context between checkpoints and renew it as it grows or when you change the
+Brain's CLI, retaining saved notes and access to earlier evidence.
 `FLOW_DISTILLER=0` disables automatic extraction in the brain runtime.
 
 ### Find and use what your brain learned
