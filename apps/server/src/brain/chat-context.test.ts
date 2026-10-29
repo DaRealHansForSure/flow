@@ -20,7 +20,12 @@ import type { BrainCapture } from "./session-worker.ts";
 import { makeRunCapture } from "./chatTurns.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
 import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
+import * as ProjectEnrichmentService from "../project/ProjectEnrichmentService.ts";
 import { makeBrainChatContextLoader, makeBrainChatCapture } from "./chat-context.ts";
+
+const noRepository = {
+  readRepositoryIdentity: () => Effect.succeed(null),
+} as unknown as ProjectEnrichmentService.ProjectEnrichmentService["Service"];
 
 const driver = ProviderDriverKind.make("codex");
 const chat = ThreadId.make("chat");
@@ -161,6 +166,7 @@ it.effect(
         Effect.provideService(BrainService, { ready: Effect.succeed(runtime) }),
         Effect.provideService(ProjectionStore.ProjectionStoreV2, threads),
         Effect.provideService(ProjectStore.ProjectStoreV2, projects),
+        Effect.provideService(ProjectEnrichmentService.ProjectEnrichmentService, noRepository),
         Effect.provide(
           ServerSettingsService.layerTest({
             brainAutoDocs: false,
