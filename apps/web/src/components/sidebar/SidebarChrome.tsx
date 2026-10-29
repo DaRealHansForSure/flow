@@ -28,6 +28,7 @@ import { SidebarThreadUndoNotice } from "./SidebarThreadUndoNotice";
 import { SidebarProviderUpdatePill } from "./SidebarProviderUpdatePill";
 import { SidebarUpdateArchitectureWarning, SidebarUpdatePill } from "./SidebarUpdatePill";
 import { FlowBrowserUpdateNotice } from "./FlowBrowserUpdateNotice";
+import { useBrainHealth } from "../brain/useBrainHealth";
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { observeResize } from "~/lib/observeResize";
 
@@ -223,12 +224,26 @@ export const SidebarChromeFooter = memo(function SidebarChromeFooter() {
   );
 });
 
+/** Fork: amber while the Brain starts, red when it fails, so trouble shows before it is opened. */
+function brainHealthTint(health: ReturnType<typeof useBrainHealth>) {
+  if (health.kind === "failed") {
+    return { overlay: "bg-destructive/70", label: `Brain unavailable: ${health.reason}` };
+  }
+  if (health.kind === "loading") {
+    return { overlay: "bg-warning/70", label: "Brain is loading" };
+  }
+  return { overlay: "bg-black/15", label: "Brain" };
+}
+
 export function SidebarBrainLink() {
   const active = useLocation({ select: (location) => location.pathname === "/brain" });
   const { isMobile, setOpenMobile } = useSidebar();
+  const tint = brainHealthTint(useBrainHealth());
   return (
     <div className="px-3 pb-2">
       <Link
+        aria-label={tint.label}
+        title={tint.label}
         aria-current={active ? "page" : undefined}
         to="/brain"
         search={{ brain: undefined, environment: undefined }}
@@ -239,7 +254,7 @@ export function SidebarBrainLink() {
       >
         <span aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <StageBackdropButtonArt variant="dev" />
-          <span className="absolute inset-0 bg-black/15" />
+          <span className={cn("absolute inset-0", tint.overlay)} />
         </span>
         <BrainCircuit size={16} />
         <span>Brain</span>

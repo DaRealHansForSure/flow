@@ -50,6 +50,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Brain entry at the top of the sidebar turns amber while the Brain starts and red when it
+  fails, with the reason on hover.
+
 - The chat's Brain button is amber until the Brain has answered. When the Brain fails to
   answer, the button turns red with the reason and a
   "Brain unavailable" toast appears once, instead of the error showing only inside the Brain
