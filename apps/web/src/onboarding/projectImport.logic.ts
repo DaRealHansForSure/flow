@@ -227,10 +227,8 @@ export interface RemoteBrainSourceMatch {
 
 /**
  * Line a connected remote Brain's indexed repositories up with local checkouts
- * so onboarding can preselect them. Sources the client cannot match — a repo
- * that is not cloned here, or a non-GitHub source — come back as `unmatched`
- * for the folder picker. Sources that resolve to the same GitHub repository are
- * reported once.
+ * so onboarding can preselect them. Sources not cloned here or not on GitHub
+ * come back as `unmatched`; two sources for one GitHub repository count once.
  */
 export function matchRemoteBrainSources(
   repositories: readonly string[],

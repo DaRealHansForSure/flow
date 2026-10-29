@@ -72,6 +72,7 @@ function BrainDocumentDialogContent({
   const [copied, setCopied] = useState(false);
   const id = document?.id,
     revision = document?.revision;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Fetches the opened document's body from the Brain service, dropping stale replies.
   useEffect(() => {
     let disposed = false;
     if (!id) return;
@@ -178,7 +179,7 @@ function BrainDocumentDialogContent({
             <>
               <div className="mb-5 flex flex-wrap items-center gap-2 border-b border-border/60 pb-4">
                 {loaded.kind !== "notes" && (
-                  <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-2xs text-muted-foreground">
                     {documentLifecycle(loaded)}
                   </span>
                 )}
@@ -373,7 +374,7 @@ export function BrainDocumentLibrary({
                       {doc.name}
                     </span>
                     {kind === "skill" && !compact && (
-                      <span className="rounded bg-primary/8 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+                      <span className="rounded bg-primary/8 px-1.5 py-0.5 font-mono text-3xs text-primary">
                         SKILL.md
                       </span>
                     )}
@@ -386,7 +387,7 @@ export function BrainDocumentLibrary({
                     </span>
                   )}
                   {!compact && (
-                    <span className="mt-auto flex items-center justify-between gap-2 pt-4 text-[10px] text-muted-foreground">
+                    <span className="mt-auto flex items-center justify-between gap-2 pt-4 text-3xs text-muted-foreground">
                       <span>{documentLifecycle(doc)}</span>
                       <span>v{doc.revision}</span>
                     </span>

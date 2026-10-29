@@ -2,14 +2,9 @@ import { BRAND } from "@t3tools/shared/branding";
 import type { DesktopAttachFailure, DesktopFlowServiceAdoption } from "@t3tools/contracts";
 
 /**
- * Attach failure -> what the recovery screen says and offers.
- *
- * Kept out of the component because the interesting part is the mapping. The
- * desktop cannot talk to the Flow service, and the right answer differs per
- * reason: a service that was never installed is still being set up or needs a
- * second try, a stopped one needs starting, and one this build is too old to
- * talk to must never be offered a downgrade or a server of our own — only an
- * update, a browser, or another attempt.
+ * Attach failure -> what the recovery screen says and offers. A service this
+ * build is too old to talk to must never be offered a downgrade or a server of
+ * our own, only an update, a browser, or another attempt.
  */
 
 export type FlowServiceRecoveryAction =
@@ -104,7 +99,7 @@ export function describeFlowServiceRecovery(input: {
   if (failure.kind === "incompatible") {
     return {
       title: `This app needs an update to connect to your ${BRAND.name} service.`,
-      body: `The service is running and your data is untouched. This app is too old to talk to it, so update the app — the service is never downgraded to match.`,
+      body: `The service is running and your data is untouched. This app is too old to talk to it, so update the app. The service is never downgraded to match.`,
       // Never "use the built-in server": a private child would fight the
       // running service for the instance lock.
       actions: [

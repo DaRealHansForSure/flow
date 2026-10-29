@@ -1,6 +1,6 @@
 import { BrainIcon } from "./BrainIcon";
 import { BrainCliSelect } from "@flow/brain-ui";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   BrainCommand,
   BrainState,
@@ -145,45 +145,43 @@ function BrainController({
     ? state?.workspaces.find((item) => item.id === selectedWorkspaceId)
     : state?.workspaces[0];
 
-  const send = useCallback(
-    async (input: BrainCommand, background = false): Promise<BrainResponse | null> => {
-      if (!environmentId || !canRequest) return null;
-      while (pending.current) {
-        if (background && input.action === "read") return null;
-        await pending.current.catch(() => {});
-      }
+  const send = async (input: BrainCommand, background = false): Promise<BrainResponse | null> => {
+    if (!environmentId || !canRequest) return null;
+    while (pending.current) {
+      if (background && input.action === "read") return null;
+      await pending.current.catch(() => {});
+    }
+    if (!mounted.current) return null;
+    if (!background) setBusy(true);
+    const request = execute({ environmentId, input });
+    pending.current = request;
+    try {
+      const result = await request;
       if (!mounted.current) return null;
-      if (!background) setBusy(true);
-      const request = execute({ environmentId, input });
-      pending.current = request;
-      try {
-        const result = await request;
-        if (!mounted.current) return null;
-        if (result._tag === "Failure") {
-          transportError.current = true;
-          const failure = squashAtomCommandFailure(result);
-          setError(
-            failure instanceof Error
-              ? failure.message
-              : "Could not reach this brain. Reconnect and retry.",
-          );
-          return null;
-        }
-        setState(result.value.state);
-        if (!background || result.value.error || transportError.current)
-          setError(result.value.error);
-        transportError.current = false;
-        return result.value;
-      } finally {
-        if (pending.current === request) pending.current = null;
-        if (mounted.current && !background) setBusy(false);
+      if (result._tag === "Failure") {
+        transportError.current = true;
+        const failure = squashAtomCommandFailure(result);
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "Could not reach this brain. Reconnect and retry.",
+        );
+        return null;
       }
-    },
-    [environmentId, execute, canRequest],
-  );
+      setState(result.value.state);
+      if (!background || result.value.error || transportError.current) setError(result.value.error);
+      transportError.current = false;
+      return result.value;
+    } finally {
+      if (pending.current === request) pending.current = null;
+      if (mounted.current && !background) setBusy(false);
+    }
+  };
 
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the Brain service and refreshes when the window becomes visible.
   useEffect(() => {
     mounted.current = true;
+    // oxlint-disable-next-line react/set-state-in-effect -- The first read of the polled Brain service; its state lands asynchronously.
     void send({ action: "read" }, true);
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void send({ action: "read" }, true);
@@ -199,6 +197,7 @@ function BrainController({
     };
   }, [send]);
 
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Writes the default Brain into the router's search params.
   useEffect(() => {
     if (!selectedWorkspaceId && workspace) onSelectionChange(workspace.id, environmentId);
   }, [environmentId, onSelectionChange, selectedWorkspaceId, workspace]);
@@ -479,100 +478,102 @@ function BrainController({
               {workspace?.name ?? "Choose where your brain runs."}
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-5">
-            <div className="space-y-2">
-              <p className="text-sm">Computer</p>
-              {environmentSelector}
+          <DialogPanel>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <p className="text-sm">Computer</p>
+                {environmentSelector}
+              </div>
+              {workspace?.remote && (
+                <div className="space-y-2">
+                  <p className="text-sm break-all">{workspace.remote.endpoint}</p>
+                  {workspace.remote.account && (
+                    <p className="text-sm">Signed in as {workspace.remote.account.email}</p>
+                  )}
+                  <a
+                    href={workspace.remote.endpoint}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm underline"
+                  >
+                    Open cloud dashboard
+                  </a>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      setCloudOpen(true);
+                    }}
+                  >
+                    Sign in again
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Disconnecting removes this computer’s connection. The remote Brain and its data
+                    stay on the server.
+                  </p>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => {
+                      void send({ action: "disconnectCloud", workspaceId: workspace.id }).then(
+                        (result) => {
+                          if (result && !result.error) {
+                            setSettingsOpen(false);
+                            onSelectionChange(null, environmentId);
+                          }
+                        },
+                      );
+                    }}
+                  >
+                    Disconnect cloud Brain
+                  </Button>
+                </div>
+              )}
+              {workspace?.remote && (
+                <div className="space-y-2">
+                  <p className="text-sm">Conversation notes agent</p>
+                  <BrainCliSelect
+                    value={workspace.notesCli ?? workspace.cli}
+                    clis={state?.clis ?? []}
+                    disabled={busy}
+                    onChange={(value) =>
+                      void send({
+                        action: "configureNotes",
+                        workspaceId: workspace.id,
+                        cli: value as BrainCli,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This Brain lives in the cloud, but notes from your conversations are written on
+                    this computer by this agent. Switch it if that agent is signed out or has
+                    reached its usage limit.
+                  </p>
+                </div>
+              )}
+              {workspace && !workspace.remote && (
+                <div className="space-y-2">
+                  <p className="text-sm">Default indexing CLI</p>
+                  <BrainCliSelect
+                    value={workspace.cli}
+                    clis={state?.clis ?? []}
+                    disabled={busy}
+                    onChange={(value) =>
+                      void send({
+                        action: "configure",
+                        workspaceId: workspace.id,
+                        cli: value as BrainCli,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used when you connect or reindex a source, and to write conversation notes.
+                    Running jobs keep their selected CLI. Switch it if this agent is signed out or
+                    has reached its usage limit.
+                  </p>
+                </div>
+              )}
             </div>
-            {workspace?.remote && (
-              <div className="space-y-2">
-                <p className="text-sm break-all">{workspace.remote.endpoint}</p>
-                {workspace.remote.account && (
-                  <p className="text-sm">Signed in as {workspace.remote.account.email}</p>
-                )}
-                <a
-                  href={workspace.remote.endpoint}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm underline"
-                >
-                  Open cloud dashboard
-                </a>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    setCloudOpen(true);
-                  }}
-                >
-                  Sign in again
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Disconnecting removes this computer’s connection. The remote Brain and its data
-                  stay on the server.
-                </p>
-                <Button
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => {
-                    void send({ action: "disconnectCloud", workspaceId: workspace.id }).then(
-                      (result) => {
-                        if (result && !result.error) {
-                          setSettingsOpen(false);
-                          onSelectionChange(null, environmentId);
-                        }
-                      },
-                    );
-                  }}
-                >
-                  Disconnect cloud Brain
-                </Button>
-              </div>
-            )}
-            {workspace?.remote && (
-              <div className="space-y-2">
-                <p className="text-sm">Conversation notes agent</p>
-                <BrainCliSelect
-                  value={workspace.notesCli ?? workspace.cli}
-                  clis={state?.clis ?? []}
-                  disabled={busy}
-                  onChange={(value) =>
-                    void send({
-                      action: "configureNotes",
-                      workspaceId: workspace.id,
-                      cli: value as BrainCli,
-                    })
-                  }
-                />
-                <p className="text-xs text-muted-foreground">
-                  This Brain lives in the cloud, but notes from your conversations are written on
-                  this computer by this agent. Switch it if that agent is signed out or has reached
-                  its usage limit.
-                </p>
-              </div>
-            )}
-            {workspace && !workspace.remote && (
-              <div className="space-y-2">
-                <p className="text-sm">Default indexing CLI</p>
-                <BrainCliSelect
-                  value={workspace.cli}
-                  clis={state?.clis ?? []}
-                  disabled={busy}
-                  onChange={(value) =>
-                    void send({
-                      action: "configure",
-                      workspaceId: workspace.id,
-                      cli: value as BrainCli,
-                    })
-                  }
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used when you connect or reindex a source, and to write conversation notes.
-                  Running jobs keep their selected CLI. Switch it if this agent is signed out or has
-                  reached its usage limit.
-                </p>
-              </div>
-            )}
           </DialogPanel>
         </DialogPopup>
       </Dialog>

@@ -1,5 +1,5 @@
 import { BrainIcon } from "./BrainIcon";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { BrainResponse, EnvironmentId, ProjectId, ThreadId } from "@t3tools/contracts";
 import { retainChatContextOnError } from "@t3tools/client-runtime/state/brain";
 import {
@@ -48,7 +48,7 @@ export function ChatBrainPanel({
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const autoExpandedThread = useRef<ThreadId | null>(null);
+  const [autoExpandedThread, setAutoExpandedThread] = useState<ThreadId | null>(null);
   async function connectBrain() {
     if (connecting) return;
     setConnecting(true);
@@ -73,6 +73,7 @@ export function ChatBrainPanel({
       setConnecting(false);
     }
   }
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the Brain service for this chat's notes with backoff while the window is visible.
   useEffect(() => {
     let disposed = false;
     let timer: ReturnType<typeof setTimeout>;
@@ -162,6 +163,7 @@ export function ChatBrainPanel({
       clearTimeout(highlightTimer);
       document.removeEventListener("visibilitychange", visible);
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- refreshKey restarts the poll after a Brain is connected.
   }, [environmentId, threadId, projectId, execute, refreshKey]);
   const brain = threadId
     ? response?.state.workspaces[0]
@@ -170,11 +172,10 @@ export function ChatBrainPanel({
   const notes = response?.chatMemories;
   const consultedNodeIds = [...new Set(notes?.consultedNodeIds ?? [])];
   const consultedNodeCount = consultedNodeIds.length;
-  useEffect(() => {
-    if (consultedNodeCount === 0 || autoExpandedThread.current === threadId) return;
-    autoExpandedThread.current = threadId;
+  if (consultedNodeCount > 0 && autoExpandedThread !== threadId) {
+    setAutoExpandedThread(threadId);
     setBrainExpanded(true);
-  }, [consultedNodeCount, threadId]);
+  }
   const memoryStatus = !brain
     ? "Connect a brain to preserve this conversation."
     : notes?.status === "extracting"
@@ -209,6 +210,7 @@ export function ChatBrainPanel({
         aria-label="Flow brain and conversation notes"
         className="order-first m-3 min-h-0 shrink-0 self-start w-[calc(100%-1.5rem)] lg:order-last lg:ml-0 lg:mr-4 lg:mt-4 lg:w-80"
       >
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- The floating panel's soft drop shadow has no theme token. */}
         <div className="max-h-[55dvh] overflow-y-auto rounded-3xl border border-border/70 bg-card/95 p-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.16)] lg:max-h-[75dvh]">
           <div className="mb-3 flex items-center gap-2">
             <BrainCircuitIcon className="size-4 text-primary" />
@@ -265,7 +267,7 @@ export function ChatBrainPanel({
                       </span>
                     </span>
                     {consultedNodeCount > 0 && (
-                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-3xs font-medium text-primary">
                         {consultedNodeCount} used
                       </span>
                     )}
@@ -344,7 +346,7 @@ export function ChatBrainPanel({
                     {consultedNodeCount > 0 && (
                       <p
                         role="status"
-                        className="border-t border-border/50 px-3 py-2 text-[11px] text-muted-foreground"
+                        className="border-t border-border/50 px-3 py-2 text-2xs text-muted-foreground"
                       >
                         Highlighting {consultedNodeCount}{" "}
                         {consultedNodeCount === 1 ? "node" : "nodes"} used by this chat
@@ -406,7 +408,7 @@ export function ChatBrainPanel({
                     className={`w-full rounded-xl px-2 py-2 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
                   >
                     <ConversationNotesPreview text={notes.notes.text} />
-                    <span className="mt-2 block text-[11px] text-primary">Read full notes →</span>
+                    <span className="mt-2 block text-2xs text-primary">Read full notes →</span>
                   </button>
                 ) : (
                   <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">
@@ -419,15 +421,15 @@ export function ChatBrainPanel({
                   role="status"
                   className={
                     notes?.extractionIssue
-                      ? "px-2 py-2 text-[11px] text-destructive"
-                      : "px-2 py-2 text-[11px] text-muted-foreground"
+                      ? "px-2 py-2 text-2xs text-destructive"
+                      : "px-2 py-2 text-2xs text-muted-foreground"
                   }
                 >
                   {memoryStatus}
                 </p>
                 {/* Who writes the notes matters when they stop; the full view always says. */}
                 {notesAgent && notes?.status === "error" ? (
-                  <p className="px-2 pb-2 text-[11px] leading-relaxed text-muted-foreground">
+                  <p className="px-2 pb-2 text-2xs leading-relaxed text-muted-foreground">
                     {notesAgent}
                   </p>
                 ) : null}

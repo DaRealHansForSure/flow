@@ -147,110 +147,112 @@ export function CreateBrainDialog({
               Create a local Brain or connect to an existing remote Brain.
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-5">
-            <fieldset className="flex gap-4" disabled={busy}>
-              <legend className="mb-2 text-sm">Brain location</legend>
-              {(["local", "remote"] as const).map((value) => (
-                <label key={value} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="brain-location"
-                    checked={location === value}
-                    onChange={() => {
-                      setLocation(value);
-                      setError("");
-                      setPassword("");
-                    }}
-                  />
-                  {value === "local" ? "This computer" : "Remote Brain"}
-                </label>
-              ))}
-            </fieldset>
-            {location === "remote" ? (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Enter your remote Brain’s URL or invitation link, email, and password. Its shared
-                  knowledge will be available to your projects.
-                </p>
+          <DialogPanel>
+            <div className="space-y-5">
+              <fieldset className="flex gap-4" disabled={busy}>
+                <legend className="mb-2 text-sm">Brain location</legend>
+                {(["local", "remote"] as const).map((value) => (
+                  <label key={value} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="brain-location"
+                      checked={location === value}
+                      onChange={() => {
+                        setLocation(value);
+                        setError("");
+                        setPassword("");
+                      }}
+                    />
+                    {value === "local" ? "This computer" : "Remote Brain"}
+                  </label>
+                ))}
+              </fieldset>
+              {location === "remote" ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your remote Brain’s URL or invitation link, email, and password. Its
+                    shared knowledge will be available to your projects.
+                  </p>
+                  <label className="block space-y-2 text-sm">
+                    Brain URL or invitation link
+                    <Input
+                      required
+                      type="url"
+                      placeholder="https://brain.example.com"
+                      value={endpoint}
+                      disabled={busy}
+                      onChange={(event) => setEndpoint(event.target.value)}
+                    />
+                  </label>
+                  <label className="block space-y-2 text-sm">
+                    Email
+                    <Input
+                      required
+                      type="email"
+                      autoComplete="username"
+                      value={email}
+                      disabled={busy}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </label>
+                  <label className="block space-y-2 text-sm">
+                    Password
+                    <Input
+                      required
+                      type="password"
+                      autoComplete="current-password"
+                      value={password}
+                      disabled={busy}
+                      onChange={(event) => setPassword(event.target.value)}
+                    />
+                  </label>
+                </>
+              ) : (
                 <label className="block space-y-2 text-sm">
-                  Brain URL or invitation link
+                  Brain name
                   <Input
+                    autoFocus
                     required
-                    type="url"
-                    placeholder="https://brain.example.com"
-                    value={endpoint}
-                    disabled={busy}
-                    onChange={(event) => setEndpoint(event.target.value)}
+                    maxLength={80}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="e.g. Acme platform"
                   />
                 </label>
-                <label className="block space-y-2 text-sm">
-                  Email
-                  <Input
-                    required
-                    type="email"
-                    autoComplete="username"
-                    value={email}
-                    disabled={busy}
-                    onChange={(event) => setEmail(event.target.value)}
-                  />
-                </label>
-                <label className="block space-y-2 text-sm">
-                  Password
-                  <Input
-                    required
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    disabled={busy}
-                    onChange={(event) => setPassword(event.target.value)}
-                  />
-                </label>
-              </>
-            ) : (
-              <label className="block space-y-2 text-sm">
-                Brain name
-                <Input
-                  autoFocus
-                  required
-                  maxLength={80}
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="e.g. Acme platform"
-                />
-              </label>
-            )}
-            <fieldset className="space-y-2">
-              <legend className="mb-2 text-sm">
-                {location === "remote" ? "Write conversation notes with" : "Build knowledge with"}
-              </legend>
-              {state?.clis.map((entry) => (
-                <label
-                  key={entry.id}
-                  className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${!entry.installed ? "opacity-50" : selected === entry.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
-                >
-                  <input
-                    type="radio"
-                    name="brain-cli"
-                    checked={selected === entry.id}
-                    disabled={!entry.installed || busy}
-                    onChange={() => setCli(entry.id)}
-                  />
-                  <span>
-                    <span className="block font-medium">{cliName(entry.id)}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {entry.installed
-                        ? "Uses your existing CLI sign-in"
-                        : "Not installed on this computer"}
+              )}
+              <fieldset className="space-y-2">
+                <legend className="mb-2 text-sm">
+                  {location === "remote" ? "Write conversation notes with" : "Build knowledge with"}
+                </legend>
+                {state?.clis.map((entry) => (
+                  <label
+                    key={entry.id}
+                    className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${!entry.installed ? "opacity-50" : selected === entry.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="brain-cli"
+                      checked={selected === entry.id}
+                      disabled={!entry.installed || busy}
+                      onChange={() => setCli(entry.id)}
+                    />
+                    <span>
+                      <span className="block font-medium">{cliName(entry.id)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {entry.installed
+                          ? "Uses your existing CLI sign-in"
+                          : "Not installed on this computer"}
+                      </span>
                     </span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-            {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
+                  </label>
+                ))}
+              </fieldset>
+              {error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
           </DialogPanel>
           <DialogFooter>
             <Button
@@ -354,7 +356,7 @@ export function ConnectCloudDialog({
                 : "Connect to your team's Cloud Brain. Its shared knowledge will appear here."}
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-4">
+          <DialogPanel>
             <label className="block space-y-2 text-sm">
               Brain URL or invitation link
               <Input
