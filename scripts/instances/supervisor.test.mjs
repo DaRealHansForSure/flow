@@ -31,7 +31,7 @@ const port=Number(args[args.indexOf('--port')+1]);
 const server=createServer((request,response)=>{response.setHeader('content-type','application/json');response.end(JSON.stringify({environmentId:'test-environment'}))});
 await mkdir(join(home,'userdata'),{recursive:true});
 await writeFile(join(home,'userdata/server-runtime.json'),JSON.stringify({url:'http://127.0.0.1:'+port}));
-server.listen(port,'127.0.0.1',()=>void fetch(process.env.TEST_RECEIPT_URL,{method:'POST',body:JSON.stringify({pid:process.pid,entry:process.argv[1]})}));
+server.listen(port,'127.0.0.1',()=>void fetch(process.env.TEST_RECEIPT_URL,{method:'POST',body:JSON.stringify({pid:process.pid,entry:process.argv[1],host:args[args.indexOf('--host')+1]})}));
 process.on('SIGTERM',()=>server.close(()=>process.exit(0)));
 `;
 
@@ -39,7 +39,13 @@ const entryOf = (code) => join(code, "apps/server/src/bin.ts");
 
 async function fixture(
   t,
-  { release = false, managed = false, current = "flow-v1.1.0", pinnedToSource = false } = {},
+  {
+    release = false,
+    managed = false,
+    current = "flow-v1.1.0",
+    pinnedToSource = false,
+    networkAccess,
+  } = {},
 ) {
   const root = await NodeFSP.realpath(await NodeFSP.mkdtemp(join(tmpdir(), "flow-supervisor-")));
   const registry = join(root, "registry");
@@ -70,6 +76,7 @@ async function fixture(
       mode: "isolated",
       dev: false,
       home: join(root, "home"),
+      ...(networkAccess === undefined ? {} : { networkAccess }),
     }),
   );
   const started = Promise.withResolvers();
@@ -278,5 +285,45 @@ test(
     await assert.rejects(NodeFSP.stat(join(home, "userdata/server-runtime.json")), {
       code: "ENOENT",
     });
+  },
+);
+
+test(
+  "a recorded network access choice starts the server on every interface",
+  { timeout: 60000 },
+  async (t) => {
+    const { supervise, runtime, started } = await fixture(t, { networkAccess: true });
+    supervise();
+    const state = await runtime();
+    assert.equal((await started).host, "0.0.0.0");
+    const status = await (await command(state, "status")).json();
+    assert.equal(status.networkAccess, true);
+  },
+);
+
+test(
+  "network access is recorded for the next start, not applied in place",
+  { timeout: 60000 },
+  async (t) => {
+    const { supervise, runtime, started, config } = await fixture(t);
+    supervise();
+    const state = await runtime();
+    assert.equal((await started).host, "127.0.0.1");
+    const enable = await fetch(`${state.controlUrl}/network-access`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${state.token}` },
+      body: JSON.stringify({ enabled: true }),
+    });
+    assert.equal(enable.status, 200);
+    // The running server keeps its loopback bind until it is restarted.
+    assert.deepEqual(await enable.json(), { networkAccess: true, active: false });
+    assert.equal((await config()).networkAccess, true);
+    const malformed = await fetch(`${state.controlUrl}/network-access`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${state.token}` },
+      body: JSON.stringify({ enabled: "yes" }),
+    });
+    assert.equal(malformed.status, 400);
+    assert.equal((await config()).networkAccess, true);
   },
 );

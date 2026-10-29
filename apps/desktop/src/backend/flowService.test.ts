@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "@effect/vitest";
 import {
   readFlowServiceStatus,
   restartFlowService,
+  setFlowServiceNetworkAccess,
   startFlowService,
   stopFlowService,
   unitLocation,
@@ -229,6 +230,65 @@ describe("flow service panel actions", () => {
 
     expect(result).toEqual({ ok: true, reason: null, detail: null });
     expect(requests).toEqual([{ url: "/stop", authorization: "Bearer private-control-token" }]);
+  });
+
+  it("records network access with the supervisor, then restarts through systemd", async () => {
+    const f = await fixture();
+    const bodies: string[] = [];
+    const requests = await control(f, (request, response) => {
+      let body = "";
+      request.on("data", (part: Buffer) => (body += part.toString()));
+      request.on("end", () => {
+        bodies.push(body);
+        response.setHeader("content-type", "application/json");
+        response.end(JSON.stringify({ networkAccess: true, active: false }));
+      });
+    });
+    const runner = recordingRunner(true);
+
+    const result = await setFlowServiceNetworkAccess(
+      {
+        registryRoot: f.registryRoot,
+        homeDirectory: f.home,
+        host: "linux",
+        uid: 501,
+        run: runner.run,
+      },
+      true,
+    );
+
+    expect(result).toEqual({ ok: true, reason: null, detail: null });
+    expect(requests).toEqual([
+      { url: "/network-access", authorization: "Bearer private-control-token" },
+    ]);
+    expect(bodies).toEqual([JSON.stringify({ enabled: true })]);
+    expect(runner.calls).toEqual([
+      { command: "systemctl", args: ["--user", "is-active", "flow.service"] },
+      { command: "systemctl", args: ["--user", "restart", "flow.service"] },
+    ]);
+  });
+
+  it("names a service too old for network access and restarts nothing", async () => {
+    const f = await fixture();
+    await control(f, (_request, response) => {
+      response.writeHead(404).end();
+    });
+    const runner = recordingRunner(true);
+
+    const result = await setFlowServiceNetworkAccess(
+      {
+        registryRoot: f.registryRoot,
+        homeDirectory: f.home,
+        host: "linux",
+        uid: 501,
+        run: runner.run,
+      },
+      true,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/too old/);
+    expect(runner.calls).toEqual([]);
   });
 
   it("reports a service that was not running rather than failing", async () => {

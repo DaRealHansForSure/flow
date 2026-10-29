@@ -210,6 +210,58 @@ describe("DesktopServerExposure", () => {
     ),
   );
 
+  it.effect("follows an attached service's port and switches it instead of relaunching", () =>
+    withHarness(
+      lanNetworkInterfaces,
+      Effect.gen(function* () {
+        const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
+        const settings = yield* DesktopAppSettings.DesktopAppSettings;
+        const requested: boolean[] = [];
+
+        yield* settings.load;
+        yield* serverExposure.configureFromSettings({ port: 3773 });
+        const followed = yield* serverExposure.followAttachedService({
+          port: 38243,
+          networkAccess: false,
+          setNetworkAccess: (enabled) => {
+            requested.push(enabled);
+            return Effect.succeed({ ok: true, reason: null, detail: null });
+          },
+        });
+        assert.equal(followed.mode, "local-only");
+
+        const change = yield* serverExposure.setMode("network-accessible");
+        assert.deepEqual(requested, [true]);
+        assert.equal(change.requiresRelaunch, false);
+        assert.equal(change.state.endpointUrl, "http://192.168.1.20:38243");
+        assert.equal((yield* settings.get).serverExposureMode, "network-accessible");
+      }),
+    ),
+  );
+
+  it.effect("keeps the previous mode when the attached service refuses the switch", () =>
+    withHarness(
+      lanNetworkInterfaces,
+      Effect.gen(function* () {
+        const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
+        const settings = yield* DesktopAppSettings.DesktopAppSettings;
+
+        yield* settings.load;
+        yield* serverExposure.followAttachedService({
+          port: 38243,
+          networkAccess: false,
+          setNetworkAccess: () =>
+            Effect.succeed({ ok: false, reason: "failed", detail: "too old" }),
+        });
+
+        const error = yield* serverExposure.setMode("network-accessible").pipe(Effect.flip);
+        assert.ok(error._tag === "DesktopServerExposureServiceError");
+        assert.equal((yield* serverExposure.getState).mode, "local-only");
+        assert.equal((yield* settings.get).serverExposureMode, "local-only");
+      }),
+    ),
+  );
+
   it.effect("persists tailscale serve preferences atomically and reports no-op updates", () =>
     withHarness(
       emptyNetworkInterfaces,

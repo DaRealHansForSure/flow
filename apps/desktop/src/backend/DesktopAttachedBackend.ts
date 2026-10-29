@@ -81,6 +81,12 @@ export interface AttachedBackendSpec {
   readonly label: Effect.Effect<string>;
   readonly environment: AttachedBackendEnvironment;
   readonly onReady?: (httpBaseUrl: URL) => Effect.Effect<void>;
+  // Runs before onReady with what the service reported about itself, so
+  // network access settings follow the service rather than this app.
+  readonly onServiceAttached?: (service: {
+    readonly httpBaseUrl: URL;
+    readonly networkAccess: boolean;
+  }) => Effect.Effect<void>;
   readonly onShutdown?: () => Effect.Effect<void>;
   // Returning true asks for one more attach attempt (the user pressed retry,
   // or the caller fixed something). False leaves the instance failed.
@@ -112,6 +118,7 @@ interface AttachSuccess {
   readonly _tag: "attached";
   readonly httpBaseUrl: URL;
   readonly dataHome: string;
+  readonly networkAccess: boolean;
 }
 
 interface AttachFailed {
@@ -322,6 +329,8 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
       _tag: "attached",
       httpBaseUrl: origin.value,
       dataHome: result.dataHome,
+      // A supervisor that predates the setting always listens on loopback.
+      networkAccess: result.networkAccess === true,
     } satisfies AttachSuccess;
   });
 
@@ -336,6 +345,12 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
         yield* Ref.set(attached, Option.some(outcome));
         yield* Ref.set(parkedFailure, Option.none());
         yield* Ref.set(ready, true);
+        yield* (
+          spec.onServiceAttached?.({
+            httpBaseUrl: outcome.httpBaseUrl,
+            networkAccess: outcome.networkAccess,
+          }) ?? Effect.void
+        );
         yield* spec.onReady?.(outcome.httpBaseUrl) ?? Effect.void;
         return;
       }

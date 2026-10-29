@@ -60,6 +60,28 @@ export function cleanEnvironment(env) {
 // 0 means "an owner exists or the user asked for this, stay stopped", 1 means
 // "this went wrong, start me again". Every exit below picks one deliberately.
 const failureLinger = 2000;
+// The server listens on loopback unless the instance's config.json has
+// `networkAccess: true`, which `/network-access` records for the next start.
+// The control server and the origin clients dial stay on loopback either way.
+const LOOPBACK_HOST = "127.0.0.1";
+const NETWORK_HOST = "0.0.0.0";
+const MAX_CONTROL_BODY_BYTES = 1024;
+
+/** Reads a small JSON control request body; anything larger or malformed is null. */
+async function readControlBody(request) {
+  let body = "";
+  for await (const part of request) {
+    body += part;
+    if (body.length > MAX_CONTROL_BODY_BYTES) {
+      return null;
+    }
+  }
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
 export async function supervise(directory) {
   const managed = process.env.FLOW_SERVICE_MANAGED === "1";
   if (managed && process.env.FLOW_RELEASE_HOME) {
@@ -112,12 +134,15 @@ export async function supervise(directory) {
   let updateTimer;
   const generation = randomUUID();
   const token = randomBytes(32).toString("hex");
+  const networkAccess = config.networkAccess === true;
   const state = {
     id: config.id,
     generation,
     name: config.name,
     phase: "starting",
     pid: process.pid,
+    // What this run listens on. A recorded change applies from the next start.
+    networkAccess,
   };
   const children = [];
   let stopping = false;
@@ -168,6 +193,30 @@ export async function supervise(directory) {
     for (const child of children) signalChild(child, "SIGTERM");
     setTimeout(() => void stop(1), failureLinger);
   };
+  // Records whether the server should listen on every interface. Restarting is
+  // left to the caller, who knows whether a service manager owns this instance.
+  const recordNetworkAccess = async (request, response) => {
+    response.setHeader("content-type", "application/json");
+    const body = await readControlBody(request);
+    if (typeof body?.enabled !== "boolean") {
+      response.writeHead(400).end(JSON.stringify({ error: 'Expected {"enabled": boolean}.' }));
+      return;
+    }
+    if (config.mode === "ui-only") {
+      response
+        .writeHead(409)
+        .end(JSON.stringify({ error: "A UI-only instance runs no server of its own." }));
+      return;
+    }
+    try {
+      const saved = await json(join(directory, "config.json"));
+      await atomic(join(directory, "config.json"), { ...saved, networkAccess: body.enabled });
+    } catch (error) {
+      response.writeHead(500).end(JSON.stringify({ error: error.message }));
+      return;
+    }
+    response.end(JSON.stringify({ networkAccess: body.enabled, active: networkAccess }));
+  };
   const server = createServer((request, response) => {
     if (request.headers.authorization !== `Bearer ${token}` || request.method !== "POST") {
       response.writeHead(401).end();
@@ -184,6 +233,10 @@ export async function supervise(directory) {
           response.writeHead(409, { "content-type": "application/json" });
           response.end(JSON.stringify({ error: error.message }));
         });
+      return;
+    }
+    if (request.url === "/network-access") {
+      void recordNetworkAccess(request, response);
       return;
     }
     if (!["/status", "/stop"].includes(request.url)) {
@@ -282,7 +335,7 @@ export async function supervise(directory) {
           "--port",
           String(serverPort),
           "--host",
-          "127.0.0.1",
+          networkAccess ? NETWORK_HOST : LOOPBACK_HOST,
           ...(config.dev ? ["--dev-url", webUrl] : []),
           "--no-browser",
         ],

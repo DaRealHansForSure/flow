@@ -80,6 +80,7 @@ import { BRAND } from "@t3tools/shared/branding";
 //   10. CommandPalette enables file-manager picker for desktop-local
 //       envs, routes pickFolder by env id. (38e8477a)
 
+import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -100,10 +101,15 @@ import * as DesktopBackendConfiguration from "./DesktopBackendConfiguration.ts";
 import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import type { DesktopFlowServiceActionResult } from "@t3tools/contracts";
 import * as FlowService from "./flowService.ts";
+import * as DesktopServerExposure from "./DesktopServerExposure.ts";
 import * as DesktopServiceAdoption from "./DesktopServiceAdoption.ts";
 import * as FlowServiceRecovery from "./flowServiceRecovery.ts";
 import { flowServiceSupportsHost } from "./serviceDiscovery.ts";
-import { HostProcessArchitecture, HostProcessPlatform } from "@t3tools/shared/hostProcess";
+import {
+  HostProcessArchitecture,
+  HostProcessPlatform,
+  HostProcessUserId,
+} from "@t3tools/shared/hostProcess";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
@@ -338,6 +344,7 @@ export const layer = Layer.effect(
     const desktopWindow = yield* DesktopWindow.DesktopWindow;
     const electronDialog = yield* ElectronDialog.ElectronDialog;
     const appSettings = yield* DesktopAppSettings.DesktopAppSettings;
+    const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
     // Anchor the pool's lifetime to its layer scope so registered
     // instance scopes can be forked off it. Without this, instance
     // scopes are orphaned: they only close via explicit unregister()
@@ -415,6 +422,7 @@ export const layer = Layer.effect(
     // screen at every launch.
     const hostPlatform = yield* HostProcessPlatform;
     const hostArchitecture = yield* HostProcessArchitecture;
+    const hostUserId = yield* HostProcessUserId;
     const legacyPrimaryRequested =
       !flowServiceSupportsHost(hostPlatform, hostArchitecture) ||
       process.env.FLOW_DESKTOP_LEGACY_BACKEND === "1" ||
@@ -465,6 +473,32 @@ export const layer = Layer.effect(
       id: DesktopBackendManager.PRIMARY_INSTANCE_ID,
       label: configuration.resolvePrimaryLabel,
       environment: yield* configuration.attachedBackendEnvironment,
+      onServiceAttached: ({ httpBaseUrl, networkAccess }) =>
+        serverExposure
+          .followAttachedService({
+            port: Number(httpBaseUrl.port),
+            networkAccess,
+            setNetworkAccess: (enabled) =>
+              Effect.promise(() =>
+                FlowService.setFlowServiceNetworkAccess(
+                  {
+                    host: hostPlatform,
+                    uid: hostUserId ?? 0,
+                    homeDirectory: environment.homeDirectory,
+                  },
+                  enabled,
+                ),
+              ).pipe(
+                Effect.catchCause((cause) =>
+                  Effect.succeed({
+                    ok: false,
+                    reason: "failed",
+                    detail: Cause.pretty(cause),
+                  } satisfies DesktopFlowServiceActionResult),
+                ),
+              ),
+          })
+          .pipe(Effect.asVoid),
       onReady: (httpBaseUrl) =>
         desktopWindow.handleBackendReady(httpBaseUrl).pipe(
           Effect.catch((error) =>

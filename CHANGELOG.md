@@ -12,3 +12,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Synced with upstream Flow `release` (flow-v0.1.15): OpenCode CLI capture, notes
   agent on an inexpensive model.
+
+### Fixed
+
+- Settings > Network access now reaches the Flow service: the service listens on every
+  interface when it is on, and Settings shows the service's real LAN and Tailscale
+  addresses instead of the unused port 3773. Needs a service built from this fork.
