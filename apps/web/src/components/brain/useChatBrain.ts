@@ -17,7 +17,10 @@ import { useEffect, useState } from "react";
 import { useRightPanelStore } from "../../rightPanelStore";
 import { brainCommand } from "../../state/brain";
 import { useAtomCommand } from "../../state/use-atom-command";
+import { toastManager } from "../ui/toast";
 import { useChatBrainStatusStore } from "./chatBrainStatusStore";
+
+const UNANSWERED_FAILURE = "The Brain did not answer. It retries on its own.";
 
 const LONG_POLL_DELAY_MS = 100;
 const RETRY_DELAY_MS = 5000;
@@ -51,12 +54,14 @@ export function useChatBrain(input: {
   const [loadedKey, setLoadedKey] = useState(sourceKey);
   const [response, setResponse] = useState<BrainResponse | null>(null);
   const [error, setError] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const [changedIds, setChangedIds] = useState<readonly string[]>([]);
   const [savedNow, setSavedNow] = useState(false);
   if (loadedKey !== sourceKey) {
     setLoadedKey(sourceKey);
     setResponse(null);
     setError(false);
+    setFailure(null);
     setChangedIds([]);
     setSavedNow(false);
   }
@@ -90,6 +95,7 @@ export function useChatBrain(input: {
         }
         if (result._tag === "Failure") {
           setError(true);
+          setFailure(UNANSWERED_FAILURE);
           delay = RETRY_DELAY_MS;
           revision = undefined;
           return;
@@ -98,6 +104,7 @@ export function useChatBrain(input: {
           revision = undefined;
           delay = RETRY_DELAY_MS;
           setError(true);
+          setFailure(result.value.error);
           setResponse((previous) => retainChatContextOnError(previous, result.value));
           return;
         }
@@ -115,6 +122,7 @@ export function useChatBrain(input: {
         }
         previousNotes = currentNotes;
         setError(false);
+        setFailure(null);
         setResponse((previous) =>
           JSON.stringify(previous) === JSON.stringify(result.value) ? previous : result.value,
         );
@@ -123,6 +131,7 @@ export function useChatBrain(input: {
         delay = RETRY_DELAY_MS;
         if (!disposed) {
           setError(true);
+          setFailure(UNANSWERED_FAILURE);
         }
       } finally {
         pending = false;
@@ -158,9 +167,20 @@ export function useChatBrain(input: {
       return;
     }
     const { setStatus } = useChatBrainStatusStore.getState();
-    setStatus(threadKey, hasBrain ? { updating } : null);
+    setStatus(threadKey, hasBrain || failure !== null ? { updating, failure } : null);
     return () => setStatus(threadKey, null);
-  }, [threadKey, hasBrain, updating]);
+  }, [threadKey, hasBrain, updating, failure]);
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- announces a new Brain failure once, as soon as the poll sees it
+  useEffect(() => {
+    if (environmentId === null) {
+      return;
+    }
+    const { claimFailureAnnouncement } = useChatBrainStatusStore.getState();
+    if (claimFailureAnnouncement(environmentId, failure)) {
+      toastManager.add({ type: "error", title: "Brain unavailable", description: failure });
+    }
+  }, [environmentId, failure]);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the Brain tab once the server confirms this chat has a Brain
   useEffect(() => {
