@@ -275,19 +275,16 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
   );
 }
 
-/** Flow: the Brain entry of the surface launchers, present only when the chat has a Brain. */
+/** Flow: the Brain entry of the surface launchers, disabled when the chat has no Brain. */
 function brainSurfaceActions(onAddBrain: (() => void) | undefined) {
-  if (onAddBrain === undefined) {
-    return [];
-  }
   return [
     {
       label: "Brain",
       icon: BrainCircuitIcon,
       shortcut: "R",
-      available: true,
-      disabledReason: "Available in a chat with a Brain.",
-      onClick: onAddBrain,
+      available: onAddBrain !== undefined,
+      disabledReason: "This chat has no Brain. Connect one in Settings > Brain.",
+      onClick: onAddBrain ?? (() => {}),
     },
   ];
 }
@@ -393,7 +390,7 @@ function RightPanelEmptyState(props: {
       disabledReason: SURFACE_UNAVAILABLE_HINTS.device,
       onClick: props.onAddDevice,
     },
-    // Flow: the Brain tab, left out entirely in a chat without a Brain.
+    // Flow: the Brain tab, disabled in a chat without a Brain.
     ...brainSurfaceActions(props.onAddBrain),
   ] as const;
 
@@ -1095,7 +1092,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       disabledReason: SURFACE_DISABLED_REASONS.device,
       onClick: props.onAddDevice,
     },
-    // Flow: the Brain tab, left out entirely in a chat without a Brain.
+    // Flow: the Brain tab, disabled in a chat without a Brain.
     ...brainSurfaceActions(props.onAddBrain),
   ] as const;
 

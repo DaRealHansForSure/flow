@@ -44,6 +44,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- In a chat without a Brain, the right panel lists "Brain" greyed out with a hint instead of
+  leaving it out.
+
 - Releases build for Linux only: the macOS service bundle and the macOS desktop builds are
   gone from the release workflows.
 
