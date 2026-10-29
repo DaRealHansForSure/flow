@@ -3,10 +3,12 @@
 # own server and its own data in ~/.flow-dev, so the installed Flow (and the chat
 # running in it) is never touched.
 #
-# Usage: scripts/fork/dev-flow.sh [--seed]
+# Usage: scripts/fork/dev-flow.sh [--seed [--force]]
 #   --seed  copy a snapshot of your real chats and your real Brain into
 #           ~/.flow-dev first (each only when the Dev Flow has none yet; the live
 #           data is only read)
+#   --force with --seed, first delete the Dev Flow's chats and Brain, so both
+#           are copied fresh
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -128,13 +130,47 @@ seed_dev_brain() {
     echo "dev-flow: seeded ${DEV_BRAIN} and ${dev_graph} from your real Brain."
 }
 
+# Deletes only the Dev Flow's own copies; the next seed replaces them.
+forget_dev_seed() {
+    echo "dev-flow: deleting the Dev Flow's chats and Brain before seeding again."
+    # statev2.sqlite is rebuilt from state.sqlite only when it is missing.
+    rm -f "${DEV_HOME}"/userdata/state.sqlite* "${DEV_HOME}"/userdata/statev2.sqlite*
+    rm -rf "${DEV_BRAIN}" "$(brain_graph_dir "${DEV_HOME}")"
+}
+
+# The Dev Flow deletes and replaces its own data; it must never be the real home.
+if [[ "$(realpath -m "${DEV_HOME}")" == "$(realpath -m "${LIVE_HOME}")" ]]; then
+    echo "dev-flow: ${DEV_HOME} is the installed Flow's data; choose another FLOW_DEV_HOME." >&2
+    exit 2
+fi
+
+seed=false
+force=false
+for argument in "$@"; do
+    case "${argument}" in
+        --seed) seed=true ;;
+        --force) force=true ;;
+        *)
+            echo "dev-flow: unknown option ${argument}" >&2
+            exit 2
+            ;;
+    esac
+done
+if [[ "${force}" == true && "${seed}" != true ]]; then
+    echo "dev-flow: --force only works together with --seed." >&2
+    exit 2
+fi
+
 migrate_legacy_dev_home
 start_log
 
-if [[ "${1:-}" == "--seed" ]]; then
+if [[ "${seed}" == true ]]; then
     if pgrep -f -- "--home-dir ${DEV_HOME}" > /dev/null; then
         echo "dev-flow: a Dev Flow is still running; close it, then seed again." >&2
         exit 1
+    fi
+    if [[ "${force}" == true ]]; then
+        forget_dev_seed
     fi
     seed_dev_database
     seed_dev_brain
