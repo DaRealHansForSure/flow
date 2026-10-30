@@ -10,10 +10,11 @@ import {
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { Link } from "@tanstack/react-router";
 import { PlugIcon, PowerOffIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";
 import { deriveProviderInstanceEntries } from "~/providerInstances";
+import { useQuietThreadProjection } from "~/state/entities";
 import { useEnvironmentProviders } from "~/state/environments";
 import { mcpAppEnvironment } from "~/state/mcpApps";
 import { useEnvironmentQuery } from "~/state/query";
@@ -25,6 +26,7 @@ import { Button } from "../ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 import { RefreshIcon } from "../ui/refresh-icon";
 import { McpServerList } from "./McpServerList";
+import { liveProviderSessionId } from "./mcpPanelSession";
 
 function useProviderName(
   environmentId: EnvironmentId,
@@ -70,6 +72,24 @@ export function McpPanel(props: {
 }) {
   const query = useProviderMcpListing(props.environmentId, { threadId: props.threadId });
   const listing = query.data;
+  const liveSessionId = liveProviderSessionId(
+    useQuietThreadProjection(scopeThreadRef(props.environmentId, props.threadId))?.projection ??
+      null,
+  );
+  const askedForSessionIdRef = useRef(liveSessionId);
+  const { refresh, isPending } = query;
+  const answeredNotRunning = listing?._tag === "no-session" && !isPending;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- asks the agent again once the chat's session starts after a "not running" answer
+  useEffect(() => {
+    if (
+      answeredNotRunning &&
+      liveSessionId !== null &&
+      liveSessionId !== askedForSessionIdRef.current
+    ) {
+      askedForSessionIdRef.current = liveSessionId;
+      refresh();
+    }
+  }, [answeredNotRunning, liveSessionId, refresh]);
   const providerName = useProviderName(props.environmentId, instanceOf(listing)) ?? "The agent";
   const timestampFormat = useClientSettings((settings) => settings.timestampFormat);
 
