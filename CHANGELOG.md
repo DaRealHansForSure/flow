@@ -50,6 +50,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The composer stands out more from the chat history in light and dark themes, on phones and on
+  wider screens: a tinted surface and a visible outline, mixed from the theme's own colors.
 - With the Working section turned off, the sidebar's chat list follows Project order: on "Last
   user message" the chat you last wrote in comes first. Created at and Manual keep the fixed,
   draggable order.

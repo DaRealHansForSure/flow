@@ -2621,14 +2621,20 @@ code {
     border-inline-width: 0;
     border-bottom-width: 0;
   }
-  /* A tinted surface, a firm top edge and a shadow set the bar apart from the chat history. */
-  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"] {
-    --chat-composer-glass-surface: var(--muted);
-    --chat-composer-outline: var(--border);
-  }
   [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-host"] {
     box-shadow: 0 -8px 24px -12px rgb(0 0 0 / 0.25);
   }
+}
+
+/* Flow: the docked composer is a tinted, outlined surface, so it stands apart from the chat in
+   light and dark themes alike. Mixed from the theme's own colors, so custom themes still fit. */
+[data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"] {
+  --chat-composer-glass-surface: color-mix(in srgb, var(--foreground) 7%, var(--background));
+  --chat-composer-outline: color-mix(in srgb, var(--foreground) 20%, var(--background));
+}
+.dark [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"] {
+  --chat-composer-glass-surface: color-mix(in srgb, var(--foreground) 10%, var(--background));
+  --chat-composer-outline: color-mix(in srgb, var(--foreground) 22%, var(--background));
 }
 
 /* Flow: the Chat font setting scales message text in the timeline only; code keeps its own size. */
