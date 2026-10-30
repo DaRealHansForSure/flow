@@ -1,22 +1,27 @@
 # Worklog
 
-Updated: 2026-10-30 17:25
+Updated: 2026-10-30 19:05
 
 ## Current focus
 
-- **Topic:** release 0.2.1 prep
+- **Topic:** release 0.2.1 prep, phone and status UI polish
 - **Goal:** ship Plan mode and today's fixes as service and desktop 0.2.1
-- **Branch:** develop (about 25 commits not pushed, from e3f05ef3f on)
-- **Last step done:** settings tests fixed (stale fixtures), web reconnects quickly after a
-  long-hidden tab, plan-revision eval reproduces the owner's case on Opus (0/3 -> 2/3); no
-  AppImage built after 0.2.1-dev.4
-- **Next step:** push develop and build 0.2.1-dev.5 when the owner says so
-- **Open questions / blockers:** feat/windows-desktop stays unmerged (owner); no
-  compatibility shims for the Play Store T3 app (owner: "we never do that"); 21 eval plan files
-  in the Claude profile's plans folder stay (owner)
+- **Branch:** develop (pushed up to aaab3a083 = 0.2.1-dev.5; about 27 commits since, not pushed)
+- **Last step done:** status pill above the composer (T3 Android style), Steer/Queue long press,
+  background work list, touch-sized header and sidebar buttons, full-width phone menus, idle
+  composer field, greyer hint, first history page back to 5 turns (server), provider stack shows
+  other kinds only. Dev web runs against the live service: `dev-runner dev:web --port 3773
+  --share` on https://nixda.tail096d14.ts.net:5733/
+- **Next step:** run the affected test files (owner: tests at the end), then push develop and
+  build 0.2.1-dev.6; then background task output (.plans/background-task-output.md)
+- **Open questions / blockers:** feat/windows-desktop stays unmerged (owner); no compatibility
+  shims for the Play Store T3 app (owner); 21 eval plan files in the Claude profile's plans
+  folder stay (owner); server-side changes (FalkorDB fix, branch recording, 5-turn first page)
+  need a new AppImage, the dev web cannot show them
 
 ## Finished features
 
+- 2026-10-30 - Status pill above the composer, Steer/Queue long press, background work list, Done status for subagents, browser grip and drag fixes, touch-sized buttons, full-width phone menus, context window colours, update dialog versions (develop)
 - 2026-10-30 - Agents tab, Chat font, sidebar follows Last user message, browser zoom and globe pill, docked browser fixes, Revise reworks the plan, FalkorDB crash fix, user docs (develop)
 - 2026-10-30 - Chunked chat history, file panel (opens alone, rendered Markdown, Download, phone menu), docked browser, Brain dot, phone composer bar, Plan ready badge (develop)
 - 2026-10-30 - Phone layout fixes, Read image thumbnails, version info in About, SearchableSelect, React Compiler and test cleanup (develop)
@@ -35,6 +40,9 @@ Updated: 2026-10-30 17:25
 
 ## History
 
+- 2026-10-30 19:05 - Phone polish from live dev web review; first page 5 turns; worklog updated
+- 2026-10-30 18:00 - Dev web served against the live service for live review
+- 2026-10-30 17:40 - 0.2.1-dev.5 built and develop pushed
 - 2026-10-30 17:05 - User docs and worklog updated for the afternoon changes
 - 2026-10-30 16:55 - Revise reworks the plan, branch on checkout chats, floating browser drag, subagent bar, phone composer
 - 2026-10-30 16:30 - Browser zoom (pinch, Ctrl+wheel), composer contrast, snooze options on phones, Cite on Android, FalkorDB crash fix
