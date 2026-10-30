@@ -9,13 +9,13 @@ import type {
 /**
  * Every window stops at the byte budget. A window that holds a user turn also
  * stops at `maxUserTurns` or `maxTurnItems` rows, which keeps ordinary turns
- * whole (V1 kept 500 activities). Any other window, such as an agent-driven
- * thread or the inside of one very long turn, stops at `maxItems` rows.
+ * whole. Any other window, such as an agent-driven thread or the inside of one
+ * very long turn, stops at `maxItems` rows.
  */
 export const THREAD_HISTORY_PAGE_POLICY = {
-  maxUserTurns: 3,
+  maxUserTurns: 1,
   maxItems: 75,
-  maxTurnItems: 500,
+  maxTurnItems: 200,
   maxEncodedBytes: 1_048_576,
 } as const;
 
