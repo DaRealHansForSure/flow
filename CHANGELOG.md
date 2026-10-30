@@ -74,6 +74,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The project name in the new-chat headline is shown in the accent colour, so it reads as the
   link that changes the project.
 
+- A chat's Brain tab always shows its Auto-Docs, Auto-Skills and Conversation notes sections,
+  each with a Default / On / Off switch for that chat; Default follows the project or Settings,
+  and the Auto-Docs and Auto-Skills switches are greyed out while the notes agent is off. The
+  whole header bar of each section folds it.
+
 - Clickable controls everywhere show the hand cursor, including plain buttons such as the Brain
   tab's arrows; the Brain tab no longer shows a "Your context" label.
 

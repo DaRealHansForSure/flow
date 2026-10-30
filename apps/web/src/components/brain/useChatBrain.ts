@@ -3,6 +3,7 @@
 // it, hands it to the Brain tab, and publishes the chat's Brain status for the header button.
 
 import type {
+  BrainChatCurationOutput,
   BrainResponse,
   BrainWorkspace,
   EnvironmentId,
@@ -35,10 +36,14 @@ export interface ChatBrain {
   readonly changedIds: readonly string[];
   readonly savedNow: boolean;
   /**
-   * Turns the notes agent on or off for this chat, or back to the global setting with
-   * undefined. Resolves with an error message, or null once the server has saved it.
+   * Turns the notes agent, Auto-Docs or Auto-Skills on or off for this chat, or back to the
+   * project or global setting with undefined. Resolves with an error message, or null once
+   * the server has saved it.
    */
-  readonly setNotesAgent: (enabled: boolean | undefined) => Promise<string | null>;
+  readonly setCurationOutput: (
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ) => Promise<string | null>;
 }
 
 /**
@@ -203,21 +208,25 @@ export function useChatBrain(input: {
     useRightPanelStore.getState().openBrainByDefault(threadRef, revealPanelByDefault);
   }, [threadRef, hasBrain, revealPanelByDefault]);
 
-  const setNotesAgent = async (enabled: boolean | undefined): Promise<string | null> => {
+  const setCurationOutput = async (
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ): Promise<string | null> => {
     if (environmentId === null || threadId === null) {
-      return "Send a first message before choosing the notes agent for this chat.";
+      return "Send a first message before choosing this for the chat.";
     }
     const requestedKey = sourceKey;
     const result = await execute({
       environmentId,
       input: {
-        action: "setChatNotesAgent",
+        action: "setChatCurationOutput",
         threadId,
+        output,
         ...(enabled === undefined ? {} : { enabled }),
       },
     });
     if (result._tag === "Failure") {
-      return "The notes agent setting could not be saved.";
+      return "The setting could not be saved.";
     }
     if (result.value.error) {
       return result.value.error;
@@ -228,7 +237,7 @@ export function useChatBrain(input: {
     return null;
   };
 
-  return { response, brain, error, changedIds, savedNow, setNotesAgent };
+  return { response, brain, error, changedIds, savedNow, setCurationOutput };
 }
 
 function chatBrainWorkspace(

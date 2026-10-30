@@ -1,6 +1,11 @@
 import { BrainIcon } from "./BrainIcon";
 import { useState } from "react";
-import type { ChatMemoryList, EnvironmentId, ThreadId } from "@t3tools/contracts";
+import type {
+  BrainChatCurationOutput,
+  ChatMemoryList,
+  EnvironmentId,
+  ThreadId,
+} from "@t3tools/contracts";
 import {
   BrainCircuitIcon,
   ChevronDownIcon,
@@ -13,12 +18,12 @@ import { BrainGraph } from "./BrainGraph";
 import { BrainGraphDialog, BrainGraphExpandButton } from "./BrainGraphDialog";
 import { BrainDocumentDialog, BrainDocumentLibrary } from "./BrainDocuments";
 import { ConversationNotesPreview } from "./ConversationNotesPreview";
-import { Toggle, ToggleGroup } from "../ui/toggle-group";
-import { toastManager } from "../ui/toast";
 import { cliName } from "./BrainControls";
+import { BrainSectionHeader } from "./BrainSectionHeader";
+import { ChatCurationSwitch } from "./ChatCurationSwitch";
 import type { ChatBrain } from "./useChatBrain";
 
-type NotesAgentChoice = "default" | "on" | "off";
+const OUTPUT_NEEDS_NOTES_AGENT = "Needs the notes agent.";
 
 /** The Brain tab of a chat's right panel; the chat view keeps its context fresh. */
 export function ChatBrainPanel({
@@ -30,7 +35,7 @@ export function ChatBrainPanel({
   threadId: ThreadId | null;
   chatBrain: ChatBrain;
 }) {
-  const { response, brain, error, changedIds, savedNow, setNotesAgent } = chatBrain;
+  const { response, brain, error, changedIds, savedNow, setCurationOutput } = chatBrain;
   const [notesExpanded, setNotesExpanded] = useState(true);
   const [brainExpanded, setBrainExpanded] = useState(false);
   const [view, setView] = useState<string | null>(null);
@@ -44,7 +49,22 @@ export function ChatBrainPanel({
     setGraphAutoExpanded(true);
     setBrainExpanded(true);
   }
-  const notesAgentOff = notes?.notesAgent?.enabled === false;
+  const curation = brain && threadId ? notes?.curation : undefined;
+  const notesAgentOff = notes?.curation?.notesAgent.enabled === false;
+  const curationSwitch = (output: BrainChatCurationOutput, label: string) => {
+    if (!curation) {
+      return null;
+    }
+    const needsNotesAgent = output !== "notesAgent" && notesAgentOff;
+    return (
+      <ChatCurationSwitch
+        label={label}
+        choice={curation[output]}
+        disabledHint={needsNotesAgent ? OUTPUT_NEEDS_NOTES_AGENT : undefined}
+        onChange={(enabled) => setCurationOutput(output, enabled)}
+      />
+    );
+  };
   const memoryStatus = chatNotesStatus({
     hasBrain: brain !== undefined,
     notes,
@@ -216,36 +236,34 @@ export function ChatBrainPanel({
             environmentId={environmentId}
             workspaceId={brain.id}
             documents={(notes?.documents ?? []).filter((doc) => doc.kind !== "memory")}
+            chatSwitches={{
+              doc: curationSwitch("autoDocs", "Auto-Docs"),
+              skill: curationSwitch("autoSkills", "Auto-Skills"),
+            }}
           />
         )}
         <section aria-label="Conversation notes" className="mt-3 border-t border-border/60 pt-3">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              aria-expanded={notesExpanded}
-              onClick={() => setNotesExpanded((value) => !value)}
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-muted/60"
-            >
-              <BookOpenIcon className="size-4 shrink-0 text-primary" />
-              <span className="flex-1 text-sm">Conversation notes</span>
-              <ChevronDownIcon
-                className={`size-4 text-muted-foreground ${notesExpanded ? "rotate-180" : ""}`}
-              />
-            </button>
-            {notes?.notes && (
-              <button
-                type="button"
-                aria-label="Read full conversation notes"
-                onClick={() => setView("notes")}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Maximize2Icon className="size-3.5" />
-              </button>
-            )}
-          </div>
-          {brain && threadId && notes?.notesAgent ? (
-            <ChatNotesAgentControl notesAgent={notes.notesAgent} onChange={setNotesAgent} />
-          ) : null}
+          <BrainSectionHeader
+            icon={BookOpenIcon}
+            label="Conversation notes"
+            expanded={notesExpanded}
+            onToggle={() => setNotesExpanded((value) => !value)}
+            actions={
+              <>
+                {curationSwitch("notesAgent", "Notes agent")}
+                {notes?.notes && (
+                  <button
+                    type="button"
+                    aria-label="Read full conversation notes"
+                    onClick={() => setView("notes")}
+                    className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Maximize2Icon className="size-3.5" />
+                  </button>
+                )}
+              </>
+            }
+          />
           {notesExpanded && (
             <>
               {notes?.notes ? (
@@ -349,69 +367,4 @@ function chatNotesStatus(input: {
     return "Saved automatically from this conversation";
   }
   return "Ready for conversation notes";
-}
-
-/** The chat's own Notes agent choice: follow Settings, or on or off for this chat only. */
-function ChatNotesAgentControl({
-  notesAgent,
-  onChange,
-}: {
-  readonly notesAgent: NonNullable<ChatMemoryList["notesAgent"]>;
-  readonly onChange: ChatBrain["setNotesAgent"];
-}) {
-  const [pendingChoice, setPendingChoice] = useState<NotesAgentChoice | null>(null);
-  const savedChoice = notesAgentChoice(notesAgent.choice);
-  const shownChoice = pendingChoice ?? savedChoice;
-  const select = (choice: NotesAgentChoice) => {
-    if (choice === shownChoice) {
-      return;
-    }
-    setPendingChoice(choice);
-    void onChange(notesAgentEnabled(choice)).then((failure) => {
-      setPendingChoice(null);
-      if (failure) {
-        toastManager.add({ type: "error", title: "Notes agent not changed", description: failure });
-      }
-    });
-  };
-  let hint = "Only for this chat.";
-  if (shownChoice === "default") {
-    hint = notesAgent.enabled ? "Follows Settings: on." : "Follows Settings: off.";
-  }
-  return (
-    <div className="flex items-center gap-2 px-2 pb-1">
-      <span className="min-w-0 flex-1">
-        <span className="block text-xs">Notes agent</span>
-        <span className="block text-2xs text-muted-foreground">{hint}</span>
-      </span>
-      <ToggleGroup
-        aria-label="Notes agent for this chat"
-        value={[shownChoice]}
-        onValueChange={(next) => {
-          const choice = next[0];
-          if (choice === "default" || choice === "on" || choice === "off") {
-            select(choice);
-          }
-        }}
-      >
-        <Toggle value="default">Default</Toggle>
-        <Toggle value="on">On</Toggle>
-        <Toggle value="off">Off</Toggle>
-      </ToggleGroup>
-    </div>
-  );
-}
-
-function notesAgentChoice(choice: boolean | undefined): NotesAgentChoice {
-  if (choice === undefined) {
-    return "default";
-  }
-  return choice ? "on" : "off";
-}
-
-function notesAgentEnabled(choice: NotesAgentChoice): boolean | undefined {
-  if (choice === "default") {
-    return undefined;
-  }
-  return choice === "on";
 }

@@ -76,7 +76,7 @@ it("requires one explicit choice for conflicting legacy checkouts and keeps othe
   }
 });
 
-it("keeps each chat's own Brain and Notes agent choices, including no Brain, across restarts", async () => {
+it("keeps each chat's own Brain and curation choices, including no Brain, across restarts", async () => {
   const directory = await mkdtemp(join(tmpdir(), "brain-thread-bindings-"));
   try {
     const bindings = new ProjectBrainBindings(directory);
@@ -84,17 +84,49 @@ it("keeps each chat's own Brain and Notes agent choices, including no Brain, acr
     expect(bindings.threadChoice("chat-a")).toBeUndefined();
     await bindings.bindThread("chat-a", "brain-1");
     await bindings.bindThread("chat-b", null);
-    await bindings.setThreadNotesAgent("chat-a", false);
-    await bindings.setThreadNotesAgent("chat-b", true);
+    await bindings.setThreadCurationChoice("chat-a", "notesAgent", false);
+    await bindings.setThreadCurationChoice("chat-a", "autoDocs", true);
+    await bindings.setThreadCurationChoice("chat-b", "notesAgent", true);
+    await bindings.setThreadCurationChoice("chat-b", "autoSkills", false);
     const restarted = new ProjectBrainBindings(directory);
     await restarted.initialize();
     expect(restarted.threadChoice("chat-a")).toBe("brain-1");
-    expect(restarted.threadNotesAgent("chat-a")).toBe(false);
-    expect(restarted.threadNotesAgent("chat-b")).toBe(true);
-    expect(restarted.threadNotesAgent("chat-c")).toBeUndefined();
+    expect(restarted.threadCurationChoices("chat-a")).toEqual({
+      notesAgent: false,
+      autoDocs: true,
+    });
+    expect(restarted.threadCurationChoices("chat-b")).toEqual({
+      notesAgent: true,
+      autoSkills: false,
+    });
+    expect(restarted.threadCurationChoices("chat-c")).toEqual({});
     // An explicit "no Brain" stays distinct from "follow the project".
     expect(restarted.threadChoice("chat-b")).toBeNull();
     expect(restarted.threadChoice("chat-c")).toBeUndefined();
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("reads Notes agent choices stored before Auto-Docs and Auto-Skills could be chosen per chat", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "brain-thread-legacy-notes-agent-"));
+  try {
+    await NodeFSP.writeFile(
+      join(directory, "project-brains.json"),
+      JSON.stringify({ "thread:chat-a": "brain-1", "notes-agent:thread:chat-a": "off" }),
+    );
+    const bindings = new ProjectBrainBindings(directory);
+    await bindings.initialize();
+    expect(bindings.threadCurationChoices("chat-a")).toEqual({ notesAgent: false });
+    await bindings.setThreadCurationChoice("chat-a", "autoDocs", false);
+    const stored = JSON.parse(
+      await NodeFSP.readFile(join(directory, "project-brains.json"), "utf8"),
+    );
+    expect(stored).toEqual({
+      "thread:chat-a": "brain-1",
+      "notes-agent:thread:chat-a": "off",
+      "auto-docs:thread:chat-a": "off",
+    });
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -106,13 +138,15 @@ it("forgets a chat's choices so it follows its project and the setting again", a
     const bindings = new ProjectBrainBindings(directory);
     await bindings.initialize();
     await bindings.bindThread("chat-a", "brain-1");
-    await bindings.setThreadNotesAgent("chat-a", false);
+    await bindings.setThreadCurationChoice("chat-a", "notesAgent", false);
+    await bindings.setThreadCurationChoice("chat-a", "autoSkills", true);
     await bindings.bindThread("chat-a", undefined);
-    await bindings.setThreadNotesAgent("chat-a", undefined);
+    await bindings.setThreadCurationChoice("chat-a", "notesAgent", undefined);
+    await bindings.setThreadCurationChoice("chat-a", "autoSkills", undefined);
     const restarted = new ProjectBrainBindings(directory);
     await restarted.initialize();
     expect(restarted.threadChoice("chat-a")).toBeUndefined();
-    expect(restarted.threadNotesAgent("chat-a")).toBeUndefined();
+    expect(restarted.threadCurationChoices("chat-a")).toEqual({});
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

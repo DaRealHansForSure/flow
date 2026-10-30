@@ -3,6 +3,7 @@ import * as NodeFS from "node:fs";
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
 import { expect, it } from "@effect/vitest";
 import {
+  DEFAULT_SERVER_SETTINGS,
   ProjectId,
   ProviderDriverKind,
   ProviderThreadId,
@@ -21,7 +22,12 @@ import { makeRunCapture } from "./chatTurns.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
 import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
 import * as ProjectEnrichmentService from "../project/ProjectEnrichmentService.ts";
-import { makeBrainChatContextLoader, makeBrainChatCapture } from "./chat-context.ts";
+import {
+  makeBrainChatContextLoader,
+  makeBrainChatCapture,
+  resolveChatCuration,
+} from "./chat-context.ts";
+import type { ChatCurationChoices } from "./project-bindings.ts";
 
 const noRepository = {
   readRepositoryIdentity: () => Effect.succeed(null),
@@ -114,6 +120,20 @@ it("closes the capture when the run's own provider turn ends", () => {
   expect(closed?.data).toMatchObject({ sessionUpdate: "turn_completed", state: "interrupted" });
 });
 
+it("reports what Default gives beside a chat's own curation choices", () => {
+  const projectId = ProjectId.make("project");
+  const settings = {
+    ...DEFAULT_SERVER_SETTINGS,
+    brainNotesAgent: false,
+    projectSettingsOverrides: { [projectId]: { brainAutoSkills: false } },
+  };
+  expect(resolveChatCuration(settings, projectId, { notesAgent: true, autoSkills: true })).toEqual({
+    notesAgent: { enabled: true, inherited: false, choice: true },
+    autoDocs: { enabled: true, inherited: true },
+    autoSkills: { enabled: true, inherited: false, choice: true },
+  });
+});
+
 it.effect(
   "uses real orient output, preserves it uncapped, and respects changing/disconnected bindings",
   () =>
@@ -126,10 +146,10 @@ it.effect(
       let fail = false;
       let captures = 0;
       let lastCapture: BrainCapture | undefined;
-      let chatNotesAgent: boolean | undefined;
+      let chatChoices: ChatCurationChoices = {};
       const orientText = "Original curated orientation\n" + "x".repeat(30000);
       const runtime = {
-        projectBindings: { register: () => {}, threadNotesAgent: () => chatNotesAgent },
+        projectBindings: { register: () => {}, threadCurationChoices: () => chatChoices },
         projectBrainId: () => binding,
         threadBrainId: () => binding,
         callProjectTool: async (
@@ -209,15 +229,15 @@ it.effect(
       );
       expect(captures).toBe(1);
       expect(lastCapture?.outputs).toEqual({ docs: true, skills: false, notesAgent: false });
-      // The chat's own choice beats the global switch, which it otherwise follows.
-      chatNotesAgent = true;
+      // The chat's own choices beat the project's, which beat the global ones.
+      chatChoices = { notesAgent: true, autoDocs: false, autoSkills: true };
       yield* capture(
         threadId,
         { receipt: "event-1b", kind: "update", data: { sessionUpdate: "turn_complete" } },
         "team",
       );
-      expect(lastCapture?.outputs).toEqual({ docs: true, skills: false, notesAgent: true });
-      chatNotesAgent = undefined;
+      expect(lastCapture?.outputs).toEqual({ docs: false, skills: true, notesAgent: true });
+      chatChoices = {};
       binding = undefined;
       expect((yield* load(threadId, "team")).context).toContain("disconnected");
       yield* capture(threadId, { receipt: "event-2", kind: "user_prompt", data: {} }, "team");

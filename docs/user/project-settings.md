@@ -246,9 +246,9 @@ without Flow orientation or memory capture; you can connect a brain later in pro
 A chat without a project starts with no brain. To give it one, pick a brain from the **No Brain**
 menu on the new-chat screen before you send the first message; the chat keeps that choice.
 
-In a chat with a brain, the **Brain** tab of the right panel shows the graph, Auto-Docs and the
-conversation notes. A new chat opens it by itself. Close it like any other tab and that chat
-keeps it closed; the Brain button in the chat header, the panel's new-tab menu or **Show Brain
+In a chat with a brain, the **Brain** tab of the right panel shows the graph, the chat's
+Auto-Docs and Auto-Skills, and the conversation notes. A new chat opens it by itself. Close it
+like any other tab and that chat keeps it closed; the Brain button in the chat header, the panel's new-tab menu or **Show Brain
 for this chat** in the command palette bring it back. A dot on the button means the brain is
 updating the chat's notes. A chat without a brain has no Brain button, and the panel's menu
 shows **Brain** greyed out.
@@ -285,18 +285,22 @@ an agent can recover after compaction. Your agent can retrieve it with `get_chat
 The same background process maintains Auto-Docs and Auto-Skills from the conversation and
 its recorded tool evidence. Auto-Docs preserve decisions, lessons, and useful project context.
 Auto-Skills describe procedures that were actually demonstrated, such as reproducing a failure
-and verifying its fix. Related documents are refined as later conversations add evidence. Notes
-always have a section; Auto-Docs and Auto-Skills appear when the chat has contributed them.
+and verifying its fix. Related documents are refined as later conversations add evidence. The
+**Brain** tab always shows all three sections, with what this chat has produced so far.
 
-To stop this background work, turn off **Settings → General → Brain → Notes agent**, or choose
-**Off** under **Notes agent** in a chat's **Brain** tab for that chat only; **Default** follows
-Settings. The chat keeps its brain briefing and tools, and its messages are still recorded, so
-turning the agent back on catches up on what it missed.
+To stop this background work, turn off **Settings → General → Brain → Notes agent**. To keep
+notes but stop Auto-Docs or Auto-Skills, turn them off in the same section; a project inherits
+these two switches and can override them in the **Brain** section of its settings.
 
-To keep notes but stop Auto-Docs or Auto-Skills, turn them off in the same section; they are
-greyed out while the notes agent is off. A project inherits these two switches and can override
-them in the **Brain** section of its settings. Existing documents stay available and searchable
-either way.
+Each section of a chat's **Brain** tab has its own **Default / On / Off** switch for that chat
+only. **Default** follows Settings, or for Auto-Docs and Auto-Skills the project's override
+where it has one, and says whether that is currently on or off. Auto-Docs and Auto-Skills need
+the notes agent, so their switches are greyed out while it is off for the chat. A change applies
+from the next update.
+
+With the notes agent off, the chat keeps its brain briefing and tools, and its messages are
+still recorded, so turning it back on catches up on what it missed. Existing documents stay
+available and searchable whatever the switches say.
 
 Notes update after completed turns and about every 60 seconds while new activity arrives.
 Busy extraction coalesces later activity into a follow-up. The tab shows pending work or an
