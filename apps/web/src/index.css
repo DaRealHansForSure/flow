@@ -2666,6 +2666,21 @@ code {
   }
 }
 
+/* Flow: the terminal's split, new and close buttons are finger-sized on touch screens too. */
+@media (pointer: coarse) {
+  [data-terminal-actions] button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  [data-terminal-actions] button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
 /* Flow: on a phone the right panel fills the screen, so its sheet drops the edge it keeps beside a chat. */
 @media (max-width: 639px) {
   [data-slot="sheet-popup"]:has([data-right-panel-tabbar]) {
