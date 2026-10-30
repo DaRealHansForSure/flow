@@ -224,6 +224,41 @@ function devCompressionPlugin(): Plugin {
   };
 }
 
+// Flow: Vite's "Bundling in progress" page has no viewport tag, so a phone lays it out 980 px
+// wide and zooms in. Dev only; built apps never serve that page.
+function devFallbackViewportPlugin(): Plugin {
+  const fallbackMarker = "__vite_is_fallback_page__";
+  const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1" />';
+  return {
+    name: "flow:dev-fallback-viewport",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.method !== "GET" || !request.headers.accept?.includes("text/html")) {
+          next();
+          return;
+        }
+        const end = response.end.bind(response) as (...args: unknown[]) => typeof response;
+        response.end = ((chunk?: unknown, ...rest: unknown[]) => {
+          const html = Buffer.isBuffer(chunk) ? chunk.toString("utf8") : chunk;
+          if (
+            typeof html === "string" &&
+            html.includes(fallbackMarker) &&
+            !html.includes('name="viewport"')
+          ) {
+            if (!response.headersSent) {
+              response.removeHeader("Content-Length");
+            }
+            return end(html.replace("<head>", `<head>\n  ${viewportTag}`), ...rest);
+          }
+          return end(chunk, ...rest);
+        }) as typeof response.end;
+        next();
+      });
+    },
+  };
+}
+
 // A static import cycle between chunks can run a chunk before the values it imports exist,
 // which blanks the app at boot. Fail the build instead of shipping it.
 function chunkCycleGuardPlugin(): Plugin {
@@ -281,6 +316,7 @@ export default defineConfig(() => {
             ),
       },
       devCompressionPlugin(),
+      devFallbackViewportPlugin(),
       chunkCycleGuardPlugin(),
       builtDev
         ? undefined
