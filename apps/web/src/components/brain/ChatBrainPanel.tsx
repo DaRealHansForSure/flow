@@ -9,15 +9,8 @@ import {
   AlertCircleIcon,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import {
-  Dialog,
-  DialogPopup,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogPanel,
-} from "../ui/dialog";
 import { BrainGraph } from "./BrainGraph";
+import { BrainGraphDialog, BrainGraphExpandButton } from "./BrainGraphDialog";
 import { BrainDocumentDialog, BrainDocumentLibrary } from "./BrainDocuments";
 import { ConversationNotesPreview } from "./ConversationNotesPreview";
 import { Toggle, ToggleGroup } from "../ui/toggle-group";
@@ -176,11 +169,16 @@ export function ChatBrainPanel({
                       {response.state.database.message}
                     </p>
                   ) : brain?.knowledge.entities.length ? (
-                    <BrainGraph
-                      knowledge={brain.knowledge}
-                      highlightedNodeIds={consultedNodeIds}
-                      compact
-                    />
+                    <div className="relative">
+                      <BrainGraph
+                        knowledge={brain.knowledge}
+                        highlightedNodeIds={consultedNodeIds}
+                        compact
+                      />
+                      <div className="absolute top-1.5 right-1.5">
+                        <BrainGraphExpandButton onClick={() => setView("brain")} />
+                      </div>
+                    </div>
                   ) : (
                     <p className="p-3 text-xs text-muted-foreground">
                       {brain
@@ -305,26 +303,17 @@ export function ChatBrainPanel({
           details={notesAgent}
         />
       )}
-      <Dialog
+      <BrainGraphDialog
         open={view === "brain"}
         onOpenChange={(open) => {
-          if (!open) setView(null);
+          if (!open) {
+            setView(null);
+          }
         }}
-      >
-        <DialogPopup className="sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{brain?.name ?? "Brain"}</DialogTitle>
-            <DialogDescription>The knowledge connected to this project.</DialogDescription>
-          </DialogHeader>
-          <DialogPanel>
-            {brain && response?.state.database.status === "ready" ? (
-              <BrainGraph knowledge={brain.knowledge} highlightedNodeIds={consultedNodeIds} />
-            ) : (
-              <p className="text-sm text-muted-foreground">The brain is currently unavailable.</p>
-            )}
-          </DialogPanel>
-        </DialogPopup>
-      </Dialog>
+        title={brain?.name ?? "Brain"}
+        knowledge={response?.state.database.status === "ready" ? brain?.knowledge : undefined}
+        highlightedNodeIds={consultedNodeIds}
+      />
     </>
   );
 }

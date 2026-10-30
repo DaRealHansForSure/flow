@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The knowledge graph opens in a large dialog: the button beside the counts on the Brain page
+  and the one on a chat's graph preview show it near full screen, with the chat's nodes
+  still highlighted.
+
 - `dev-flow.sh --seed --force` deletes the Dev Flow's chats and Brain and copies both fresh
   from your real data.
 
