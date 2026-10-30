@@ -11,9 +11,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Code blocks in chats, Brain documents and file previews have a Download button next to Copy.
-  It saves the block under the fence's file name or, without one, under the chat's project
-  folder plus date and time with an ending from the block's language, e.g.
-  `example-20261030-010203.sh` (`.txt` when the language is unknown).
+  It saves the block through the normal Save dialog or downloads folder. The file takes the
+  fence's file name or, without one, the project's name plus date and time with an ending from
+  the block's language, e.g. `example-20261030-010203.sh` (`.txt` when the language is unknown).
 
 - `dev-flow.sh --seed --force` deletes the Dev Flow's chats and Brain and copies both fresh
   from your real data.
