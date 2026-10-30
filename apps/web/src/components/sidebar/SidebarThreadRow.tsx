@@ -1131,8 +1131,10 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
   ) : null;
 
   const diff = latestRunDiff(thread);
-  // Only the provider icon would remain, so the row drops the line instead of leaving it blank.
+  // Only the provider icon would remain, so the card drops the line instead of leaving it blank.
+  // Two-line folder rows keep it so every row has the same height and the icon one place.
   const metaLineEmpty =
+    variant !== "folder-multiline" &&
     !thread.branch &&
     !showsScratchMachine &&
     prBadge === null &&
@@ -1207,7 +1209,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
         {...(fileDropHandlers ?? {})}
         className={cn(
           "list-none [content-visibility:auto] [contain-intrinsic-size:auto_36px]",
-          metaLine !== null && multiline && "[contain-intrinsic-size:auto_54px]",
+          multiline && "[contain-intrinsic-size:auto_54px]",
           sortable?.isDragging && "relative z-20",
         )}
       >
@@ -1257,7 +1259,6 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
               )}
               {draftIndicator}
               {title}
-              {multiline ? titleLineProviderStack : null}
               {pinIndicator}
               {multiline ? null : terminalStatusIcon}
               {isRegeneratingTitle ? (

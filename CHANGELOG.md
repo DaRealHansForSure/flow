@@ -53,6 +53,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- In the folder sidebar every thread uses two lines, with its provider icon always at the end of
+  the second line, also when the thread has no branch.
 - The floating browser has a grip in its top-left corner that is always visible, so it is easy to
   grab and move.
 - In a subagent's chat, the bar in place of the composer matches the composer: the status is a chip
