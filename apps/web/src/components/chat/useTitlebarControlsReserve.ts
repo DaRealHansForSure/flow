@@ -22,6 +22,32 @@ export function trackTitlebarControls(element: HTMLElement | null) {
 }
 
 /**
+ * Ref callback for the window's floating panel buttons. Besides announcing size changes, it
+ * publishes their width as `--workspace-titlebar-controls-width`, which the desktop app's
+ * no-drag strips use so every button stays clickable over a draggable title bar.
+ */
+export function trackWorkspaceTitlebarControls(element: HTMLElement | null) {
+  if (!element) {
+    return;
+  }
+  const root = document.documentElement;
+  const publish = () => {
+    root.style.setProperty(
+      "--workspace-titlebar-controls-width",
+      `${Math.ceil(element.getBoundingClientRect().width)}px`,
+    );
+  };
+  publish();
+  const stopPublishing = observeResize(element, publish);
+  const stopTracking = trackTitlebarControls(element);
+  return () => {
+    stopPublishing();
+    stopTracking?.();
+    root.style.removeProperty("--workspace-titlebar-controls-width");
+  };
+}
+
+/**
  * Flow: how much room a header row must leave on its right for the floating panel buttons
  * (`data-workspace-titlebar-controls`) that sit over it. Measured rather than guessed, so a
  * button that appears late, such as the Brain button while a chat loads, never covers the title.

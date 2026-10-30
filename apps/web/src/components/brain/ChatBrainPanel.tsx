@@ -240,7 +240,7 @@ export function ChatBrainPanel({
                     type="button"
                     aria-label="Read full conversation notes"
                     onClick={() => setView("notes")}
-                    className="absolute top-1.5 right-1.5 rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     <Maximize2Icon className="size-3.5" />
                   </button>

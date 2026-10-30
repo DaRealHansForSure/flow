@@ -63,6 +63,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- In the desktop app every button at the top right can be clicked again. A fixed strip kept
+  them out of the window's drag area and was too narrow for four buttons, so the leftmost one
+  (such as the panel's enlarge button) neither reacted nor changed the pointer. The strip now
+  follows the buttons' width. Panel tab close buttons and the notes' enlarge button have
+  larger targets.
+
 - With the side panel open, its header no longer repeats the Brain button; the Brain tab and
   the panel's + menu already open it.
 

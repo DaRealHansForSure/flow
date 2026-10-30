@@ -8,7 +8,10 @@ import { cn } from "~/lib/utils";
 import type { ThreadPanelPresentation } from "../../rightPanelLayout";
 import { PopoverCreateHandle, PopoverTrigger } from "../ui/popover";
 import { useMobileSidebarSheetMounted } from "../ui/sidebar";
-import { trackTitlebarControls } from "./useTitlebarControlsReserve";
+import {
+  trackTitlebarControls,
+  trackWorkspaceTitlebarControls,
+} from "./useTitlebarControlsReserve";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -193,7 +196,7 @@ export function WorkspaceTitlebarControls(props: {
   const mobileSidebarOpen = useMobileSidebarSheetMounted();
   return (
     <div
-      ref={trackTitlebarControls}
+      ref={trackWorkspaceTitlebarControls}
       className={cn(
         "pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] z-50 mr-px flex h-[var(--workspace-topbar-height)] items-center gap-1 [-webkit-app-region:no-drag]",
         mobileSidebarOpen && "hidden",
