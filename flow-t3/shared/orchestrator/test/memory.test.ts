@@ -259,6 +259,7 @@ describe("consolidation banding", () => {
     assert.equal(r2.action, "contradicts");
     assert.equal(r2.memoryId, r1.memoryId, "attached as counter-evidence to the same memory, not a new one");
     const mem = store.getMemory(r1.memoryId);
+    assert.ok(mem);
     assert.equal(mem.contradiction_count, 1);
   });
 
@@ -271,6 +272,7 @@ describe("consolidation banding", () => {
     assert.equal(r2.action, "same");
     assert.equal(r2.memoryId, r1.memoryId);
     const mem = store.getMemory(r1.memoryId);
+    assert.ok(mem);
     assert.equal(mem.evidence_count, 2);
     assert.equal(mem.people_count, 2, "two distinct sessions → 2 people");
   });
@@ -282,6 +284,7 @@ describe("consolidation banding", () => {
     const o2 = await obs("ci runs on github actions self hosted");
     await consolidate.consolidateObservation(o2, judge);
     const mem = store.getMemory(r1.memoryId);
+    assert.ok(mem);
     assert.match(mem.claim, /self-hosted runners/);
   });
 });
@@ -298,6 +301,7 @@ describe("maintenance sweep", () => {
     const res = maintenance.sweepMemories();
     assert.ok(res.sunk >= 1);
     const mem = store.getMemory(r.memoryId);
+    assert.ok(mem);
     assert.equal(mem.status, "sunk");
   });
 });
