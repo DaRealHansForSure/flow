@@ -3561,6 +3561,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       !restingControlsVisible && "invisible",
                     )}
                   >
+                    {/* Flow: attaching stays one tap away while the phone composer rests. */}
+                    {composerAttachButton}
                     {composerControls}
                   </div>
                 </div>
