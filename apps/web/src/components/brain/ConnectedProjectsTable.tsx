@@ -30,16 +30,54 @@ interface ProjectRow {
   readonly lastActivityAt: string | null;
 }
 
-const SOURCE_STATUS: Record<BrainSource["status"], { label: string; dot: string }> = {
-  ready: { label: "Ready", dot: "bg-success" },
-  queued: { label: "Queued", dot: "bg-muted-foreground" },
-  waiting: { label: "Waiting", dot: "bg-muted-foreground" },
-  cloning: { label: "Cloning", dot: "bg-info" },
-  indexing: { label: "Indexing", dot: "bg-info" },
-  embedding: { label: "Embedding", dot: "bg-info" },
-  error: { label: "Error", dot: "bg-destructive" },
-  cancelled: { label: "Cancelled", dot: "bg-muted-foreground" },
+const SOURCE_STATUS: Record<
+  BrainSource["status"],
+  { label: string; dot: string; meaning: string }
+> = {
+  ready: {
+    label: "Ready",
+    dot: "bg-success",
+    meaning: "Indexed. The Brain knows this project's code as of the last index.",
+  },
+  queued: {
+    label: "Queued",
+    dot: "bg-muted-foreground",
+    meaning: "Waiting for the indexer, which works on one source at a time.",
+  },
+  waiting: {
+    label: "Waiting",
+    dot: "bg-muted-foreground",
+    meaning: "The folder has no Git commit yet. Commit once, then index it.",
+  },
+  cloning: {
+    label: "Cloning",
+    dot: "bg-info",
+    meaning: "Copying the repository so it can be read without touching your folder.",
+  },
+  indexing: {
+    label: "Indexing",
+    dot: "bg-info",
+    meaning: "An agent is reading the code and writing it into the knowledge graph.",
+  },
+  embedding: {
+    label: "Embedding",
+    dot: "bg-info",
+    meaning: "Making the indexed code searchable by meaning.",
+  },
+  error: {
+    label: "Error",
+    dot: "bg-destructive",
+    meaning: "The last index failed. Reindex it from the sources list above.",
+  },
+  cancelled: {
+    label: "Cancelled",
+    dot: "bg-muted-foreground",
+    meaning: "Indexing was stopped before it finished.",
+  },
 };
+const NO_SOURCE_LABEL = "No source";
+const NO_SOURCE_MEANING =
+  "The project's folder is not a source of this Brain, so its code is not indexed. Chats in it can still read the Brain.";
 
 function timestamp(value: string | null | undefined): number | null {
   if (!value) {
@@ -120,19 +158,29 @@ export function ConnectedProjectsTable(props: {
     {
       id: "source",
       header: "Source",
-      sortValue: (row) => (row.source ? SOURCE_STATUS[row.source.status].label : null),
+      sortValue: (row) => (row.source ? SOURCE_STATUS[row.source.status].label : NO_SOURCE_LABEL),
       renderCell: (row) => {
-        if (!row.source) {
-          return <span className="text-xs text-muted-foreground">No source</span>;
-        }
-        const status = SOURCE_STATUS[row.source.status];
+        const status = row.source ? SOURCE_STATUS[row.source.status] : null;
+        const detail = row.source?.message.trim();
         return (
-          <span
-            className={`inline-flex items-center gap-1.5 text-xs ${row.source.status === "error" ? "text-destructive" : ""}`}
-          >
-            <span aria-hidden className={`size-1.5 rounded-full ${status.dot}`} />
-            {status.label}
-          </span>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span
+                  className={`inline-flex cursor-help items-center gap-1.5 text-xs ${status === null ? "text-muted-foreground" : row.source?.status === "error" ? "text-destructive" : ""}`}
+                />
+              }
+            >
+              {status ? (
+                <span aria-hidden className={`size-1.5 rounded-full ${status.dot}`} />
+              ) : null}
+              {status?.label ?? NO_SOURCE_LABEL}
+            </TooltipTrigger>
+            <TooltipPopup>
+              {status?.meaning ?? NO_SOURCE_MEANING}
+              {detail && row.source?.status !== "ready" ? ` ${detail}` : ""}
+            </TooltipPopup>
+          </Tooltip>
         );
       },
     },
