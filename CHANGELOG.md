@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- On web and desktop, holding the send button while the agent works (or right-clicking it) opens a\n menu to Steer now or Queue the message, as in the mobile app.
 - The browser panel and the floating browser can be magnified on your screen without zooming the
   page: pinch with two fingers on a phone, or Ctrl + mouse wheel or a trackpad pinch on a computer.
   A badge shows the zoom and resets it.
