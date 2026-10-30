@@ -1,7 +1,7 @@
 import { FILL_PREVIEW_VIEWPORT, type ScopedThreadRef } from "@t3tools/contracts";
 import { previewPdfAssetUrl } from "@t3tools/shared/preview";
 import { useEnvironmentHttpBaseUrl } from "~/state/environments";
-import { PanelRightIcon, PictureInPicture2, XIcon } from "lucide-react";
+import { GripIcon, PanelRightIcon, PictureInPicture2, XIcon } from "lucide-react";
 import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -614,6 +614,19 @@ function MiniPlayerShell({
             </div>
           </div>
 
+          {/* Flow: a grip that is always visible, so moving the card does not depend on finding
+              the small corner handle. */}
+          <div
+            aria-hidden
+            className="pointer-events-auto absolute z-[49] flex size-6 touch-none cursor-grab items-center justify-center rounded-md border border-border/80 bg-popover/92 text-muted-foreground shadow-sm backdrop-blur-xl hover:text-foreground active:cursor-grabbing pointer-coarse:size-8 [&_svg]:size-3.5"
+            style={{ left: pillInset, top: pillInset }}
+            onPointerDown={(event) => beginGesture(event, null)}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endGesture}
+            onPointerCancel={endGesture}
+          >
+            <GripIcon aria-hidden />
+          </div>
           <div className="absolute inset-0 z-[47] rounded-[inherit] bg-muted shadow-2xl/35" />
           {children(frame)}
           <div className="pointer-events-none absolute inset-0 z-[49] rounded-[inherit] ring-1 ring-inset ring-border/80" />
