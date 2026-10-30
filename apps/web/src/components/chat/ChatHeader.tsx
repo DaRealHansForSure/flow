@@ -37,10 +37,10 @@ import {
   WorkspaceBreadcrumbText,
 } from "../WorkspaceBreadcrumb";
 import { observeResize } from "~/lib/observeResize";
-import { cn } from "~/lib/utils";
 import { textDirection } from "~/textDirection";
 import { useClientSettings } from "../../hooks/useSettings";
 import { GuestShareIndicator } from "./GuestShareControls";
+import { useTitlebarControlsReserve } from "./useTitlebarControlsReserve";
 
 interface ChatHeaderProps {
   activeThreadEnvironmentId: EnvironmentId;
@@ -52,8 +52,6 @@ interface ChatHeaderProps {
   parentThreadLink: { threadId: ThreadId; title: string } | null;
   onOpenThread: (threadId: ThreadId) => void;
   rightPanelOpen: boolean;
-  /** Flow: the Brain button joins the floating panel buttons, which need one more slot. */
-  brainControlShown?: boolean;
   onNewThreadInProject: () => void;
   onOpenProjectSettings?: (() => void) | undefined;
 }
@@ -79,8 +77,6 @@ export const ChatHeader = memo(function ChatHeader({
   activeProject,
   parentThreadLink,
   onOpenThread,
-  rightPanelOpen,
-  brainControlShown = false,
   onNewThreadInProject,
   onOpenProjectSettings,
 }: ChatHeaderProps) {
@@ -88,6 +84,7 @@ export const ChatHeader = memo(function ChatHeader({
   const activeProjectCwd = activeProject?.workspaceRoot ?? null;
   const interfaceFont = useClientSettings((settings) => settings.fontFamilySans);
   const breadcrumbContainerRef = useRef<HTMLDivElement>(null);
+  const titlebarControlsReserve = useTitlebarControlsReserve(breadcrumbContainerRef);
   const [collapseParentTitle, setCollapseParentTitle] = useState(false);
   const activeThreadRef = scopeThreadRef(activeThreadEnvironmentId, activeThreadId);
   const canOperateThread = useEnvironmentScope(
@@ -278,17 +275,8 @@ export const ChatHeader = memo(function ChatHeader({
   return (
     <div
       ref={breadcrumbContainerRef}
-      className={cn(
-        "flex min-w-0 flex-1 items-center gap-2 sm:gap-3",
-        // Room for the floating panel buttons; Flow adds the Brain button to them.
-        rightPanelOpen
-          ? brainControlShown
-            ? "pr-16"
-            : "pr-10"
-          : brainControlShown
-            ? "pr-34"
-            : "pr-24",
-      )}
+      className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3"
+      style={{ paddingRight: titlebarControlsReserve }}
       onContextMenu={handleHeaderContextMenu}
     >
       <WorkspaceBreadcrumb

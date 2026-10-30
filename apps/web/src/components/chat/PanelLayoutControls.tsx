@@ -8,6 +8,7 @@ import { cn } from "~/lib/utils";
 import type { ThreadPanelPresentation } from "../../rightPanelLayout";
 import { PopoverCreateHandle, PopoverTrigger } from "../ui/popover";
 import { useMobileSidebarSheetMounted } from "../ui/sidebar";
+import { trackTitlebarControls } from "./useTitlebarControlsReserve";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -170,6 +171,7 @@ export const RightPanelMaximizeControl = memo(function RightPanelMaximizeControl
 export function ThreadPanelHeaderControl(props: PanelLayoutControlsProps) {
   return (
     <div
+      ref={trackTitlebarControls}
       className="absolute top-[var(--workspace-controls-top)] right-[calc(env(safe-area-inset-right)+0.75rem)] z-50 flex h-[var(--workspace-topbar-height)] items-center [-webkit-app-region:no-drag]"
       data-workspace-titlebar-controls
     >
@@ -191,6 +193,7 @@ export function WorkspaceTitlebarControls(props: {
   const mobileSidebarOpen = useMobileSidebarSheetMounted();
   return (
     <div
+      ref={trackTitlebarControls}
       className={cn(
         "pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] z-50 mr-px flex h-[var(--workspace-topbar-height)] items-center gap-1 [-webkit-app-region:no-drag]",
         mobileSidebarOpen && "hidden",
