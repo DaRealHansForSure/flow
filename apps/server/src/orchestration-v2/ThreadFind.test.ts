@@ -787,8 +787,8 @@ describe("V2 history materialization", () => {
     Effect.gen(function* () {
       const projection = yield* setup;
       yield* putItems(
-        Array.from({ length: 80 }, (_, ordinal) =>
-          item(`row:${ordinal}`, ordinal, ordinal < 78 ? "small" : "large ".repeat(200_000)),
+        Array.from({ length: 305 }, (_, ordinal) =>
+          item(`row:${ordinal}`, ordinal, ordinal < 303 ? "small" : "large ".repeat(200_000)),
         ),
       );
       const snapshot = yield* projection.getThreadSnapshot(threadId);
@@ -819,7 +819,7 @@ describe("V2 history materialization", () => {
         sizes.push(page.items.length);
         cursor = page.nextCursor;
       }
-      assert.deepEqual(sizes, [1, 1, 75, 3]);
+      assert.deepEqual(sizes, [1, 1, 300, 3]);
     }).pipe(Effect.provide(layerTest)),
   );
 });
