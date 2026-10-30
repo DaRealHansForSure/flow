@@ -3346,8 +3346,11 @@ export default function ChatView(props: ChatViewProps) {
   } satisfies PanelLayoutControlsProps;
   const panelToggleControlProps = {
     ...panelToggleBaseProps,
-    // Flow: opens the chat's Brain tab; hidden for a chat without a Brain.
-    ...(activeThreadRef ? { brainControl: <BrainHeaderButton threadRef={activeThreadRef} /> } : {}),
+    // Flow: opens the chat's Brain tab; hidden for a chat without a Brain, and while the panel
+    // is open, where the Brain tab and the + menu already reach it.
+    ...(activeThreadRef && !rightPanelOpen
+      ? { brainControl: <BrainHeaderButton threadRef={activeThreadRef} /> }
+      : {}),
   } satisfies PanelLayoutControlsProps;
   const panelToggleControls = (
     <PanelLayoutControls
@@ -3413,7 +3416,7 @@ export default function ChatView(props: ChatViewProps) {
           {isElectron && rightPanelControlsAtRoot ? (
             <span
               aria-hidden
-              className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] h-[var(--workspace-topbar-height)] w-28 [-webkit-app-region:no-drag]"
+              className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] h-[var(--workspace-topbar-height)] w-[calc(var(--workspace-titlebar-controls-width,7rem)+0.25rem)] [-webkit-app-region:no-drag]"
             />
           ) : null}
           {!rightPanelControlsAtRoot && !rightPanelControlsInPanel ? panelLayoutControls : null}
@@ -4016,15 +4019,11 @@ export default function ChatView(props: ChatViewProps) {
                   maximized={rightPanelMaximized}
                   onToggle={toggleRightPanelMaximizedStable}
                 />
-                {shouldUsePlanSidebarSheet ? (
-                  // Flow: the phone sheet already shows the Brain tab, so it leaves out the toggle.
-                  <PanelLayoutControls
-                    {...panelToggleBaseProps}
-                    showThreadPanelControl={!inlineRightPanelOwnsTitleBar}
-                  />
-                ) : (
-                  panelToggleControls
-                )}
+                {/* Flow: the open panel has its Brain tab and + menu, so no Brain toggle here. */}
+                <PanelLayoutControls
+                  {...panelToggleBaseProps}
+                  showThreadPanelControl={!inlineRightPanelOwnsTitleBar}
+                />
               </div>
             ) : null
           }
