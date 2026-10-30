@@ -1,22 +1,24 @@
 # Worklog
 
-Updated: 2026-10-30 13:45
+Updated: 2026-10-30 14:10
 
 ## Current focus
 
-- **Topic:** Visual pass over the fork additions (phone and desktop)
-- **Goal:** fork screens look clean on a phone: Plan tab, review actions, comment dialog,
-  missing-provider notice, Brain panel
-- **Branch:** develop (fix/fork-visual-pass merged)
-- **Last step done:** phone sheet header without the duplicate Brain button; Brain section
-  switches wrap under their title in narrow panels. Plan permission mode and the release
-  page guide link merged into develop; Brain type errors and the React Compiler bailout fixed
-- **Next step:** release 0.2.1 (needs the owner's push OK)
-- **Open questions / blockers:** ten more fork components still use try/finally the React
-  Compiler skips (reactCompilerCoverage); the Dev Flow lacks the claude_work instance
+- **Topic:** Release 0.2.1 (everything below is merged into develop, not pushed)
+- **Goal:** ship Plan mode and today's fixes as service and desktop 0.2.1
+- **Branch:** develop (74+ commits ahead of origin)
+- **Last step done:** docs brought up to date (About versions, Brain switch tooltip, phone
+  test stack in CLAUDE.md); fork tests moved to browser tests; React Compiler leftovers fixed
+- **Next step:** release branch: CHANGELOG [Unreleased] -> [0.2.1], merge develop into main
+  and release, push and run the "Flow release" workflow (needs the owner's push OK; installing
+  restarts flow.service and ends every chat)
+- **Open questions / blockers:** Plan fallback for providers without plan mode (step 9,
+  optional); feat/windows-desktop waits for the Windows work; the Dev Flow lacks the
+  claude_work provider instance
 
 ## Finished features
 
+- 2026-10-30 - Phone layout fixes, Read image thumbnails, version info in About, SearchableSelect, React Compiler and test cleanup (develop)
 - 2026-10-30 - Plan as a permission mode, steps 1 to 8 plus Reopen (merged into develop)
 - 2026-10-30 - Flow runs only while the app is open; backup step in the install guide (develop)
 - 2026-10-30 - uninstall-flow.sh, code block download, graph dialog, Brain status colours (develop)
@@ -32,6 +34,8 @@ Updated: 2026-10-30 13:45
 
 ## History
 
+- 2026-10-30 14:10 - Phone sheets layer cleanly; fork tests are browser tests; docs updated
+- 2026-10-30 13:30 - Read image thumbnails, About versions, SearchableSelect, React Compiler fixes
 - 2026-10-30 13:45 - Plan work merged; check fixes merged; visual pass fixes merged
 
 - 2026-10-30 11:45 - Step 7 mobile committed; web fixes from phone tests merged (Cite on touch, chips, comments)

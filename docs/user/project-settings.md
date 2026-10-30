@@ -294,9 +294,9 @@ these two switches and can override them in the **Brain** section of its setting
 
 Each section of a chat's **Brain** tab has its own **Default / On / Off** switch for that chat
 only. **Default** follows Settings, or for Auto-Docs and Auto-Skills the project's override
-where it has one, and says whether that is currently on or off. Auto-Docs and Auto-Skills need
-the notes agent, so their switches are greyed out while it is off for the chat. A change applies
-from the next update.
+where it has one; the switch's tooltip says whether that is currently on or off. Auto-Docs and
+Auto-Skills need the notes agent, so their switches are greyed out while it is off for the chat.
+A change applies from the next update.
 
 With the notes agent off, the chat keeps its brain briefing and tools, and its messages are
 still recorded, so turning it back on catches up on what it missed. Existing documents stay

@@ -103,6 +103,13 @@ scripts/fork/dev-flow.sh --seed --force   # delete the Dev Flow's copies and cop
   chat: twice they restarted `flow.service` and ended every chat. Run them only with
   those variables removed: `env -u FLOW_RELEASE_HOME -u FLOW_INSTANCE_HOME -u
   FLOW_SERVICE_MANAGED node --test <file>`.
+- To test on a phone over the tailnet, serve the Dev Flow data from the browser stack:
+  `T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD=0 FLOW_BRAIN_NODE="$(command -v node)" node
+  scripts/dev-runner.ts dev --share --home-dir "$HOME/.flow-dev"` (with `node_modules/.bin`
+  on `PATH`), and mint a pairing link with
+  `node src/bin.ts pair --base-dir "$HOME/.flow-dev"` from `apps/server`. Without that
+  variable the server, which runs in `apps/server`, adds a project named "server" for that
+  folder to the Dev Flow data.
 
 ## Backing up the Brain
 
