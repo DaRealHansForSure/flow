@@ -95,6 +95,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A new chat on a project's own checkout records the branch it starts on, so the sidebar shows it
+  like it does for other chats.
 - A new chat on the project's own checkout shows its branch in the sidebar again: the server
   records the branch the checkout is on when the chat starts, unless a branch was picked.
 - The floating browser can be dragged over the chat history on a wide window instead of stopping
