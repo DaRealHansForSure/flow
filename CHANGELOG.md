@@ -56,6 +56,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- In the command palette's project list, No project has a second line like the projects, so every
+  row is as tall and easy to tap.
 - On a phone the idle composer shows "Ask anything..." in a rounded, outlined field in a muted
   colour, so it reads as a place to type rather than a line of text; the send button beside it
   matches the field's height.
