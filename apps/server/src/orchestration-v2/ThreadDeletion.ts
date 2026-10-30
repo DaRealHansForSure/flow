@@ -226,6 +226,15 @@ export const planThreadDeletion = Effect.fn("ThreadDeletion.planThreadDeletion")
     threadId: command.threadId,
     request: { type: "preview.cleanup" },
   });
+  // Flow: the worker removes the folder only when it is a No project chat's own and unused.
+  if (projection.thread.worktreePath !== null) {
+    effects.push({
+      id: `effect:${command.commandId}:scratch-folder.cleanup`,
+      commandId: command.commandId,
+      threadId: command.threadId,
+      request: { type: "scratch-folder.cleanup", worktreePath: projection.thread.worktreePath },
+    });
+  }
   const attachmentIds = Array.from(new Set(input.attachmentIds));
   if (attachmentIds.length > 0) {
     effects.push({

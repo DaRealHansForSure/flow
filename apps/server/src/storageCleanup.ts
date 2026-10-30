@@ -51,6 +51,7 @@ import { withWorkspaceLease } from "./workspace/workspaceLease.ts";
 import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as NodeSqliteClient from "@t3tools/shared/nodeSqliteClient";
 import { isNetworkPath } from "@t3tools/shared/path";
+import * as ScratchFolderCleanup from "./project/ScratchFolderCleanup.ts";
 
 const decodeCleanupThread = Schema.decodeUnknownEffect(
   Schema.fromJsonString(OrchestrationV2AppThreadJson),
@@ -217,6 +218,7 @@ const make = Effect.gen(function* () {
   const terminals = yield* TerminalManager.TerminalManager;
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
+  const scratchFolders = yield* ScratchFolderCleanup.ScratchFolderCleanup;
   const liveTerminals = new Map<string, Map<string, TerminalSummary>>();
   const orphanSizes = new Map<string, number | null>();
   const noteTerminal = (terminal: TerminalSummary) => {
@@ -1160,6 +1162,20 @@ const make = Effect.gen(function* () {
           }),
         ),
       );
+    }
+    // Flow: folders of No project chats that were deleted.
+    for (const removal of yield* scratchFolders.removeOrphans(now)) {
+      entries.push({
+        kind: "scratch-folder",
+        outcome: removal.outcome,
+        reason: removal.reason,
+        path: removal.path,
+        projectPath: null,
+        threadId: null,
+        threadTitle: null,
+        bytes: removal.bytes,
+        files: null,
+      });
     }
     const counts = { removed: 0, kept: 0, failed: 0 };
     let bytesFreed = 0;

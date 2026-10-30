@@ -18,6 +18,7 @@ import * as ProjectService from "../project/ProjectService.ts";
 import * as ProjectSetupScriptRunner from "../project/ProjectSetupScriptRunner.ts";
 import * as ManagedProjectFolders from "../project/ManagedProjectFolders.ts";
 import * as ScratchThreadPromotion from "../project/ScratchThreadPromotion.ts";
+import * as ScratchFolderCleanup from "../project/ScratchFolderCleanup.ts";
 import * as CheckpointCaptureService from "./CheckpointCaptureService.ts";
 import * as CheckpointService from "./CheckpointService.ts";
 import * as CheckpointRollbackService from "./CheckpointRollbackService.ts";
@@ -355,6 +356,11 @@ const layerMcpAppRequestsProvided = McpAppRequests.layer.pipe(
   ),
 );
 
+// Flow: removes deleted No project chats' folders; used by the effect worker and storage cleanup.
+const layerScratchFolderCleanupProvided = ScratchFolderCleanup.layer.pipe(
+  Layer.provide(Layer.merge(layerManagedProjectFoldersProvided, layerThreadManagementProvided)),
+);
+
 const layerProviderMcpServersProvided = ProviderMcpServers.layer.pipe(
   Layer.provide(Layer.mergeAll(layerThreadManagementProvided, layerProviderSessionManagerProvided)),
 );
@@ -374,8 +380,9 @@ export const layer = Layer.mergeAll(
 );
 
 export const layerProduction = Layer.mergeAll(
-  layer.pipe(Layer.provide(layerProjectService)),
+  layer.pipe(Layer.provide(layerProjectService), Layer.provide(layerScratchFolderCleanupProvided)),
   layerProjectService,
+  layerScratchFolderCleanupProvided,
   layerManagedProjectFoldersProvided,
   layerThreadLaunchProvided,
   layerScheduledTaskProvided,

@@ -182,6 +182,23 @@ function lastRunSummary(
   return entries.map((entry) => `${entry.label}: ${entry.counts}`).join(" · ");
 }
 
+function folderName(path: string | null): string | undefined {
+  return path?.split(/[\\/]/).findLast(Boolean);
+}
+
+function cleanupEntryName(entry: StorageCleanupReport["entries"][number]): string {
+  switch (entry.kind) {
+    case "worktree":
+      return (entry.threadId === null ? entry.path : folderName(entry.path)) ?? "Worktrees";
+    case "logs":
+      return "Rotated logs";
+    case "scratch-folder":
+      return `No project: ${folderName(entry.path) ?? "folder"}`;
+    case "browser-artifacts":
+      return "Browser artifacts";
+  }
+}
+
 function CleanupResults({
   report,
   environmentLabel,
@@ -192,14 +209,7 @@ function CleanupResults({
   return (
     <>
       {report.entries.map((entry, index) => {
-        const name =
-          entry.kind === "worktree"
-            ? ((entry.threadId === null
-                ? entry.path
-                : entry.path?.split(/[\\/]/).findLast(Boolean)) ?? "Worktrees")
-            : entry.kind === "logs"
-              ? "Rotated logs"
-              : "Browser artifacts";
+        const name = cleanupEntryName(entry);
         return (
           <SettingsRow
             key={`${entry.path ?? entry.kind}:${entry.threadId ?? index}`}
