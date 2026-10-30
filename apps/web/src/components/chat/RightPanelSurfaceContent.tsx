@@ -27,6 +27,7 @@ import { ChatBrainPanel } from "../brain/ChatBrainPanel";
 import type { ChatBrain } from "../brain/useChatBrain";
 import type { PlanVersion } from "@t3tools/client-runtime/state/plan-versions";
 import { PlanPanel } from "./PlanPanel";
+import { ThreadRelationshipsPanel } from "./ThreadRelationshipsControl";
 
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
@@ -193,6 +194,17 @@ export function RightPanelSurfaceContent(props: {
           threadId={props.brain.threadId}
           chatBrain={props.brain.chatBrain}
         />
+      );
+    // Flow: the Agents tab.
+    case "agents":
+      return (
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          <ThreadRelationshipsPanel
+            environmentId={props.environmentId}
+            threadId={threadRef.threadId}
+            layout="panel"
+          />
+        </div>
       );
     // Flow: the Plan tab.
     case "plan":

@@ -1410,6 +1410,11 @@ export default function ChatView(props: ChatViewProps) {
       useRightPanelStore.getState().open(activeThreadRef, "plan");
     }
   });
+  const openAgentsSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "agents");
+    }
+  });
   const autoOpenPlanId = hasActionableProposedPlan(activeProposedPlan)
     ? (activeProposedPlan?.id ?? null)
     : null;
@@ -4077,6 +4082,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddDevice={addDeviceSurfaceStable}
           onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
           onAddPlan={planVersions.length > 0 ? openPlanSurfaceStable : undefined}
+          onAddAgents={isServerThread ? openAgentsSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}

@@ -63,9 +63,10 @@ const isClosedViewEntry = (entry: unknown): entry is ClosedViewEntry => {
     case "diff":
     case "files":
     case "pull-requests":
-    // Flow: the Brain and Plan tabs.
+    // Flow: the Brain, Plan and Agents tabs.
     case "brain":
     case "plan":
+    case "agents":
       return surface.id === surface.kind;
     case "preview":
       return surface.resourceId === null || typeof surface.resourceId === "string";

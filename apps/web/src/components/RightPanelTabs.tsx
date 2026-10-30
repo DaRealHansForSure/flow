@@ -28,6 +28,7 @@ import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dn
 import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
+  BotIcon,
   BrainCircuitIcon,
   PencilRulerIcon,
   ChevronDown,
@@ -135,6 +136,7 @@ export interface RightPanelTabsProps {
   /** Flow: offered only in a chat with a Brain. */
   onAddBrain?: (() => void) | undefined;
   onAddPlan?: (() => void) | undefined;
+  onAddAgents?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -278,12 +280,13 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
 }
 
 /**
- * Flow: the Brain and Plan entries of the surface launchers, disabled when the chat has no
- * Brain or no plan.
+ * Flow: the Brain, Plan and Agents entries of the surface launchers, disabled when the chat has
+ * no Brain or no plan.
  */
 function flowSurfaceActions(
   onAddBrain: (() => void) | undefined,
   onAddPlan: (() => void) | undefined,
+  onAddAgents: (() => void) | undefined,
 ) {
   return [
     {
@@ -301,6 +304,14 @@ function flowSurfaceActions(
       available: onAddPlan !== undefined,
       disabledReason: "This chat has no plan yet. Switch to Plan to make one.",
       onClick: onAddPlan ?? (() => {}),
+    },
+    {
+      label: "Agents",
+      icon: BotIcon,
+      shortcut: "G",
+      available: onAddAgents !== undefined,
+      disabledReason: "Only saved chats have agents.",
+      onClick: onAddAgents ?? (() => {}),
     },
   ];
 }
@@ -339,6 +350,7 @@ function RightPanelEmptyState(props: {
   onAddDevice: () => void;
   onAddBrain: (() => void) | undefined;
   onAddPlan: (() => void) | undefined;
+  onAddAgents?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -408,7 +420,7 @@ function RightPanelEmptyState(props: {
       onClick: props.onAddDevice,
     },
     // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
-    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan),
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
   ] as const;
 
   type SurfaceAction = (typeof actions)[number];
@@ -598,6 +610,9 @@ function surfaceTitle(
     // Flow: the Plan tab, named like the file it can be saved as.
     case "plan":
       return "Plan.md";
+    // Flow: the Agents tab.
+    case "agents":
+      return "Agents";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -693,6 +708,8 @@ function SurfaceIcon({
       return <BrainCircuitIcon className="size-3 shrink-0" />;
     case "plan":
       return <PencilRulerIcon className="size-3 shrink-0" />;
+    case "agents":
+      return <BotIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -1115,7 +1132,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       onClick: props.onAddDevice,
     },
     // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
-    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan),
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
   ] as const;
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1494,6 +1511,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddDevice={props.onAddDevice}
             onAddBrain={props.onAddBrain}
             onAddPlan={props.onAddPlan}
+            onAddAgents={props.onAddAgents}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}

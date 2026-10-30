@@ -349,7 +349,10 @@ function DelegatedFromRow(props: {
 export function ThreadRelationshipsPanel(props: {
   readonly environmentId: EnvironmentId;
   readonly threadId: ThreadId;
+  /** Flow: "panel" is the Agents tab, with every group labelled and open. */
+  readonly layout?: "details" | "panel";
 }) {
+  const inPanel = props.layout === "panel";
   const ref = scopeThreadRef(props.environmentId, props.threadId);
   const projection = useThreadProjection(ref)?.projection ?? null;
   const providersByEnvironment = useEnvironmentProviders();
@@ -458,8 +461,8 @@ export function ThreadRelationshipsPanel(props: {
   });
   const groups = [
     { id: "related", label: null, rows: related, expanded: true },
-    { id: "active", label: null, rows: active, expanded: true },
-    { id: "previous", label: "Previous agents", rows: previous, expanded: false },
+    { id: "active", label: inPanel ? "Active agents" : null, rows: active, expanded: true },
+    { id: "previous", label: "Previous agents", rows: previous, expanded: inPanel },
   ];
   // Tasks running in a linked environment have no thread here; they get their own rows.
   const remoteSubagents = (projection?.subagents ?? []).filter(
@@ -549,12 +552,24 @@ export function ThreadRelationshipsPanel(props: {
       ? null
       : (graph.nodes.get(mergeTargetThreadId)?.thread?.title ?? null);
 
+  if (
+    inPanel &&
+    related.length === 0 &&
+    active.length === 0 &&
+    previous.length === 0 &&
+    remoteSubagents.length === 0 &&
+    delegatedFrom === undefined
+  ) {
+    return <p className="p-3 text-muted-foreground text-xs">No agents in this chat yet.</p>;
+  }
+
   return (
     <ThreadDetailsSection
       headingId="thread-details-lineage-heading"
       title={runningCount > 0 ? `Lineage · ${runningCount} running` : "Lineage"}
       // A lone "Previous agents" row names itself; the heading returns for status or actions.
       showHeading={
+        inPanel ||
         runningCount > 0 ||
         canDetach ||
         related.length > 0 ||

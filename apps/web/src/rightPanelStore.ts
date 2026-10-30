@@ -25,6 +25,8 @@ const RIGHT_PANEL_KINDS = [
   "brain",
   // Flow: the chat's latest proposed plan.
   "plan",
+  // Flow: the chat's active and previous agents.
+  "agents",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -82,7 +84,9 @@ export type RightPanelSurface =
   // Flow: one Brain tab per chat.
   | { id: "brain"; kind: "brain" }
   // Flow: one Plan tab per chat, showing its latest proposed plan.
-  | { id: "plan"; kind: "plan" };
+  | { id: "plan"; kind: "plan" }
+  // Flow: one Agents tab per chat, listing its active and previous agents.
+  | { id: "agents"; kind: "agents" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 14;
@@ -245,6 +249,9 @@ const singletonSurface = (
     // Flow: the Plan tab.
     case "plan":
       return { id: "plan", kind };
+    // Flow: the Agents tab.
+    case "agents":
+      return { id: "agents", kind };
   }
 };
 
@@ -491,7 +498,7 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
               const surfaces = Array.isArray(validThreadState?.surfaces)
                 ? validThreadState.surfaces.flatMap<RightPanelSurface>((surface) => {
                     const kind = (surface as { kind?: string }).kind;
-                    if (kind === "plan" || kind === "agents") return [];
+                    if (kind === "plan") return [];
                     if (
                       (surface.kind === "file" || surface.kind === "files") &&
                       "folderTrail" in surface &&
