@@ -63,6 +63,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- With the side panel open, its header no longer repeats the Brain button; the Brain tab and
+  the panel's + menu already open it.
+
 - The chat title no longer runs under the buttons at the top right while a chat loads: the
   header measures the room the buttons take instead of guessing it from whether the chat has a
   Brain.
