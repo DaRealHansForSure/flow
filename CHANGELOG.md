@@ -147,6 +147,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Linux service release builds again: it reads pnpm 12's lockfile, which starts with a
+  document of its own.
+
+- The Windows service release builds again: the two `@reflink` packages it installs without a
+  license file have notices in the third-party license config.
+
 - On Wayland the desktop app no longer logs "'--ozone-platform=wayland' is not compatible with
   Vulkan" at every start; Chromium skips Vulkan there, which it could not use anyway.
 

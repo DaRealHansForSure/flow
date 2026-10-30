@@ -1,6 +1,6 @@
 import * as NodeTest from "node:test";
 import * as NodeAssert from "node:assert/strict";
-import { projectCpuLockfile } from "./prepare-browser-lockfile.mjs";
+import { projectCpuLockfile, splitLockfileDocuments } from "./prepare-browser-lockfile.mjs";
 
 NodeTest.test(
   "CPU projection removes only optional GPU payloads without changing pinned runtime dependencies",
@@ -43,4 +43,11 @@ NodeTest.test("CPU projection refuses to remove a required GPU dependency", () =
       }),
     /required dependency/,
   );
+});
+
+NodeTest.test("Lockfile split keeps pnpm's leading document and returns the lockfile", () => {
+  const leading = "---\nlockfileVersion: '9.0'\n\nimporters:\n  .: {}\n\n---\n";
+  const lockfile = "lockfileVersion: '9.0'\n\npackages: {}\n";
+  NodeAssert.deepEqual(splitLockfileDocuments(leading + lockfile), { leading, lockfile });
+  NodeAssert.deepEqual(splitLockfileDocuments(lockfile), { leading: "", lockfile });
 });
