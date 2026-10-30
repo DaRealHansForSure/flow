@@ -282,6 +282,7 @@ import { ComposerControlsBar } from "./ComposerControlsBar";
 import { heldMissingProvider } from "./missingProviderBanner";
 import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
+import { allowComposerFocus } from "../../touchComposerFocus";
 
 function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
   const armed = Date.now() <= deadline.current;
@@ -3108,9 +3109,18 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         onRemoveFile={removeComposerFileFromDraft}
       />
     ) : null;
+  // Flow: files picked while the phone composer rests open it, with the cursor in it.
+  const addAttachmentsFromButton: typeof addComposerAttachments = async (...args) => {
+    const inserted = await addComposerAttachments(...args);
+    if (inserted && isComposerCollapsedMobile) {
+      allowComposerFocus();
+      expandMobileComposer();
+    }
+    return inserted;
+  };
   const composerAttachButton = showComposerAttachAction ? (
     <ComposerAttachButton
-      addComposerAttachments={addComposerAttachments}
+      addComposerAttachments={addAttachmentsFromButton}
       focusComposer={focusComposer}
     />
   ) : null;

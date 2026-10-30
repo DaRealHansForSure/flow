@@ -21,8 +21,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- The resting phone composer keeps the attach button left of the message field, so adding a file
-  does not need the composer opened first.
+- The resting phone composer keeps the attach button left of the message field; files picked there
+  open the composer with the cursor in it.
 - Work rows tell their kind apart by colour: thinking blue, commands green, tools violet, file
   edits amber and searches cyan, on the icon and as a thin rail beside expanded details.
   Expanded details of every kind start under the row's label with the same spacing.
