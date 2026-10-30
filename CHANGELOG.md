@@ -27,6 +27,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Closing the background work list no longer puts the cursor in the message box, so the phone
+  keyboard stays down.
 - On touch screens the terminal's split, new and close buttons are 40 px with 20 px icons, like the
   header buttons.
 - On a phone, opening a chat from the sidebar shows the chat itself; its side panel no longer

@@ -47,7 +47,8 @@ function BackgroundWorkSheet(props: {
         <span className="min-w-0 truncate text-foreground">{props.title}</span>
       </button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetPopup side="bottom" className="max-h-[70dvh]">
+        {/* Closing must not hand focus back to the composer: that would raise the phone keyboard. */}
+        <SheetPopup side="bottom" className="max-h-[70dvh]" finalFocus={false}>
           <SheetHeader>
             <SheetTitle>Background work</SheetTitle>
           </SheetHeader>
@@ -102,7 +103,13 @@ function BackgroundWorkPopover(props: {
         </span>
         <span className="min-w-0 truncate text-foreground hover:underline">{props.title}</span>
       </PopoverTrigger>
-      <PopoverPopup ref={popupRef} side="top" align="center" className="w-[min(92vw,24rem)]">
+      <PopoverPopup
+        ref={popupRef}
+        side="top"
+        align="center"
+        className="w-[min(92vw,24rem)]"
+        finalFocus={false}
+      >
         <PopoverTitle className="mb-1">Background work</PopoverTitle>
         {props.details}
       </PopoverPopup>
