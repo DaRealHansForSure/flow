@@ -101,6 +101,8 @@ export function applyAppearanceFontVariables(
   const code = clampCodeFontSize(preferences.sizeCode);
   root.style.setProperty("--font-size-code", `${code}px`);
   root.style.setProperty("--diffs-font-size", `${code}px`);
+  // Flow: code inside a tool call or thinking block is reference, so it stays a step smaller.
+  root.style.setProperty("--font-size-work-detail", `${workDetailCodeFontSize(code)}px`);
 
   if (preferences.smoothing) {
     root.style.setProperty("-webkit-font-smoothing", "antialiased");
@@ -318,4 +320,11 @@ export async function queryInstalledFontFamilies(): Promise<InstalledFontFamilie
   } catch {
     return { families: [], status: "denied" };
   }
+}
+
+const WORK_DETAIL_CODE_SCALE = 0.8;
+const MIN_WORK_DETAIL_CODE_PX = 10;
+
+function workDetailCodeFontSize(codeFontSizePx: number): number {
+  return Math.max(MIN_WORK_DETAIL_CODE_PX, Math.round(codeFontSizePx * WORK_DETAIL_CODE_SCALE));
 }

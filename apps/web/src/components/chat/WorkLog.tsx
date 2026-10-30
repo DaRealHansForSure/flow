@@ -149,6 +149,7 @@ export function WorkLogDetails({
   return (
     <div
       ref={scrollerRef}
+      data-work-log-details={kind}
       onScroll={(event) => {
         const { scrollHeight, scrollTop, clientHeight } = event.currentTarget;
         atLiveEdgeRef.current = scrollHeight - scrollTop - clientHeight <= LIVE_EDGE_PX;

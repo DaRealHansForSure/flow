@@ -2666,6 +2666,12 @@ code {
   }
 }
 
+/* Flow: code and output inside a tool call or thinking block are reference, so they use a smaller
+   code size than the conversation. */
+[data-work-log-details] {
+  --font-size-code: var(--font-size-work-detail, var(--text-2xs));
+}
+
 /* Flow: the terminal's split, new and close buttons are finger-sized on touch screens too. */
 @media (pointer: coarse) {
   [data-terminal-actions] button {

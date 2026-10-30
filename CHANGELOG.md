@@ -19,6 +19,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Code and output inside a tool call or thinking block use a smaller code size than the
+  conversation (80 % of the code font size), since they are reference, not the answer.
 - The status pill above the composer shows the turn's agents as in the mobile app ("2/3" while
   they work, "3 done" after); tapping it opens the Agents tab. Background work has no Open button
   any more: a row in its list opens that agent's chat.
