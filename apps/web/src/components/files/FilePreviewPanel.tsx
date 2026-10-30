@@ -44,13 +44,15 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
-import { FolderTree, Globe2, WrapTextIcon } from "lucide-react";
+import { EllipsisIcon, FolderTree, Globe2, WrapTextIcon } from "lucide-react";
 import { Code2, Eye, Table2 } from "lucide";
 import * as Schema from "effect/Schema";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPreview";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from "~/components/ui/menu";
+import { Button } from "~/components/ui/button";
 import { OpenInPicker } from "~/components/chat/OpenInPicker";
 import { MediaVideoPlayer } from "~/components/media/MediaVideoPlayer";
 import { MediaActions, type MediaActionSource } from "~/components/media/MediaActions";
@@ -963,6 +965,65 @@ function renderedToggleLabel(
   return rendered ? "Show HTML source" : "Show rendered page";
 }
 
+interface FileSurfaceActionItem {
+  readonly key: string;
+  readonly label: string;
+  readonly pressed?: boolean;
+  readonly disabled?: boolean;
+  readonly onPress: () => void;
+  readonly icon: ReactNode;
+}
+
+/** Flow: icon buttons from the small breakpoint up; one menu on phones, where they do not fit. */
+function FileSurfaceActions(props: {
+  readonly actions: ReadonlyArray<FileSurfaceActionItem | null>;
+}) {
+  const actions = props.actions.filter((action) => action !== null);
+  if (actions.length === 0) {
+    return null;
+  }
+  return (
+    <>
+      <div className="contents max-sm:hidden">
+        {actions.map((action) => (
+          <FileSurfaceAction
+            key={action.key}
+            label={action.label}
+            {...(action.pressed === undefined ? {} : { pressed: action.pressed })}
+            {...(action.disabled === undefined ? {} : { disabled: action.disabled })}
+            onPress={action.onPress}
+          >
+            {action.icon}
+          </FileSurfaceAction>
+        ))}
+      </div>
+      <Menu>
+        <MenuTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0 sm:hidden"
+              aria-label="File actions"
+            />
+          }
+        >
+          <EllipsisIcon aria-hidden="true" className="size-4" />
+        </MenuTrigger>
+        <MenuPopup align="end">
+          {actions.map((action) => (
+            <MenuItem key={action.key} disabled={action.disabled ?? false} onClick={action.onPress}>
+              {action.icon}
+              {action.label}
+            </MenuItem>
+          ))}
+        </MenuPopup>
+      </Menu>
+    </>
+  );
+}
+
 function initialExplorerOpen(): boolean {
   try {
     return getLocalStorageItem(FILE_EXPLORER_STORAGE_KEY, Schema.Boolean) ?? true;
@@ -1193,6 +1254,43 @@ export default function FilePreviewPanel({
     });
   };
 
+  const downloadResource =
+    absolutePath === null || previewPath === null
+      ? null
+      : ({
+          _tag: "media-file",
+          threadId: threadRef.threadId,
+          path: absolutePath,
+          disposition: "attachment",
+        } as const);
+  const prepareDownload = useAssetUrlRefresh(environmentId, downloadResource);
+  const [downloading, setDownloading] = useState(false);
+  const handleDownload = () => {
+    if (previewPath === null) return;
+    setDownloading(true);
+    void (async () => {
+      const url = await prepareDownload();
+      if (!url) throw new Error("Reconnect to the environment and try again.");
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("The file could not be loaded. Try again.");
+      // Blob downloads keep desktop's custom app scheme from navigating to an external browser.
+      const downloadUrl = URL.createObjectURL(await response.blob());
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 30_000);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = previewPath.split(/[\\/]/).at(-1) || previewPath;
+      anchor.click();
+    })()
+      .catch((cause: unknown) => {
+        toastManager.add({
+          type: "error",
+          title: "Could not download file",
+          description: cause instanceof Error ? cause.message : "Try again.",
+        });
+      })
+      .finally(() => setDownloading(false));
+  };
+
   const handleOpenInBrowser = () => {
     if (!canReadFiles || !canOperatePreview || !absolutePath || !environmentHttpBaseUrl) return;
     void (async () => {
@@ -1272,49 +1370,67 @@ export default function FilePreviewPanel({
               revealFileManager={revealsInFileManager}
             />
           ) : null}
-          {canToggleRendered && renderedMode ? (
-            <FileSurfaceAction
-              label={renderedToggleLabel(renderedMode, rendered)}
-              pressed={rendered}
-              onPress={() => {
-                const pressed = !rendered;
-                setRenderedPreferred(pressed);
-                setHandledReveal(
-                  pressed && relativePath !== null
-                    ? { path: relativePath, requestId: revealRequestId }
-                    : null,
-                );
-              }}
-            >
-              <MorphIcon
-                className="size-3.5"
-                icon={rendered ? Code2 : renderedMode === "table" ? Table2 : Eye}
-              />
-            </FileSurfaceAction>
-          ) : null}
-          {showsRawText ? (
-            <FileSurfaceAction
-              label={wordWrap ? "Disable word wrap" : "Enable word wrap"}
-              pressed={wordWrap}
-              onPress={() => setWordWrapOverride(!wordWrap)}
-            >
-              <WrapTextIcon className="size-3.5" />
-            </FileSurfaceAction>
-          ) : null}
-          {canOpenInBrowser ? (
-            <FileSurfaceAction label="Open file in preview browser" onPress={handleOpenInBrowser}>
-              <Globe2 className="size-3.5" />
-            </FileSurfaceAction>
-          ) : null}
-          {!isHostFile && previewPath !== null ? (
-            <FileSurfaceAction
-              label={explorerOpen ? "Hide file explorer" : "Show file explorer"}
-              pressed={explorerOpen}
-              onPress={toggleExplorer}
-            >
-              <FolderTree className="size-3.5" />
-            </FileSurfaceAction>
-          ) : null}
+          <FileSurfaceActions
+            actions={[
+              canToggleRendered && renderedMode
+                ? {
+                    key: "rendered",
+                    label: renderedToggleLabel(renderedMode, rendered),
+                    pressed: rendered,
+                    onPress: () => {
+                      const pressed = !rendered;
+                      setRenderedPreferred(pressed);
+                      setHandledReveal(
+                        pressed && relativePath !== null
+                          ? { path: relativePath, requestId: revealRequestId }
+                          : null,
+                      );
+                    },
+                    icon: (
+                      <MorphIcon
+                        className="size-3.5"
+                        icon={rendered ? Code2 : renderedMode === "table" ? Table2 : Eye}
+                      />
+                    ),
+                  }
+                : null,
+              showsRawText
+                ? {
+                    key: "wrap",
+                    label: wordWrap ? "Disable word wrap" : "Enable word wrap",
+                    pressed: wordWrap,
+                    onPress: () => setWordWrapOverride(!wordWrap),
+                    icon: <WrapTextIcon className="size-3.5" />,
+                  }
+                : null,
+              canOpenInBrowser
+                ? {
+                    key: "browser",
+                    label: "Open file in preview browser",
+                    onPress: handleOpenInBrowser,
+                    icon: <Globe2 className="size-3.5" />,
+                  }
+                : null,
+              downloadResource !== null && canReadFiles
+                ? {
+                    key: "download",
+                    label: downloading ? "Preparing download…" : "Download file",
+                    disabled: downloading,
+                    onPress: handleDownload,
+                    icon: <DownloadIcon className="size-3.5" />,
+                  }
+                : null,
+              !isHostFile && previewPath !== null
+                ? {
+                    key: "explorer",
+                    label: explorerOpen ? "Hide file explorer" : "Show file explorer",
+                    pressed: explorerOpen,
+                    onPress: toggleExplorer,
+                    icon: <FolderTree className="size-3.5" />,
+                  }
+                : null,
+            ]}
+          />
         </div>
       ) : null}
       {relativePath && !attachment && !isHostFile && !canWriteFiles && !fileAccess.isPending ? (

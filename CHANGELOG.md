@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The file panel has a Download button for the open file. On phones its actions (rendered view,
+  word wrap, preview browser, download, file tree) sit in one menu instead of a row of icons.
 - Moving the floating browser into the right panel sticks for the chat: browsers the agent
   opens later join the panel as tabs instead of floating over the chat, and closing the panel no
   longer floats one. A tab that arrives while the panel is closed puts a blue dot on the panel
