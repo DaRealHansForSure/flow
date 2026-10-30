@@ -32,7 +32,7 @@ describe("applyServerConfigProjection settingsUpdated", () => {
       },
     };
     const current = Option.some({
-      config: { settings } as unknown as ServerConfig,
+      config: { settings, environment: { capabilities: {} } } as unknown as ServerConfig,
       latestEvent: {} as ServerConfigStreamEvent,
       source: "live" as const,
     });
