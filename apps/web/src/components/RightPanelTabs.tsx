@@ -1312,6 +1312,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
           ownsDesktopTitleBar && "drag-region",
           ownsDesktopTitleBar && "wco:pr-(--workspace-native-controls-inset)",
           props.mode === "inline" && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
+          // Flow: on a phone the tabs start where the chat header's left menu button sits.
+          props.mode === "sheet" && "max-sm:pl-(--workspace-controls-left)",
         )}
         data-right-panel-tabbar
       >
