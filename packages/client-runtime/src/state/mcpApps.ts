@@ -25,6 +25,11 @@ export function createMcpAppEnvironmentAtoms<R, E>(
       label: "environment-command:mcp-apps:read-resource",
       tag: WS_METHODS.mcpAppsReadResource,
     }),
+    /** A running agent session's MCP servers; asked on open and on Refresh only. */
+    providerServers: createEnvironmentRpcQueryAtomFamily(runtime, {
+      label: "environment-data:provider-mcp:list",
+      tag: WS_METHODS.providerMcpList,
+    }),
     updateModelContext: createEnvironmentRpcCommand(runtime, {
       label: "environment-command:mcp-apps:update-model-context",
       tag: WS_METHODS.mcpAppsUpdateModelContext,

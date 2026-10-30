@@ -29,6 +29,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
   BotIcon,
+  PlugIcon,
   BrainCircuitIcon,
   PencilRulerIcon,
   ChevronDown,
@@ -137,6 +138,7 @@ export interface RightPanelTabsProps {
   onAddBrain?: (() => void) | undefined;
   onAddPlan?: (() => void) | undefined;
   onAddAgents?: (() => void) | undefined;
+  onAddMcp?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -287,6 +289,7 @@ function flowSurfaceActions(
   onAddBrain: (() => void) | undefined,
   onAddPlan: (() => void) | undefined,
   onAddAgents: (() => void) | undefined,
+  onAddMcp: (() => void) | undefined,
 ) {
   return [
     {
@@ -312,6 +315,14 @@ function flowSurfaceActions(
       available: onAddAgents !== undefined,
       disabledReason: "Only saved chats have agents.",
       onClick: onAddAgents ?? (() => {}),
+    },
+    {
+      label: "MCP",
+      icon: PlugIcon,
+      shortcut: "S",
+      available: onAddMcp !== undefined,
+      disabledReason: "Only saved chats have an agent with MCP servers.",
+      onClick: onAddMcp ?? (() => {}),
     },
   ];
 }
@@ -351,6 +362,7 @@ function RightPanelEmptyState(props: {
   onAddBrain: (() => void) | undefined;
   onAddPlan: (() => void) | undefined;
   onAddAgents?: (() => void) | undefined;
+  onAddMcp?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -420,7 +432,7 @@ function RightPanelEmptyState(props: {
       onClick: props.onAddDevice,
     },
     // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
-    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents, props.onAddMcp),
   ] as const;
 
   type SurfaceAction = (typeof actions)[number];
@@ -613,6 +625,9 @@ function surfaceTitle(
     // Flow: the Agents tab.
     case "agents":
       return "Agents";
+    // Flow: the MCP tab.
+    case "mcp":
+      return "MCP";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -710,6 +725,8 @@ function SurfaceIcon({
       return <PencilRulerIcon className="size-3 shrink-0" />;
     case "agents":
       return <BotIcon className="size-3 shrink-0" />;
+    case "mcp":
+      return <PlugIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -1132,7 +1149,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       onClick: props.onAddDevice,
     },
     // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
-    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents, props.onAddMcp),
   ] as const;
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1510,6 +1527,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddBrain={props.onAddBrain}
             onAddPlan={props.onAddPlan}
             onAddAgents={props.onAddAgents}
+            onAddMcp={props.onAddMcp}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}

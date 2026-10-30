@@ -18,7 +18,7 @@ import {
 import { resolveShortcutCommand, type ShortcutEventLike } from "./keybindings";
 
 export type ComposerTriggerKind = "path" | "pull-request" | "slash-command" | "skill";
-export type ComposerSlashCommand = "model" | "plan" | "default";
+export type ComposerSlashCommand = "model" | "plan" | "default" | "mcp";
 export type ComposerSubmissionIntent = "foreground" | "background" | "alternate";
 
 export interface ComposerTrigger {
@@ -320,7 +320,7 @@ export function composerStateAtPromptEnd(
 
 export function parseStandaloneComposerSlashCommand(
   text: string,
-): Exclude<ComposerSlashCommand, "model"> | null {
+): Exclude<ComposerSlashCommand, "model" | "mcp"> | null {
   const match = /^\/(plan|default)\s*$/i.exec(text.trim());
   if (!match) {
     return null;
@@ -328,6 +328,11 @@ export function parseStandaloneComposerSlashCommand(
   const command = match[1]?.toLowerCase();
   if (command === "plan") return "plan";
   return "default";
+}
+
+/** Flow: `/mcp` opens the chat's MCP tab instead of reaching the agent as text. */
+export function isMcpCommand(text: string): boolean {
+  return /^\/mcp\s*$/i.test(text.trim());
 }
 
 /**
