@@ -122,10 +122,12 @@ try {
     await NodeFSP.writeFile(file, JSON.stringify({ ...pkg, version }, null, 2) + "\n");
   }
   const workspacePath = NodePath.join(source, "pnpm-workspace.yaml");
-  await NodeFSP.writeFile(
-    workspacePath,
-    pinCurrentArchitectures(await NodeFSP.readFile(workspacePath, "utf8")),
-  );
+  const workspace = pinCurrentArchitectures(await NodeFSP.readFile(workspacePath, "utf8"));
+  await NodeFSP.writeFile(workspacePath, workspace);
+  // Bootstrap the vite-plus the workspace pins: an older one brings a pnpm that
+  // misreads the current lockfile and installs every platform's packages.
+  const vitePlusVersion = /^ {2}vite-plus: (\d+\.\d+\.\d+)$/m.exec(workspace)?.[1];
+  if (!vitePlusVersion) throw Error("pnpm-workspace.yaml has no vite-plus catalog version.");
   if (platform === "linux") await prepareCpuLockfile(source, temporary);
   if (windows) {
     // install-flow.sh's build, without a POSIX shell.
@@ -146,8 +148,8 @@ try {
         "--no-audit",
         "--no-fund",
         "--package-lock=false",
-        "vite-plus@0.3.0",
-        "@voidzero-dev/vite-plus-win32-x64-msvc@0.3.0",
+        `vite-plus@${vitePlusVersion}`,
+        `@voidzero-dev/vite-plus-win32-x64-msvc@${vitePlusVersion}`,
       ],
       source,
     );
