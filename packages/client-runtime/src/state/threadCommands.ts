@@ -36,6 +36,8 @@ import {
   linkThreadPullRequest,
   respondToThreadApproval,
   respondToThreadUserInput,
+  declineThreadProposedPlan,
+  reopenThreadProposedPlan,
   dismissThreadUserInput,
   revertThreadCheckpoint,
   setThreadInteractionMode,
@@ -283,6 +285,18 @@ export function createThreadEnvironmentAtoms<R, E>(
     dismissUserInput: createEnvironmentCommand(runtime, {
       label: "environment-data:commands:thread:dismiss-user-input",
       execute: dismissThreadUserInput,
+      scheduler,
+      concurrency,
+    }),
+    declineProposedPlan: createEnvironmentCommand(runtime, {
+      label: "environment-data:commands:thread:decline-proposed-plan",
+      execute: declineThreadProposedPlan,
+      scheduler,
+      concurrency,
+    }),
+    reopenProposedPlan: createEnvironmentCommand(runtime, {
+      label: "environment-data:commands:thread:reopen-proposed-plan",
+      execute: reopenThreadProposedPlan,
       scheduler,
       concurrency,
     }),

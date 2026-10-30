@@ -806,6 +806,8 @@ function OpenCommandPaletteDialog(props: {
         value: "new-thread-in:no-project",
         searchTerms: ["no project", "without project", "none"],
         title: "No project",
+        // Flow: a second line like the projects below, so this row is as tall and easy to hit.
+        description: "Chat without a folder",
         icon: <MessageSquareDashedIcon className={ITEM_ICON_CLASS} />,
         shortcutCommand: "chat.newWithoutProject" as const,
         run: () => startScratchThread(scratchTargetEnvironmentId),

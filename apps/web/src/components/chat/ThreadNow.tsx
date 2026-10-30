@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { threadSyncLabel, type ThreadSyncPhase } from "../../threadSync";
 import { cn } from "~/lib/utils";
 import { NoticeText } from "./ComposerBannerStack";
+import { STATUS_PILL_CLASS, STATUS_PILL_PART_CLASS } from "./statusPill";
 
 /** A line of thread state for the end of the timeline. */
 export interface ThreadNowItem {
@@ -12,6 +13,8 @@ export interface ThreadNowItem {
   readonly title: ReactNode;
   readonly description?: ReactNode;
   readonly actions?: ReactNode;
+  /** Flow: the full list behind the line, shown when the status pill's part is opened. */
+  readonly details?: ReactNode;
 }
 
 /** Matches ThreadStatusLine, so every line at the end of the timeline reads as one family. */
@@ -28,17 +31,16 @@ const lineClassName = cn(
 function ThreadNowLine({
   item,
   announce = false,
+  chip = false,
 }: {
   readonly item: ThreadNowItem;
   /** Announces the line when it appears; only for something that needs the user. */
   readonly announce?: boolean;
+  /** Flow: draws the line as a pill, so running background work reads as one control. */
+  readonly chip?: boolean;
 }) {
-  return (
-    <div
-      role={announce ? "alert" : undefined}
-      className={lineClassName}
-      data-thread-now-line="true"
-    >
+  const content = (
+    <>
       <span aria-hidden className="flex size-3.5 shrink-0 items-center justify-center">
         {item.icon}
       </span>
@@ -61,8 +63,29 @@ function ThreadNowLine({
         ) : null}
       </NoticeText>
       {item.actions ? (
-        <span className="ms-1.5 flex shrink-0 items-center gap-2.5">{item.actions}</span>
+        <span
+          className={cn(
+            "ms-1.5 flex shrink-0 items-center gap-2.5",
+            chip && STATUS_PILL_PART_CLASS,
+          )}
+        >
+          {item.actions}
+        </span>
       ) : null}
+    </>
+  );
+  return (
+    <div
+      role={announce ? "alert" : undefined}
+      className={lineClassName}
+      data-thread-now-line="true"
+    >
+      {chip ? (
+        // Matches the mobile app's running-work pill: centered, a divider before its actions.
+        <span className={STATUS_PILL_CLASS}>{content}</span>
+      ) : (
+        content
+      )}
     </div>
   );
 }
@@ -95,7 +118,7 @@ export function ThreadNow({
   return (
     <>
       {attention ? <ThreadNowLine item={attention} announce /> : null}
-      {work ? <ThreadNowLine item={work} /> : null}
+      {work ? <ThreadNowLine item={work} chip /> : null}
       {syncPhase ? <ThreadSyncLine phase={syncPhase} /> : null}
       {goal ? <ThreadNowLine item={goal} /> : null}
     </>

@@ -78,6 +78,8 @@ import { useSelectedThreadGitState } from "../../state/use-selected-thread-git-s
 import { useSelectedThreadRequests } from "../../state/use-selected-thread-requests";
 import { useSelectedThreadWorktree } from "../../state/use-selected-thread-worktree";
 import { useThreadComposerState } from "../../state/use-thread-composer-state";
+import { MobilePlanReviewProvider, useMobilePlanReviewState } from "./plan-review";
+import { updateComposerDraftSettings } from "../../state/use-composer-drafts";
 import { resolveMergeBackTargetThreadId } from "@t3tools/client-runtime/state/thread-relationships";
 import { resolveLatestMergeBackRun } from "@t3tools/client-runtime/state/thread-workflows";
 import { threadEnvironment, useThreadFamily } from "../../state/threads";
@@ -501,6 +503,24 @@ function ThreadRouteContent(
   const routeConnectionState =
     routeEnvironmentRuntime?.connectionState ?? (environmentId ? "available" : connectionState);
   const routeConnectionError = routeEnvironmentRuntime?.connectionError ?? null;
+  // Flow: plan versions and Accept, Revise, Decline and Reopen for the plan cards.
+  const planReview = useMobilePlanReviewState({
+    environmentId: selectedThread?.environmentId ?? null,
+    threadId: selectedThread?.id ?? null,
+    structure: selectedThreadDetail,
+    working: composer.activeWorkStartedAt !== null,
+    modelSelection: composer.modelSelection ?? selectedThread?.modelSelection ?? null,
+    runtimeMode: composer.runtimeMode ?? selectedThread?.runtimeMode ?? "approval-required",
+    onInteractionModeChange: composer.onUpdateInteractionMode,
+    onRuntimeModeChange: (runtimeMode) => {
+      if (selectedThread !== null) {
+        updateComposerDraftSettings(
+          scopedThreadKey(selectedThread.environmentId, selectedThread.id),
+          { runtimeMode },
+        );
+      }
+    },
+  });
   const selectedThreadWithDraftSettings = selectedThread
     ? {
         ...selectedThread,
@@ -966,7 +986,7 @@ function ThreadRouteContent(
         });
   const serverConfig = routeEnvironmentRuntime?.serverConfig ?? null;
   const renderThreadRouteBody = () => (
-    <>
+    <MobilePlanReviewProvider value={planReview}>
       <GitActionProgressOverlay
         progress={gitActionProgress}
         onDismiss={dismissGitActionResult}
@@ -1089,7 +1109,7 @@ function ThreadRouteContent(
           onDismissUserInput={requests.onDismissUserInput}
         />
       </>
-    </>
+    </MobilePlanReviewProvider>
   );
 
   return (

@@ -271,6 +271,65 @@ describe("rightPanelStore", () => {
     expect(store.getUserActionRevision(refB)).toBe(0);
   });
 
+  // Flow: the Plan tab opens for each new proposed plan.
+  it("opens the Plan tab once per plan, keeps it closed across reload, and reopens for the next plan", () => {
+    const store = useRightPanelStore.getState();
+    store.openFile(refA, "src/app.ts");
+    store.openPlanByDefault(refA, "plan-1", true);
+    expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("plan");
+
+    store.closeSurface(refA, "plan");
+    const persisted = JSON.parse(
+      JSON.stringify({ byThreadKey: useRightPanelStore.getState().byThreadKey }),
+    );
+    useRightPanelStore.setState(migratePersistedRightPanelState(persisted));
+    store.openPlanByDefault(refA, "plan-1", true);
+    expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("file");
+
+    store.openPlanByDefault(refA, "plan-2", true);
+    expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("plan");
+
+    store.openPlanByDefault(refB, "plan-3", false);
+    const sheetChat = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB);
+    expect(sheetChat.isOpen).toBe(false);
+    expect(sheetChat.activeSurfaceId).toBe("plan");
+  });
+
+  it("docks browsers the agent reveals once the user moved one into the panel, until one pops out again", () => {
+    const store = useRightPanelStore.getState();
+    const panel = () =>
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA);
+    store.openBrowser(refA, "tab-0");
+    expect(panel().browserDocked).toBeUndefined();
+    store.dockBrowser(refA, "tab-1");
+    expect(panel().browserDocked).toBe(true);
+
+    store.close(refA);
+    store.dockRevealedBrowser(refA, "tab-2");
+    expect(panel().isOpen).toBe(false);
+    expect(panel().activeSurfaceId).toBe("browser:tab-2");
+    expect(panel().unseenActivity).toBe(true);
+
+    store.show(refA);
+    expect(panel().isOpen).toBe(true);
+    expect(panel().unseenActivity).toBeUndefined();
+
+    store.dockRevealedBrowser(refA, "tab-3");
+    expect(panel().activeSurfaceId).toBe("browser:tab-3");
+    expect(panel().unseenActivity).toBeUndefined();
+
+    store.close(refA);
+    store.tuckBrowser(refA);
+    expect(panel().unseenActivity).toBe(true);
+    store.undockBrowser(refA);
+    expect(panel().browserDocked).toBeUndefined();
+
+    store.openPlanByDefault(refB, "plan-1", false);
+    expect(
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB).unseenActivity,
+    ).toBe(true);
+  });
+
   const completedDiff = { kind: "diff", turnId: RunId.make("turn-1") } as const;
   const linkedPullRequest = pullRequestSurface({
     projectId: "project-a",
@@ -685,45 +744,58 @@ describe("rightPanelStore", () => {
     });
   });
 
-  it.each([
-    { kind: "plan", isOpen: true },
-    { kind: "agents", isOpen: true },
-    { kind: "agents", isOpen: false },
-  ])("drops $kind with isOpen=$isOpen and falls back", ({ kind, isOpen }) => {
+  it("keeps the Agents tab", () => {
+    const panelState = {
+      isOpen: true,
+      activeSurfaceId: "agents",
+      surfaces: [{ id: "agents", kind: "agents" }],
+    };
     expect(
-      migratePersistedRightPanelState({
-        byThreadKey: {
-          "env-1:thread-A": {
-            isOpen,
-            activeSurfaceId: kind,
-            surfaces: [{ id: kind, kind }],
-          },
-          "env-1:thread-B": {
-            isOpen,
-            activeSurfaceId: kind,
-            surfaces: [
-              { id: kind, kind },
-              { id: "diff", kind: "diff" },
-            ],
-          },
-        },
-      }),
+      migratePersistedRightPanelState({ byThreadKey: { "env-1:thread-A": panelState } }),
     ).toEqual({
-      byThreadKey: {
-        "env-1:thread-A": {
-          isOpen: false,
-          activeSurfaceId: null,
-          surfaces: [],
-        },
-        "env-1:thread-B": {
-          isOpen,
-          activeSurfaceId: "diff",
-          surfaces: [{ id: "diff", kind: "diff" }],
-        },
-      },
+      byThreadKey: { "env-1:thread-A": panelState },
       threadPanelVisibilityByThreadKey: {},
     });
   });
+
+  it.each([{ kind: "plan", isOpen: true }])(
+    "drops $kind with isOpen=$isOpen and falls back",
+    ({ kind, isOpen }) => {
+      expect(
+        migratePersistedRightPanelState({
+          byThreadKey: {
+            "env-1:thread-A": {
+              isOpen,
+              activeSurfaceId: kind,
+              surfaces: [{ id: kind, kind }],
+            },
+            "env-1:thread-B": {
+              isOpen,
+              activeSurfaceId: kind,
+              surfaces: [
+                { id: kind, kind },
+                { id: "diff", kind: "diff" },
+              ],
+            },
+          },
+        }),
+      ).toEqual({
+        byThreadKey: {
+          "env-1:thread-A": {
+            isOpen: false,
+            activeSurfaceId: null,
+            surfaces: [],
+          },
+          "env-1:thread-B": {
+            isOpen,
+            activeSurfaceId: "diff",
+            surfaces: [{ id: "diff", kind: "diff" }],
+          },
+        },
+        threadPanelVisibilityByThreadKey: {},
+      });
+    },
+  );
 
   it("persists inline preference without restoring an open popover", () => {
     expect(

@@ -12,7 +12,7 @@ import type {
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import type { EnvironmentConnectionPresentation } from "@t3tools/client-runtime/connection";
 import * as Option from "effect/Option";
-import { PlusIcon, SettingsIcon, Folder } from "lucide-react";
+import { PlusIcon, SettingsIcon } from "lucide-react";
 import { brainCommand } from "../../state/brain";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { useEnvironments, usePrimaryEnvironmentId } from "../../state/environments";
@@ -23,6 +23,8 @@ import { BrainPage } from "./BrainPage";
 import { BrainDocumentLibrary } from "./BrainDocuments";
 import { BrainSources, BrainIndexing } from "./BrainSources";
 import { BrainSelect, CreateBrainDialog, ConnectCloudDialog } from "./BrainControls";
+import { SearchableSelect } from "../SearchableSelect";
+import { ConnectedProjectsTable } from "./ConnectedProjectsTable";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -92,8 +94,10 @@ export function LiveBrainPage({
       openSettings={openSettings}
       onSettingsClosed={onSettingsClosed}
       environmentSelector={
-        <BrainSelect
+        <SearchableSelect
           label="Brain computer"
+          searchLabel="Search computers"
+          emptyLabel="No matching computers."
           value={environmentId ?? ""}
           options={environments.map((entry) => ({
             value: entry.environmentId,
@@ -140,7 +144,9 @@ function BrainController({
   const pending = useRef<Promise<unknown> | null>(null);
   const transportError = useRef(false);
   const allProjects = useProjects();
-  const projects = allProjects.filter((project) => project.environmentId === environmentId);
+  const projects = allProjects.filter(
+    (project) => project.environmentId === environmentId && !project.isScratch,
+  );
   const workspace = selectedWorkspaceId
     ? state?.workspaces.find((item) => item.id === selectedWorkspaceId)
     : state?.workspaces[0];
@@ -155,7 +161,7 @@ function BrainController({
     if (!background) setBusy(true);
     const request = execute({ environmentId, input });
     pending.current = request;
-    try {
+    return await (async () => {
       const result = await request;
       if (!mounted.current) return null;
       if (result._tag === "Failure") {
@@ -172,10 +178,10 @@ function BrainController({
       if (!background || result.value.error || transportError.current) setError(result.value.error);
       transportError.current = false;
       return result.value;
-    } finally {
+    })().finally(() => {
       if (pending.current === request) pending.current = null;
       if (mounted.current && !background) setBusy(false);
-    }
+    });
   };
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the Brain service and refreshes when the window becomes visible.
@@ -379,74 +385,13 @@ function BrainController({
         )}
         {workspace && (
           <section className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-medium">Connected projects</h2>
-                <p className="mt-1 max-w-prose text-xs text-muted-foreground">
-                  Projects that use this brain's knowledge. The brain follows their repositories:
-                  any checkout of one, opened here or in a coding tool like Claude Code, Codex or
-                  Cursor on this computer, reads this brain and adds its conversations as notes.
-                </p>
-              </div>
-              <BrainSelect
-                label="Connect an existing project"
-                value=""
-                disabled={busy}
-                options={projects
-                  .filter((project) => !workspace.projectIds?.includes(project.id))
-                  .map((project) => ({ value: project.id, label: project.title }))}
-                onChange={(id) => {
-                  const project = projects.find((entry) => entry.id === id);
-                  if (project)
-                    void send({
-                      action: "bindProject",
-                      projectId: project.id,
-                      workspaceId: workspace.id,
-                    });
-                }}
-              />
-            </div>
-            <div className="divide-y divide-border rounded-xl border border-border bg-card">
-              {!projects.some((project) => workspace.projectIds?.includes(project.id)) && (
-                <p className="p-4 text-xs text-muted-foreground">
-                  Create a project from the sidebar or connect an existing one above. Its repository
-                  will be added as a source automatically.
-                </p>
-              )}
-              {projects
-                .filter((project) => workspace.projectIds?.includes(project.id))
-                .map((project) => {
-                  const connected = state?.workspaces.find((brain) =>
-                    brain.projectIds?.includes(project.id),
-                  );
-                  return (
-                    <div key={project.id} className="flex flex-wrap items-center gap-3 p-4">
-                      <Folder size={16} className="text-muted-foreground" />
-                      <span className="min-w-0 flex-1 truncate text-sm">{project.title}</span>
-                      <BrainSelect
-                        label={`Brain for ${project.title}`}
-                        value={connected?.id ?? "none"}
-                        disabled={busy}
-                        options={[
-                          { value: "none", label: "No brain" },
-                          ...(state?.workspaces ?? []).map((brain) => ({
-                            value: brain.id,
-                            label: brain.name,
-                            icon: <BrainIcon id={brain.id} />,
-                          })),
-                        ]}
-                        onChange={(value) =>
-                          void send({
-                            action: "bindProject",
-                            projectId: project.id,
-                            workspaceId: value === "none" ? null : value,
-                          })
-                        }
-                      />
-                    </div>
-                  );
-                })}
-            </div>
+            <ConnectedProjectsTable
+              workspace={workspace}
+              state={state}
+              projects={projects}
+              busy={busy}
+              send={send}
+            />
           </section>
         )}
       </BrainPage>

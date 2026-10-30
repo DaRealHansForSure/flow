@@ -49,7 +49,7 @@ import { GuestMessageName, guestBubbleClassName } from "../chat/guestMessageStyl
 import { MessagesTimeline } from "../chat/MessagesTimeline";
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 import { getDisplayModelName, getTriggerDisplayModelName } from "../chat/providerIconUtils";
-import { ScrollToEndButton } from "../chat/TimelineOverlays";
+import { ComposerStatusControl } from "../chat/ComposerStatusControl";
 import type { TimelineRow } from "../chat/timelineRowContext";
 import { useTimelineFollow } from "../chat/useTimelineFollow";
 import { GuestHtmlRender } from "./GuestHtmlRender";
@@ -494,9 +494,13 @@ function GuestThread({
           />
         </HostImageUrlContext>
         {follow.showScrollToBottom ? (
-          <ScrollToEndButton
-            summary={null}
+          <ComposerStatusControl
             bottom={4}
+            work={null}
+            workingSince={null}
+            browsers={null}
+            queuedCount={0}
+            showScrollToEnd
             onScrollToEnd={() => follow.scrollToEnd(true)}
           />
         ) : null}

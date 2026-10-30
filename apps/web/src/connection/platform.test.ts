@@ -27,6 +27,7 @@ import {
   prepareDesktopSshEnvironment,
   provisionDesktopSshEnvironment,
   secondaryRegistrationsToRetainAfterTopologyRead,
+  webApplicationActiveWakeup,
 } from "./platform.ts";
 import { APP_VERSION } from "../branding.ts";
 
@@ -448,5 +449,13 @@ describe("primary topology cache", () => {
         cause: new Error("IPC unavailable"),
       }),
     ).toBe(cached);
+  });
+});
+
+describe("webApplicationActiveWakeup", () => {
+  it("treats a page hidden for ten seconds or more as a long resume", () => {
+    expect(webApplicationActiveWakeup(null, 50_000)).toBe("application-active");
+    expect(webApplicationActiveWakeup(0, 9_999)).toBe("application-active");
+    expect(webApplicationActiveWakeup(0, 10_000)).toBe("application-active-long");
   });
 });

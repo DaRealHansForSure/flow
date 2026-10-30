@@ -34,8 +34,9 @@ git config pull.ff only
 ## Branches
 
 - `main` holds releases. `develop` collects finished work.
-- Every change goes on its own branch from `develop` (`feat/...`, `fix/...`, `docs/...`),
-  merged with `git merge --no-ff` into `develop`, then `develop` into `main`.
+- Work that takes several commits goes on its own branch from `develop` (`feat/...`,
+  `fix/...`, `docs/...`), merged with `git merge --no-ff` into `develop`. A change that is a
+  single commit goes straight onto `develop`. `develop` reaches `main` with `--no-ff`.
 - Never rebase history that has already been pushed.
 
 ## How the owner wants work done
@@ -48,8 +49,9 @@ These rules come from the owner and override the upstream guidance above where t
 - **One branch per topic, not per commit.** A branch carries one feature or piece of
   work (`feat/dev-flow`, `fix/service-network-access`) as several logical commits, cut
   from `develop` and merged once with `--no-ff` when the topic is done. Follow-up fixes
-  to unmerged work go onto the same branch. Do not commit work directly to `develop` or
-  `main`, and delete a topic branch once it is merged.
+  to unmerged work go onto the same branch. A change that is only one commit (a small fix,
+  a docs or worklog update) is committed directly on `develop` without a branch. Never
+  commit directly to `main`, and delete a topic branch once it is merged.
 - **Tests only when they pay.** Run tests after a big feature is complete or when the owner
   asks, not after every small edit. Typecheck and lint the touched scope before committing.
 - **CHANGELOG.md.** Every user-visible fork change gets a line under `[Unreleased]` in the
@@ -103,6 +105,13 @@ scripts/fork/dev-flow.sh --seed --force   # delete the Dev Flow's copies and cop
   chat: twice they restarted `flow.service` and ended every chat. Run them only with
   those variables removed: `env -u FLOW_RELEASE_HOME -u FLOW_INSTANCE_HOME -u
   FLOW_SERVICE_MANAGED node --test <file>`.
+- To test on a phone over the tailnet, serve the Dev Flow data from the browser stack:
+  `T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD=0 FLOW_BRAIN_NODE="$(command -v node)" node
+  scripts/dev-runner.ts dev --share --home-dir "$HOME/.flow-dev"` (with `node_modules/.bin`
+  on `PATH`), and mint a pairing link with
+  `node src/bin.ts pair --base-dir "$HOME/.flow-dev"` from `apps/server`. Without that
+  variable the server, which runs in `apps/server`, adds a project named "server" for that
+  folder to the Dev Flow data.
 
 ## Backing up the Brain
 
@@ -173,8 +182,7 @@ app's update feed is the repository its release workflow runs in.
   version, so that service release must exist.
 - Before releasing, rename `[Unreleased]` in `CHANGELOG.md` to `[X.Y.Z] - <date>`: that section
   becomes the release text. Without one the page only points at the CHANGELOG.
-- Below that text every release page shows `scripts/fork/release-files.md`, the table of its
-  files. Update the table whenever a release gains, loses or renames a file.
+- Below that text every release page links to the install guide (`docs/user/install.md`).
 - Every push to `release` starts a service release of the next patch version on its own. When
   the push is only the base for a "Flow release" run, put `[skip ci]` in its merge commit.
 - A machine that still has an upstream install switches once, by accepting the update the

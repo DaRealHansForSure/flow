@@ -11,7 +11,7 @@ import type {
   EnvironmentId,
   FilesystemBrowseResult,
 } from "@t3tools/contracts";
-import { Folder, ArrowUp, ChevronRight } from "lucide-react";
+import { Folder, ArrowUp, ChevronRight, SearchIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -45,6 +45,20 @@ export function BrainSources({
 }) {
   const [modal, setModal] = useState<"github" | "folder" | null>(null);
   const [connectedModal, setConnectedModal] = useState<"github" | "folder" | null>(null);
+  // Flow: the connected sources list can be searched by name, path or branch.
+  const [sourceQuery, setSourceQuery] = useState("");
+  const openConnected = (kind: "github" | "folder") => {
+    setSourceQuery("");
+    setConnectedModal(kind);
+  };
+  const connectedSources = workspace.sources.filter(
+    (source) => Boolean(source.localPath) === (connectedModal === "folder"),
+  );
+  const sourceTerms = sourceQuery.trim().toLowerCase().split(/\s+/u).filter(Boolean);
+  const matchingSources = connectedSources.filter((source) => {
+    const text = `${source.repository} ${source.localPath ?? ""} ${source.branch}`.toLowerCase();
+    return sourceTerms.every((term) => text.includes(term));
+  });
   const [error, setError] = useState("");
   const [folder, setFolder] = useState("");
   const [listing, setListing] = useState<FilesystemBrowseResult | null>(null);
@@ -56,7 +70,7 @@ export function BrainSources({
   async function browseFolder(path: string) {
     setBrowsing(true);
     setError("");
-    try {
+    return await (async () => {
       const result = await browse({
         environmentId,
         input: { partialPath: path.endsWith("/") ? path : path + "/" },
@@ -67,9 +81,9 @@ export function BrainSources({
       }
       setListing(result.value);
       setFolder(result.value.parentPath);
-    } finally {
+    })().finally(() => {
       setBrowsing(false);
-    }
+    });
   }
   return (
     <section className="space-y-4" aria-label="Brain sources">
@@ -80,7 +94,7 @@ export function BrainSources({
             setError("");
             setModal("github");
           },
-          onList: () => setConnectedModal("github"),
+          onList: () => openConnected("github"),
         }}
         folder={{
           description: workspace.remote
@@ -90,7 +104,7 @@ export function BrainSources({
             setError("");
             setModal("folder");
           },
-          onList: () => setConnectedModal("folder"),
+          onList: () => openConnected("folder"),
         }}
       />
       <Dialog
@@ -107,19 +121,33 @@ export function BrainSources({
             <DialogDescription>
               Sources connected to {workspace.name}. Reindex to pull the latest committed changes.
             </DialogDescription>
+            {connectedSources.length > 1 ? (
+              <label className="mt-2 flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-muted-foreground">
+                <SearchIcon aria-hidden className="size-4 shrink-0" />
+                <input
+                  type="search"
+                  aria-label="Search sources"
+                  placeholder="Search by name, path or branch…"
+                  value={sourceQuery}
+                  onChange={(event) => setSourceQuery(event.target.value)}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <span className="shrink-0 text-xs tabular-nums">
+                  {matchingSources.length} of {connectedSources.length}
+                </span>
+              </label>
+            ) : null}
           </DialogHeader>
           <DialogPanel>
-            {workspace.sources.some(
-              (source) => Boolean(source.localPath) === (connectedModal === "folder"),
-            ) ? (
+            {matchingSources.length > 0 ? (
               <BrainSourceList
-                sources={workspace.sources.filter(
-                  (source) => Boolean(source.localPath) === (connectedModal === "folder"),
-                )}
+                sources={matchingSources}
                 workspaceId={workspace.id}
                 send={send}
                 busy={busy}
               />
+            ) : connectedSources.length > 0 ? (
+              <p className="text-sm text-muted-foreground">Nothing matches the search.</p>
             ) : (
               <p className="text-sm text-muted-foreground">
                 No {connectedModal === "github" ? "GitHub repositories" : "local folders"} connected

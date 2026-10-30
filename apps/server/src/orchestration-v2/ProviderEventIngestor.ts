@@ -689,7 +689,29 @@ export const layer: Layer.Layer<
                       occurredAt,
                     )
                   : plan;
+              // Flow: a new open plan replaces one the user reopened, which the provider
+              // does not know about; a thread keeps one open plan.
+              const replacedPlans =
+                plan.kind === "proposed_plan" && plan.status === "active"
+                  ? (yield* projections.getThreadRecords(plan.threadId, ["plans"])).plans.filter(
+                      (other) =>
+                        other.kind === "proposed_plan" &&
+                        other.status === "active" &&
+                        other.id !== plan.id,
+                    )
+                  : [];
+              const replaced = yield* Effect.forEach(replacedPlans, (other) =>
+                makeDomainEvent(input, {
+                  type: "plan.updated",
+                  threadId: other.threadId,
+                  payload: { ...other, status: "superseded" },
+                  runId: other.runId,
+                  nodeId: other.nodeId,
+                  occurredAt,
+                }),
+              );
               return [
+                ...replaced,
                 yield* makeDomainEvent(input, {
                   type: "plan.updated",
                   threadId: plan.threadId,

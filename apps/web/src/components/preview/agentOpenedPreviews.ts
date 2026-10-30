@@ -43,13 +43,15 @@ export function revealServerTabs(
   for (const session of sessions) {
     const force = session.revealRequest?.force === true;
     if (!options.autoShowFloatingPreview && !force) continue;
-    const surface = useRightPanelStore
-      .getState()
-      .byThreadKey[scopedThreadKey(threadRef)]?.surfaces.find(
-        (surface) => surface.kind === "preview" && surface.resourceId === session.tabId,
-      );
+    const panel = useRightPanelStore.getState().byThreadKey[scopedThreadKey(threadRef)];
+    const surface = panel?.surfaces.find(
+      (surface) => surface.kind === "preview" && surface.resourceId === session.tabId,
+    );
     if (surface && force) {
       useRightPanelStore.getState().activateSurface(threadRef, surface.id);
+    } else if (!surface && panel?.browserDocked) {
+      // Flow: the user keeps this chat's browsers in the panel; a closed panel shows a dot.
+      useRightPanelStore.getState().dockRevealedBrowser(threadRef, session.tabId);
     } else if (!surface) {
       usePreviewMiniPlayerStore.getState().open(threadRef, browserMiniPlayerSource(session.tabId));
     }

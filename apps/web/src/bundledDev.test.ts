@@ -45,7 +45,13 @@ export const startup = Promise.resolve().then(() => globalThis.onStarted(Shared(
       publicDir: NodeURL.fileURLToPath(new URL("../public", import.meta.url)),
       logLevel: "silent",
       resolve: {
-        alias: { react: NodePath.dirname(NodeURL.fileURLToPath(import.meta.resolve("react"))) },
+        alias: {
+          react: NodePath.dirname(NodeURL.fileURLToPath(import.meta.resolve("react"))),
+          // Flow: the boot error screen names the brand; the temporary root cannot resolve it.
+          "@t3tools/shared/branding": NodeURL.fileURLToPath(
+            import.meta.resolve("@t3tools/shared/branding"),
+          ),
+        },
       },
       experimental: { bundledDev: true },
       plugins: [

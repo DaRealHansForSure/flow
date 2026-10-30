@@ -52,7 +52,7 @@ app.addContentTypeParser("application/json", { parseAs: "buffer" }, (req, body, 
     // Expose both raw (for HMAC) and parsed (for regular routes)
     const parsed = JSON.parse((body as Buffer).toString("utf-8")) as unknown;
     // Attach raw buffer to request so webhook handlers can reach it
-    (req as Record<string, unknown>)._rawBody = body as Buffer;
+    (req as unknown as Record<string, unknown>)._rawBody = body as Buffer;
     done(null, parsed);
   } catch (err) {
     done(err as Error, undefined);

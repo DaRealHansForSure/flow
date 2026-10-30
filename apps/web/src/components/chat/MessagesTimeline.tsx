@@ -1112,6 +1112,21 @@ const ConversationTimeline = memo(function ConversationTimeline({
     </>
   );
 
+  // Flow: older turns arrive in chunks as the reader nears the top, so long chats stay short.
+  const loadEarlierOnScroll = () => {
+    if (
+      historyControls?.hasMoreHistory !== true ||
+      historyControls.loading ||
+      historyControls.error !== null ||
+      restoringThreadPosition ||
+      findActive ||
+      citationPositioning
+    ) {
+      return;
+    }
+    historyControls.onLoadEarlier();
+  };
+
   const canvas = useChatCanvas();
   const registerTimeline = canvas?.registerTimeline;
   // Stable so the list attaches once per mount, not on every render.
@@ -1336,6 +1351,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
               }
               maintainScrollAtEndThreshold={1}
               onScroll={handleScroll}
+              onStartReached={loadEarlierOnScroll}
               onItemSizeChanged={handleItemSizeChanged}
               className={cn(
                 "messages-timeline-scroll scrollbar-gutter-both h-full min-h-0 overflow-x-hidden overscroll-y-contain [overflow-anchor:none]",

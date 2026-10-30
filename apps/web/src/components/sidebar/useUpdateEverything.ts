@@ -106,9 +106,14 @@ export function useUpdateEverything(
     providerMachines: providers.machines.map((machine) => ({
       environmentId: machine.environmentId,
       label: machine.label,
-      providers: machine.candidates.map(
-        (candidate) => PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver,
-      ),
+      // Flow: each provider shows the version it moves from and to, when both are known.
+      providers: machine.candidates.map((candidate) => {
+        const name = PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver;
+        const { currentVersion, latestVersion } = candidate.versionAdvisory;
+        return currentVersion && latestVersion
+          ? `${name} ${currentVersion} → ${latestVersion}`
+          : name;
+      }),
     })),
   });
 

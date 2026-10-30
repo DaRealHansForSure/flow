@@ -136,10 +136,9 @@ const clampToContainer = (
   position: PreviewMiniPlayerPosition,
   container: PreviewMiniPlayerSize,
   player: PreviewMiniPlayerSize,
-  minimumX = PREVIEW_MINI_PLAYER_EDGE_GAP,
 ): PreviewMiniPlayerPosition => ({
   x: Math.min(
-    Math.max(position.x, minimumX, PREVIEW_MINI_PLAYER_EDGE_GAP),
+    Math.max(position.x, PREVIEW_MINI_PLAYER_EDGE_GAP),
     Math.max(
       PREVIEW_MINI_PLAYER_EDGE_GAP,
       container.width - player.width - PREVIEW_MINI_PLAYER_EDGE_GAP,
@@ -172,9 +171,8 @@ export function clampPreviewMiniPlayerPosition(
   container: PreviewMiniPlayerSize,
   player: PreviewMiniPlayerSize,
   obstacles: PreviewMiniPlayerObstacles = NO_PREVIEW_MINI_PLAYER_OBSTACLES,
-  minimumX = PREVIEW_MINI_PLAYER_EDGE_GAP,
 ): PreviewMiniPlayerPosition {
-  const inside = clampToContainer(position, container, player, minimumX);
+  const inside = clampToContainer(position, container, player);
   if (!overlapsObstacle(inside, player, container, obstacles)) return inside;
   const gap = PREVIEW_MINI_PLAYER_EDGE_GAP;
   const fitRows = (x: number): PreviewMiniPlayerPosition => {
@@ -207,7 +205,7 @@ export function clampPreviewMiniPlayerPosition(
   for (const x of beside) {
     const candidate = fitRows(x);
     if (
-      clampToContainer(candidate, container, player, minimumX).x !== x ||
+      clampToContainer(candidate, container, player).x !== x ||
       overlapsObstacle(candidate, player, container, obstacles)
     ) {
       continue;

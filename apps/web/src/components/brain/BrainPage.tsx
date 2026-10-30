@@ -5,7 +5,7 @@ import type { BrainSnapshot } from "../../brain/repository";
 import { isElectron } from "../../env";
 import { SidebarInset } from "../ui/sidebar";
 import { WorkspacePageHeader } from "../WorkspacePageHeader";
-import { BrainGraphDialog, BrainGraphExpandButton } from "./BrainGraphDialog";
+import { BrainGraphDialog, brainGraphCorner } from "./BrainGraphDialog";
 
 export function BrainPage({
   snapshot,
@@ -74,11 +74,7 @@ export function BrainPage({
           docs={docs}
           skills={skills}
           {...(onCreate ? { onCreate } : {})}
-          graphCorner={
-            hasKnowledge ? (
-              <BrainGraphExpandButton onClick={() => setGraphExpanded(true)} />
-            ) : undefined
-          }
+          graphCorner={hasKnowledge ? brainGraphCorner(() => setGraphExpanded(true)) : undefined}
         />
       </main>
       <BrainGraphDialog

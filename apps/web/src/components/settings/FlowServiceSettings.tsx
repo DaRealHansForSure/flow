@@ -46,16 +46,18 @@ export function FlowServiceSettings({
     if (!call) return;
     setPendingAction(action);
     setActionError(null);
-    try {
-      setActionError(describeFlowServiceActionResult(await call()));
-    } catch (cause) {
-      setActionError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
+    return await (async () => {
+      try {
+        setActionError(describeFlowServiceActionResult(await call()));
+      } catch (cause) {
+        setActionError(cause instanceof Error ? cause.message : String(cause));
+      }
+    })().finally(() => {
       setPendingAction(null);
       // The service may take a moment to settle, but the panel must not show
       // a state the user just changed, so re-read immediately either way.
       refreshDesktopFlowService();
-    }
+    });
   };
 
   if (!canManage) {

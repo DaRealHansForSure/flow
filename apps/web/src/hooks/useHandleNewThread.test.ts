@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import type { RuntimeMode } from "@t3tools/contracts";
+import type { ProviderInteractionMode, RuntimeMode } from "@t3tools/contracts";
 
 const testState = vi.hoisted(() => {
   let completeProjectFileRead: (value: null) => void = () => undefined;
@@ -11,6 +11,7 @@ const testState = vi.hoisted(() => {
     newWorktreesStartFromOrigin: false,
     defaultModelSelection: null,
     defaultRuntimeMode: "full-access" as RuntimeMode,
+    defaultInteractionMode: "default" as ProviderInteractionMode,
   };
   let storedDraft: {
     readonly draftId: string;
@@ -84,6 +85,9 @@ const testState = vi.hoisted(() => {
     get targetSettings() {
       return targetSettings;
     },
+    startInPlan() {
+      targetSettings = { ...targetSettings, defaultInteractionMode: "plan" };
+    },
     reset(
       nextStoredDraft: typeof storedDraft,
       workspaceDefaults = {
@@ -101,6 +105,7 @@ const testState = vi.hoisted(() => {
         newWorktreesStartFromOrigin: workspaceDefaults.startFromOrigin,
         defaultModelSelection: null,
         defaultRuntimeMode: "full-access",
+        defaultInteractionMode: "default",
       };
       router.state.location.href = "/";
       router.navigate.mockClear();
@@ -294,6 +299,25 @@ describe.each([
     );
     expect(testState.draftStore.setPrompt.mock.invocationCallOrder[0]).toBeLessThan(
       testState.router.navigate.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it("starts the thread in the default permissions from Settings", async () => {
+    testState.reset(draft);
+    testState.startInPlan();
+    const pendingOpen = useNewThreadHandler()({
+      environmentId: "environment-ssh",
+      projectId: "project-remote",
+    } as never);
+
+    testState.completeProjectFileRead(null);
+    await pendingOpen;
+
+    expect(testState.draftStore.setLogicalProjectDraftThreadId).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ runtimeMode: "full-access", interactionMode: "plan" }),
     );
   });
 

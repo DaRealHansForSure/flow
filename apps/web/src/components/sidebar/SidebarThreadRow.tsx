@@ -48,6 +48,7 @@ import {
   Undo2Icon,
   UserRoundIcon,
   XIcon,
+  PencilRulerIcon,
 } from "lucide-react";
 import {
   memo,
@@ -202,25 +203,33 @@ function SidebarProviderStack(props: {
       iconClassName="opacity-60"
     />
   );
-  if (stack.length === 1) {
+  // Flow: an earlier provider shows only when it was another kind; a switch between two setups
+  // of the same provider would repeat the same logo.
+  const earlier = stack.slice(0, -1).flatMap((instanceId) => {
+    const entry = props.providerEntryByInstanceId.get(instanceId);
+    return entry === undefined || entry.driverKind === currentEntry.driverKind
+      ? []
+      : [{ instanceId, entry }];
+  });
+  const earlierKinds = earlier.filter(
+    (item, index) =>
+      earlier.findIndex((other) => other.entry.driverKind === item.entry.driverKind) === index,
+  );
+  if (earlierKinds.length === 0) {
     return <span className="inline-flex shrink-0 items-center">{current}</span>;
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5">
-      {stack.slice(0, -1).map((instanceId) => {
-        const entry = props.providerEntryByInstanceId.get(instanceId);
-        if (entry === undefined) return null;
-        return (
-          <ProviderInstanceIcon
-            key={instanceId}
-            driverKind={entry.driverKind}
-            displayName={entry.displayName}
-            acpRegistryAgentId={entry.acpRegistryAgentId}
-            acpRegistryIconUrl={entry.acpRegistryIconUrl}
-            iconClassName="size-3 opacity-35 grayscale"
-          />
-        );
-      })}
+      {earlierKinds.map(({ instanceId, entry }) => (
+        <ProviderInstanceIcon
+          key={instanceId}
+          driverKind={entry.driverKind}
+          displayName={entry.displayName}
+          acpRegistryAgentId={entry.acpRegistryAgentId}
+          acpRegistryIconUrl={entry.acpRegistryIconUrl}
+          iconClassName="size-3 opacity-35 grayscale"
+        />
+      ))}
       <span className="relative z-10 inline-flex items-center">{current}</span>
     </span>
   );
@@ -521,6 +530,7 @@ const TOP_STATUS_ICONS = {
   input: MessageCircleQuestionIcon,
   request: UserRoundIcon,
   approval: ShieldQuestionIcon,
+  plan: PencilRulerIcon,
   failed: CircleAlertIcon,
   done: CircleCheckIcon,
   woke: AlarmClockIcon,
@@ -739,43 +749,49 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
               icon: "approval" as const,
               className: "text-warning-foreground",
             }
-          : status === "input"
+          : status === "plan"
             ? {
-                label: "Input",
-                icon: "input" as const,
-                className: "text-indigo-600 dark:text-indigo-300",
+                label: "Plan ready",
+                icon: "plan" as const,
+                className: "text-violet-600 dark:text-violet-300",
               }
-            : status === "request"
+            : status === "input"
               ? {
-                  label: "Request",
-                  icon: "request" as const,
-                  className: "text-guest-foreground",
+                  label: "Input",
+                  icon: "input" as const,
+                  className: "text-indigo-600 dark:text-indigo-300",
                 }
-              : status === "limited"
+              : status === "request"
                 ? {
-                    label: "Limited",
-                    icon: "failed" as const,
-                    className: "text-warning-foreground",
+                    label: "Request",
+                    icon: "request" as const,
+                    className: "text-guest-foreground",
                   }
-                : status === "failed"
+                : status === "limited"
                   ? {
-                      label: "Failed",
+                      label: "Limited",
                       icon: "failed" as const,
-                      className: "text-error-foreground",
+                      className: "text-warning-foreground",
                     }
-                  : isWoke
+                  : status === "failed"
                     ? {
-                        label: "Woke",
-                        icon: "woke" as const,
-                        className: "text-warning-foreground",
+                        label: "Failed",
+                        icon: "failed" as const,
+                        className: "text-error-foreground",
                       }
-                    : isUnread
+                    : isWoke
                       ? {
-                          label: "Done",
-                          icon: "done" as const,
-                          className: "text-success-foreground",
+                          label: "Woke",
+                          icon: "woke" as const,
+                          className: "text-warning-foreground",
                         }
-                      : null;
+                      : isUnread
+                        ? {
+                            label: "Done",
+                            icon: "done" as const,
+                            className: "text-success-foreground",
+                          }
+                        : null;
   const isWokeStatus = topStatus?.icon === "woke";
 
   const branchMismatch = resolveLocalCheckoutBranchMismatch({
@@ -1123,8 +1139,10 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
   ) : null;
 
   const diff = latestRunDiff(thread);
-  // Only the provider icon would remain, so the row drops the line instead of leaving it blank.
+  // Only the provider icon would remain, so the card drops the line instead of leaving it blank.
+  // Two-line folder rows keep it so every row has the same height and the icon one place.
   const metaLineEmpty =
+    variant !== "folder-multiline" &&
     !thread.branch &&
     !showsScratchMachine &&
     prBadge === null &&
@@ -1199,7 +1217,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
         {...(fileDropHandlers ?? {})}
         className={cn(
           "list-none [content-visibility:auto] [contain-intrinsic-size:auto_36px]",
-          metaLine !== null && multiline && "[contain-intrinsic-size:auto_54px]",
+          multiline && "[contain-intrinsic-size:auto_54px]",
           sortable?.isDragging && "relative z-20",
         )}
       >
@@ -1249,7 +1267,6 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
               )}
               {draftIndicator}
               {title}
-              {multiline ? titleLineProviderStack : null}
               {pinIndicator}
               {multiline ? null : terminalStatusIcon}
               {isRegeneratingTitle ? (

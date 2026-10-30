@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { resolvePlanFollowUpSubmission } from "./proposedPlan";
+import { PLAN_REVISION_PROMPT_PREFIX, resolvePlanFollowUpSubmission } from "./proposedPlan";
 
 describe("resolvePlanFollowUpSubmission", () => {
   it.each(["", "Consider this "])(
@@ -8,7 +8,7 @@ describe("resolvePlanFollowUpSubmission", () => {
     (prose) => {
       const draftText = `${prose}[PR #42](t3-context://v1/review-comment/pr-42)`;
       expect(resolvePlanFollowUpSubmission({ draftText, planMarkdown: "# Plan" })).toEqual({
-        text: draftText,
+        text: `${PLAN_REVISION_PROMPT_PREFIX}${draftText}`,
         interactionMode: "plan",
       });
     },

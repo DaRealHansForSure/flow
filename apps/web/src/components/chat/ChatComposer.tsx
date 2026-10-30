@@ -2,7 +2,10 @@ import { useComposerTypingGuard } from "./useComposerTypingGuard";
 import { insertAttachmentReferencesForDraft } from "./composerAttachmentReferences";
 import { DESKTOP_PASTE_AS_TEXT_EVENT } from "../../lib/desktopPasteAsText";
 import {
+  type PermissionMode,
+  planPermissionModeOption,
   resolveCompatibleRuntimeMode,
+  resolvePermissionMode,
   runtimeModeConfig,
   runtimeModeOptions as runtimeModes,
 } from "./runtimeModeConfig";
@@ -276,6 +279,8 @@ import {
   usePreparingComposerImages,
 } from "./preparingComposerImages";
 import { ComposerControlsBar } from "./ComposerControlsBar";
+import { heldMissingProvider } from "./missingProviderBanner";
+import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
 
 function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
@@ -414,7 +419,9 @@ export interface ChatComposerProps {
   threadSyncPhase: ThreadSyncPhase | null;
 
   runtimeMode: RuntimeMode;
-  defaultRuntimeMode?: RuntimeMode;
+  defaultPermissionMode?: PermissionMode;
+  /** Flow: the chat's own provider instance when it is not set up here; null when it is. */
+  missingProviderInstanceId?: ProviderInstanceId | null;
   interactionMode: ProviderInteractionMode;
 
   lockedProvider: ProviderDriverKind | null;
@@ -914,8 +921,17 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     selectedProviderEntry?.snapshot,
     selectedModel,
   );
+  // Flow: a missing provider is never swapped silently; only a model picked by hand replaces it.
+  const missingProviderInstanceId = heldMissingProvider({
+    missingInstanceId: props.missingProviderInstanceId,
+    draftActiveProvider: composerDraft.activeProvider,
+    draftSelectionExplicit: composerDraft.modelSelectionExplicit,
+  });
   const sendDisabledReason =
     externalSendDisabledReason ??
+    (missingProviderInstanceId === null
+      ? null
+      : `This chat's provider "${missingProviderInstanceId}" is not set up here. Pick another model, or set it up in Settings.`) ??
     (multipleModelSelections?.length === 0 ? "Select at least one model." : null) ??
     (activePendingProgress
       ? attachmentBlockReason
@@ -939,9 +955,20 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const selectedPromptEffort = composerProviderState.promptEffort;
   const selectedModelOptionsForDispatch = composerProviderState.modelOptionsForDispatch;
   const { enabled: planModeUiEnabled, interactionMode } = resolveComposerInteractionMode({
-    planModeEnabled: settings.planModeEnabled,
     provider: selectedProviderStatus,
     interactionMode: requestedInteractionMode,
+  });
+  const permissionMode = resolvePermissionMode(compatibleRuntimeMode, interactionMode);
+  const permissionModeOptions = planModeUiEnabled
+    ? [...compatibleRuntimeModeOptions, planPermissionModeOption]
+    : compatibleRuntimeModeOptions;
+  const handlePermissionModeChange = useStableCallback((mode: PermissionMode) => {
+    if (mode === "plan") {
+      handleInteractionModeChange("plan");
+      return;
+    }
+    handleInteractionModeChange("default");
+    handleRuntimeModeChange(mode);
   });
   const selectedModelSelection: ModelSelection = createModelSelection(
     selectedInstanceId,
@@ -2115,6 +2142,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     );
   };
   const handleSubmitMessageStable = useStableCallback(handleSubmitMessage);
+  const sendWithModeStable = useStableCallback((mode: "steer" | "queue") => {
+    submitComposer(undefined, mode);
+  });
   const submitCitationAndSend = () => {
     submitComposer(
       undefined,
@@ -2302,14 +2332,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       reportedModelSelection={reportedModelSelection}
       promptUltrathink={promptUltrathink}
       onPromptEdit={editPromptFromTraitsStable}
-      planModeEnabled={settings.planModeEnabled}
-      planModeUiEnabled={planModeUiEnabled}
-      interactionMode={interactionMode}
-      compatibleRuntimeMode={compatibleRuntimeMode}
-      defaultRuntimeMode={props.defaultRuntimeMode}
-      compatibleRuntimeModeOptions={compatibleRuntimeModeOptions}
-      toggleInteractionMode={toggleInteractionMode}
-      handleRuntimeModeChange={handleRuntimeModeChange}
+      permissionMode={permissionMode}
+      defaultPermissionMode={props.defaultPermissionMode}
+      missingProviderInstanceId={missingProviderInstanceId}
+      permissionModeOptions={permissionModeOptions}
+      handlePermissionModeChange={handlePermissionModeChange}
       composerControlsCollapsed={composerControlsCollapsed}
       effortDisplay={settings.effortDisplay}
       permissionsShownInStrip={props.permissionsShownInStrip}
@@ -2826,7 +2853,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           reportedModelSelection,
           prompt: promptRef.current,
           cursor: readComposerSnapshotStable().expandedCursor,
-          planModeEnabled: settings.planModeEnabled,
+          planModeEnabled: false,
           direction,
         });
         if (!change) return;
@@ -3020,7 +3047,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       selectedModel,
       selectedInstanceId,
       reportedModelSelection,
-      settings.planModeEnabled,
       selectedModelSelection,
       multipleModelSelections,
       setMultipleModelSelections,
@@ -3197,26 +3223,32 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
             )}
           >
             {showCollapsedMobilePromptRow ? (
-              <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <div className="flex items-center justify-between gap-2 px-2 py-2">
+                {/* Flow: drawn as a field, so an idle composer reads as a place to type. */}
                 <button
                   type="button"
                   data-chat-composer-transition-prompt="true"
                   className={cn(
-                    "min-w-0 flex-1 truncate bg-transparent p-0 text-left text-sm focus:outline-none",
-                    prompt.trim() ? "text-foreground" : "text-placeholder",
+                    "flex h-10 min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-3 text-left text-sm focus:outline-none",
+                    prompt.trim() ? "text-foreground" : "text-muted-foreground",
                   )}
                   onPointerDown={(event) => event.preventDefault()}
                   onClick={expandMobileComposerStable}
                   aria-label="Expand composer"
                 >
-                  {prompt.trim() ||
-                    (showProviderUnavailable ? "Enable a provider in Settings" : "Ask anything...")}
+                  {prompt.trim() ? (
+                    <CollapsedComposerPrompt prompt={prompt.trim()} />
+                  ) : showProviderUnavailable ? (
+                    "Enable a provider in Settings"
+                  ) : (
+                    "Ask anything..."
+                  )}
                 </button>
                 {collapsedComposerImagePreviews}
                 <button
                   type="button"
                   data-chat-composer-transition-actions="true"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-message-action text-message-action-foreground hover:bg-message-action-hover disabled:opacity-64"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-message-action text-message-action-foreground hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground"
                   disabled={collapsedComposerPrimaryActionDisabled}
                   aria-label={collapsedComposerPrimaryActionLabel}
                   onPointerDown={(event) => event.preventDefault()}
@@ -3491,6 +3523,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     preserveComposerFocusOnPointerDown={isMobileViewport}
                     isEditingQueuedMessage={isEditingQueuedMessage}
                     onSubmitMessage={handleSubmitMessageStable}
+                    onSendWithMode={sendWithModeStable}
                     onResume={onResume}
                     onPreviousPendingQuestion={onPreviousActivePendingUserInputQuestion}
                     onInterrupt={handleInterruptPrimaryActionStable}
@@ -3511,7 +3544,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               <div className="h-8">
                 <div
                   ref={setInlineRestingControlsHost}
-                  className="absolute bottom-2 inset-x-4 min-w-0"
+                  className="absolute bottom-2 inset-x-3 min-w-0"
                 >
                   <div
                     ref={attachRestingComposerControls}

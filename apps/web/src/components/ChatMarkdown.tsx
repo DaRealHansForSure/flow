@@ -1668,6 +1668,7 @@ function ChatMarkdown({
         className,
       )}
       data-streaming={componentState.isStreaming ? "" : undefined}
+      data-chat-text={inline ? undefined : ""}
       onCopy={handleCopy}
     >
       <ChatMarkdownRendererContext value={componentState}>

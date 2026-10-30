@@ -273,8 +273,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/threads",
     scope: "project-defaults",
     searchTerms: [
-      "new thread default runtime mode supervised approvals auto accept edits full access",
+      "new thread default runtime mode supervised approvals auto accept edits full access plan",
     ],
+  },
+  {
+    id: "after-plan-permissions",
+    title: "Permissions after the plan",
+    to: "/settings/threads",
+    scope: "project-defaults",
+    searchTerms: ["plan accept implement default runtime mode"],
   },
   {
     id: "color-scheme",
@@ -359,6 +366,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Prompt font",
     to: "/settings/appearance",
     searchTerms: ["typography family size composer input"],
+  },
+  {
+    id: "chat-font",
+    title: "Chat font",
+    to: "/settings/appearance",
+    searchTerms: ["typography size percent scale messages conversation text smaller larger"],
   },
   {
     id: "code-font",
@@ -741,12 +754,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "open-source-licenses",
     title: "Open source licenses",
     to: "/settings/about",
-  },
-  {
-    id: "legacy-plan-mode",
-    title: "Plan mode (legacy)",
-    to: "/settings/labs",
-    searchTerms: ["build plan composer old"],
   },
   {
     id: "legacy-context-window-indicator",

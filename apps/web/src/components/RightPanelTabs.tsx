@@ -28,7 +28,9 @@ import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dn
 import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
+  BotIcon,
   BrainCircuitIcon,
+  PencilRulerIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -133,6 +135,8 @@ export interface RightPanelTabsProps {
   onAddDevice: () => void;
   /** Flow: offered only in a chat with a Brain. */
   onAddBrain?: (() => void) | undefined;
+  onAddPlan?: (() => void) | undefined;
+  onAddAgents?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -275,8 +279,15 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
   );
 }
 
-/** Flow: the Brain entry of the surface launchers, disabled when the chat has no Brain. */
-function brainSurfaceActions(onAddBrain: (() => void) | undefined) {
+/**
+ * Flow: the Brain, Plan and Agents entries of the surface launchers, disabled when the chat has
+ * no Brain or no plan.
+ */
+function flowSurfaceActions(
+  onAddBrain: (() => void) | undefined,
+  onAddPlan: (() => void) | undefined,
+  onAddAgents: (() => void) | undefined,
+) {
   return [
     {
       label: "Brain",
@@ -285,6 +296,22 @@ function brainSurfaceActions(onAddBrain: (() => void) | undefined) {
       available: onAddBrain !== undefined,
       disabledReason: "This chat has no Brain. Connect one in Settings > Brain.",
       onClick: onAddBrain ?? (() => {}),
+    },
+    {
+      label: "Plan",
+      icon: PencilRulerIcon,
+      shortcut: "A",
+      available: onAddPlan !== undefined,
+      disabledReason: "This chat has no plan yet. Switch to Plan to make one.",
+      onClick: onAddPlan ?? (() => {}),
+    },
+    {
+      label: "Agents",
+      icon: BotIcon,
+      shortcut: "G",
+      available: onAddAgents !== undefined,
+      disabledReason: "Only saved chats have agents.",
+      onClick: onAddAgents ?? (() => {}),
     },
   ];
 }
@@ -322,6 +349,8 @@ function RightPanelEmptyState(props: {
   onAddPullRequests: () => void;
   onAddDevice: () => void;
   onAddBrain: (() => void) | undefined;
+  onAddPlan: (() => void) | undefined;
+  onAddAgents?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -390,8 +419,8 @@ function RightPanelEmptyState(props: {
       disabledReason: SURFACE_UNAVAILABLE_HINTS.device,
       onClick: props.onAddDevice,
     },
-    // Flow: the Brain tab, disabled in a chat without a Brain.
-    ...brainSurfaceActions(props.onAddBrain),
+    // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
   ] as const;
 
   type SurfaceAction = (typeof actions)[number];
@@ -578,6 +607,12 @@ function surfaceTitle(
     // Flow: the Brain tab.
     case "brain":
       return "Brain";
+    // Flow: the Plan tab, named like the file it can be saved as.
+    case "plan":
+      return "Plan.md";
+    // Flow: the Agents tab.
+    case "agents":
+      return "Agents";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -671,6 +706,10 @@ function SurfaceIcon({
     // Flow: the Brain tab.
     case "brain":
       return <BrainCircuitIcon className="size-3 shrink-0" />;
+    case "plan":
+      return <PencilRulerIcon className="size-3 shrink-0" />;
+    case "agents":
+      return <BotIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -1092,8 +1131,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       disabledReason: SURFACE_DISABLED_REASONS.device,
       onClick: props.onAddDevice,
     },
-    // Flow: the Brain tab, disabled in a chat without a Brain.
-    ...brainSurfaceActions(props.onAddBrain),
+    // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
   ] as const;
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1273,6 +1312,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
           ownsDesktopTitleBar && "drag-region",
           ownsDesktopTitleBar && "wco:pr-(--workspace-native-controls-inset)",
           props.mode === "inline" && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
+          // Flow: the full-width phone sheet leaves room for the sidebar toggle floating above it.
+          props.mode === "sheet" && "max-sm:pl-13",
         )}
         data-right-panel-tabbar
       >
@@ -1452,7 +1493,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
         {ownsDesktopTitleBar ? (
           <span
             aria-hidden
-            className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] h-[var(--workspace-topbar-height)] w-28 [-webkit-app-region:no-drag]"
+            className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] h-[var(--workspace-topbar-height)] w-[calc(var(--workspace-titlebar-controls-width,7rem)+0.25rem)] [-webkit-app-region:no-drag]"
           />
         ) : null}
       </div>
@@ -1469,6 +1510,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddPullRequests={props.onAddPullRequests}
             onAddDevice={props.onAddDevice}
             onAddBrain={props.onAddBrain}
+            onAddPlan={props.onAddPlan}
+            onAddAgents={props.onAddAgents}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}

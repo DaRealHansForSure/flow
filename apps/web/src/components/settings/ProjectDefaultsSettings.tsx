@@ -19,7 +19,12 @@ import { useEnvironmentProviders, useEnvironments } from "../../state/environmen
 import { EMPTY_SERVER_PROVIDERS } from "../../state/server";
 import { resolveEnvModeLabel, WORKTREE_SUBMODULES_LABELS } from "../BranchToolbar.logic";
 import { ProviderModelPicker } from "../chat/ProviderModelPicker";
-import { runtimeModeConfig, runtimeModeOptions } from "../chat/runtimeModeConfig";
+import {
+  type PermissionMode,
+  permissionModeConfig,
+  resolvePermissionMode,
+  runtimeModeOptions,
+} from "../chat/runtimeModeConfig";
 import { PULL_REQUEST_MERGE_METHOD_LABELS } from "../pullRequest/pullRequestDetail.logic";
 import { TraitsPicker } from "../chat/TraitsPicker";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../ui/select";
@@ -85,8 +90,11 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
     fallbackSelection?.instanceId,
     fallbackSelection?.model,
   );
-  const mixedPermissions = useScopedSettingsMixed(["defaultRuntimeMode"]);
-  const PermissionIcon = runtimeModeConfig[settings.defaultRuntimeMode].icon;
+  const mixedPermissions = useScopedSettingsMixed(["defaultRuntimeMode", "defaultInteractionMode"]);
+  const defaultPermissionMode = resolvePermissionMode(
+    settings.defaultRuntimeMode,
+    settings.defaultInteractionMode,
+  );
   const mixedWorkspace = useScopedSettingsMixed(["defaultThreadEnvMode"]);
   const mixedAutoPull = useScopedSettingsMixed(["defaultAutoPull"]);
   const mixedAgentCredits = useScopedSettingsMixed(["removeAgentCreditsOnMerge"]);
@@ -162,7 +170,7 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                 model={selection.model}
                 modelOptions={selection.options ?? []}
                 allowPromptInjectedEffort={false}
-                planModeEnabled={settings.planModeEnabled}
+                planModeEnabled={false}
                 triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
                 onModelOptionsChange={(options) =>
                   setModel(createModelSelection(selection.instanceId, selection.model, options))
@@ -294,7 +302,7 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
           {fallbackRow}
           <SettingsRow
             serverScoped
-            settingKeys={["defaultRuntimeMode"]}
+            settingKeys={["defaultRuntimeMode", "defaultInteractionMode"]}
             mixed={mixedPermissions}
             {...searchableSetting("default-permissions")}
             description={
@@ -303,56 +311,53 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                 : "Default permissions for new threads. Projects can override them."
             }
             resetAction={
-              settings.defaultRuntimeMode !== DEFAULT_SERVER_SETTINGS.defaultRuntimeMode ? (
+              defaultPermissionMode !== DEFAULT_SERVER_SETTINGS.defaultRuntimeMode ? (
                 <SettingResetButton
                   label="default permissions"
                   onClick={() =>
                     updateSettings({
                       defaultRuntimeMode: DEFAULT_SERVER_SETTINGS.defaultRuntimeMode,
+                      defaultInteractionMode: DEFAULT_SERVER_SETTINGS.defaultInteractionMode,
                     })
                   }
                 />
               ) : null
             }
             control={
-              <Select
-                value={mixedPermissions ? null : settings.defaultRuntimeMode}
-                onValueChange={(value) => {
-                  if (value) updateSettings({ defaultRuntimeMode: value });
-                }}
-              >
-                <SelectTrigger size="sm" aria-label="Default permissions">
-                  {!mixedPermissions && (
-                    <PermissionIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                  )}
-                  <SelectValue>
-                    {mixedPermissions
-                      ? "Mixed"
-                      : runtimeModeConfig[settings.defaultRuntimeMode].label}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectPopup align="end" alignItemWithTrigger={false}>
-                  {runtimeModeOptions.map((mode) => {
-                    const option = runtimeModeConfig[mode];
-                    const Icon = option.icon;
-                    return (
-                      <SelectItem key={mode} value={mode} className="min-w-64">
-                        <div className="grid gap-0.5">
-                          <span className="inline-flex items-center gap-1.5 font-medium">
-                            <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                            {option.label}
-                          </span>
-                          <span className="text-xs leading-4 text-muted-foreground">
-                            {option.description}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectPopup>
-              </Select>
+              <PermissionModeSelect
+                label="Default permissions"
+                value={mixedPermissions ? null : defaultPermissionMode}
+                options={[...runtimeModeOptions, "plan"]}
+                onChange={(mode) =>
+                  updateSettings(
+                    mode === "plan"
+                      ? { defaultInteractionMode: "plan" }
+                      : { defaultInteractionMode: "default", defaultRuntimeMode: mode },
+                  )
+                }
+              />
             }
           />
+          {defaultPermissionMode === "plan" ? (
+            <SettingsRow
+              serverScoped
+              settingKeys={["defaultRuntimeMode"]}
+              {...searchableSetting("after-plan-permissions")}
+              description="Permissions a thread switches to when you accept its plan."
+              control={
+                <PermissionModeSelect
+                  label="Permissions after the plan"
+                  value={settings.defaultRuntimeMode}
+                  options={runtimeModeOptions}
+                  onChange={(mode) => {
+                    if (mode !== "plan") {
+                      updateSettings({ defaultRuntimeMode: mode });
+                    }
+                  }}
+                />
+              }
+            />
+          ) : null}
           {workspaceRow}
         </>
       ) : (
@@ -524,5 +529,49 @@ export function WorktreeSubmodulesRow() {
         </Select>
       }
     />
+  );
+}
+
+function PermissionModeSelect(props: {
+  label: string;
+  value: PermissionMode | null;
+  options: ReadonlyArray<PermissionMode>;
+  onChange: (mode: PermissionMode) => void;
+}) {
+  const selected = props.value === null ? null : permissionModeConfig(props.value);
+  const SelectedIcon = selected?.icon;
+  return (
+    <Select
+      value={props.value}
+      onValueChange={(value) => {
+        if (value) {
+          props.onChange(value);
+        }
+      }}
+    >
+      <SelectTrigger size="sm" aria-label={props.label}>
+        {SelectedIcon ? <SelectedIcon className="size-3.5 shrink-0 text-muted-foreground" /> : null}
+        <SelectValue>{selected?.label ?? "Mixed"}</SelectValue>
+      </SelectTrigger>
+      <SelectPopup align="end" alignItemWithTrigger={false}>
+        {props.options.map((mode) => {
+          const option = permissionModeConfig(mode);
+          const Icon = option.icon;
+          return (
+            <SelectItem key={mode} value={mode} className="min-w-64">
+              <div className="grid gap-0.5">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                  {option.label}
+                </span>
+                <span className="text-xs leading-4 text-muted-foreground">
+                  {option.description}
+                </span>
+              </div>
+            </SelectItem>
+          );
+        })}
+      </SelectPopup>
+    </Select>
   );
 }

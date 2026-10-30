@@ -21,6 +21,12 @@ Android uses **Material You Layout** by default unless you have turned it off in
 It changes shapes, spacing, and controls independently
 of the selected theme.
 
+## Chat font
+
+On web and desktop, **Settings → Appearance → Chat font** sizes only the text of chat messages,
+from 70 to 130 % of the interface font size. Use it to make a chat smaller or larger without
+shrinking buttons and menus the way browser zoom does.
+
 ## Composer context
 
 Git-backed projects show branch and worktree controls below the composer while you create a thread.

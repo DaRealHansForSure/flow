@@ -13,6 +13,8 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { makeBrainProjections } from "./brainProjections.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
+import { ServerConfig } from "../config.ts";
+import { isScratchWorkspace } from "./scratch.ts";
 import { BrainService } from "./BrainService.ts";
 import type { BrainCapture } from "./session-worker.ts";
 import type { ChatCurationChoices } from "./project-bindings.ts";
@@ -105,6 +107,7 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
 export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function* () {
   const service = yield* BrainService;
   const serverSettings = yield* ServerSettingsService;
+  const { baseDir } = yield* ServerConfig;
   const projections = yield* makeBrainProjections;
   const capture: BrainChatCapture = Effect.fn("brain.captureChatEvent")(function* (
     threadId: ThreadId,
@@ -119,6 +122,8 @@ export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function*
       .getProjectShellById(thread.value.projectId)
       .pipe(Effect.mapError(() => "Could not resolve the project's work folder."));
     const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
+    // Flow: No project chats only read their Brain; nothing from them is stored in it.
+    if (isScratchWorkspace(baseDir, workspaceRoot)) return;
     const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
     if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
     if (!runtime.threadBrainId(thread.value.projectId, threadId)) return;

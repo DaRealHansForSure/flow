@@ -4,7 +4,6 @@ import { useStableCallback } from "../../hooks/useStableCallback";
 import { scopeProjectRef } from "@t3tools/client-runtime/environment";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import { useNavigate } from "@tanstack/react-router";
-import { DEFAULT_INTERACTION_MODE } from "../../types";
 import { newDraftId, newThreadId } from "~/lib/utils";
 import {
   deriveLogicalProjectKeyFromSettings,
@@ -107,12 +106,16 @@ export function usePullRequestDraftThread(input: PullRequestDraftThreadInput) {
 
     const nextDraftId = newDraftId();
     const nextThreadId = newThreadId();
+    const projectDefaults = resolveProjectSettings(
+      settings,
+      activeProject.id,
+      activeProject,
+    ).settings;
     setLogicalProjectDraftThreadId(logicalProjectKey, activeProjectRef, nextDraftId, {
       threadId: nextThreadId,
       createdAt: new Date().toISOString(),
-      runtimeMode: resolveProjectSettings(settings, activeProject.id, activeProject).settings
-        .defaultRuntimeMode,
-      interactionMode: DEFAULT_INTERACTION_MODE,
+      runtimeMode: projectDefaults.defaultRuntimeMode,
+      interactionMode: projectDefaults.defaultInteractionMode,
       ...input,
     });
     await navigate({

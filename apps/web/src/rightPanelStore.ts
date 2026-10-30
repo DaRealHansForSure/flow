@@ -23,6 +23,10 @@ const RIGHT_PANEL_KINDS = [
   "pull-requests",
   // Flow: the chat's Brain context.
   "brain",
+  // Flow: the chat's latest proposed plan.
+  "plan",
+  // Flow: the chat's active and previous agents.
+  "agents",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -78,7 +82,11 @@ export type RightPanelSurface =
     }
   | { id: "pull-requests"; kind: "pull-requests" }
   // Flow: one Brain tab per chat.
-  | { id: "brain"; kind: "brain" };
+  | { id: "brain"; kind: "brain" }
+  // Flow: one Plan tab per chat, showing its latest proposed plan.
+  | { id: "plan"; kind: "plan" }
+  // Flow: one Agents tab per chat, listing its active and previous agents.
+  | { id: "agents"; kind: "agents" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 14;
@@ -97,6 +105,12 @@ export interface ThreadRightPanelState {
   dismissedDeviceSurfaceIds?: string[];
   maximized?: true;
   proactiveDiffTurnId?: RunId;
+  /** Flow: the plan the Plan tab last opened for on its own, so a closed tab stays closed. */
+  proactivePlanId?: string;
+  /** Flow: the user moved a browser into the panel, so browsers the agent reveals join it. */
+  browserDocked?: true;
+  /** Flow: a tab arrived while the panel was closed; the panel button shows a dot until it opens. */
+  unseenActivity?: true;
 }
 
 export interface ThreadPanelVisibility {
@@ -129,6 +143,16 @@ interface RightPanelStoreState {
   openDevice: (ref: ScopedThreadRef, target: DeviceTabTarget, automatic?: boolean) => void;
   /** Flow: a chat with a Brain starts with its tab, until the user closes it in that chat. */
   openBrainByDefault: (ref: ScopedThreadRef, revealPanel: boolean) => void;
+  /** Flow: each new proposed plan opens the Plan tab once; closing it holds until the next plan. */
+  openPlanByDefault: (ref: ScopedThreadRef, planId: string, revealPanel: boolean) => void;
+  /** Flow: moves the floating browser into the panel and keeps this chat's later browsers there. */
+  dockBrowser: (ref: ScopedThreadRef, tabId: string) => void;
+  /** Flow: adds a browser the agent revealed as a tab, without opening a closed panel. */
+  dockRevealedBrowser: (ref: ScopedThreadRef, tabId: string) => void;
+  /** Flow: the browser floats over the chat again, and so do this chat's later browsers. */
+  undockBrowser: (ref: ScopedThreadRef) => void;
+  /** Flow: a closed floating browser waits in the panel; a closed panel shows a dot for it. */
+  tuckBrowser: (ref: ScopedThreadRef) => void;
   renameDevice: (ref: ScopedThreadRef, surfaceId: string, title: string) => void;
   openBrowser: (ref: ScopedThreadRef, tabId: string | null) => void;
   openFile: (ref: ScopedThreadRef, relativePath: string, line?: number) => void;
@@ -222,6 +246,12 @@ const singletonSurface = (
     // Flow: the Brain tab.
     case "brain":
       return { id: "brain", kind };
+    // Flow: the Plan tab.
+    case "plan":
+      return { id: "plan", kind };
+    // Flow: the Agents tab.
+    case "agents":
+      return { id: "agents", kind };
   }
 };
 
@@ -315,13 +345,20 @@ const updateThreadStateMap = (
   updater: (current: ThreadRightPanelState) => ThreadRightPanelState,
 ): Record<string, ThreadRightPanelState> => {
   const current = byThreadKey[threadKey] ?? EMPTY_THREAD_STATE;
-  const next = updater(current);
+  const updated = updater(current);
+  // Flow: opening the panel shows whatever arrived while it was closed.
+  const next =
+    updated.isOpen && updated.unseenActivity
+      ? (({ unseenActivity: _seen, ...rest }) => rest)(updated)
+      : updated;
   if (
     !next.isOpen &&
     next.activeSurfaceId === null &&
     next.surfaces.length === 0 &&
     !next.dismissedDeviceSurfaceIds?.length &&
-    next.proactiveDiffTurnId === undefined
+    next.proactiveDiffTurnId === undefined &&
+    next.proactivePlanId === undefined &&
+    next.browserDocked === undefined
   ) {
     if (!(threadKey in byThreadKey)) return byThreadKey;
     const { [threadKey]: _removed, ...rest } = byThreadKey;
@@ -461,7 +498,7 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
               const surfaces = Array.isArray(validThreadState?.surfaces)
                 ? validThreadState.surfaces.flatMap<RightPanelSurface>((surface) => {
                     const kind = (surface as { kind?: string }).kind;
-                    if (kind === "plan" || kind === "agents") return [];
+                    if (kind === "plan") return [];
                     if (
                       (surface.kind === "file" || surface.kind === "files") &&
                       "folderTrail" in surface &&
@@ -560,6 +597,9 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
                   activeSurfaceId,
                   ...(typeof validThreadState?.proactiveDiffTurnId === "string"
                     ? { proactiveDiffTurnId: RunId.make(validThreadState.proactiveDiffTurnId) }
+                    : {}),
+                  ...(typeof validThreadState?.proactivePlanId === "string"
+                    ? { proactivePlanId: validThreadState.proactivePlanId }
                     : {}),
                   ...(Array.isArray(validThreadState?.dismissedDeviceSurfaceIds)
                     ? {
@@ -697,6 +737,58 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
             }
             return { ...current, isOpen: revealPanel, surfaces, activeSurfaceId: "brain" };
           }),
+        ),
+      openPlanByDefault: (ref, planId, revealPanel) =>
+        set((state) =>
+          automaticUpdate(state, scopedThreadKey(ref), (current) => {
+            if (current.proactivePlanId === planId) {
+              return current;
+            }
+            const opened = upsertSurface(current, singletonSurface("plan"));
+            const isOpen = revealPanel || current.isOpen;
+            return {
+              ...opened,
+              isOpen,
+              proactivePlanId: planId,
+              ...(isOpen ? {} : { unseenActivity: true as const }),
+            };
+          }),
+        ),
+      dockBrowser: (ref, tabId) =>
+        set((state) =>
+          userAction(state, scopedThreadKey(ref), (current) => ({
+            ...upsertSurface(current, browserSurface(tabId)),
+            browserDocked: true,
+          })),
+        ),
+      dockRevealedBrowser: (ref, tabId) =>
+        set((state) =>
+          automaticUpdate(state, scopedThreadKey(ref), (current) => {
+            const surface = browserSurface(tabId);
+            if (current.surfaces.some((entry) => entry.id === surface.id)) {
+              return current;
+            }
+            const added = upsertSurface(current, surface);
+            return current.isOpen
+              ? added
+              : { ...added, isOpen: false, unseenActivity: true as const };
+          }),
+        ),
+      undockBrowser: (ref) =>
+        set((state) =>
+          userAction(state, scopedThreadKey(ref), (current) => {
+            if (current.browserDocked === undefined) return current;
+            const { browserDocked: _docked, ...rest } = current;
+            return rest;
+          }),
+        ),
+      tuckBrowser: (ref) =>
+        set((state) =>
+          automaticUpdate(state, scopedThreadKey(ref), (current) =>
+            current.isOpen || !current.surfaces.some((surface) => surface.kind === "preview")
+              ? current
+              : { ...current, unseenActivity: true as const },
+          ),
         ),
       renameDevice: (ref, surfaceId, title) =>
         set((state) =>

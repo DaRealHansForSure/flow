@@ -73,6 +73,16 @@ Press `Option+Up` on macOS or `Alt+Up` on Windows and Linux with the cursor at t
 start of the composer to edit the most recently queued message. Change
 `thread.editQueuedMessage` to use another shortcut.
 
+To pick for a single message on web and desktop, hold the send button while the agent works, or
+right-click it, and choose **Steer now** or **Queue**.
+
+### Status above the composer
+
+While the agent works, a status pill above the composer shows the thread's background commands and
+subagents with **Stop**, how long the turn has run, its open browsers and its queued messages. Tap
+the background work to list every item by its full name; on a phone the list opens as a sheet from
+the bottom. The round button beside the pill scrolls back to the end of the chat.
+
 Mobile has the same choice under **Settings → Chat**. While a turn is
 running the send button shows which action it will take. Long-press it to use the
 other action for a single message, or hold `Cmd` while sending from a hardware
@@ -344,7 +354,11 @@ File links refer to the environment's machine, including when you connect remote
 Previews use the original file, even outside the workspace. Moving or deleting it
 can break the preview, so save a copy if you need to keep it.
 
-## Files outside the workspace
+## Files from chat links
+
+A file opened from a link in the chat, or from search, opens on its own without the file tree, and
+Markdown files open rendered. Switching one to source applies to that file only, and the tree is
+one click away. **Download file** saves the open file; on phones the file actions sit in one menu.
 
 Follow an agent's file link to read a report or other file outside the workspace.
 These files open read-only. An HTML file outside the workspace cannot load scripts,

@@ -25,8 +25,9 @@ export function BrainSectionHeader({
 }) {
   // The toggle is stretched under the row rather than wrapping it, since a button must not
   // contain the action buttons. Everything above it but the actions lets clicks through.
+  // In a narrow panel (a phone) the actions move to a second row so the title keeps its line.
   return (
-    <header className="relative flex items-start gap-2 px-2 py-2">
+    <header className="@container relative grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-start gap-x-2 gap-y-1 px-2.5 py-2">
       <button
         type="button"
         aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
@@ -44,9 +45,13 @@ export function BrainSectionHeader({
         </h2>
         {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
       </div>
-      {actions && <div className="relative flex items-start gap-1">{actions}</div>}
+      {actions && (
+        <div className="relative flex items-start justify-end gap-1 @max-[22rem]:col-span-3 @max-[22rem]:col-start-2 @max-[22rem]:row-start-2">
+          {actions}
+        </div>
+      )}
       <ChevronDownIcon
-        className={`pointer-events-none relative mt-0.5 size-4 shrink-0 text-muted-foreground ${expanded ? "rotate-180" : ""}`}
+        className={`pointer-events-none relative col-start-4 row-start-1 mt-0.5 size-4 shrink-0 text-muted-foreground ${expanded ? "rotate-180" : ""}`}
       />
     </header>
   );

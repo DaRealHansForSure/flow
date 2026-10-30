@@ -77,7 +77,7 @@ function getRow(source: string, resource: string): PollCursorRow | undefined {
     .get(source, resource) as PollCursorRow | undefined;
 }
 
-function upsertRow(row: PollCursorRow & { last_poll_at?: number }): void {
+function upsertRow(row: Omit<PollCursorRow, "last_poll_at"> & { last_poll_at?: number }): void {
   db.prepare(`
     INSERT INTO poll_cursors (source, resource, cursor, last_poll_at, status)
     VALUES (@source, @resource, @cursor, @last_poll_at, @status)

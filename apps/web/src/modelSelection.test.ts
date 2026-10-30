@@ -701,7 +701,6 @@ describe("resolveAppModelSelectionState with the opencode plan agent", () => {
   };
   const settings: UnifiedSettings = {
     ...DEFAULT_UNIFIED_SETTINGS,
-    planModeEnabled: false,
     textGenerationModelSelection: createModelSelection(instanceId, model, [
       { id: "agent", value: "plan" },
     ]),
@@ -769,7 +768,7 @@ describe("default model settings and new-thread composer parity", () => {
           model,
           models,
           modelOptions,
-          planModeEnabled: settings.planModeEnabled,
+          planModeEnabled: false,
         });
       const composerTraits = traits(composer.selectedModel, composer.modelOptions?.[instanceId]);
 

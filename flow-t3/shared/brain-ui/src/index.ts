@@ -7,6 +7,7 @@ export { BrainConnectionDialog } from "./BrainConnectionDialog.tsx";
 export { BrainRepositoryPicker, type BrainRepository } from "./BrainRepositoryPicker.tsx";
 export { BrainConnectedSources, isBrainSourceIndexing, type BrainConnectedSource } from "./BrainConnectedSources.tsx";
 export type {
+  BrainGraphCorner,
   BrainSourceCard,
   BrainUiDocument,
   BrainUiDocumentSummary,

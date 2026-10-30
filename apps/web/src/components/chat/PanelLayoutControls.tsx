@@ -1,5 +1,12 @@
-import { PanelBottomIcon, PanelRightIcon, SquareMenuIcon } from "lucide-react";
-import { Maximize2, Minimize2 } from "lucide";
+import { SquareMenuIcon } from "lucide-react";
+import {
+  Maximize2,
+  Minimize2,
+  PanelBottom,
+  PanelBottomClose,
+  PanelRight,
+  PanelRightClose,
+} from "lucide";
 import { MorphIcon } from "~/components/MorphIcon";
 import { memo, type ReactNode } from "react";
 
@@ -7,6 +14,11 @@ import { cn } from "~/lib/utils";
 
 import type { ThreadPanelPresentation } from "../../rightPanelLayout";
 import { PopoverCreateHandle, PopoverTrigger } from "../ui/popover";
+import { useMobileSidebarSheetMounted } from "../ui/sidebar";
+import {
+  trackTitlebarControls,
+  trackWorkspaceTitlebarControls,
+} from "./useTitlebarControlsReserve";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -28,6 +40,10 @@ export interface PanelLayoutControlsProps {
   onToggleTerminal: () => void;
   onToggleThreadPanel: () => void;
   onToggleRightPanel: () => void;
+  /** Flow: the Brain toggle, first in the group so it shares its spacing. */
+  brainControl?: ReactNode;
+  /** Flow: a tab arrived in the closed right panel, such as a browser the agent opened. */
+  rightPanelUnseen?: boolean;
 }
 
 export const PanelLayoutControls = memo(function PanelLayoutControls({
@@ -48,6 +64,8 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
   onToggleTerminal,
   onToggleThreadPanel,
   onToggleRightPanel,
+  brainControl,
+  rightPanelUnseen = false,
 }: PanelLayoutControlsProps) {
   const threadPanelToggle = (
     <Toggle
@@ -82,6 +100,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
       className="flex h-full shrink-0 items-center gap-1 [-webkit-app-region:no-drag]"
       data-panel-layout-controls
     >
+      {brainControl}
       {showThreadPanelControl ? threadPanelControl : null}
       {showTerminalControl ? (
         <Tooltip>
@@ -95,7 +114,8 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
               size="sm"
               disabled={!terminalAvailable}
             >
-              <PanelBottomIcon className="size-4" />
+              {/* Flow: an open drawer shows the close arrow, like the sidebar toggle. */}
+              <MorphIcon className="size-4" icon={terminalOpen ? PanelBottomClose : PanelBottom} />
             </Toggle>
           </TooltipTrigger>
           <TooltipPopup side="bottom">
@@ -109,7 +129,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
         <Tooltip>
           <TooltipTrigger render={<span className="flex shrink-0" />}>
             <Toggle
-              className="shrink-0 [-webkit-app-region:no-drag]"
+              className="relative shrink-0 [-webkit-app-region:no-drag]"
               pressed={rightPanelOpen}
               onPressedChange={onToggleRightPanel}
               aria-label="Toggle right panel"
@@ -118,7 +138,14 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
               size="sm"
               disabled={!rightPanelAvailable}
             >
-              <PanelRightIcon className="size-4" />
+              <MorphIcon className="size-4" icon={rightPanelOpen ? PanelRightClose : PanelRight} />
+              {rightPanelUnseen ? (
+                <span
+                  aria-hidden
+                  data-right-panel-unseen-dot
+                  className="pointer-events-none absolute top-1 right-1 size-1.5 rounded-full bg-info"
+                />
+              ) : null}
             </Toggle>
           </TooltipTrigger>
           <TooltipPopup side="bottom">
@@ -145,7 +172,8 @@ export const RightPanelMaximizeControl = memo(function RightPanelMaximizeControl
       <TooltipTrigger
         render={
           <Toggle
-            className="shrink-0 [-webkit-app-region:no-drag]"
+            // Flow: on a phone the panel already fills the screen, so there is nothing to enlarge.
+            className="shrink-0 [-webkit-app-region:no-drag] max-sm:hidden"
             pressed={maximized}
             onPressedChange={onToggle}
             aria-label={label}
@@ -165,6 +193,7 @@ export const RightPanelMaximizeControl = memo(function RightPanelMaximizeControl
 export function ThreadPanelHeaderControl(props: PanelLayoutControlsProps) {
   return (
     <div
+      ref={trackTitlebarControls}
       className="absolute top-[var(--workspace-controls-top)] right-[calc(env(safe-area-inset-right)+0.75rem)] z-50 flex h-[var(--workspace-topbar-height)] items-center [-webkit-app-region:no-drag]"
       data-workspace-titlebar-controls
     >
@@ -182,9 +211,15 @@ export function WorkspaceTitlebarControls(props: {
   readonly onToggleMaximized: () => void;
   readonly children: ReactNode;
 }) {
+  // Flow: these float above every sheet, so they step aside while the phone sidebar is open.
+  const mobileSidebarOpen = useMobileSidebarSheetMounted();
   return (
     <div
-      className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] z-50 mr-px flex h-[var(--workspace-topbar-height)] items-center gap-1 [-webkit-app-region:no-drag]"
+      ref={trackWorkspaceTitlebarControls}
+      className={cn(
+        "pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] z-50 mr-px flex h-[var(--workspace-topbar-height)] items-center gap-1 [-webkit-app-region:no-drag]",
+        mobileSidebarOpen && "hidden",
+      )}
       data-workspace-titlebar-controls
     >
       {props.showMaximizeControl ? (

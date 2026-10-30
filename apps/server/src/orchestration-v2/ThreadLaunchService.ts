@@ -894,7 +894,12 @@ const make = Effect.gen(function* () {
                 },
               )
             : input.workspaceStrategy;
-        const initialBranch = workspaceStrategy.branch ?? null;
+        // Clients leave the branch unset on the project checkout; record the one it starts on.
+        const initialBranch =
+          workspaceStrategy.branch ??
+          (workspaceStrategy.type === "root" && input.reuseExistingThread !== true
+            ? yield* git.currentBranch(project.workspaceRoot).pipe(Effect.orElseSucceed(() => null))
+            : null);
         const initialWorktreePath =
           workspaceStrategy.type === "existing_worktree" ? workspaceStrategy.worktreePath : null;
         const claimDispatch =

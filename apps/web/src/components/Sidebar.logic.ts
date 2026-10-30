@@ -809,6 +809,7 @@ export type SidebarThreadStatus =
   | "waiting"
   | "failed"
   | "limited"
+  | "plan"
   | "ready";
 
 export function shouldRecedeSidebarThread(input: {
@@ -822,7 +823,8 @@ export function shouldRecedeSidebarThread(input: {
     input.isActive ||
     input.isSelected ||
     input.status === "input" ||
-    input.status === "request"
+    input.status === "request" ||
+    input.status === "plan"
   ) {
     return false;
   }
@@ -841,7 +843,8 @@ type SidebarThreadStatusInput = Pick<
   | "pendingGuestMessageCount"
   | "runtime"
   | "blockedOnThreadWait"
->;
+> &
+  Partial<Pick<SidebarThreadSummary, "interactionMode" | "hasActionableProposedPlan">>;
 
 export function resolveSidebarThreadStatus(thread: SidebarThreadStatusInput): SidebarThreadStatus {
   if (thread.hasPendingApprovals || thread.pendingSubagentRequest === "approval") {
@@ -862,6 +865,10 @@ export function resolveSidebarThreadStatus(thread: SidebarThreadStatusInput): Si
     ["preparing", "queued", "starting", "running", "waiting"].includes(thread.runtime.status)
   ) {
     return "working";
+  }
+  // Flow: a finished Plan run whose plan waits for Accept, Revise or Decline.
+  if (thread.interactionMode === "plan" && thread.hasActionableProposedPlan === true) {
+    return "plan";
   }
   if (thread.runtime?.status === "idle") {
     return "waiting";
@@ -884,7 +891,8 @@ export function resolveSidebarFolderDot(
     statuses.has("input") ||
     statuses.has("approval") ||
     statuses.has("request") ||
-    statuses.has("limited")
+    statuses.has("limited") ||
+    statuses.has("plan")
   ) {
     return "attention";
   }
@@ -950,6 +958,7 @@ export function groupSidebarThreadsByProject<
 
 export type SidebarV2TopStatusKind =
   | "approval"
+  | "plan"
   | "done"
   | "failed"
   | "limited"

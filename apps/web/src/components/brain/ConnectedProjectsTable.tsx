@@ -1,0 +1,309 @@
+// Flow: the Brain page's Connected projects, as a searchable table with sortable columns.
+import type { EnvironmentProject } from "@t3tools/client-runtime/state/models";
+import type { BrainCommand, BrainSource, BrainState, BrainWorkspace } from "@t3tools/contracts";
+import * as Schema from "effect/Schema";
+import type { ReactNode } from "react";
+
+import { useLocalStorage } from "../../hooks/useLocalStorage";
+import { useThreadShells } from "../../state/entities";
+import { formatRelativeTimeLabel } from "../../timestampFormat";
+import { ProjectFavicon } from "../ProjectFavicon";
+import { SearchableSelect } from "../SearchableSelect";
+import { DataTable, type DataTableColumn } from "../ui/data-table";
+import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
+import type { DataTableSort } from "../ui/data-table.logic";
+import { BrainSelect } from "./BrainControls";
+import { BrainIcon } from "./BrainIcon";
+
+const SORT_KEY = "flow:brain:connected-projects-sort";
+const DEFAULT_SORT: DataTableSort | null = { columnId: "project", direction: "asc" };
+const SortSchema = Schema.NullOr(
+  Schema.Struct({
+    columnId: Schema.String,
+    direction: Schema.Literals(["asc", "desc"]),
+  }),
+);
+
+interface ProjectRow {
+  readonly project: EnvironmentProject;
+  readonly source: BrainSource | undefined;
+  readonly chats: number;
+  readonly lastActivityAt: string | null;
+}
+
+const SOURCE_STATUS: Record<
+  BrainSource["status"],
+  { label: string; dot: string; meaning: string }
+> = {
+  ready: {
+    label: "Ready",
+    dot: "bg-success",
+    meaning: "Indexed. The Brain knows this project's code as of the last index.",
+  },
+  queued: {
+    label: "Queued",
+    dot: "bg-muted-foreground",
+    meaning: "Waiting for the indexer, which works on one source at a time.",
+  },
+  waiting: {
+    label: "Waiting",
+    dot: "bg-muted-foreground",
+    meaning: "The folder has no Git commit yet. Commit once, then index it.",
+  },
+  cloning: {
+    label: "Cloning",
+    dot: "bg-info",
+    meaning: "Copying the repository so it can be read without touching your folder.",
+  },
+  indexing: {
+    label: "Indexing",
+    dot: "bg-info",
+    meaning: "An agent is reading the code and writing it into the knowledge graph.",
+  },
+  embedding: {
+    label: "Embedding",
+    dot: "bg-info",
+    meaning: "Making the indexed code searchable by meaning.",
+  },
+  error: {
+    label: "Error",
+    dot: "bg-destructive",
+    meaning: "The last index failed. Reindex it from the sources list above.",
+  },
+  cancelled: {
+    label: "Cancelled",
+    dot: "bg-muted-foreground",
+    meaning: "Indexing was stopped before it finished.",
+  },
+};
+const NO_SOURCE_LABEL = "No source";
+const NO_SOURCE_MEANING =
+  "The project's folder is not a source of this Brain, so its code is not indexed. Chats in it can still read the Brain.";
+
+function timestamp(value: string | null | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function samePath(left: string | undefined, right: string): boolean {
+  return left !== undefined && left.replace(/\/+$/u, "") === right.replace(/\/+$/u, "");
+}
+
+/** A hint that opens on hover, and on tap where there is no hover (phones). */
+function Hint(props: {
+  readonly triggerClassName: string;
+  readonly children: ReactNode;
+  readonly hint: ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        openOnHover
+        render={<button type="button" className={props.triggerClassName} />}
+      >
+        {props.children}
+      </PopoverTrigger>
+      <PopoverPopup tooltipStyle side="top">
+        {props.hint}
+      </PopoverPopup>
+    </Popover>
+  );
+}
+
+/** Cuts a long path in the middle, keeping its last folder; the full path shows in a hint. */
+function MiddleTruncatedPath(props: { readonly path: string }) {
+  const cut = props.path.lastIndexOf("/");
+  const head = cut > 0 ? props.path.slice(0, cut) : "";
+  const tail = cut > 0 ? props.path.slice(cut) : props.path;
+  return (
+    <Hint
+      triggerClassName="flex w-full min-w-0 cursor-help text-start font-mono text-2xs text-muted-foreground"
+      hint={<span className="font-mono break-all">{props.path}</span>}
+    >
+      <span className="truncate">{head}</span>
+      <span className="max-w-[75%] shrink-0 truncate">{tail}</span>
+    </Hint>
+  );
+}
+
+export function ConnectedProjectsTable(props: {
+  readonly workspace: BrainWorkspace;
+  readonly state: BrainState | null;
+  readonly projects: ReadonlyArray<EnvironmentProject>;
+  readonly busy: boolean;
+  readonly send: (input: BrainCommand) => unknown;
+}) {
+  const { workspace, state, busy, send } = props;
+  const [sort, setSort] = useLocalStorage(SORT_KEY, DEFAULT_SORT, SortSchema);
+  const threads = useThreadShells();
+  const connected = props.projects.filter((project) => workspace.projectIds?.includes(project.id));
+  const rows: ProjectRow[] = connected.map((project) => {
+    const projectThreads = threads.filter(
+      (thread) =>
+        thread.environmentId === project.environmentId &&
+        thread.projectId === project.id &&
+        thread.archivedAt === null,
+    );
+    const lastActivityAt = projectThreads.reduce<string | null>((latest, thread) => {
+      const activity = thread.latestUserMessageAt ?? thread.updatedAt;
+      return latest === null || activity > latest ? activity : latest;
+    }, null);
+    return {
+      project,
+      source: workspace.sources.find((source) => samePath(source.localPath, project.workspaceRoot)),
+      chats: projectThreads.length,
+      lastActivityAt,
+    };
+  });
+
+  const columns: ReadonlyArray<DataTableColumn<ProjectRow>> = [
+    {
+      id: "project",
+      header: "Project",
+      phone: "title",
+      sortValue: (row) => row.project.title,
+      renderCell: (row) => (
+        <div className="flex max-w-96 min-w-0 items-center gap-2.5">
+          <ProjectFavicon project={row.project} className="size-4 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{row.project.title}</div>
+            <MiddleTruncatedPath path={row.project.workspaceRoot} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "source",
+      header: "Source",
+      sortValue: (row) => (row.source ? SOURCE_STATUS[row.source.status].label : NO_SOURCE_LABEL),
+      renderCell: (row) => {
+        const status = row.source ? SOURCE_STATUS[row.source.status] : null;
+        const detail = row.source?.message.trim();
+        return (
+          <Hint
+            triggerClassName={`inline-flex cursor-help items-center gap-1.5 text-xs ${status === null ? "text-muted-foreground" : row.source?.status === "error" ? "text-destructive" : ""}`}
+            hint={
+              <>
+                {status?.meaning ?? NO_SOURCE_MEANING}
+                {detail && row.source?.status !== "ready" ? ` ${detail}` : ""}
+              </>
+            }
+          >
+            {status ? <span aria-hidden className={`size-1.5 rounded-full ${status.dot}`} /> : null}
+            {status?.label ?? NO_SOURCE_LABEL}
+          </Hint>
+        );
+      },
+    },
+    {
+      id: "indexed",
+      header: "Last indexed",
+      sortValue: (row) => timestamp(row.source?.indexedAt),
+      renderCell: (row) => (
+        <span className="text-xs text-muted-foreground">
+          {row.source?.indexedAt ? formatRelativeTimeLabel(row.source.indexedAt) : "Not yet"}
+        </span>
+      ),
+    },
+    {
+      id: "chats",
+      header: "Chats",
+      align: "end",
+      sortValue: (row) => row.chats,
+      renderCell: (row) => (
+        <span className="text-xs">{row.chats === 1 ? "1 chat" : `${row.chats} chats`}</span>
+      ),
+    },
+    {
+      id: "activity",
+      header: "Last activity",
+      sortValue: (row) => timestamp(row.lastActivityAt),
+      renderCell: (row) => (
+        <span className="text-xs text-muted-foreground">
+          {row.lastActivityAt ? formatRelativeTimeLabel(row.lastActivityAt) : "No activity"}
+        </span>
+      ),
+    },
+    {
+      id: "brain",
+      header: "Brain",
+      phone: "trailing",
+      renderCell: (row) => {
+        const brain = state?.workspaces.find((entry) => entry.projectIds?.includes(row.project.id));
+        return (
+          <BrainSelect
+            label={`Brain for ${row.project.title}`}
+            value={brain?.id ?? "none"}
+            disabled={busy}
+            options={[
+              { value: "none", label: "No brain" },
+              ...(state?.workspaces ?? []).map((entry) => ({
+                value: entry.id,
+                label: entry.name,
+                icon: <BrainIcon id={entry.id} />,
+              })),
+            ]}
+            onChange={(value) =>
+              void send({
+                action: "bindProject",
+                projectId: row.project.id,
+                workspaceId: value === "none" ? null : value,
+              })
+            }
+          />
+        );
+      },
+    },
+  ];
+
+  const connectExisting = (
+    <SearchableSelect
+      label="Connect an existing project"
+      searchLabel="Search projects"
+      emptyLabel="No matching projects."
+      value=""
+      disabled={busy}
+      options={props.projects
+        .filter((project) => !workspace.projectIds?.includes(project.id))
+        .map((project) => ({ value: project.id, label: project.title }))}
+      onChange={(id) => {
+        const project = props.projects.find((entry) => entry.id === id);
+        if (project) {
+          void send({ action: "bindProject", projectId: project.id, workspaceId: workspace.id });
+        }
+      }}
+    />
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium">Connected projects</h2>
+          <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+            Projects that use this brain's knowledge. The brain follows their repositories: any
+            checkout of one, opened here or in a coding tool like Claude Code, Codex or Cursor on
+            this computer, reads this brain and adds its conversations as notes.
+          </p>
+        </div>
+        {connectExisting}
+      </div>
+      <DataTable
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.project.id}
+        searchText={(row) =>
+          `${row.project.title} ${row.project.workspaceRoot} ${row.source?.repository ?? ""}`
+        }
+        searchLabel="Search projects"
+        sort={sort}
+        onSortChange={setSort}
+        countLabel={(count) => (count === 1 ? "1 project" : `${count} projects`)}
+        emptyLabel="Create a project from the sidebar or connect an existing one above. Its repository will be added as a source automatically."
+      />
+    </>
+  );
+}

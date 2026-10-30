@@ -2,7 +2,10 @@ import { TimelinePendingApprovalRow } from "./TimelinePendingApprovalRow";
 import { WorkLogButton, WorkLogList, WorkLogRow } from "./WorkLog";
 import type { WorktreeSetupSnapshot } from "@t3tools/contracts";
 import { type ToolActivityIcon } from "@t3tools/contracts";
-import { liveThoughtLine } from "@t3tools/client-runtime/work-log/presentation";
+import {
+  liveThoughtLine,
+  resolveViewedImageAsset,
+} from "@t3tools/client-runtime/work-log/presentation";
 import { resolveWorkGroupScrollAnchor } from "@t3tools/client-runtime/work-log/scroll-anchor";
 import { observeResize } from "~/lib/observeResize";
 import { tickTextContent } from "~/lib/tickTextContent";
@@ -24,6 +27,7 @@ import {
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import { Spinner } from "../ui/spinner";
 import { WorktreeSetupCard } from "./WorktreeSetupCard";
+import { WorkLogImageStack } from "./WorkLogImageThumbnail";
 import { cn } from "~/lib/utils";
 import { type TimestampFormat } from "@t3tools/contracts/settings";
 import {
@@ -585,8 +589,24 @@ export function WorkGroupToggleTimelineRow({
   row: Extract<TimelineRow, { kind: "work-toggle" }>;
 }) {
   const ctx = use(TimelineRowCtx);
+  const { threadRef } = ctx;
+  const images =
+    threadRef && !row.expanded
+      ? row.imagePaths.flatMap((path) => {
+          const image = resolveViewedImageAsset(path, {
+            threadId: threadRef.threadId,
+            workspaceRoot: ctx.workspaceRoot,
+          });
+          return image === null ? [] : [image];
+        })
+      : [];
   return (
     <WorkGroupHeader
+      imagePreview={
+        threadRef && images.length > 0 ? (
+          <WorkLogImageStack environmentId={threadRef.environmentId} images={images} />
+        ) : null
+      }
       label={row.summary}
       iconName={row.toolSurface ?? toolGroupSummaryIconName(row.summaryKind)}
       toolIcon={row.toolIcon}
@@ -608,6 +628,7 @@ function WorkGroupHeader(props: {
   createdAt: string;
   timestampFormat: TimestampFormat;
   onToggle: () => void;
+  imagePreview?: ReactNode;
 }) {
   return (
     <WorkLogButton
@@ -624,7 +645,12 @@ function WorkGroupHeader(props: {
       }
       label={<span className="block truncate">{props.label}</span>}
       trailing={
-        <TimelineRowTimestamp createdAt={props.createdAt} timestampFormat={props.timestampFormat} />
+        props.imagePreview ?? (
+          <TimelineRowTimestamp
+            createdAt={props.createdAt}
+            timestampFormat={props.timestampFormat}
+          />
+        )
       }
     />
   );

@@ -339,7 +339,7 @@ function SnoozePresetFields(props: {
   // misclick on "When" can be undone without retyping it.
   const [memory, setMemory] = useState<KindMemory>({ minutes: 60, time: "09:00" });
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto sm:gap-2">
       <Select
         value={when}
         items={WHEN_LABELS}
@@ -356,7 +356,11 @@ function SnoozePresetFields(props: {
           onChange(next);
         }}
       >
-        <SelectTrigger size="sm" className="w-32" aria-label="When">
+        <SelectTrigger
+          size="sm"
+          className="min-w-0 flex-1 basis-0 sm:flex-none sm:w-32"
+          aria-label="When"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectPopup>
@@ -379,7 +383,7 @@ function SnoozePresetFields(props: {
             nativeInput
             size="sm"
             type="time"
-            className="w-32"
+            className="min-w-0 flex-[1.3] basis-0 sm:flex-none sm:w-32"
             aria-label="Time"
             value={preset.time}
             onChange={(event) => {
@@ -413,7 +417,7 @@ function DurationFields(props: { minutes: number; onChange: (minutes: number) =>
     <>
       <NumberField
         size="sm"
-        className="w-32"
+        className="min-w-0 flex-[1.6] basis-0 sm:flex-none sm:w-32"
         min={1}
         max={maxAmount}
         step={1}
@@ -454,7 +458,7 @@ function DurationFields(props: { minutes: number; onChange: (minutes: number) =>
           }
         }}
       >
-        <SelectTrigger size="sm" className="w-28" aria-label="Unit">
+        <SelectTrigger size="sm" className="w-20 min-w-0 shrink-0 sm:w-28" aria-label="Unit">
           <SelectValue />
         </SelectTrigger>
         <SelectPopup>

@@ -25,6 +25,9 @@ import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavail
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
 import { ChatBrainPanel } from "../brain/ChatBrainPanel";
 import type { ChatBrain } from "../brain/useChatBrain";
+import type { PlanVersion } from "@t3tools/client-runtime/state/plan-versions";
+import { PlanPanel } from "./PlanPanel";
+import { ThreadRelationshipsPanel } from "./ThreadRelationshipsControl";
 
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
@@ -54,6 +57,13 @@ interface RightPanelPullRequestProps {
 interface RightPanelBrainProps {
   readonly threadId: ThreadId | null;
   readonly chatBrain: ChatBrain;
+  readonly readOnly: boolean;
+}
+
+/** Flow: the chat's latest proposed plan, shown in the Plan tab. */
+interface RightPanelPlanProps {
+  readonly plan: PlanVersion | null;
+  readonly cwd: string | undefined;
 }
 
 interface RightPanelFileProps {
@@ -85,6 +95,7 @@ export function RightPanelSurfaceContent(props: {
   readonly pullRequest: RightPanelPullRequestProps;
   readonly files: RightPanelFileProps;
   readonly brain: RightPanelBrainProps;
+  readonly plan: RightPanelPlanProps;
 }) {
   const { surface, threadRef, visible } = props;
   if (surface === null) return null;
@@ -183,6 +194,29 @@ export function RightPanelSurfaceContent(props: {
           environmentId={props.environmentId}
           threadId={props.brain.threadId}
           chatBrain={props.brain.chatBrain}
+          readOnly={props.brain.readOnly}
+        />
+      );
+    // Flow: the Agents tab.
+    case "agents":
+      return (
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2">
+          <ThreadRelationshipsPanel
+            environmentId={props.environmentId}
+            threadId={threadRef.threadId}
+            layout="panel"
+          />
+        </div>
+      );
+    // Flow: the Plan tab.
+    case "plan":
+      return (
+        <PlanPanel
+          environmentId={props.environmentId}
+          threadRef={threadRef}
+          plan={props.plan.plan}
+          cwd={props.plan.cwd}
+          workspaceRoot={props.files.workspaceRoot}
         />
       );
     case "device":

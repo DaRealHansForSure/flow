@@ -1,5 +1,6 @@
 import type { BrainUiKnowledge } from "@flow/brain-ui";
-import { Maximize2Icon } from "lucide-react";
+import { Maximize2Icon, ScanIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "../ui/button";
 import { Dialog, DialogDescription, DialogHeader, DialogPopup, DialogTitle } from "../ui/dialog";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
@@ -7,19 +8,46 @@ import { BrainGraph } from "./BrainGraph";
 
 const noHighlightedNodeIds: readonly string[] = [];
 
-/** Icon button that opens the knowledge graph in the large dialog. */
-export function BrainGraphExpandButton({ onClick }: { onClick: () => void }) {
+function BrainGraphIconButton(props: {
+  readonly label: string;
+  readonly onClick: () => void;
+  readonly children: ReactNode;
+}) {
   return (
     <Tooltip>
       <TooltipTrigger
         render={
-          <Button variant="ghost-muted" size="icon-xs" aria-label="Open larger" onClick={onClick} />
+          <Button
+            variant="ghost-muted"
+            size="icon-xs"
+            aria-label={props.label}
+            onClick={props.onClick}
+          />
         }
       >
-        <Maximize2Icon />
+        {props.children}
       </TooltipTrigger>
-      <TooltipPopup>Open larger</TooltipPopup>
+      <TooltipPopup>{props.label}</TooltipPopup>
     </Tooltip>
+  );
+}
+
+/**
+ * The graph's corner: Fit centres and fits the graph again, and Open larger, when given, opens
+ * the large dialog. Pass it as the graph's `corner` function so it receives `fit`.
+ */
+export function brainGraphCorner(onEnlarge?: () => void) {
+  return (fit: () => void) => (
+    <>
+      <BrainGraphIconButton label="Fit to view" onClick={fit}>
+        <ScanIcon />
+      </BrainGraphIconButton>
+      {onEnlarge ? (
+        <BrainGraphIconButton label="Open larger" onClick={onEnlarge}>
+          <Maximize2Icon />
+        </BrainGraphIconButton>
+      ) : null}
+    </>
   );
 }
 
@@ -54,7 +82,12 @@ export function BrainGraphDialog({
         </DialogHeader>
         {knowledge && (
           <div className="mx-6 mb-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/50">
-            <BrainGraph knowledge={knowledge} highlightedNodeIds={highlightedNodeIds} fill />
+            <BrainGraph
+              knowledge={knowledge}
+              highlightedNodeIds={highlightedNodeIds}
+              fill
+              corner={brainGraphCorner()}
+            />
           </div>
         )}
       </DialogPopup>

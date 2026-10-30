@@ -1119,6 +1119,7 @@ function ScheduledTaskEditorForm({
   const projects = allProjects.filter(
     (project) =>
       project.environmentId === environmentId &&
+      (!project.isScratch || project.id === task?.projectId) &&
       matchesScheduledTaskScope(scope, environmentId, project.id),
   );
   const settings = useEnvironmentSettings(environmentId);

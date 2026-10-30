@@ -202,6 +202,11 @@ export interface DismissThreadUserInputInput extends ThreadCommandInput {
   readonly requestId: RuntimeRequestId;
 }
 
+/** Names a proposed plan of the thread; declining and reopening take the same input. */
+export interface DeclineThreadProposedPlanInput extends ThreadCommandInput {
+  readonly planId: PlanId;
+}
+
 export interface RevertThreadCheckpointInput extends ThreadCommandInput {
   readonly restoreFiles?: boolean;
   readonly checkpointId?: string;
@@ -883,6 +888,28 @@ export const respondToThreadUserInput = Effect.fn("EnvironmentCommands.respondTo
       ...(input.attachmentsByQuestionId === undefined
         ? {}
         : { attachmentsByQuestionId: input.attachmentsByQuestionId }),
+    });
+  },
+);
+
+export const declineThreadProposedPlan = Effect.fn("EnvironmentCommands.declineThreadProposedPlan")(
+  function* (input: DeclineThreadProposedPlanInput) {
+    return yield* dispatch({
+      type: "thread.proposed-plan.decline",
+      commandId: yield* allocateCommandId(input),
+      threadId: input.threadId,
+      planId: input.planId,
+    });
+  },
+);
+
+export const reopenThreadProposedPlan = Effect.fn("EnvironmentCommands.reopenThreadProposedPlan")(
+  function* (input: DeclineThreadProposedPlanInput) {
+    return yield* dispatch({
+      type: "thread.proposed-plan.reopen",
+      commandId: yield* allocateCommandId(input),
+      threadId: input.threadId,
+      planId: input.planId,
     });
   },
 );
