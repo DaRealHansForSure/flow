@@ -27,6 +27,12 @@ export const RUNTIME_MODE_CHOICES: ReadonlyArray<{
   },
 ];
 
+/** Flow: Plan sits on top of the runtime mode, which applies again once the plan is accepted. */
+export const PLAN_PERMISSION_CHOICE = {
+  label: "Plan",
+  description: "Read and plan only; commands ask first. Nothing changes before you accept.",
+} as const;
+
 export function runtimeModeChoicesForSupportedModes(
   supportedRuntimeModes: ReadonlyArray<RuntimeMode> | undefined,
 ) {

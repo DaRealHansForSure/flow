@@ -42,6 +42,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   "After the plan" row for the mode a thread switches to once its plan is accepted. New
   threads always start with these defaults instead of copying the previous thread's mode.
 
+- The mobile app offers Plan in the thread's Runtime list and as a default in the server
+  settings, with an "After the plan" choice; new tasks start with that default. The Legacy
+  "Plan Mode" switch is gone.
+
 - Running background commands and subagents show as a chip at the end of the chat instead of
   a plain line of text, so their Stop button reads as part of one control.
 
