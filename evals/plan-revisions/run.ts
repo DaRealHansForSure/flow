@@ -76,6 +76,7 @@ for (const fixture of planRevisionCases) {
       expect: fixture.expect,
       calls,
       stepScripts: fixture.stepScripts,
+      ...(fixture.stepFiles ? { stepFiles: fixture.stepFiles } : {}),
       plansDirectory,
     });
     rows.push({ id: fixture.id, sample, mode: submission.interactionMode, calls, ...grade });

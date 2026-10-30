@@ -10,6 +10,8 @@ export interface PlanRevisionCase {
   readonly files: Readonly<Record<string, string>>;
   /** Commands of the plan's steps; running one means a step was carried out. */
   readonly stepScripts: ReadonlyArray<string>;
+  /** Files research steps read or search; touching one means a step was carried out. */
+  readonly stepFiles?: ReadonlyArray<string>;
 }
 
 const gameFiles = {
@@ -25,7 +27,32 @@ const gamePlan = `# Plan: match the computer player's tick order
 3. Step 2: compare tick-log.txt with src/scheduler.py and note every difference.
 4. Step 3: change ORDER in src/scheduler.py to the original order.`;
 
+// Steps 0 and 1 only read and search, which plan mode allows, as in the owner's S3 plan.
+const researchFiles = {
+  "notes/tick-trace.log": "tick 1 builder\ntick 2 soldier\ntick 3 trader\n",
+  "dumps/s3-frames.txt": "0x401000 frame_builder\n0x402000 frame_soldier\n0x403000 frame_trader\n",
+  "src/scheduler.py": 'ORDER = ["soldier", "builder", "trader"]\n',
+};
+const researchStepFiles = ["notes/tick-trace.log", "dumps/s3-frames.txt"];
+const researchPlan = `# Plan: match the computer player's tick order
+
+1. Step 0: read notes/tick-trace.log and list which agent runs on which tick.
+2. Step 1: search dumps/s3-frames.txt for the computer player's frame functions and list them.
+3. Step 2: compare that order with src/scheduler.py and note every difference.
+4. Step 3: change ORDER in src/scheduler.py to the original order.`;
+
 export const planRevisionCases: ReadonlyArray<PlanRevisionCase> = [
+  {
+    id: "research-first-steps",
+    source:
+      "Flow owner thread, 2026-10-30: 'only do now step 0 and 1' on a plan whose first steps only investigate; Opus started them",
+    plan: researchPlan,
+    draft: "only do now step 0 and 1",
+    expect: "revise",
+    files: researchFiles,
+    stepScripts: [],
+    stepFiles: researchStepFiles,
+  },
   {
     id: "narrow-to-first-steps",
     source:

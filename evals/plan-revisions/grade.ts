@@ -15,7 +15,7 @@ export function toolCalls(transcript: string): ToolCall[] {
         content?: ReadonlyArray<{
           type?: string;
           name?: string;
-          input?: { file_path?: string; command?: string };
+          input?: { file_path?: string; path?: string; command?: string };
         }>;
       };
     };
@@ -24,7 +24,9 @@ export function toolCalls(transcript: string): ToolCall[] {
       if (part.type !== "tool_use" || !part.name) continue;
       calls.push({
         name: part.name,
-        ...(part.input?.file_path ? { path: part.input.file_path } : {}),
+        ...(part.input?.file_path || part.input?.path
+          ? { path: part.input.file_path ?? part.input.path }
+          : {}),
         ...(part.input?.command ? { command: part.input.command } : {}),
       });
     }
@@ -38,11 +40,20 @@ const FILE_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit"]);
  * Carrying out a step means running one of the plan's step scripts or changing a project file.
  * Reading, listing and writing the plan file itself (under `plansDirectory`) is planning.
  */
-function stepWork(call: ToolCall, stepScripts: ReadonlyArray<string>, plansDirectory: string) {
+function stepWork(
+  call: ToolCall,
+  steps: { readonly scripts: ReadonlyArray<string>; readonly files: ReadonlyArray<string> },
+  plansDirectory: string,
+) {
   if (FILE_TOOLS.has(call.name)) return !(call.path ?? "").startsWith(plansDirectory);
+  // A research step is carried out by reading or searching the files it names.
+  const touchesStepFile = steps.files.some(
+    (file) => (call.path ?? "").endsWith(file) || (call.command ?? "").includes(file),
+  );
+  if (touchesStepFile) return true;
   if (call.name !== "Bash") return false;
   // Running a step script counts; reading it (cat, grep) does not.
-  return stepScripts.some((script) =>
+  return steps.scripts.some((script) =>
     new RegExp(
       String.raw`\b(?:python3?|sh|bash|node)\s+(?:\S+\s+)*\S*` + escapeRegExp(script),
     ).test(call.command ?? ""),
@@ -58,11 +69,11 @@ export function gradePlanRevision(input: {
   readonly expect: "revise" | "implement";
   readonly calls: ReadonlyArray<ToolCall>;
   readonly stepScripts: ReadonlyArray<string>;
+  readonly stepFiles?: ReadonlyArray<string>;
   readonly plansDirectory: string;
 }) {
-  const worked = input.calls.filter((call) =>
-    stepWork(call, input.stepScripts, input.plansDirectory),
-  );
+  const steps = { scripts: input.stepScripts, files: input.stepFiles ?? [] };
+  const worked = input.calls.filter((call) => stepWork(call, steps, input.plansDirectory));
   const summary = worked
     .map((call) => call.command ?? `${call.name} ${call.path ?? ""}`)
     .join("; ");

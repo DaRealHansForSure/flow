@@ -17,12 +17,16 @@ pnpm plan-revisions --out runs/plan-revisions --case narrow-to-first-steps --sam
 
 ## Grading
 
-Carrying out a step means running one of the case's step scripts or writing a project file. Looking around and writing the plan file is planning. A revision passes when no step was carried out; an accepted plan passes when one was. A case fails when half or more of its samples fail. `run.test.ts` tests the grader.
+Carrying out a step means running one of the case's step scripts, writing a project file, or, for a research step, reading or searching the file it names. Looking around and writing the plan file is planning. A revision passes when no step was carried out; an accepted plan passes when one was. A case fails when half or more of its samples fail. `run.test.ts` tests the grader.
 
 ## Cost
 
-Each sample is one short Haiku session; a full run is 12 sessions.
+Each sample is one short Haiku session; a full run is 15 sessions.
 
 ## Add a case
 
-Add an entry to `cases.ts` with an `id`, a `source`, the `plan`, the user's `draft`, the project `files`, the `stepScripts` its steps run, and whether the agent should `revise` or `implement`.
+Add an entry to `cases.ts` with an `id`, a `source`, the `plan`, the user's `draft`, the project `files`, the `stepScripts` its steps run, the `stepFiles` its research steps read, and whether the agent should `revise` or `implement`.
+
+## Results
+
+2026-10-30, Opus 5.5, three samples per case: with feedback sent bare, `research-first-steps` failed 3 of 3 (the agent read the log and the dump, so it carried out steps 0 and 1); with the revision frame it passed 2 of 3. The other cases passed with both texts on Haiku and Opus. A control whose feedback could only be answered by reading the research files was dropped: reading them is fair there, and the grader cannot tell.

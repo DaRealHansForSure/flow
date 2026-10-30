@@ -44,6 +44,20 @@ describe("plan revision grader", () => {
     ).toBe(true);
   });
 
+  it("counts reading a research step's file as carrying out that step", () => {
+    const research = (calls: Parameters<typeof gradePlanRevision>[0]["calls"]) =>
+      gradePlanRevision({
+        expect: "revise",
+        calls,
+        stepScripts: [],
+        stepFiles: ["dumps/s3-frames.txt"],
+        plansDirectory,
+      }).pass;
+    expect(research([{ name: "Grep", path: "/run/case/project/dumps/s3-frames.txt" }])).toBe(false);
+    expect(research([{ name: "Bash", command: "cat dumps/s3-frames.txt" }])).toBe(false);
+    expect(research([{ name: "Bash", command: "ls dumps" }])).toBe(true);
+  });
+
   it("fails an accepted plan that never starts the work", () => {
     expect(grade("implement", [{ name: "Read", path: "/run/case/README.md" }])).toBe(false);
     expect(grade("implement", [{ name: "Write", path: "/run/case/hello.txt" }])).toBe(true);
