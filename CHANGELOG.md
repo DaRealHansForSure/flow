@@ -8,25 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-30
+
 ### Added
 
 - Every release page ends with a table of its files: what each one is and how to use it,
   with the install commands pinned to that version.
-
-### Fixed
-
-- The Windows service release builds with the vite-plus version the workspace pins instead of
-  an old 0.3.0, whose pnpm misread the lockfile and installed every platform's packages.
-
-### Changed
-
-- Releases no longer carry `install-cloud.sh`, a copy of `install-cli.sh` for upstream's Cloud
-  dashboard, and each desktop download gets its own `.sha256` file instead of one `SHA256SUMS`,
-  the way the service archive already has one.
-
-## [0.2.0] - 2026-10-30
-
-### Added
 
 - The install guide starts with backing up a Flow already in use (`backup-brain.sh`, also
   runnable straight from the release branch), and the README links to it.
@@ -93,6 +80,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the service is never downgraded.
 
 ### Changed
+
+- Releases no longer carry `install-cloud.sh`, a copy of `install-cli.sh` for upstream's Cloud
+  dashboard, and each desktop download gets its own `.sha256` file instead of one `SHA256SUMS`,
+  the way the service archive already has one.
 
 - One release page per version: `flow-vX.Y.Z` holds the service and the desktop app, with the
   version's CHANGELOG.md section as its text. The separate `flow-desktop-v*` page, the
@@ -166,6 +157,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   agent on an inexpensive model.
 
 ### Fixed
+
+- The Windows service release builds with the vite-plus version the workspace pins instead of
+  an old 0.3.0, whose pnpm misread the lockfile and installed every platform's packages.
 
 - The Windows service release installs only Windows packages again: pnpm 12 no longer expands
   the `FLOW_INSTALL_*` variables in `pnpm-workspace.yaml`, so the release build pins its copy
