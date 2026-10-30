@@ -15,6 +15,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Cite shows for text selected by long press on a phone. The selection helper treated the
+  touch's pointercancel as a dismissal, so touchscreens never saw it.
+
 - The Brain button's dot for notes being written is blue. It used the theme colour, which is
   amber in some themes and looked like a warning.
 
