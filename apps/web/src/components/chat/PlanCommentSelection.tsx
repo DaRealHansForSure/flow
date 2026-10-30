@@ -2,13 +2,11 @@ import { MessageSquarePlusIcon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import {
-  observeSelectionActions,
-  resolveSelectionActionPosition,
-  type SelectionActionPoint,
-} from "~/lib/selectionActions";
+import { resolveSelectionActionPosition, type SelectionActionPoint } from "~/lib/selectionActions";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
+
+const SELECTION_SETTLE_MS = 250;
 
 /**
  * Flow: a Comment button for text selected in a plan, which opens a note field. The note and
@@ -27,7 +25,6 @@ export function PlanCommentSelection(props: {
   } | null>(null);
   const [note, setNote] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
-  const actionsRef = useRef<ReturnType<typeof observeSelectionActions> | null>(null);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- measures the popover DOM node and keeps it inside the window before paint
   useLayoutEffect(() => {
@@ -45,46 +42,72 @@ export function PlanCommentSelection(props: {
     if (!container) {
       return;
     }
-    const clear = () => {
-      setSelection(null);
-      setNote("");
-    };
-    const update = (pointer: SelectionActionPoint | null) => {
-      const nativeSelection = window.getSelection();
-      if (!nativeSelection || nativeSelection.rangeCount === 0 || nativeSelection.isCollapsed) {
-        clear();
+    // Touch selection (long press, handles) ends in pointercancel and no mouseup, so the
+    // popover follows selectionchange; a mouse drag only counts once the button is released.
+    let mouseButtonDown = false;
+    let timer: number | undefined;
+    const update = () => {
+      if (popoverRef.current?.contains(document.activeElement)) {
         return;
       }
-      const range = nativeSelection.getRangeAt(0);
-      const passage = nativeSelection.toString().trim();
-      if (passage.length === 0 || !container.contains(range.commonAncestorContainer)) {
-        clear();
+      const nativeSelection = window.getSelection();
+      const range =
+        nativeSelection && nativeSelection.rangeCount > 0 && !nativeSelection.isCollapsed
+          ? nativeSelection.getRangeAt(0)
+          : null;
+      const passage = nativeSelection?.toString().trim() ?? "";
+      if (
+        range === null ||
+        passage.length === 0 ||
+        !container.contains(range.commonAncestorContainer)
+      ) {
+        setSelection(null);
+        setNote("");
         return;
       }
       const rects = range.getClientRects();
+      const position = resolveSelectionActionPosition({
+        bounds: container.getBoundingClientRect(),
+        selectionRect: rects.item(rects.length - 1) ?? range.getBoundingClientRect(),
+        pointer: null,
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+      });
+      // Below the selection handles a touchscreen draws under the selected text.
+      const handleOffset = window.matchMedia("(pointer: coarse)").matches ? 28 : 0;
       setSelection({
         editing: false,
         passage,
-        position: resolveSelectionActionPosition({
-          bounds: container.getBoundingClientRect(),
-          selectionRect: rects.item(rects.length - 1) ?? range.getBoundingClientRect(),
-          pointer,
-          viewport: { width: window.innerWidth, height: window.innerHeight },
-        }),
+        position: { ...position, y: position.y + handleOffset },
       });
     };
-    const actions = observeSelectionActions({
-      element: container,
-      getActionElement: () => popoverRef.current,
-      onSelection: update,
-      onDismiss: clear,
-    });
-    actionsRef.current = actions;
-    document.addEventListener("selectionchange", actions.selectionChanged);
+    const schedule = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(update, SELECTION_SETTLE_MS);
+    };
+    const onSelectionChange = () => {
+      if (!mouseButtonDown) {
+        schedule();
+      }
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && event.button === 0) {
+        mouseButtonDown = true;
+      }
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && mouseButtonDown) {
+        mouseButtonDown = false;
+        schedule();
+      }
+    };
+    document.addEventListener("selectionchange", onSelectionChange);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("pointerup", onPointerUp, true);
     return () => {
-      document.removeEventListener("selectionchange", actions.selectionChanged);
-      actions.dispose();
-      actionsRef.current = null;
+      window.clearTimeout(timer);
+      document.removeEventListener("selectionchange", onSelectionChange);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("pointerup", onPointerUp, true);
     };
   }, [container]);
 
@@ -92,7 +115,6 @@ export function PlanCommentSelection(props: {
     return null;
   }
   const close = () => {
-    actionsRef.current?.cancel();
     setSelection(null);
     setNote("");
   };
