@@ -84,6 +84,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Popping a browser out of the side panel again floats this chat's later browsers over the chat,
+  instead of keeping them in the panel; closing the floating browser leaves a dot on the panel
+  button, where the browser waits.
 - On a phone the composer is a full-width, square bar on the bottom edge of the window, over an
   opaque base, so chat text no longer scrolls into view below or beside it. A
   tinted surface, a firm top edge and a soft shadow set it apart from the chat history.
