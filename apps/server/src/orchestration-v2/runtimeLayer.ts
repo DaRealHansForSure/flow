@@ -8,6 +8,7 @@ import * as OrchestrationEventStore from "../persistence/OrchestrationEventStore
 import * as McpAppModelContext from "../mcpApps/McpAppModelContext.ts";
 import * as PreviewAgentActivity from "../preview/PreviewAgentActivity.ts";
 import * as McpAppRequests from "../mcpApps/McpAppRequests.ts";
+import * as ProviderMcpServers from "../provider/ProviderMcpServers.ts";
 import * as ProviderSessionRuntime from "../persistence/ProviderSessionRuntime.ts";
 import * as TextGeneration from "../textGeneration/TextGeneration.ts";
 import * as ProviderAuthService from "../provider/ProviderAuthService.ts";
@@ -354,10 +355,15 @@ const layerMcpAppRequestsProvided = McpAppRequests.layer.pipe(
   ),
 );
 
+const layerProviderMcpServersProvided = ProviderMcpServers.layer.pipe(
+  Layer.provide(Layer.mergeAll(layerThreadManagementProvided, layerProviderSessionManagerProvided)),
+);
+
 export const layer = Layer.mergeAll(
   layerCommandOutputHubProvided,
   layerOrchestratorProvided,
   layerMcpAppRequestsProvided,
+  layerProviderMcpServersProvided,
   layerThreadManagementProvided,
   layerEffectWorkerProvided,
   layerProviderSessionManagerProvided,

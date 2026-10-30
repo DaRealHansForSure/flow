@@ -169,6 +169,13 @@ export interface ProviderSessionManagerV2Shape {
   readonly closeInstance: (
     instanceId: ProviderInstanceId,
   ) => Effect.Effect<void, ProviderSessionManagerV2Error>;
+  /** Read-only: never opens or resumes a session. */
+  readonly liveSessionsForInstance: (instanceId: ProviderInstanceId) => Effect.Effect<
+    ReadonlyArray<{
+      readonly runtime: ProviderAdapter.ProviderAdapterV2SessionRuntime;
+      readonly threadIds: ReadonlyArray<ThreadId>;
+    }>
+  >;
   readonly release: (input: {
     readonly providerSessionId: ProviderSessionId;
     readonly reason: ProviderSessionReleaseReason;
@@ -2236,6 +2243,17 @@ export const layerWithOptions = (
                   providerSessionId,
                   cause,
                 }),
+            ),
+          ),
+        liveSessionsForInstance: (instanceId) =>
+          Ref.get(sessions).pipe(
+            Effect.map((entries) =>
+              [...entries.values()]
+                .filter((entry) => entry.runtime.instanceId === instanceId)
+                .map((entry) => ({
+                  runtime: entry.exposedRuntime,
+                  threadIds: [...entry.attachedThreadIds],
+                })),
             ),
           ),
         closeInstance: Effect.fn("ProviderSessionManager.closeInstance")(
