@@ -91,11 +91,6 @@ export function ChatBrainPanel({
         aria-label="Flow brain and conversation notes"
         className="h-full min-h-0 overflow-y-auto p-4"
       >
-        {/* Flow: the right panel tabs share their insets, so titles and rows line up across tabs. */}
-        <div className="mb-1 flex min-h-8 items-center gap-2 px-2.5">
-          <BrainCircuitIcon className="size-4 text-primary" />
-          <h2 className="text-sm font-semibold">Flow</h2>
-        </div>
         {error && (
           <p role="alert" className="mb-3 text-xs text-destructive">
             Could not refresh context. {response ? "Showing last loaded data." : "Reconnecting…"}

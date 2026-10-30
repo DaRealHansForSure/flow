@@ -96,8 +96,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   beside it, and Markdown files always open rendered; switching to the source applies to that file
   only. The tree and the source view are still one click away.
 - The Brain panel is tidier: the Default / On / Off switches drop the "Follows Settings" line under
-  them (it moved into their tooltip), and the conversation notes' enlarge button sits in the top
-  right of the notes instead of the section header.
+  them (it moved into their tooltip), the conversation notes' enlarge button sits in the top right
+  of the notes instead of the section header, and the "Flow" title above the Brain is gone.
 - Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a "Plan"
   chip, with Shift+Tab and `/plan` still switching to it. It replaces the separate Build/Plan
   toggle and the Legacy settings switch, and is available for every provider that plans.
