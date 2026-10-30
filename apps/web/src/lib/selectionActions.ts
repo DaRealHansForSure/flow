@@ -203,6 +203,23 @@ export function observeSelectionActions({
     onDismiss("cancel");
   };
 
+  // Flow: a phone keyboard opening or closing changes only the height. A long press in the chat
+  // while the composer has focus closes the keyboard right after selecting, so that resize
+  // settles and places the actions again instead of dismissing them; a real resize still does.
+  let viewWidth = view.innerWidth;
+  const onResize = () => {
+    const widthChanged = view.innerWidth !== viewWidth;
+    viewWidth = view.innerWidth;
+    if (widthChanged) {
+      dismiss();
+      return;
+    }
+    cancelPending();
+    if (!pointerDown && !dismissed && restorable) {
+      schedule(SELECTION_SCROLL_SETTLE_MS);
+    }
+  };
+
   document.addEventListener("pointerdown", onPointerDown, true);
   element.addEventListener("pointerdown", onSelectionStart);
   view.addEventListener("pointerup", onPointerUp);
@@ -213,7 +230,7 @@ export function observeSelectionActions({
   element.addEventListener("contextmenu", onContextMenu, true);
   element.addEventListener("scroll", onScroll, true);
   view.addEventListener("blur", dismiss);
-  view.addEventListener("resize", dismiss);
+  view.addEventListener("resize", onResize);
 
   return {
     get pending() {
@@ -240,7 +257,7 @@ export function observeSelectionActions({
       element.removeEventListener("contextmenu", onContextMenu, true);
       element.removeEventListener("scroll", onScroll, true);
       view.removeEventListener("blur", dismiss);
-      view.removeEventListener("resize", dismiss);
+      view.removeEventListener("resize", onResize);
     },
   };
 }
