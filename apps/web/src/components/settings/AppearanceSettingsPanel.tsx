@@ -333,6 +333,33 @@ export function AppearanceSettingsPanel() {
             />
           }
         />
+        <SettingsRow
+          {...searchableSetting("work-detail-syntax-highlighting")}
+          description="Colour commands and tool input in expanded tool calls. Off shows them as plain text."
+          resetAction={
+            settings.workDetailSyntaxHighlighting !==
+            DEFAULT_UNIFIED_SETTINGS.workDetailSyntaxHighlighting ? (
+              <SettingResetButton
+                label="code highlighting in tool calls"
+                onClick={() =>
+                  updateSettings({
+                    workDetailSyntaxHighlighting:
+                      DEFAULT_UNIFIED_SETTINGS.workDetailSyntaxHighlighting,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <Switch
+              checked={settings.workDetailSyntaxHighlighting}
+              onCheckedChange={(checked) =>
+                updateSettings({ workDetailSyntaxHighlighting: Boolean(checked) })
+              }
+              aria-label="Highlight code in tool calls"
+            />
+          }
+        />
         <AdvancedSettings
           targetIds={[
             searchableSetting("panel-animations").id,
