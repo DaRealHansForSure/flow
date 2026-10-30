@@ -215,19 +215,6 @@ export function ChatBrainPanel({
             </section>
           </>
         )}
-        {brain && (
-          <BrainDocumentLibrary
-            key={brain.id}
-            compact
-            environmentId={environmentId}
-            workspaceId={brain.id}
-            documents={(notes?.documents ?? []).filter((doc) => doc.kind !== "memory")}
-            chatSwitches={{
-              doc: curationSwitch("autoDocs", "Auto-Docs"),
-              skill: curationSwitch("autoSkills", "Auto-Skills"),
-            }}
-          />
-        )}
         <section aria-label="Conversation notes" className="mt-3 border-t border-border/60 pt-3">
           <BrainSectionHeader
             icon={BookOpenIcon}
@@ -296,6 +283,20 @@ export function ChatBrainPanel({
             </>
           )}
         </section>
+        {/* Auto-Docs and Auto-Skills come from the notes agent, so they follow its section. */}
+        {brain && (
+          <BrainDocumentLibrary
+            key={brain.id}
+            compact
+            environmentId={environmentId}
+            workspaceId={brain.id}
+            documents={(notes?.documents ?? []).filter((doc) => doc.kind !== "memory")}
+            chatSwitches={{
+              doc: curationSwitch("autoDocs", "Auto-Docs"),
+              skill: curationSwitch("autoSkills", "Auto-Skills"),
+            }}
+          />
+        )}
       </section>
       {brain && (
         <BrainDocumentDialog
