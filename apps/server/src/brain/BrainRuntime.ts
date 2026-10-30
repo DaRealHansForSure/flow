@@ -32,6 +32,7 @@ import {
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
 import { FalkorDB } from "falkordblite";
+import { survivesFalkorClientErrors } from "./falkorClientErrors.ts";
 import * as NodeFSP from "node:fs/promises";
 import * as NodeCrypto from "node:crypto";
 import * as NodeOS from "node:os";
@@ -488,6 +489,7 @@ export class BrainRuntime {
           logLevel: "warning",
           additionalConfig: { appendonly: "yes", appendfsync: "always" },
         });
+        survivesFalkorClientErrors(this.db);
         await this.db.selectGraph("flow_runtime").query("RETURN 1 AS ready");
         this.database = {
           status: "ready",
