@@ -526,6 +526,7 @@ function commandThreadId(command: OrchestrationV2ServerCommand): ThreadId {
     case "runtime-request.respond":
     case "runtime-request.delivery.fail":
     case "thread.user-input.dismiss":
+    case "thread.proposed-plan.decline":
     case "checkpoint.rollback":
     case "checkpoint.rollback.fail":
     case "thread.background-work.settle":
@@ -8931,6 +8932,43 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
     },
   );
 
+  // Flow: a declined plan can no longer be implemented; the chat stays in Plan for a new one.
+  const dispatchProposedPlanDecline = Effect.fn("Orchestrator.dispatchProposedPlanDecline")(
+    function* (
+      command: Extract<OrchestrationV2Command, { readonly type: "thread.proposed-plan.decline" }>,
+      events: Ref.Ref<Array<OrchestrationV2DomainEvent>>,
+    ) {
+      const plan = yield* projectionStore
+        .getPlan(command.threadId, command.planId)
+        .pipe(mapDispatchError(command));
+      if (plan?.kind !== "proposed_plan") {
+        return yield* new OrchestratorDispatchError({
+          commandId: command.commandId,
+          commandType: command.type,
+          cause: `Proposed plan ${command.planId} does not exist on thread ${command.threadId}.`,
+        });
+      }
+      if (plan.status !== "active") {
+        return yield* new OrchestratorDispatchError({
+          commandId: command.commandId,
+          commandType: command.type,
+          cause: `Proposed plan ${plan.id} is not active.`,
+        });
+      }
+      yield* emit(
+        events,
+        command,
+      )({
+        type: "plan.updated",
+        threadId: plan.threadId,
+        ...(plan.runId === null ? {} : { runId: plan.runId }),
+        nodeId: plan.nodeId,
+        occurredAt: yield* DateTime.now,
+        payload: { ...plan, status: "declined" },
+      });
+    },
+  );
+
   const dispatchQueuedMessagePromoteToSteer = Effect.fn(
     "Orchestrator.dispatchQueuedMessagePromoteToSteer",
   )(function* (
@@ -12609,6 +12647,9 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         break;
       case "thread.user-input.dismiss":
         yield* dispatchThreadUserInputDismiss(command, events, effects);
+        break;
+      case "thread.proposed-plan.decline":
+        yield* dispatchProposedPlanDecline(command, events);
         break;
       case "subagent.stop":
         yield* dispatchSubagentStop(command, events, effects);
