@@ -74,7 +74,7 @@ export function BrainPage({
           docs={docs}
           skills={skills}
           {...(onCreate ? { onCreate } : {})}
-          graphActions={
+          graphCorner={
             hasKnowledge ? (
               <BrainGraphExpandButton onClick={() => setGraphExpanded(true)} />
             ) : undefined

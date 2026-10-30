@@ -22,7 +22,7 @@ export function BrainWorkspaceView({
   docs,
   skills,
   onCreate,
-  graphActions,
+  graphCorner,
 }: BrainWorkspaceViewProps) {
   const [tab, setTab] = useState<Tab>("graph");
   const tabs: readonly [Tab, string][] = [
@@ -79,7 +79,7 @@ export function BrainWorkspaceView({
                 <h2><Network size={16} /> Knowledge graph</h2>
                 <p>{hasBrain ? "Explore what this brain knows and where it came from." : "Connect sources to map your code and how it works."}</p>
               </div>
-              {(hasBrain || graphActions) && (
+              {hasBrain && (
                 <div className="flow-brain-graph-card-meta">
                   {hasBrain && (
                     <span>
@@ -87,12 +87,11 @@ export function BrainWorkspaceView({
                       {snapshot.entities.length} {snapshot.entities.length === 1 ? "entity" : "entities"} · {snapshot.edges.length} relationships
                     </span>
                   )}
-                  {graphActions}
                 </div>
               )}
             </header>
             {snapshot.entities.length > 0 ? (
-              <BrainGraph knowledge={snapshot} />
+              <BrainGraph knowledge={snapshot} corner={graphCorner} />
             ) : (
               <div className="flow-brain-empty-graph" role="status">
                 <BrainCircuit size={28} />

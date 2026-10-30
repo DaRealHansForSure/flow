@@ -135,16 +135,6 @@ export function ChatBrainPanel({
                     className={`size-4 shrink-0 text-muted-foreground ${brainExpanded ? "rotate-180" : ""}`}
                   />
                 </button>
-                {brain && threadId && (
-                  <button
-                    type="button"
-                    aria-label="Expand brain graph"
-                    onClick={() => setView("brain")}
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <Maximize2Icon className="size-3.5" />
-                  </button>
-                )}
               </div>
               {brain && failedSources.length > 0 && (
                 <div
@@ -189,16 +179,12 @@ export function ChatBrainPanel({
                       {response.state.database.message}
                     </p>
                   ) : brain?.knowledge.entities.length ? (
-                    <div className="relative">
-                      <BrainGraph
-                        knowledge={brain.knowledge}
-                        highlightedNodeIds={consultedNodeIds}
-                        compact
-                      />
-                      <div className="absolute top-1.5 right-1.5">
-                        <BrainGraphExpandButton onClick={() => setView("brain")} />
-                      </div>
-                    </div>
+                    <BrainGraph
+                      knowledge={brain.knowledge}
+                      highlightedNodeIds={consultedNodeIds}
+                      compact
+                      corner={<BrainGraphExpandButton onClick={() => setView("brain")} />}
+                    />
                   ) : (
                     <p className="p-3 text-xs text-muted-foreground">
                       {brain
