@@ -1,22 +1,18 @@
 # Worklog
 
-Updated: 2026-10-30 02:05
+Updated: 2026-10-30 02:40
 
 ## Current focus
 
 - **Topic:** First own release 0.2.0 (AppImage plus service from DaRealHansForSure/flow)
 - **Goal:** The machine runs this fork's Flow, installed and updated only from the fork
-- **Branch:** develop (everything merged; ~4600 commits ahead of origin, not pushed)
-- **Last step done:** App-only default merged (own server unless "Keep Flow running in the
-  background"); install guide starts with a backup; uninstall-flow.sh; inherited tags removed;
-  local AppImage rebuild started into .t3/appimage
-- **Next step:** Owner tests the AppImage isolated, then on OK: merge develop into main
-  (--no-ff), push develop and main, create `release`, run the "Flow release" workflow with
-  0.2.0; on this machine back up, move a stale ~/.t3/userdata/statev2.sqlite aside, start
-  the AppImage and answer the switch question
+- **Branch:** chore/release-0.2.0, merged into develop and main, `release` created from main
+- **Last step done:** Owner switched this machine to the local 0.2.0 AppImage (backup taken,
+  stale statev2.sqlite moved aside, service stopped and disabled); chats and Brain carried over
+- **Next step:** Push develop, main and release; owner enables Actions and runs the
+  "Flow release" workflow on `release` with version 0.2.0
 - **Open questions / blockers:** Actions and workflow write permission must be on in the fork;
-  the startup switch box, real systemctl timing and the Settings row are untested in a real
-  app; codex/opencode curator flags untested; four Brain web tests need a rewrite without
+  the "Keep Flow running in the background" Settings row is untested in a real app; codex/opencode curator flags untested; four Brain web tests need a rewrite without
   react-test-renderer; DesktopPreReadyPlatform has 4 failing tests already on develop
 
 ## Finished features
