@@ -51,3 +51,19 @@ export function describeUsageLimitAlert(alert: UsageLimitAlert): string {
   });
   return `${used}, resets ${resetsAt}`;
 }
+
+const USAGE_RECHECK_AFTER_MS = 5 * 60 * 1000;
+
+/**
+ * Flow: on returning to the app, the chip's usage is worth a fresh look once it is older than the
+ * server's own 5-minute probe cache; a newer one would come back unchanged.
+ */
+export function usageLimitsNeedRecheck(
+  limits: ServerProviderUsageLimits | undefined,
+  nowMs: number,
+): boolean {
+  if (limits === undefined || limits.unavailable?.reason === "unsupported") {
+    return false;
+  }
+  return nowMs - Date.parse(limits.checkedAt) >= USAGE_RECHECK_AFTER_MS;
+}

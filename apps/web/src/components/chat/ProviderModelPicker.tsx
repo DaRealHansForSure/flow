@@ -5,7 +5,9 @@ import {
   type ProviderDriverKind,
   type ResolvedKeybindingsConfig,
 } from "@t3tools/contracts";
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import { serverEnvironment } from "../../state/server";
+import { useAtomCommand } from "../../state/use-atom-command";
 import { Badge } from "../ui/badge";
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
@@ -13,7 +15,11 @@ import { cn } from "~/lib/utils";
 import { ModelPickerContent, resolveModelPickerSelectedModel } from "./ModelPickerContent";
 import { ChatGptSharingControl } from "./ChatGptSharingControl";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
-import { describeUsageLimitAlert, resolveUsageLimitAlert } from "./usageLimitTone";
+import {
+  describeUsageLimitAlert,
+  resolveUsageLimitAlert,
+  usageLimitsNeedRecheck,
+} from "./usageLimitTone";
 import { ModelEsque, getDisplayModelName, getTriggerDisplayModelName } from "./providerIconUtils";
 import { shouldShowInstanceBadge, type ProviderInstanceEntry } from "../../providerInstances";
 import { ComposerControl, type ComposerControlSize } from "./ComposerControl";
@@ -64,6 +70,31 @@ function lockBackgroundScroll(popup: HTMLElement | null) {
     body.style.overflow = previousBodyOverflow;
     body.style.paddingRight = previousBodyPaddingRight;
   };
+}
+
+/** Flow: asks the server for fresh usage when the app comes back into view and it is stale. */
+function useUsageRecheckOnReturn(
+  environmentId: EnvironmentId | null,
+  entry: ProviderInstanceEntry | null,
+) {
+  const refreshProviders = useAtomCommand(serverEnvironment.refreshProviders, {
+    reportFailure: false,
+  });
+  const instanceId = entry?.instanceId ?? null;
+  const limits = entry?.snapshot.usageLimits;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- listens for the page becoming visible again, outside React
+  useEffect(() => {
+    if (environmentId === null || instanceId === null) {
+      return;
+    }
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && usageLimitsNeedRecheck(limits, Date.now())) {
+        void refreshProviders({ environmentId, input: { instanceId } });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [environmentId, instanceId, limits, refreshProviders]);
 }
 
 export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
@@ -173,6 +204,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
   const baseTooltipContent = shortcutLabel
     ? `${props.triggerLabel ?? allModelNames ?? triggerLabel} · ${shortcutLabel}`
     : (props.triggerLabel ?? allModelNames ?? triggerLabel);
+  useUsageRecheckOnReturn(props.environmentId, selectedEntries ? null : activeEntry);
   const usageAlert = selectedEntries
     ? null
     : resolveUsageLimitAlert(activeEntry?.snapshot.usageLimits);

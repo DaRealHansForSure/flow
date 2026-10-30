@@ -1,7 +1,7 @@
 import type { ServerProviderUsageLimits } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
-import { resolveUsageLimitAlert } from "./usageLimitTone";
+import { resolveUsageLimitAlert, usageLimitsNeedRecheck } from "./usageLimitTone";
 
 function limits(...percents: ReadonlyArray<number>): ServerProviderUsageLimits {
   return {
@@ -38,5 +38,26 @@ describe("resolveUsageLimitAlert", () => {
     expect(
       resolveUsageLimitAlert({ ...limits(99), unavailable: { reason: "probeFailed" } }),
     ).toBeNull();
+  });
+});
+
+describe("usageLimitsNeedRecheck", () => {
+  const checkedAt = Date.parse("2026-10-30T20:00:00.000Z");
+  it.each([
+    [4 * 60 * 1000, false],
+    [5 * 60 * 1000, true],
+    [30 * 60 * 1000, true],
+  ] as const)("%d ms after the check gives %s", (elapsedMs, expected) => {
+    expect(usageLimitsNeedRecheck(limits(50), checkedAt + elapsedMs)).toBe(expected);
+  });
+
+  it("never asks for an account without usage limits", () => {
+    expect(usageLimitsNeedRecheck(undefined, checkedAt + 60 * 60 * 1000)).toBe(false);
+    expect(
+      usageLimitsNeedRecheck(
+        { ...limits(50), unavailable: { reason: "unsupported" } },
+        checkedAt + 60 * 60 * 1000,
+      ),
+    ).toBe(false);
   });
 });

@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   swiping back toward the edge closes it.
 - The model chip under the composer turns amber when the selected account has used more than 80 %
   of a usage limit and red above 90 %; its tooltip names the limit and when it resets.
+  Coming back to the app asks for fresh usage when the last check is older than 5 minutes.
 - An MCP tab in the right panel lists the MCP servers of the chat's running agent, grouped into
   Flow, your servers, plugins and claude.ai connectors, with each server's status and tools.
   Failed servers and servers that need a sign-in are shown at the top. Open it with `/mcp`,
