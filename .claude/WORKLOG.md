@@ -17,18 +17,18 @@ Updated: 2026-10-30 23:10
 
 ## Also open: MCP view
 
-- **Topic:** MCP view (feat/mcp-view, 4 commits on develop 7ab8f4c49, not merged, not pushed)
+- **Topic:** MCP view (feat/mcp-view, 7 commits on develop ed8a896ab, not merged, not pushed)
 - **Goal:** let the user see the MCP servers of the chat's running agent: MCP tab in the right
   panel (`/mcp`, command palette, + menu) and an MCP servers section in Settings > Providers
-- **Last step done:** server RPC providerMcp.list (live sessions only, never starts one),
-  Claude/Codex/OpenCode adapters, MCP tab and Settings section; checked live in `vp run dev`
-  with a Haiku chat: t3-code, desigma, rea and Claude Docs shown, `/mcp` sends no turn
+- **Last step done:** Check servers in Settings starts Claude once (providers:manage) when no
+  chat runs; provider cards fold Runtime, Environment, Models and MCP servers under headers.
+  Both checked live in `vp run dev` (port 7133)
 - **Next step:** owner review; merge feat/mcp-view into develop with --no-ff when the owner
-  says so. Later steps: reconnect/enable/sign-in actions, a check without a running chat,
+  says so. Later: Check servers for Codex and OpenCode, reconnect/enable/sign-in actions,
   config-file listing for Cursor and Antigravity
 - **Open questions / blockers:**
   - `vp run check:changed` fails only on apps/desktop typecheck (warning in
-    src/preview/Manager.ts, also on develop); everything else passes.
+    src/preview/Manager.ts, also on develop).
   - Claude status during a running turn is untested (owner did not OK the paid check).
 
 ## Finished features
