@@ -184,6 +184,7 @@ import { resolveCompatibleRuntimeMode, resolvePermissionMode } from "./chat/runt
 import { PlanReviewProvider } from "./chat/planReview";
 import { deriveProposedPlanVersions } from "@t3tools/client-runtime/state/plan-versions";
 import { buildPlanReviewComment } from "./chat/planComments";
+import { missingProviderBannerItem } from "./chat/missingProviderBanner";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import { isEditableFocused } from "../lib/editableFocus";
 import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
@@ -1302,11 +1303,31 @@ export default function ChatView(props: ChatViewProps) {
   const selectedProvider = selectedProviderEntry?.driverKind ?? requestedDriverKind;
   const activeProviderInstanceId = selectedProviderEntry?.instanceId ?? null;
   const activeProviderStatus = selectedProviderEntry?.snapshot ?? null;
-  const { enabled: interactionModeEnabled, interactionMode } = resolveComposerInteractionMode({
-    provider: activeProviderStatus,
-    interactionMode:
-      composerInteractionMode ?? activeThread?.interactionMode ?? DEFAULT_INTERACTION_MODE,
-  });
+  const requestedThreadInteractionMode =
+    composerInteractionMode ?? activeThread?.interactionMode ?? DEFAULT_INTERACTION_MODE;
+  // Flow: without a provider here the composer falls back to another instance and decides
+  // whether it plans; vetoing Plan here as well made picking it do nothing.
+  const { enabled: interactionModeEnabled, interactionMode } =
+    activeProviderStatus === null
+      ? { enabled: true, interactionMode: requestedThreadInteractionMode }
+      : resolveComposerInteractionMode({
+          provider: activeProviderStatus,
+          interactionMode: requestedThreadInteractionMode,
+        });
+  // Flow: the chat's own provider instance, when it is not set up or turned off here.
+  const missingThreadProviderInstanceId = (() => {
+    const instanceId = isServerThread
+      ? (activeRuntime?.providerInstanceId ?? activeThreadModelInstanceId)
+      : undefined;
+    if (instanceId === undefined) {
+      return null;
+    }
+    return providerInstanceEntries.some(
+      (entry) => entry.instanceId === instanceId && entry.enabled && entry.isAvailable,
+    )
+      ? null
+      : instanceId;
+  })();
   const conversationProviderStatus =
     providerStatuses.find((status) => status.instanceId === activeRuntime?.providerInstanceId) ??
     activeProviderStatus;
@@ -2616,6 +2637,15 @@ export default function ChatView(props: ChatViewProps) {
     const limitRecoveryItems = limitRecoveryBanner === null ? [] : [limitRecoveryBanner];
     const usageLimitsItems = usageLimitsBanner === null ? [] : [usageLimitsBanner];
     const projectCloneItems = projectCloneBannerItem === null ? [] : [projectCloneBannerItem];
+    const missingProviderItems =
+      missingThreadProviderInstanceId === null
+        ? []
+        : [
+            missingProviderBannerItem({
+              instanceId: missingThreadProviderInstanceId,
+              onOpenSettings: () => void navigate({ to: "/settings/providers" }),
+            }),
+          ];
     if (!localCheckoutBranchMismatch || !showBranchMismatchBanner || !activeBranchMismatchKey) {
       return [
         ...feedbackBannerItems,
@@ -2623,6 +2653,7 @@ export default function ChatView(props: ChatViewProps) {
         ...limitRecoveryItems,
         ...usageLimitsItems,
         ...projectCloneItems,
+        ...missingProviderItems,
         ...systemComposerBannerItems,
       ];
     }
@@ -2632,6 +2663,7 @@ export default function ChatView(props: ChatViewProps) {
       ...limitRecoveryItems,
       ...usageLimitsItems,
       ...projectCloneItems,
+      ...missingProviderItems,
       ...systemComposerBannerItems,
       branchMismatchBannerItem({
         mismatchKey: activeBranchMismatchKey,
@@ -3697,6 +3729,7 @@ export default function ChatView(props: ChatViewProps) {
                                 activeEnvironmentUnavailable ? null : threadSyncPhase
                               }
                               runtimeMode={runtimeMode}
+                              missingProviderInstanceId={missingThreadProviderInstanceId}
                               defaultPermissionMode={resolvePermissionMode(
                                 defaultRuntimeMode,
                                 projectDefaults.defaultInteractionMode,

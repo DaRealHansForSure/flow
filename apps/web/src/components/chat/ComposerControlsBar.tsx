@@ -54,6 +54,8 @@ export function ComposerControlsBar(props: {
   permissionsShownInStrip: boolean;
   permissionMode: PermissionMode;
   defaultPermissionMode: PermissionMode | undefined;
+  /** Flow: shown in red as the chat's provider until a model is picked by hand. */
+  missingProviderInstanceId: ProviderInstanceId | null;
   permissionModeOptions: ReadonlyArray<PermissionModeOption>;
   handlePermissionModeChange: (mode: PermissionMode) => void;
   composerControlsCollapsed: boolean;
@@ -98,6 +100,7 @@ export function ComposerControlsBar(props: {
     onPromptEdit,
     permissionMode,
     defaultPermissionMode,
+    missingProviderInstanceId,
     permissionModeOptions,
     handlePermissionModeChange,
     composerControlsCollapsed,
@@ -241,12 +244,13 @@ export function ComposerControlsBar(props: {
       selectedModelSelection={selectedModelSelection}
       onProviderModelSelect={onProviderModelSelect}
       activeInstanceId={
-        providerCatalogPending
+        missingProviderInstanceId ??
+        (providerCatalogPending
           ? (activeThreadModelSelection?.instanceId ?? selectedInstanceId)
-          : selectedInstanceId
+          : selectedInstanceId)
       }
       model={
-        providerCatalogPending
+        missingProviderInstanceId !== null || providerCatalogPending
           ? (activeThreadModelSelection?.model ?? selectedModelForPickerWithCustomFallback)
           : selectedModelForPickerWithCustomFallback
       }
@@ -260,6 +264,7 @@ export function ComposerControlsBar(props: {
         "pe-1",
         TEXT_CONTROL_STATES,
         composerControlsCollapsed ? "min-w-13 shrink text-xs!" : "min-w-13",
+        missingProviderInstanceId !== null && "text-destructive-foreground",
       )}
       terminalOpen={terminalOpen}
       open={modelPickerOpen}

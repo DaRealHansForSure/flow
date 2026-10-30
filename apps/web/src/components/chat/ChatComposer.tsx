@@ -279,6 +279,7 @@ import {
   usePreparingComposerImages,
 } from "./preparingComposerImages";
 import { ComposerControlsBar } from "./ComposerControlsBar";
+import { heldMissingProvider } from "./missingProviderBanner";
 import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
 
@@ -419,6 +420,8 @@ export interface ChatComposerProps {
 
   runtimeMode: RuntimeMode;
   defaultPermissionMode?: PermissionMode;
+  /** Flow: the chat's own provider instance when it is not set up here; null when it is. */
+  missingProviderInstanceId?: ProviderInstanceId | null;
   interactionMode: ProviderInteractionMode;
 
   lockedProvider: ProviderDriverKind | null;
@@ -918,8 +921,17 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     selectedProviderEntry?.snapshot,
     selectedModel,
   );
+  // Flow: a missing provider is never swapped silently; only a model picked by hand replaces it.
+  const missingProviderInstanceId = heldMissingProvider({
+    missingInstanceId: props.missingProviderInstanceId,
+    draftActiveProvider: composerDraft.activeProvider,
+    draftSelectionExplicit: composerDraft.modelSelectionExplicit,
+  });
   const sendDisabledReason =
     externalSendDisabledReason ??
+    (missingProviderInstanceId === null
+      ? null
+      : `This chat's provider "${missingProviderInstanceId}" is not set up here. Pick another model, or set it up in Settings.`) ??
     (multipleModelSelections?.length === 0 ? "Select at least one model." : null) ??
     (activePendingProgress
       ? attachmentBlockReason
@@ -2319,6 +2331,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       onPromptEdit={editPromptFromTraitsStable}
       permissionMode={permissionMode}
       defaultPermissionMode={props.defaultPermissionMode}
+      missingProviderInstanceId={missingProviderInstanceId}
       permissionModeOptions={permissionModeOptions}
       handlePermissionModeChange={handlePermissionModeChange}
       composerControlsCollapsed={composerControlsCollapsed}
