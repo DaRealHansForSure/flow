@@ -48,8 +48,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- A long press on an answer offers Cite also while the message box has focus; the keyboard closing
-  right after the selection no longer hides it.
+- A long press on an answer offers Cite also while the message box has focus: the message box lets
+  go of focus instead of pulling the selection back, and the keyboard closing right after the
+  selection no longer hides it.
 - The resting phone composer shows a quoted answer as a chip instead of its raw
   `[Assistant quote](t3-citation://...)` link.
 - The Cite button for selected answer text is a primary button the size of the plan's Comment

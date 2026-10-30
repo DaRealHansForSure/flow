@@ -112,9 +112,21 @@ export function observeSelectionActions({
     cancel();
     onDismiss("cancel");
   };
+  // Flow: a long press selects text without moving focus. A focused editor elsewhere (the message
+  // box) then pulls the selection back into itself, so its focus is released first.
+  const releaseOutsideEditorFocus = () => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || element.contains(active)) return;
+    const editable =
+      active.isContentEditable || active.tagName === "INPUT" || active.tagName === "TEXTAREA";
+    if (editable) active.blur();
+  };
   const onContextMenu = () => {
     // Chrome on Android fires contextmenu for the long press that selects text.
-    if (touchGesture && gestureActive) return;
+    if (touchGesture && gestureActive) {
+      releaseOutsideEditorFocus();
+      return;
+    }
     cancel();
     onDismiss("interaction");
   };
@@ -169,6 +181,7 @@ export function observeSelectionActions({
   // finishes the gesture rather than dismissing it, so handle drags afterwards still count.
   const onPointerCancel = (event: PointerEvent) => {
     if (event.pointerType !== "mouse" && gestureActive) {
+      releaseOutsideEditorFocus();
       pointerDown = gestureActive = false;
       pointer = null;
       dismissed = false;

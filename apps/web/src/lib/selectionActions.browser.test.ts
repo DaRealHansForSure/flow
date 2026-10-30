@@ -15,6 +15,10 @@ it.each([false, true])(
     const actions = observeSelectionActions({ element, onSelection, onDismiss: vi.fn() });
     document.addEventListener("selectionchange", actions.selectionChanged);
     try {
+      const composer = document.createElement("div");
+      composer.contentEditable = "true";
+      document.body.append(composer);
+      composer.focus();
       const touch = { pointerType: "touch", isPrimary: true, button: 0, bubbles: true } as const;
       element.dispatchEvent(new PointerEvent("pointerdown", touch));
       const range = document.createRange();
@@ -28,6 +32,9 @@ it.each([false, true])(
       }
 
       await vi.waitFor(() => expect(onSelection).toHaveBeenCalled());
+      // A focused message box would pull the selection back into itself.
+      expect(document.activeElement).not.toBe(composer);
+      composer.remove();
     } finally {
       document.removeEventListener("selectionchange", actions.selectionChanged);
       actions.dispose();
