@@ -112,6 +112,13 @@ store path), the agent registry (`~/.flow`) and the chats. A real run needs the 
 stopped, so quit the app and pass `--stop-service`; that ends every running chat. The
 backup lands in `~/Backups/flow-<date>-<time>` with a `RESTORE.txt`.
 
+## Removing the installed Flow
+
+`scripts/fork/uninstall-flow.sh` lists the installed parts (service, releases, `flow`
+command, AppImages, app settings, menu entries); `--yes` removes them. Chats, the Brain and
+the Dev Flow are never touched. Run it from a normal terminal with Flow closed; it refuses
+to run inside the service.
+
 ## Syncing with upstream
 
 Sync every week or two. Seven weeks of drift once gave 227 conflicting files.

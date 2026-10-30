@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scripts/fork/uninstall-flow.sh` removes the installed Flow (service, releases, `flow`
+  command, AppImages, app settings and menu entries) and never touches chats or the Brain.
+  Without `--yes` it only lists what it would remove; it refuses to run from inside Flow.
+
 - Code blocks in chats, Brain documents and file previews have a Download button next to Copy.
   It saves the block through the normal Save dialog or downloads folder. The file takes the
   fence's file name or, without one, the project's name plus date and time with an ending from
