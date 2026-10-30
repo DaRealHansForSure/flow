@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- The model chip under the composer turns amber when the selected account has used more than 80 %
+  of a usage limit and red above 90 %; its tooltip names the limit and when it resets.
+
 ### Changed
 
 - The status pill above the composer shows the turn's agents as in the mobile app ("2/3" while

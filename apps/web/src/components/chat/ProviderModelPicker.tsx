@@ -13,6 +13,7 @@ import { cn } from "~/lib/utils";
 import { ModelPickerContent, resolveModelPickerSelectedModel } from "./ModelPickerContent";
 import { ChatGptSharingControl } from "./ChatGptSharingControl";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
+import { describeUsageLimitAlert, resolveUsageLimitAlert } from "./usageLimitTone";
 import { ModelEsque, getDisplayModelName, getTriggerDisplayModelName } from "./providerIconUtils";
 import { shouldShowInstanceBadge, type ProviderInstanceEntry } from "../../providerInstances";
 import { ComposerControl, type ComposerControlSize } from "./ComposerControl";
@@ -169,9 +170,16 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
   const allModelNames = selectedEntries
     ? selectedEntries.map((selection) => selection.fullLabel).join(", ") || "Choose models"
     : undefined;
-  const triggerTooltipContent = shortcutLabel
+  const baseTooltipContent = shortcutLabel
     ? `${props.triggerLabel ?? allModelNames ?? triggerLabel} · ${shortcutLabel}`
     : (props.triggerLabel ?? allModelNames ?? triggerLabel);
+  const usageAlert = selectedEntries
+    ? null
+    : resolveUsageLimitAlert(activeEntry?.snapshot.usageLimits);
+  const triggerTooltipContent =
+    usageAlert === null
+      ? baseTooltipContent
+      : `${baseTooltipContent} · ${describeUsageLimitAlert(usageAlert)}`;
 
   return (
     <Popover
@@ -192,6 +200,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
             }
             size={size}
             data-chat-provider-model-picker="true"
+            tone={usageAlert?.tone ?? "default"}
             className={cn(
               "min-w-0 shrink justify-between whitespace-nowrap",
               props.compact
