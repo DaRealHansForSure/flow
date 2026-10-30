@@ -32,6 +32,7 @@ import {
 } from "../../session-logic";
 import ChatMarkdown from "../ChatMarkdown";
 import { ChatMarkdownAssetImage } from "./ChatMarkdownMedia";
+import { WorkLogImageThumbnail } from "./WorkLogImageThumbnail";
 import { ChevronRightIcon, CircleAlertIcon, XIcon, RotateCcwIcon } from "lucide-react";
 import { Button, InlineButton } from "../ui/button";
 import { useAssetUrls } from "../../assets/assetUrls";
@@ -486,6 +487,13 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
           !showDestructiveRowStyle &&
           !toolIconAcceptsTint(entryToolIcon) ? (
             <XIcon aria-hidden className={cn("size-3 shrink-0", failedToolIconClassName)} />
+          ) : null}
+          {!expanded && viewedImage && threadRef ? (
+            <WorkLogImageThumbnail
+              environmentId={threadRef.environmentId}
+              image={viewedImage}
+              onImageExpand={onImageExpand}
+            />
           ) : null}
           <TimelineRowTimestamp createdAt={workEntry.createdAt} timestampFormat={timestampFormat} />
           <span
