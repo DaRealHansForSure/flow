@@ -1055,7 +1055,10 @@ export default function FilePreviewPanel({
     serverConfig?.shellRevealInFileManager === true;
   // Everything preview-related keys off previewPath; a folder has no preview.
   const previewPath = isFolder ? null : relativePath;
-  const [explorerOpen, setExplorerOpen] = useState(initialExplorerOpen);
+  // Flow: a file opened straight from a link (chat, search) starts without the tree.
+  const [explorerOpen, setExplorerOpen] = useState(
+    () => relativePath === null && initialExplorerOpen(),
+  );
   const showExplorer = shouldShowFileExplorer({
     relativePath: previewPath,
     explorerOpen,
@@ -1063,7 +1066,7 @@ export default function FilePreviewPanel({
   });
   const [renderMarkdownPreferred, setRenderMarkdownPreferred] = useLocalStorage(
     RENDER_MARKDOWN_STORAGE_KEY,
-    false,
+    true,
     Schema.Boolean,
   );
   const [renderBrowserFilePreferred, setRenderBrowserFilePreferred] = useLocalStorage(
