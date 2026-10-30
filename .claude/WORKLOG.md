@@ -1,14 +1,14 @@
 # Worklog
 
-Updated: 2026-10-30 14:10
+Updated: 2026-10-30 14:20
 
 ## Current focus
 
 - **Topic:** Release 0.2.1 (everything below is merged into develop, not pushed)
 - **Goal:** ship Plan mode and today's fixes as service and desktop 0.2.1
-- **Branch:** develop (74+ commits ahead of origin)
-- **Last step done:** docs brought up to date (About versions, Brain switch tooltip, phone
-  test stack in CLAUDE.md); fork tests moved to browser tests; React Compiler leftovers fixed
+- **Branch:** develop (pushed to origin)
+- **Last step done:** chat header measures the room its floating buttons need (no title
+  overlap while a chat loads); docs up to date; develop pushed
 - **Next step:** release branch: CHANGELOG [Unreleased] -> [0.2.1], merge develop into main
   and release, push and run the "Flow release" workflow (needs the owner's push OK; installing
   restarts flow.service and ends every chat)
@@ -34,6 +34,7 @@ Updated: 2026-10-30 14:10
 
 ## History
 
+- 2026-10-30 14:20 - Measured header room for the floating buttons; develop pushed
 - 2026-10-30 14:10 - Phone sheets layer cleanly; fork tests are browser tests; docs updated
 - 2026-10-30 13:30 - Read image thumbnails, About versions, SearchableSelect, React Compiler fixes
 - 2026-10-30 13:45 - Plan work merged; check fixes merged; visual pass fixes merged
