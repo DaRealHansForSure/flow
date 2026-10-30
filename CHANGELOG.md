@@ -95,6 +95,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Finished subagents show Done (or how they ended) in Lineage and the Agents tab, matching the
+  subagent bar, instead of Idle.
 - Coming back to the web app after its tab was in the background for a while (for example a
   minimised browser on a phone) reconnects within a few seconds instead of waiting up to 15 seconds
   on a connection the browser had already dropped.

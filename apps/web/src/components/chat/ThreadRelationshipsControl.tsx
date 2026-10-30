@@ -619,10 +619,6 @@ export function ThreadRelationshipsPanel(props: {
               const isSubagent = edge.kind === "subagent";
               const isMergeTarget = threadId === mergeTargetThreadId;
               const isParent = isParentThreadRelationship(edge, props.threadId);
-              const rowStatus =
-                (isParent && threadId === parentRef?.threadId
-                  ? (node?.thread?.activityRunStatus ?? parentNativeStatus)
-                  : undefined) ?? threadRelationshipRowStatus(graph, { threadId, edge });
               const RelationshipIcon = isParent
                 ? CornerLeftUpIcon
                 : isSubagent
@@ -638,6 +634,14 @@ export function ThreadRelationshipsPanel(props: {
               const agent = workflowGroup
                 ? projectedAgent
                 : currentSubagent(projectedAgent, node?.thread);
+              // Flow: a finished subagent's own chat reads "idle"; its record says how it ended,
+              // as the subagent bar shows.
+              const rowStatus =
+                (isParent && threadId === parentRef?.threadId
+                  ? (node?.thread?.activityRunStatus ?? parentNativeStatus)
+                  : undefined) ??
+                agent?.status ??
+                threadRelationshipRowStatus(graph, { threadId, edge });
               const failed = rowStatus === "failed" || rowStatus === "error";
               const canStop =
                 agent &&
