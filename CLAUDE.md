@@ -14,7 +14,8 @@ which upstream owns, so syncing never conflicts on it.
 | `upstream` | samyakkkk/flow            | Flow upstream. Fetch only.             |
 | `t3`       | pingdotgg/t3code (`main`) | T3 Code upstream. Fetch only.          |
 
-`upstream` and `t3` have their push URL set to `no-push`, so a stray push fails.
+`upstream` and `t3` have their push URL set to `no-push`, so a stray push fails, and fetch no
+tags: only this fork's own release tags exist here and on `origin`.
 On a fresh clone, recreate the setup:
 
 ```bash
@@ -22,6 +23,8 @@ git remote add upstream https://github.com/samyakkkk/flow.git
 git remote add -t main t3 https://github.com/pingdotgg/t3code.git
 git remote set-url --push upstream no-push
 git remote set-url --push t3 no-push
+git config remote.upstream.tagOpt --no-tags
+git config remote.t3.tagOpt --no-tags
 git config rerere.enabled true
 git config rerere.autoupdate true
 git config merge.ff false
@@ -119,6 +122,9 @@ Sync every week or two. Seven weeks of drift once gave 227 conflicting files.
    Code directly. Flow upstream merges T3 itself, but often lags behind it.
 4. Fix the conflicts, run the focused tests for what changed, and merge the sync branch
    into `develop` with `--no-ff`.
+
+To sync with a specific T3 release instead of `t3/main`, fetch its tag on its own and merge the
+commit without keeping the tag: `git fetch t3 refs/tags/v0.1.6` then `git merge --no-ff FETCH_HEAD`.
 
 `rerere` records how each conflict was resolved and replays it in the next sync, so
 resolve carefully once. Check progress with
