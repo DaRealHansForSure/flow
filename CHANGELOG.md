@@ -69,6 +69,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The chat's Brain tab lists Conversation notes, with the notes agent switch, before Auto-Docs
+  and Auto-Skills, which depend on it.
+
 - The knowledge graph's "open larger" button sits in the graph's top right corner on both the
   Brain page and the chat's Brain tab; the second one in the Brain tab's header is gone.
 
