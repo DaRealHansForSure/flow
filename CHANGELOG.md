@@ -15,6 +15,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Brain button's dot for notes being written is blue. It used the theme colour, which is
+  amber in some themes and looked like a warning.
+
+### Fixed
+
 - The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
   `=` after a `#`, so a pairing link lost its token, and older builds left such addresses
   as plain text.
