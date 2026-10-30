@@ -127,6 +127,7 @@ import {
   MCP_APP_RESOURCE_SCHEME,
 } from "@t3tools/shared/mcpApp";
 import { snapshotMcpApp } from "../../mcpApps/McpAppSnapshot.ts";
+import { mapCodexMcpServers } from "./codexMcpServers.ts";
 import {
   ProviderAdapterDriverCreateError,
   type ProviderAdapterDriverCreateInput,
@@ -6716,6 +6717,37 @@ export const makeCodexAdapterV2 = Effect.fn("makeCodexAdapterV2")(function* (
           ),
         };
 
+        const mcpServers: ProviderAdapter.ProviderAdapterV2McpServers = {
+          list: Effect.fn("CodexAdapterV2.listMcpServers")(
+            function* ({ providerThread }) {
+              const threadId = yield* getNativeThreadId(providerThread);
+              const statuses: Array<CodexSchema.V2ListMcpServerStatusResponse__McpServerStatus> =
+                [];
+              let cursor: string | undefined;
+              do {
+                const page = yield* ensureInitialized.pipe(
+                  Effect.andThen(
+                    client.request("mcpServerStatus/list", {
+                      threadId,
+                      detail: "toolsAndAuthOnly",
+                      ...(cursor === undefined ? {} : { cursor }),
+                    }),
+                  ),
+                );
+                statuses.push(...page.data);
+                cursor = page.nextCursor ?? undefined;
+              } while (cursor !== undefined);
+              const profile =
+                adapterOptions.settings.homePath || adapterOptions.environment.CODEX_HOME;
+              return {
+                ...(profile ? { profile } : {}),
+                servers: mapCodexMcpServers(statuses),
+              };
+            },
+            Effect.mapError(mcpAppsError("Failed to list Codex MCP servers.")),
+          ),
+        };
+
         const runtime: ProviderAdapter.ProviderAdapterV2SessionRuntime = {
           instanceId: adapterOptions.instanceId,
           driver: CODEX_PROVIDER,
@@ -7521,6 +7553,7 @@ export const makeCodexAdapterV2 = Effect.fn("makeCodexAdapterV2")(function* (
             ),
           ),
           mcpApps,
+          mcpServers,
           readThreadSnapshot: Effect.fn("CodexAdapterV2.readThreadSnapshot")(
             function* (threadInput) {
               const threadId = yield* getNativeThreadId(threadInput.providerThread);

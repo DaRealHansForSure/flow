@@ -65,6 +65,7 @@ import { mergeProviderInstanceEnvironment } from "@t3tools/provider-core/server/
 import { t3OrchestrationSystemPrompt } from "@t3tools/provider-core/server/orchestrationInstructions";
 import { buildRuntimeInstructions } from "@t3tools/provider-core/server/runtimeInstructions";
 import * as OpenCodeRuntime from "./OpenCodeRuntime.ts";
+import { mapOpenCodeMcpServers } from "./mcpServers.ts";
 import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
 import { makeProviderFailure } from "@t3tools/provider-core/server/failure";
 import { turnScopedSelectionTransition } from "@t3tools/provider-core/server/selectionTransition";
@@ -3026,6 +3027,28 @@ export const makeOpenCodeAdapterV2 = Effect.fn("makeOpenCodeAdapterV2")(function
           instanceId: options.instanceId,
           driver: OPENCODE_PROVIDER,
           providerSessionId: input.providerSessionId,
+          mcpServers: {
+            list: Effect.fn("OpencodeAdapter.listMcpServers")(function* () {
+              const statuses = yield* OpenCodeRuntime.runOpenCodeSdk("mcp.status", (signal) =>
+                client.mcp.status(undefined, { signal, throwOnError: true }),
+              ).pipe(
+                Effect.timeout("5 seconds"),
+                Effect.mapError(
+                  (cause) =>
+                    new ProviderAdapter.ProviderAdapterProtocolError({
+                      driver: OPENCODE_PROVIDER,
+                      detail: "OpenCode MCP status request failed.",
+                      cause,
+                    }),
+                ),
+              );
+              return {
+                servers: mapOpenCodeMcpServers(
+                  Object.entries(statuses.data ?? {}).map(([name, status]) => ({ name, status })),
+                ),
+              };
+            }),
+          },
           providerSession: sessionEntity,
           events: Stream.fromEffectRepeat(Queue.take(events)),
           hasPendingBackgroundWork: Effect.sync(() => busySessionIds.size > 0),

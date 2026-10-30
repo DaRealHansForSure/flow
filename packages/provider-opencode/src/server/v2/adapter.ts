@@ -57,6 +57,7 @@ import * as ProviderHost from "@t3tools/provider-core/server/ProviderHost";
 import * as OpenCode2Client from "./OpenCode2Client.ts";
 import * as OpenCode2Server from "./OpenCode2Server.ts";
 import * as OpenCodeRuntime from "../OpenCodeRuntime.ts";
+import { mapOpenCodeMcpServers } from "../mcpServers.ts";
 import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
 import { buildRuntimeInstructions } from "@t3tools/provider-core/server/runtimeInstructions";
 import { t3OrchestrationSystemPrompt } from "@t3tools/provider-core/server/orchestrationInstructions";
@@ -3329,10 +3330,37 @@ export const make = Effect.fn("OpenCode2Adapter.make")(function* (instanceId: Pr
         .pipe(Effect.asVoid);
     });
 
+    const mcpServers: ProviderAdapter.ProviderAdapterV2McpServers = {
+      list: Effect.fn("OpenCode2Adapter.listMcpServers")(function* ({ providerThread }) {
+        const state = [...threads.values()].find(
+          (candidate) => candidate.providerThread.id === providerThread.id,
+        );
+        const directory = state?.mcp?.directory ?? host.paths.cwd;
+        const listing = yield* client.mcp.list({ location: { directory } }).pipe(
+          Effect.timeout(INVENTORY_TIMEOUT),
+          Effect.mapError(
+            (cause) =>
+              new ProviderAdapter.ProviderAdapterProtocolError({
+                driver: OPENCODE_PROVIDER,
+                detail: "OpenCode MCP server list failed.",
+                cause,
+              }),
+          ),
+        );
+        // Without an app thread no T3 entry belongs to this listing, so hide them all.
+        const ownEntry =
+          providerThread.appThreadId === null
+            ? ""
+            : yield* mcpServerNameFor(providerThread.appThreadId);
+        return { servers: mapOpenCodeMcpServers(listing.data, ownEntry) };
+      }),
+    };
+
     const runtime: ProviderAdapter.ProviderAdapterV2SessionRuntime = {
       instanceId,
       driver,
       providerSessionId: input.providerSessionId,
+      mcpServers,
       get providerSession() {
         return session;
       },
