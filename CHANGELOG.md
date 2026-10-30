@@ -48,6 +48,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The resting phone composer shows a quoted answer as a chip instead of its raw
+  `[Assistant quote](t3-citation://...)` link.
 - The Cite button for selected answer text is a primary button the size of the plan's Comment
   button. Both appear where the selection ends, also when it was dragged upwards, instead of where
   it started. A selection dragged from above an answer into it offers Cite for the answer's part.
