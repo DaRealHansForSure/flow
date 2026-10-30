@@ -91,7 +91,8 @@ export function ChatBrainPanel({
         aria-label="Flow brain and conversation notes"
         className="h-full min-h-0 overflow-y-auto p-4"
       >
-        <div className="mb-3 flex items-center gap-2">
+        {/* Flow: the right panel tabs share their insets, so titles and rows line up across tabs. */}
+        <div className="mb-1 flex min-h-8 items-center gap-2 px-2.5">
           <BrainCircuitIcon className="size-4 text-primary" />
           <h2 className="text-sm font-semibold">Flow</h2>
         </div>
@@ -113,7 +114,7 @@ export function ChatBrainPanel({
                   type="button"
                   aria-expanded={brainExpanded}
                   onClick={() => setBrainExpanded((value) => !value)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-muted/60"
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-left hover:bg-muted/60"
                 >
                   {brain ? (
                     <BrainIcon id={brain.id} />
@@ -231,7 +232,7 @@ export function ChatBrainPanel({
                     type="button"
                     aria-label="Read full notes"
                     onClick={() => setView("notes")}
-                    className={`w-full rounded-xl py-2 pr-9 pl-2 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
+                    className={`w-full rounded-xl py-2 pr-9 pl-2.5 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
                   >
                     <ConversationNotesPreview text={notes.notes.text} />
                     <span className="mt-2 block text-2xs text-primary">Read full notes →</span>

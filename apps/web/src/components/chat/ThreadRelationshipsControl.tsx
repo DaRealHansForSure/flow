@@ -100,6 +100,10 @@ function resolveThreadLineageWindow<Row>(
 function ThreadLineageRowList(props: {
   readonly hiddenCount: number;
   readonly onShowMore: () => void;
+  /** Flow: the Agents tab lets its lists grow and scrolls the whole tab instead. */
+  readonly fullHeight?: boolean;
+  /** Flow: rows under a section label sit a step in from it. */
+  readonly indented?: boolean;
   readonly children: ReactNode;
 }) {
   return (
@@ -107,7 +111,12 @@ function ThreadLineageRowList(props: {
       {/* ScrollArea's max-height viewport measures badly inside this scrolling panel. */}
       <ul
         aria-label="Related threads"
-        className="m-0 max-h-[13.5rem] list-none overflow-y-auto overscroll-contain p-0 has-data-workflow-expanded:max-h-[min(28rem,55dvh)]"
+        className={cn(
+          "m-0 list-none p-0",
+          !props.fullHeight &&
+            "max-h-[13.5rem] overflow-y-auto overscroll-contain has-data-workflow-expanded:max-h-[min(28rem,55dvh)]",
+          props.indented && "ps-3",
+        )}
       >
         {props.children}
       </ul>
@@ -115,7 +124,7 @@ function ThreadLineageRowList(props: {
         <button
           type="button"
           onClick={props.onShowMore}
-          className={`flex h-8 w-full cursor-pointer items-center rounded-lg ${THREAD_DETAILS_PANEL_ROW_CONTENT_CLASS} text-sm font-medium text-muted-foreground/70 hover:bg-black/[0.055] hover:text-foreground/80 dark:hover:bg-white/[0.075]`}
+          className={`flex h-8 w-full cursor-pointer items-center rounded-lg ${props.indented ? "ms-3 w-[calc(100%-0.75rem)]" : ""} ${THREAD_DETAILS_PANEL_ROW_CONTENT_CLASS} text-sm font-medium text-muted-foreground/70 hover:bg-black/[0.055] hover:text-foreground/80 dark:hover:bg-white/[0.075]`}
         >
           <PlusIcon aria-hidden className="size-4 shrink-0" />
           Show {Math.min(props.hiddenCount, THREAD_LINEAGE_PAGE_COUNT)} more
@@ -129,10 +138,14 @@ function ThreadLineageGroup(props: {
   readonly label: string | null;
   readonly rows: ReadonlyArray<ThreadRelationshipWalkRow>;
   readonly expanded: boolean;
+  readonly inPanel: boolean;
   readonly children: (rows: ReadonlyArray<ThreadRelationshipWalkRow>) => ReactNode;
 }) {
   const [expanded, setExpanded] = useState(props.expanded);
-  const [visibleCount, setVisibleCount] = useState(THREAD_LINEAGE_INITIAL_COUNT);
+  // Flow: the Agents tab has the height to list every agent at once.
+  const [visibleCount, setVisibleCount] = useState(
+    props.inPanel ? Number.POSITIVE_INFINITY : THREAD_LINEAGE_INITIAL_COUNT,
+  );
   const { visibleRows, hiddenCount } = resolveThreadLineageWindow(props.rows, visibleCount);
   const failedCount = props.rows.filter(
     ({ edge }) => edge.status === "failed" || edge.status === "error",
@@ -166,6 +179,8 @@ function ThreadLineageGroup(props: {
         <ThreadLineageRowList
           hiddenCount={hiddenCount}
           onShowMore={() => setVisibleCount((count) => count + THREAD_LINEAGE_PAGE_COUNT)}
+          fullHeight={props.inPanel}
+          indented={props.label !== null}
         >
           {props.children(visibleRows)}
         </ThreadLineageRowList>
@@ -604,7 +619,7 @@ export function ThreadRelationshipsPanel(props: {
       }
     >
       {delegatedFrom === undefined ? null : (
-        <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}}>
+        <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}} fullHeight={inPanel}>
           <DelegatedFromRow
             delegatedFrom={delegatedFrom}
             fallbackLabel={currentThread?.linkOrigin?.label}
@@ -612,7 +627,11 @@ export function ThreadRelationshipsPanel(props: {
         </ThreadLineageRowList>
       )}
       {groups.map((group) => (
-        <ThreadLineageGroup key={`${scopedThreadKey(ref)}:${group.id}`} {...group}>
+        <ThreadLineageGroup
+          key={`${scopedThreadKey(ref)}:${group.id}`}
+          {...group}
+          inPanel={inPanel}
+        >
           {(visibleRows) =>
             visibleRows.map(({ threadId, edge }) => {
               const node = graph.nodes.get(threadId);
@@ -876,7 +895,7 @@ export function ThreadRelationshipsPanel(props: {
         </ThreadLineageGroup>
       ))}
       {remoteSubagents.length > 0 ? (
-        <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}}>
+        <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}} fullHeight={inPanel}>
           {remoteSubagents.map((agent) => (
             <RemoteSubagentRow
               key={agent.id}

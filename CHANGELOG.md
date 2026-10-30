@@ -27,7 +27,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   panel is closed puts a blue dot on the panel button until you open it. Popping a browser out of
   the panel again floats the chat's later browsers too.
 - An Agents tab in the right panel (+ > Agents, or G) lists the chat's active and previous agents,
-  the overview T3 Code dropped when it replaced its Agents panel.
+  the overview T3 Code dropped when it replaced its Agents panel. It uses the panel's full height,
+  lists every agent without "Show more", and indents the agents under each section. Its titles and
+  rows line up with the Brain tab's.
 - Settings > Appearance > Chat font sizes only the text of chat messages (70 to 130 % of the
   interface size), so the chat can be smaller without shrinking buttons the way browser zoom does.
 - The file panel has a Download button for the open file. On phones its actions (rendered view,
