@@ -129,7 +129,7 @@ export function PlanCommentSelection(props: {
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 max-w-[calc(100vw-1rem)]"
+      className="fixed z-50 max-w-[calc(100vw-1rem)] rounded-lg shadow-lg"
       style={{ left: selection.position.x, top: selection.position.y }}
       data-plan-comment-popover
     >
@@ -164,8 +164,8 @@ export function PlanCommentSelection(props: {
         </div>
       ) : (
         <Button
-          size="xs"
-          variant="glass"
+          size="sm"
+          variant="default"
           onPointerDown={(event) => event.preventDefault()}
           onClick={() => setSelection({ ...selection, editing: true })}
         >
