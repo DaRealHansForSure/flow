@@ -117,6 +117,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Two security fixes from T3 Code, taken ahead of the next sync: a failed clone no longer shows a
+  token from the repository URL, and signed asset and upload URLs stay out of HTTP traces.
 - The Brain tab remembers which sections are open (graph, conversation notes, Auto-Docs,
   Auto-Skills) when you switch tabs or chats, and the graph no longer reopens on its own once you
   closed it.
