@@ -1,31 +1,23 @@
 # Worklog
 
-Updated: 2026-10-30 21:00
+Updated: 2026-10-30 23:10
 
 ## Current focus
 
-- **Topic:** release 0.2.1 prep: phone, Brain page and No project polish
-- **Goal:** ship Plan mode and today's chat, Brain and phone changes as service and desktop 0.2.1
-- **Branch:** develop (pushed up to 0697c3631 = 0.2.1-dev.6; 36 commits since, not pushed)
-- **Last step done:** No project chats only read their Brain and stay out of project lists
-  (server and web, merged from fix/no-project-temporary); Connected projects as a searchable,
-  sortable table with tap hints; per-terminal font zoom; rendered pages open on tap; Brain tab
-  remembers sections; graph Fit button; two T3 security fixes cherry-picked; FORK.md and
-  CHANGELOG tidied. Dev web against the live service: `node scripts/dev-runner.ts dev:web
-  --port 3773 --share` on https://nixda.tail096d14.ts.net:5733/
-- **Next step:** push develop and build 0.2.1-dev.7 when the owner says so (server changes need
-  it); then the T3 sync (157 commits) or background task output
-  (.plans/background-task-output.md)
+- **Topic:** side fixes from the Brain settings chat (Part 1 of the plan)
+- **Goal:** phone and chat polish first, then Brain settings in one place (Part 2)
+- **Branch:** develop (Part 1 merged, nothing pushed)
+- **Last step done:** agents pill and Agents tab rows, subagent window, usage chip, Revise, plan
+  header, phone Back and swipes, terminal buttons, keyboard guard, work-row colours and sizes
+- **Next step:** owner checks Part 1 on the phone and says when to run tests; then Part 2
+  (Brain settings, plan in the Claude profile plans folder)
 - **Open questions / blockers:**
-  - Removing notes recorded from earlier No project chats, and the scratch folder's old Brain
-    binding, deletes Brain data: only with the owner's yes.
-  - No project chats follow the normal settle rules (owner); phone scroll loss after closing
-    Usage is ignored for now (owner).
-  - feat/windows-desktop stays unmerged; no shims for the Play Store T3 app; the eval plan files
-    in the Claude profile stay (owner).
+  - Tests written but not run: threadHistoryPaging, ThreadFind, usageLimitTone, phoneNavigation.
+  - feat/windows-desktop stays unmerged; no shims for the Play Store T3 app.
 
 ## Finished features
 
+- 2026-10-30 - Side fixes: agents pill, phone Back and swipes, usage chip, keyboard guard, work-row colours (develop)
 - 2026-10-30 - No project chats only read their Brain and are not projects; Connected projects table; source search; terminal font zoom; rendered pages open on tap; Brain tab memory; graph Fit; provider removal; About order; dev bundling page fits phones (develop)
 - 2026-10-30 - Status pill, Steer/Queue long press, background work list, touch-sized buttons, full-width phone menus, context window colours, update dialog versions (develop)
 - 2026-10-30 - Agents tab, Chat font, sidebar follows Last user message, browser zoom and globe pill, docked browser, Revise reworks the plan, FalkorDB crash fix (develop)
@@ -38,6 +30,7 @@ Updated: 2026-10-30 21:00
 
 ## History
 
+- 2026-10-30 23:10 - Part 1 side fixes committed on develop; tests waiting for the owner
 - 2026-10-30 21:00 - FORK.md, CHANGELOG and worklog tidied; tap hints in the projects table
 - 2026-10-30 20:45 - No project chats only read their Brain, hidden from project lists (merged)
 - 2026-10-30 20:30 - Projects table: icons, middle-cut paths, state hints, picker above it
