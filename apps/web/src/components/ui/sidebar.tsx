@@ -22,6 +22,7 @@ import { setLocalStorageItem } from "~/hooks/useLocalStorage";
 import { resolveSidebarState, type ResponsiveSidebarState } from "./sidebarState";
 import * as Schema from "effect/Schema";
 import { announceSidebarVisibility } from "~/lib/accessibilityAnnouncements";
+import { usePanelAnimationSettings } from "~/panelAnimations";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -281,6 +282,8 @@ function Sidebar({
   resizable?: boolean | SidebarResizableOptions;
 }) {
   const { isMobile, state, openMobile, setOpenMobile, setMobileSheetElement } = useSidebar();
+  // Flow: the phone sheet follows Settings' panel animation length, 0 ms included.
+  const panelAnimation = usePanelAnimationSettings();
   const offcanvasCollapsed = !isMobile && collapsible === "offcanvas" && state === "collapsed";
 
   const resolvedResizable = resolveSidebarResizable({ collapsible, isMobile, resizable });
@@ -319,6 +322,7 @@ function Sidebar({
             data-slot="sidebar"
             showCloseButton={false}
             side={side}
+            transitionDurationMs={panelAnimation.active ? panelAnimation.durationMs : 0}
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
