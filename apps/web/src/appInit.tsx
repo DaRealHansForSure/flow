@@ -85,6 +85,7 @@ function startClientAppearance(): void {
       previous.fontFamilyComposer !== settings.fontFamilyComposer ||
       previous.fontSizeInterface !== settings.fontSizeInterface ||
       previous.fontSizePrompt !== settings.fontSizePrompt ||
+      previous.fontScaleChat !== settings.fontScaleChat ||
       previous.fontSizeCode !== settings.fontSizeCode ||
       previous.fontSmoothing !== settings.fontSmoothing
     ) {
@@ -94,6 +95,7 @@ function startClientAppearance(): void {
         composer: settings.fontFamilyComposer,
         sizeInterface: settings.fontSizeInterface,
         sizePrompt: settings.fontSizePrompt,
+        scaleChat: settings.fontScaleChat,
         sizeCode: settings.fontSizeCode,
         smoothing: settings.fontSmoothing,
       });

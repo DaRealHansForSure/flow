@@ -80,6 +80,7 @@ type TypographySettings = Pick<
   | "fontFamilyTerminal"
   | "fontSizeInterface"
   | "fontSizePrompt"
+  | "fontScaleChat"
   | "fontSizeCode"
   | "fontSizeTerminal"
 >;
@@ -94,6 +95,7 @@ export function getChangedTypographySettingLabels(settings: TypographySettings):
     settings.fontSizePrompt !== DEFAULT_UNIFIED_SETTINGS.fontSizePrompt
       ? ["Prompt font"]
       : []),
+    ...(settings.fontScaleChat !== DEFAULT_UNIFIED_SETTINGS.fontScaleChat ? ["Chat font"] : []),
     ...(settings.fontFamilyCode !== DEFAULT_UNIFIED_SETTINGS.fontFamilyCode ||
     settings.fontSizeCode !== DEFAULT_UNIFIED_SETTINGS.fontSizeCode
       ? ["Code font"]

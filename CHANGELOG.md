@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Settings > Appearance > Chat font sizes only the text of chat messages (70 to 130 % of the
+  interface size), so the chat can be smaller without shrinking buttons the way browser zoom does.
 - The file panel has a Download button for the open file. On phones its actions (rendered view,
   word wrap, preview browser, download, file tree) sit in one menu instead of a row of icons.
 - Moving the floating browser into the right panel sticks for the chat: browsers the agent

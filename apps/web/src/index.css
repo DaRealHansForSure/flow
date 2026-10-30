@@ -2630,3 +2630,8 @@ code {
     box-shadow: 0 -8px 24px -12px rgb(0 0 0 / 0.25);
   }
 }
+
+/* Flow: the Chat font setting scales message text in the timeline only; code keeps its own size. */
+.messages-timeline-scroll [data-chat-text] {
+  font-size: calc(var(--text-sm) * var(--chat-font-scale, 1));
+}

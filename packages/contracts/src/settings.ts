@@ -171,6 +171,16 @@ export const PromptFontSize = Schema.Int.check(
 export type PromptFontSize = typeof PromptFontSize.Type;
 export const DEFAULT_PROMPT_FONT_SIZE: PromptFontSize = 14;
 
+// Flow: chat message text as a percentage of the interface size, so the chat can shrink alone.
+export const MIN_CHAT_FONT_SCALE = 70;
+export const MAX_CHAT_FONT_SCALE = 130;
+export const CHAT_FONT_SCALE_STEP = 5;
+export const ChatFontScale = Schema.Int.check(
+  Schema.isBetween({ minimum: MIN_CHAT_FONT_SCALE, maximum: MAX_CHAT_FONT_SCALE }),
+);
+export type ChatFontScale = typeof ChatFontScale.Type;
+const DEFAULT_CHAT_FONT_SCALE: ChatFontScale = 100;
+
 export const MIN_CODE_FONT_SIZE = 10;
 export const MAX_CODE_FONT_SIZE = 18;
 export const CodeFontSize = Schema.Int.check(
@@ -440,6 +450,9 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   fontSizePrompt: PromptFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_PROMPT_FONT_SIZE)),
+  ),
+  fontScaleChat: ChatFontScale.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_CHAT_FONT_SCALE)),
   ),
   fontSizeCode: CodeFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_CODE_FONT_SIZE)),
@@ -1749,6 +1762,7 @@ export const ClientSettingsPatch = Schema.Struct({
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),
+  fontScaleChat: Schema.optionalKey(ChatFontScale),
   fontSizeCode: Schema.optionalKey(CodeFontSize),
   fontSizeTerminal: Schema.optionalKey(TerminalFontSize),
   fontFamilyCode: Schema.optionalKey(FontFamilyPreference),
