@@ -182,6 +182,7 @@ import { ComposerContextPermissions } from "./ComposerContextPermissions";
 import { resolveCompatibleRuntimeMode, resolvePermissionMode } from "./chat/runtimeModeConfig";
 import { PlanReviewProvider } from "./chat/planReview";
 import { deriveProposedPlanVersions } from "./chat/planVersions";
+import { buildPlanReviewComment } from "./chat/planComments";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import { isEditableFocused } from "../lib/editableFocus";
 import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
@@ -190,7 +191,7 @@ import { cn } from "~/lib/utils";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
 import { toastManager } from "./ui/toast";
 import { projectScriptIdFromCommand } from "~/projectScripts";
-import { newMessageId } from "~/lib/utils";
+import { newMessageId, randomUUID } from "~/lib/utils";
 import {
   NO_PROVIDER_MODEL_SELECTION,
   providerInstanceEntriesFor,
@@ -2947,6 +2948,20 @@ export default function ChatView(props: ChatViewProps) {
       });
     }
   });
+  const addComposerReviewComment = useComposerDraftStore((store) => store.addReviewComment);
+  const commentOnPlanStable = useStableCallback((passage: string, note: string) => {
+    if (activeProposedPlan) {
+      addComposerReviewComment(
+        composerDraftTarget,
+        buildPlanReviewComment({
+          id: `plan-comment:${randomUUID()}`,
+          planId: activeProposedPlan.id,
+          passage,
+          note,
+        }),
+      );
+    }
+  });
   const reviewablePlanId =
     isServerThread && hasActionableProposedPlan(activeProposedPlan)
       ? (activeProposedPlan?.id ?? null)
@@ -2971,6 +2986,7 @@ export default function ChatView(props: ChatViewProps) {
             acceptInNewThread: () => void onImplementPlanInNewThreadStable(),
             revise: focusComposerStable,
             decline: declinePlanStable,
+            comment: commentOnPlanStable,
           },
   };
 

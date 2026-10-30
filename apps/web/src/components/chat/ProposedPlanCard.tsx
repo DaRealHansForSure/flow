@@ -10,6 +10,7 @@ import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { cn } from "~/lib/utils";
 import { Badge } from "../ui/badge";
 import { useRightPanelStore } from "../../rightPanelStore";
+import { PlanCommentSelection } from "./PlanCommentSelection";
 import { PlanReviewActions, usePlanReview } from "./planReview";
 import { planVersionLabel } from "./planVersions";
 import { usePlanFileActions } from "./usePlanFileActions";
@@ -36,6 +37,8 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   const { versions, review } = usePlanReview();
   const version = versions.find((candidate) => candidate.id === planId);
   const statusLabel = version ? planVersionLabel(version, versions.length) : null;
+  const reviewable = review !== null && review.planId === planId;
+  const [commentArea, setCommentArea] = useState<HTMLElement | null>(null);
   const title = proposedPlanTitle(planMarkdown) ?? "Proposed plan";
   const lineCount = planMarkdown.split("\n").length;
   const canCollapse = planMarkdown.length > 900 || lineCount > 20;
@@ -82,7 +85,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
           </MenuPopup>
         </Menu>
       </div>
-      <div className="mt-4">
+      <div className="mt-4" ref={setCommentArea}>
         <div
           ref={revealRef}
           className={cn("relative", isCollapsed && "max-h-104 overflow-hidden")}
@@ -126,10 +129,13 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
         ) : null}
       </div>
 
-      {review !== null && review.planId === planId ? (
+      {reviewable ? (
         <div className="mt-4 flex justify-end">
           <PlanReviewActions review={review} />
         </div>
+      ) : null}
+      {reviewable ? (
+        <PlanCommentSelection container={commentArea} onComment={review.comment} />
       ) : null}
       {fileActions.saveDialog}
     </div>

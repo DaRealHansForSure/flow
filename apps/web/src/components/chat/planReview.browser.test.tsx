@@ -15,6 +15,7 @@ it("accepts the plan in a mode picked from the Accept menu", async () => {
     acceptInNewThread: vi.fn(),
     revise: vi.fn(),
     decline: vi.fn(),
+    comment: vi.fn(),
   };
   await using screen = await render(<PlanReviewActions review={review} />, { router: false }); // no routes involved
   await userEvent.click(screen.getByRole("button", { name: "Accept with other permissions" }));

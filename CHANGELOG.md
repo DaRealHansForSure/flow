@@ -20,6 +20,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in Plan. Each plan shows its version and whether it was accepted, revised or declined,
   and the Plan tab can show earlier versions.
 
+- Passages of an open plan can be commented on: select text in the plan card or the Plan
+  tab, choose Comment and write a note. Each comment becomes a chip in the composer and is
+  sent, with the quoted passage, when you Revise.
+
 ### Changed
 
 - Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a

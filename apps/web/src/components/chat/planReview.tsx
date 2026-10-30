@@ -27,6 +27,8 @@ export interface PlanReview {
   readonly acceptInNewThread: () => void;
   readonly revise: () => void;
   readonly decline: () => void;
+  /** Adds a comment on a passage of the plan to the composer, sent with the next Revise. */
+  readonly comment: (passage: string, note: string) => void;
 }
 
 interface PlanReviewState {

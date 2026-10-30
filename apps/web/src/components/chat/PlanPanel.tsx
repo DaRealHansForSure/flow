@@ -19,6 +19,7 @@ import {
   FileSurfaceAction,
   FileSurfaceLoading,
 } from "../files/fileSurfaceChrome";
+import { PlanCommentSelection } from "./PlanCommentSelection";
 import { PlanReviewActions, usePlanReview } from "./planReview";
 import { type PlanVersion, planVersionLabel } from "./planVersions";
 import { usePlanFileActions } from "./usePlanFileActions";
@@ -57,6 +58,8 @@ function PlanDocument(props: {
   const { planMarkdown } = plan;
   const statusLabel = planVersionLabel(plan, versions.length);
   const [rendered, setRendered] = useState(true);
+  const reviewable = review !== null && review.planId === plan.id;
+  const [commentArea, setCommentArea] = useState<HTMLElement | null>(null);
   const fileActions = usePlanFileActions({
     planMarkdown,
     environmentId: props.environmentId,
@@ -119,21 +122,26 @@ function PlanDocument(props: {
           <SaveIcon className="size-3.5" />
         </FileSurfaceAction>
       </div>
-      {review !== null && review.planId === plan.id ? (
+      {reviewable ? (
         <div className="flex shrink-0 justify-end border-b border-border/60 px-3 py-2">
           <PlanReviewActions review={review} />
         </div>
       ) : null}
+      {reviewable && rendered ? (
+        <PlanCommentSelection container={commentArea} onComment={review.comment} />
+      ) : null}
       {rendered ? (
         <ScrollArea className="min-h-0 flex-1">
-          <ChatMarkdown
-            text={stripDisplayedPlanMarkdown(planMarkdown)}
-            cwd={props.cwd}
-            environmentId={props.environmentId}
-            threadRef={props.threadRef}
-            isStreaming={false}
-            className="mx-auto max-w-4xl px-6 py-5"
-          />
+          <div ref={setCommentArea}>
+            <ChatMarkdown
+              text={stripDisplayedPlanMarkdown(planMarkdown)}
+              cwd={props.cwd}
+              environmentId={props.environmentId}
+              threadRef={props.threadRef}
+              isStreaming={false}
+              className="mx-auto max-w-4xl px-6 py-5"
+            />
+          </div>
         </ScrollArea>
       ) : (
         <Suspense fallback={<FileSurfaceLoading />}>
