@@ -854,7 +854,7 @@ export function ConnectedAgentsStep({
     if (busy || !name.trim()) return;
     setBusy(true);
     setError("");
-    try {
+    return await (async () => {
       const result = await executeBrain({
         environmentId,
         input: { action: "create", name: name.trim(), cli },
@@ -870,9 +870,9 @@ export function ConnectedAgentsStep({
       setBrainState(result.value.state);
       onChoose(environmentId, { id: result.value.createdWorkspaceId, name: name.trim() });
       onContinue(environmentId);
-    } finally {
+    })().finally(() => {
       setBusy(false);
-    }
+    });
   };
   /**
    * Connect mode reuses the Brain page's validation and command shape, so the
@@ -883,7 +883,7 @@ export function ConnectedAgentsStep({
     if (busy || !connectCloudReady(fields) || !cliReady) return;
     setBusy(true);
     setError("");
-    try {
+    return await (async () => {
       const result = await executeBrain({ environmentId, input: connectCloudCommand(fields) });
       const response = result._tag === "Success" ? result.value : null;
       const outcome = connectCloudOutcome(response);
@@ -900,9 +900,9 @@ export function ConnectedAgentsStep({
         sources: remoteBrainSources(connected),
       });
       onContinue(environmentId);
-    } finally {
+    })().finally(() => {
       setBusy(false);
-    }
+    });
   };
   const connectReady = connectCloudReady({ endpoint, email, password });
   const cliReady =

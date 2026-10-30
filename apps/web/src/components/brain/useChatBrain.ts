@@ -96,63 +96,65 @@ export function useChatBrain(input: {
         return;
       }
       pending = true;
-      try {
-        const result = await execute({
-          environmentId,
-          input: threadId
-            ? { action: "readChat", threadId, ...(revision ? { revision } : {}) }
-            : { action: "read", projectId, metadataOnly: true },
-        });
-        if (disposed) {
-          return;
-        }
-        if (result._tag === "Failure") {
-          setError(true);
-          setFailure(UNANSWERED_FAILURE);
-          delay = RETRY_DELAY_MS;
+      return await (async () => {
+        try {
+          const result = await execute({
+            environmentId,
+            input: threadId
+              ? { action: "readChat", threadId, ...(revision ? { revision } : {}) }
+              : { action: "read", projectId, metadataOnly: true },
+          });
+          if (disposed) {
+            return;
+          }
+          if (result._tag === "Failure") {
+            setError(true);
+            setFailure(UNANSWERED_FAILURE);
+            delay = RETRY_DELAY_MS;
+            revision = undefined;
+            return;
+          }
+          if (result.value.error) {
+            revision = undefined;
+            delay = RETRY_DELAY_MS;
+            setError(true);
+            setFailure(result.value.error);
+            setResponse((previous) => retainChatContextOnError(previous, result.value));
+            return;
+          }
+          revision = result.value.chatMemories?.revision;
+          delay = revision ? LONG_POLL_DELAY_MS : RETRY_DELAY_MS;
+          const currentNotes = noteFingerprints(result.value);
+          if (previousNotes && notesChanged(previousNotes, currentNotes)) {
+            setChangedIds(changedNoteIds(previousNotes, currentNotes));
+            setSavedNow(true);
+            clearTimeout(highlightTimer);
+            highlightTimer = setTimeout(() => {
+              setChangedIds([]);
+              setSavedNow(false);
+            }, CHANGE_HIGHLIGHT_MS);
+          }
+          previousNotes = currentNotes;
+          setError(false);
+          setFailure(null);
+          setResponse((previous) =>
+            JSON.stringify(previous) === JSON.stringify(result.value) ? previous : result.value,
+          );
+        } catch {
           revision = undefined;
-          return;
-        }
-        if (result.value.error) {
-          revision = undefined;
           delay = RETRY_DELAY_MS;
-          setError(true);
-          setFailure(result.value.error);
-          setResponse((previous) => retainChatContextOnError(previous, result.value));
-          return;
+          if (!disposed) {
+            setError(true);
+            setFailure(UNANSWERED_FAILURE);
+          }
         }
-        revision = result.value.chatMemories?.revision;
-        delay = revision ? LONG_POLL_DELAY_MS : RETRY_DELAY_MS;
-        const currentNotes = noteFingerprints(result.value);
-        if (previousNotes && notesChanged(previousNotes, currentNotes)) {
-          setChangedIds(changedNoteIds(previousNotes, currentNotes));
-          setSavedNow(true);
-          clearTimeout(highlightTimer);
-          highlightTimer = setTimeout(() => {
-            setChangedIds([]);
-            setSavedNow(false);
-          }, CHANGE_HIGHLIGHT_MS);
-        }
-        previousNotes = currentNotes;
-        setError(false);
-        setFailure(null);
-        setResponse((previous) =>
-          JSON.stringify(previous) === JSON.stringify(result.value) ? previous : result.value,
-        );
-      } catch {
-        revision = undefined;
-        delay = RETRY_DELAY_MS;
-        if (!disposed) {
-          setError(true);
-          setFailure(UNANSWERED_FAILURE);
-        }
-      } finally {
+      })().finally(() => {
         pending = false;
         if (!disposed) {
           clearTimeout(timer);
           timer = setTimeout(() => void refresh(), delay);
         }
-      }
+      });
     };
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") {

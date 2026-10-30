@@ -29,14 +29,16 @@ function BrowserUpdateNotice() {
     const check = async () => {
       if (document.hidden || pending) return;
       pending = true;
-      try {
-        const next = await fetchFlowBrowserUpdate();
-        if (!disposed) setState(next);
-      } catch {
-        /* Source installations and older servers may not expose this route. */
-      } finally {
+      return await (async () => {
+        try {
+          const next = await fetchFlowBrowserUpdate();
+          if (!disposed) setState(next);
+        } catch {
+          /* Source installations and older servers may not expose this route. */
+        }
+      })().finally(() => {
         pending = false;
-      }
+      });
     };
     void check();
     const timer = setInterval(() => void check(), 30000);
@@ -55,16 +57,7 @@ function BrowserUpdateNotice() {
     setRestarting(true);
     setError(null);
     try {
-      let target = state.readyVersion;
-      try {
-        target = (await fetchFlowBrowserUpdate(true)).readyVersion ?? target;
-      } catch (cause) {
-        // A dropped response can mean the restart already began. HTTP errors
-        // are explicit rejections and should remain actionable immediately.
-        if (cause instanceof Error && cause.message.startsWith("Flow update request failed"))
-          throw cause;
-      }
-      await waitForFlowBrowserUpdate(target);
+      await applyFlowBrowserUpdate(state.readyVersion);
       window.location.reload();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not restart Flow. Please retry.");
@@ -115,4 +108,19 @@ function BrowserUpdateNotice() {
       </AlertDialog>
     </div>
   );
+}
+
+/** Starts the update and waits until the service runs the new version. */
+async function applyFlowBrowserUpdate(readyVersion: string) {
+  let target = readyVersion;
+  try {
+    target = (await fetchFlowBrowserUpdate(true)).readyVersion ?? target;
+  } catch (cause) {
+    // A dropped response can mean the restart already began. HTTP errors
+    // are explicit rejections and should remain actionable immediately.
+    if (cause instanceof Error && cause.message.startsWith("Flow update request failed")) {
+      throw cause;
+    }
+  }
+  await waitForFlowBrowserUpdate(target);
 }
