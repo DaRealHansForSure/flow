@@ -4,27 +4,37 @@ import { createPortal } from "react-dom";
 
 import { resolveSelectionActionPosition, type SelectionActionPoint } from "~/lib/selectionActions";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+} from "../ui/dialog";
 import { Textarea } from "../ui/textarea";
 
 const SELECTION_SETTLE_MS = 250;
 
 /**
- * Flow: a Comment button for text selected in a plan, which opens a note field. The note and
- * the passage go to onComment; the popover then closes and the selection is cleared.
+ * Flow: a Comment button for text selected in a plan, which opens a dialog for the note. The
+ * note and the passage go to onComment.
  */
 export function PlanCommentSelection(props: {
   readonly container: HTMLElement | null;
   readonly onComment: (passage: string, note: string) => void;
 }) {
   const { container, onComment } = props;
-  // Editing lives in the same state, so the popover is measured again when it grows.
   const [selection, setSelection] = useState<{
     readonly passage: string;
     readonly position: SelectionActionPoint;
-    readonly editing: boolean;
   } | null>(null);
+  // The note is written in a dialog, which stays clear of a phone's keyboard.
+  const [draftPassage, setDraftPassage] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- measures the popover DOM node and keeps it inside the window before paint
   useLayoutEffect(() => {
@@ -47,9 +57,6 @@ export function PlanCommentSelection(props: {
     let mouseButtonDown = false;
     let timer: number | undefined;
     const update = () => {
-      if (popoverRef.current?.contains(document.activeElement)) {
-        return;
-      }
       const nativeSelection = window.getSelection();
       const range =
         nativeSelection && nativeSelection.rangeCount > 0 && !nativeSelection.isCollapsed
@@ -62,7 +69,6 @@ export function PlanCommentSelection(props: {
         !container.contains(range.commonAncestorContainer)
       ) {
         setSelection(null);
-        setNote("");
         return;
       }
       const rects = range.getClientRects();
@@ -80,11 +86,7 @@ export function PlanCommentSelection(props: {
       });
       // Below the selection handles a touchscreen draws under the selected text.
       const handleOffset = window.matchMedia("(pointer: coarse)").matches ? 28 : 0;
-      setSelection({
-        editing: false,
-        passage,
-        position: { ...position, y: position.y + handleOffset },
-      });
+      setSelection({ passage, position: { ...position, y: position.y + handleOffset } });
     };
     const schedule = () => {
       window.clearTimeout(timer);
@@ -126,69 +128,86 @@ export function PlanCommentSelection(props: {
     };
   }, [container]);
 
-  if (!selection) {
-    return null;
-  }
-  const close = () => {
-    setSelection(null);
+  const closeDraft = () => {
+    setDraftPassage(null);
     setNote("");
   };
   const submit = () => {
-    if (note.trim().length === 0) {
+    if (draftPassage === null || note.trim().length === 0) {
       return;
     }
-    onComment(selection.passage, note);
-    window.getSelection()?.removeAllRanges();
-    close();
+    onComment(draftPassage, note);
+    closeDraft();
   };
-  return createPortal(
-    <div
-      ref={popoverRef}
-      className="fixed z-50 max-w-[calc(100vw-1rem)] rounded-lg shadow-lg"
-      style={{ left: selection.position.x, top: selection.position.y }}
-      data-plan-comment-popover
-    >
-      {selection.editing ? (
-        <div className="grid w-72 gap-2 rounded-lg border border-border bg-popover p-2 shadow-lg">
-          <Textarea
-            size="sm"
-            autoFocus
-            aria-label="Comment on the selected passage"
-            placeholder="What should change here?"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                submit();
-              }
-              if (event.key === "Escape") {
-                event.preventDefault();
-                close();
-              }
-            }}
-          />
-          <div className="flex justify-end gap-2">
-            <Button size="xs" variant="ghost" onClick={close}>
+  return (
+    <>
+      {selection !== null && draftPassage === null
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              className="fixed z-50 rounded-lg shadow-lg"
+              style={{ left: selection.position.x, top: selection.position.y }}
+              data-plan-comment-popover
+            >
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => {
+                  setDraftPassage(selection.passage);
+                  setSelection(null);
+                  window.getSelection()?.removeAllRanges();
+                }}
+              >
+                <MessageSquarePlusIcon aria-hidden="true" className="size-3.5" />
+                Comment
+              </Button>
+            </div>,
+            document.body,
+          )
+        : null}
+      <Dialog
+        open={draftPassage !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeDraft();
+          }
+        }}
+      >
+        <DialogPopup className="max-w-xl" initialFocus={noteRef}>
+          <DialogHeader>
+            <DialogTitle>Comment on the plan</DialogTitle>
+            <DialogDescription>Sent with the passage when you Revise.</DialogDescription>
+          </DialogHeader>
+          <DialogPanel>
+            <div className="grid gap-3">
+              <blockquote className="max-h-32 overflow-y-auto border-l-2 border-border ps-3 text-muted-foreground text-sm whitespace-pre-wrap">
+                {draftPassage}
+              </blockquote>
+              <Textarea
+                ref={noteRef}
+                aria-label="Comment on the selected passage"
+                placeholder="What should change here?"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    submit();
+                  }
+                }}
+              />
+            </div>
+          </DialogPanel>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={closeDraft}>
               Cancel
             </Button>
-            <Button size="xs" disabled={note.trim().length === 0} onClick={submit}>
+            <Button size="sm" disabled={note.trim().length === 0} onClick={submit}>
               Add comment
             </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          size="sm"
-          variant="default"
-          onPointerDown={(event) => event.preventDefault()}
-          onClick={() => setSelection({ ...selection, editing: true })}
-        >
-          <MessageSquarePlusIcon aria-hidden="true" className="size-3.5" />
-          Comment
-        </Button>
-      )}
-    </div>,
-    document.body,
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
+    </>
   );
 }

@@ -25,11 +25,13 @@ it("comments on a passage selected in the plan", async () => {
   window.getSelection()?.addRange(range);
 
   await userEvent.click(page.getByRole("button", { name: "Comment" }));
-  await userEvent.type(
-    page.getByRole("textbox", { name: "Comment on the selected passage" }),
-    "Split this step",
-  );
-  await userEvent.click(page.getByRole("button", { name: "Add comment" }));
+  const note = page.getByRole("textbox", { name: "Comment on the selected passage" });
+  await expect.element(note).toHaveFocus();
+  await userEvent.keyboard("Split this step");
+  // The dialog opens with the note focused; the repo's dialog tests drive it by keyboard.
+  await userEvent.keyboard("{Control>}{Enter}{/Control}");
   expect(onComment).toHaveBeenCalledWith("Add a migration for the new column.", "Split this step");
-  await expect.element(page.getByRole("button", { name: "Add comment" })).not.toBeInTheDocument();
+  await expect
+    .element(page.getByRole("textbox", { name: "Comment on the selected passage" }))
+    .not.toBeInTheDocument();
 });
