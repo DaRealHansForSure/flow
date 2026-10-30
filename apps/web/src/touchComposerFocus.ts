@@ -11,7 +11,8 @@ const COMPOSER_AREA_SELECTOR = '[data-chat-composer-overlay="true"]';
 const TAP_FOCUS_WINDOW_MS = 1_000;
 const ALLOWED_FOCUS_WINDOW_MS = 1_000;
 
-let lastPointerDown: { readonly target: Element; readonly atMs: number } | null = null;
+/** When the composer area was last tapped; read at tap time, as expanding replaces the tapped node. */
+let lastComposerTapAtMs: number | null = null;
 let allowedUntilMs = 0;
 
 /** Lets the next focus of the composer through, for an action that asks for typing (Revise). */
@@ -19,12 +20,8 @@ export function allowComposerFocus(): void {
   allowedUntilMs = performance.now() + ALLOWED_FOCUS_WINDOW_MS;
 }
 
-function focusFollowsComposerTap(editor: Element, nowMs: number): boolean {
-  if (lastPointerDown === null || nowMs - lastPointerDown.atMs > TAP_FOCUS_WINDOW_MS) {
-    return false;
-  }
-  const area = editor.closest(COMPOSER_AREA_SELECTOR) ?? editor;
-  return area.contains(lastPointerDown.target);
+function focusFollowsComposerTap(nowMs: number): boolean {
+  return lastComposerTapAtMs !== null && nowMs - lastComposerTapAtMs <= TAP_FOCUS_WINDOW_MS;
 }
 
 export function installTouchComposerFocusGuard(): void {
@@ -32,9 +29,10 @@ export function installTouchComposerFocusGuard(): void {
   document.addEventListener(
     "pointerdown",
     (event) => {
-      if (event.target instanceof Element) {
-        lastPointerDown = { target: event.target, atMs: performance.now() };
-      }
+      const tappedComposer =
+        event.target instanceof Element &&
+        event.target.closest(`${COMPOSER_AREA_SELECTOR}, ${COMPOSER_EDITOR_SELECTOR}`) !== null;
+      lastComposerTapAtMs = tappedComposer ? performance.now() : null;
     },
     { capture: true, passive: true },
   );
@@ -49,7 +47,7 @@ export function installTouchComposerFocusGuard(): void {
         return;
       }
       const nowMs = performance.now();
-      if (nowMs < allowedUntilMs || focusFollowsComposerTap(editor, nowMs)) {
+      if (nowMs < allowedUntilMs || focusFollowsComposerTap(nowMs)) {
         return;
       }
       event.target.blur();
