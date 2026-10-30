@@ -2679,6 +2679,9 @@ code {
   [data-work-log-details],
   [data-work-log-details] [class*="max-h-"] {
     max-height: none;
+    /* Hidden, not visible: a box that still scrolls sideways would turn visible back into auto
+       and catch the swipe for the few pixels its padding adds. */
+    overflow-y: hidden;
   }
 }
 

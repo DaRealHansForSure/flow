@@ -44,7 +44,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - On a phone the message box takes the cursor, and raises the keyboard, only when you tap it (or
   press Revise on a plan). Closing a dialog, sheet or menu no longer brings the keyboard up.
 - On touch screens an expanded tool call shows its whole content instead of a small box that
-  scrolls on its own, so swiping keeps scrolling the chat instead of getting stuck at the box's end.
+  scrolls on its own, so swiping keeps scrolling the chat instead of getting stuck at the box's end
+  or on the few pixels its padding added.
 - Closing the background work list no longer puts the cursor in the message box, so the phone
   keyboard stays down.
 - On touch screens the terminal's split, new and close buttons are 40 px with 20 px icons, like the
