@@ -1,23 +1,25 @@
 # Worklog
 
-Updated: 2026-10-30 14:20
+Updated: 2026-10-30 16:10
 
 ## Current focus
 
-- **Topic:** Release 0.2.1 (everything below is merged into develop, not pushed)
+- **Topic:** Release 0.2.1 (everything below is on develop)
 - **Goal:** ship Plan mode and today's fixes as service and desktop 0.2.1
-- **Branch:** develop (pushed to origin)
-- **Last step done:** chat header measures the room its floating buttons need (no title
-  overlap while a chat loads); docs up to date; develop pushed
-- **Next step:** release branch: CHANGELOG [Unreleased] -> [0.2.1], merge develop into main
-  and release, push and run the "Flow release" workflow (needs the owner's push OK; installing
-  restarts flow.service and ends every chat)
-- **Open questions / blockers:** Plan fallback for providers without plan mode (step 9,
-  optional); feat/windows-desktop waits for the Windows work; the Dev Flow lacks the
-  claude_work provider instance
+- **Branch:** develop (pushed up to 9d13656a7; the first-page change e3f05ef3f is not pushed)
+- **Last step done:** a chat opens with only its newest turn (at most 200 entries); older turns
+  load in chunks of five while scrolling up. Test AppImage 0.2.1-dev.4 in release/.
+- **Next step:** owner checks dev.4 (chunked loading, file panel); then either the background
+  task output view (.plans/background-task-output.md) or release 0.2.1 (CHANGELOG [Unreleased]
+  -> [0.2.1], merge into main, "Flow release" workflow; needs the owner's OK)
+- **Open questions / blockers:** feat/windows-desktop waits for the Windows work; no
+  compatibility shims for the Play Store T3 app (owner: "we never do that"); four
+  client-runtime settings tests (server.test.ts, serverConfigProjection.test.ts) already fail
+  on develop
 
 ## Finished features
 
+- 2026-10-30 - Chunked chat history, file panel (opens alone, rendered Markdown, Download, phone menu), docked browser, Brain dot, phone composer bar, Plan ready badge (develop)
 - 2026-10-30 - Phone layout fixes, Read image thumbnails, version info in About, SearchableSelect, React Compiler and test cleanup (develop)
 - 2026-10-30 - Plan as a permission mode, steps 1 to 8 plus Reopen (merged into develop)
 - 2026-10-30 - Flow runs only while the app is open; backup step in the install guide (develop)
@@ -34,6 +36,10 @@ Updated: 2026-10-30 14:20
 
 ## History
 
+- 2026-10-30 16:10 - First page is the newest turn; worklog updated
+- 2026-10-30 15:40 - Markdown always opens rendered; AppImage 0.2.1-dev.4
+- 2026-10-30 15:25 - Chunked chat loading, file panel Download and phone menu; AppImage 0.2.1-dev.3
+- 2026-10-30 14:50 - Docked browser stays, panel dot, Brain dot on real changes, phone composer bar; AppImage 0.2.1-dev.2
 - 2026-10-30 14:20 - Measured header room for the floating buttons; develop pushed
 - 2026-10-30 14:10 - Phone sheets layer cleanly; fork tests are browser tests; docs updated
 - 2026-10-30 13:30 - Read image thumbnails, About versions, SearchableSelect, React Compiler fixes
