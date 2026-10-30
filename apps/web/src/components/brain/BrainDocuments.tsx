@@ -1,4 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
+import * as Schema from "effect/Schema";
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import type {
   BrainDocument,
   BrainDocumentSummary,
@@ -38,6 +40,10 @@ function documentLifecycle(document: BrainDocumentSummary): string {
       ? "Maintained context"
       : "Retained memory";
 }
+
+const COLLAPSED_SECTIONS_KEY = "flow:brain:collapsed-sections";
+const NO_COLLAPSED_SECTIONS: Record<string, boolean> = {};
+const CollapsedSectionsSchema = Schema.Record(Schema.String, Schema.Boolean);
 
 export function BrainDocumentDialog(props: Parameters<typeof BrainDocumentDialogContent>[0]) {
   return (
@@ -261,7 +267,12 @@ export function BrainDocumentLibrary({
   const [selected, setSelected] = useState<BrainDocumentSummary | null>(null);
   const [legacy, setLegacy] = useState<BrainKnowledge["memories"][number] | null>(null);
   const [query, setQuery] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Flow: closed sections stay closed across tabs, chats and reloads.
+  const [collapsed, setCollapsed] = useLocalStorage(
+    COLLAPSED_SECTIONS_KEY,
+    NO_COLLAPSED_SECTIONS,
+    CollapsedSectionsSchema,
+  );
   const matches = (text: string) => text.toLowerCase().includes(query.toLowerCase());
   return (
     <>
@@ -332,9 +343,7 @@ export function BrainDocumentLibrary({
               count={all.length + old.length}
               description={compact ? undefined : sectionDescription(kind)}
               expanded={!collapsed[kind]}
-              onToggle={() =>
-                setCollapsed((previous) => ({ ...previous, [kind]: !previous[kind] }))
-              }
+              onToggle={() => setCollapsed({ ...collapsed, [kind]: !collapsed[kind] })}
               actions={kind === "doc" || kind === "skill" ? chatSwitches?.[kind] : null}
             />
             <div

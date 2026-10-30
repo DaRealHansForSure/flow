@@ -1,5 +1,7 @@
 import { BrainIcon } from "./BrainIcon";
 import { useState } from "react";
+import * as Schema from "effect/Schema";
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import type {
   BrainChatCurationOutput,
   ChatMemoryList,
@@ -26,6 +28,10 @@ import type { ChatBrain } from "./useChatBrain";
 const OUTPUT_NEEDS_NOTES_AGENT = "Needs the notes agent.";
 
 /** The Brain tab of a chat's right panel; the chat view keeps its context fresh. */
+const NOTES_EXPANDED_KEY = "flow:brain-tab:notes-expanded";
+const GRAPH_EXPANDED_KEY = "flow:brain-tab:graph-expanded";
+const GraphExpandedSchema = Schema.NullOr(Schema.Boolean);
+
 export function ChatBrainPanel({
   environmentId,
   threadId,
@@ -36,19 +42,24 @@ export function ChatBrainPanel({
   chatBrain: ChatBrain;
 }) {
   const { response, brain, error, changedIds, savedNow, setCurationOutput } = chatBrain;
-  const [notesExpanded, setNotesExpanded] = useState(true);
-  const [brainExpanded, setBrainExpanded] = useState(false);
+  // Flow: open sections are remembered across tabs, chats and reloads.
+  const [notesExpanded, setNotesExpanded] = useLocalStorage(
+    NOTES_EXPANDED_KEY,
+    true,
+    Schema.Boolean,
+  );
+  // null until the user opens or closes the graph; until then it opens by itself once used.
+  const [storedBrainExpanded, setBrainExpanded] = useLocalStorage<boolean | null, boolean | null>(
+    GRAPH_EXPANDED_KEY,
+    null,
+    GraphExpandedSchema,
+  );
   const [view, setView] = useState<string | null>(null);
-  const [graphAutoExpanded, setGraphAutoExpanded] = useState(false);
   const failedSources = brain?.sources.filter((source) => source.status === "error") ?? [];
   const notes = response?.chatMemories;
   const consultedNodeIds = [...new Set(notes?.consultedNodeIds ?? [])];
   const consultedNodeCount = consultedNodeIds.length;
-  // The graph opens by itself the first time this chat uses the Brain; the tab is keyed per chat.
-  if (consultedNodeCount > 0 && !graphAutoExpanded) {
-    setGraphAutoExpanded(true);
-    setBrainExpanded(true);
-  }
+  const brainExpanded = storedBrainExpanded ?? consultedNodeCount > 0;
   const curation = brain && threadId ? notes?.curation : undefined;
   const notesAgentOff = notes?.curation?.notesAgent.enabled === false;
   const curationSwitch = (output: BrainChatCurationOutput, label: string) => {
@@ -108,7 +119,7 @@ export function ChatBrainPanel({
                 <button
                   type="button"
                   aria-expanded={brainExpanded}
-                  onClick={() => setBrainExpanded((value) => !value)}
+                  onClick={() => setBrainExpanded(!brainExpanded)}
                   className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-left hover:bg-muted/60"
                 >
                   {brain ? (
@@ -216,7 +227,7 @@ export function ChatBrainPanel({
             icon={BookOpenIcon}
             label="Conversation notes"
             expanded={notesExpanded}
-            onToggle={() => setNotesExpanded((value) => !value)}
+            onToggle={() => setNotesExpanded(!notesExpanded)}
             actions={curationSwitch("notesAgent", "Notes agent")}
           />
           {notesExpanded && (
