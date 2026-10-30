@@ -158,7 +158,6 @@ const MermaidFilePreview = lazy(() =>
 );
 
 const FILE_EXPLORER_STORAGE_KEY = "t3code.fileExplorerOpen";
-const RENDER_MARKDOWN_STORAGE_KEY = "t3code.renderMarkdown";
 const RENDER_BROWSER_FILE_STORAGE_KEY = "t3code.renderBrowserFile";
 const RENDER_TABLE_STORAGE_KEY = "t3code.renderTable";
 type FilePostRender = <LAnnotation>(
@@ -1125,11 +1124,12 @@ export default function FilePreviewPanel({
     explorerOpen,
     attachmentOpen: attachment !== undefined,
   });
-  const [renderMarkdownPreferred, setRenderMarkdownPreferred] = useLocalStorage(
-    RENDER_MARKDOWN_STORAGE_KEY,
-    true,
-    Schema.Boolean,
-  );
+  // Flow: Markdown always opens rendered; the source view is a choice for the open file only.
+  const [markdownSourcePath, setMarkdownSourcePath] = useState<string | null>(null);
+  const renderMarkdownPreferred =
+    markdownSourcePath === null || markdownSourcePath !== relativePath;
+  const setRenderMarkdownPreferred = (rendered: boolean) =>
+    setMarkdownSourcePath(rendered ? null : relativePath);
   const [renderBrowserFilePreferred, setRenderBrowserFilePreferred] = useLocalStorage(
     RENDER_BROWSER_FILE_STORAGE_KEY,
     true,

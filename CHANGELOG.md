@@ -45,8 +45,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - A file opened from a link in the chat (or from search) opens on its own, without the file
-  tree beside it, and Markdown files open rendered. The tree and the source view are still one
-  click away.
+  tree beside it, and Markdown files always open rendered; switching to the source applies to that
+  file only. The tree and the source view are still one click away.
 - Long chats open with only their last three turns and load older turns in chunks of five
   as you scroll up, instead of the last ten at once behind a "Load earlier turns" button.
 - The Brain panel is tidier: the Default / On / Off switches drop the "Follows Settings" line
