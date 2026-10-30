@@ -145,6 +145,10 @@ interface RightPanelStoreState {
   dockBrowser: (ref: ScopedThreadRef, tabId: string) => void;
   /** Flow: adds a browser the agent revealed as a tab, without opening a closed panel. */
   dockRevealedBrowser: (ref: ScopedThreadRef, tabId: string) => void;
+  /** Flow: the browser floats over the chat again, and so do this chat's later browsers. */
+  undockBrowser: (ref: ScopedThreadRef) => void;
+  /** Flow: a closed floating browser waits in the panel; a closed panel shows a dot for it. */
+  tuckBrowser: (ref: ScopedThreadRef) => void;
   renameDevice: (ref: ScopedThreadRef, surfaceId: string, title: string) => void;
   openBrowser: (ref: ScopedThreadRef, tabId: string | null) => void;
   openFile: (ref: ScopedThreadRef, relativePath: string, line?: number) => void;
@@ -762,6 +766,22 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
               ? added
               : { ...added, isOpen: false, unseenActivity: true as const };
           }),
+        ),
+      undockBrowser: (ref) =>
+        set((state) =>
+          userAction(state, scopedThreadKey(ref), (current) => {
+            if (current.browserDocked === undefined) return current;
+            const { browserDocked: _docked, ...rest } = current;
+            return rest;
+          }),
+        ),
+      tuckBrowser: (ref) =>
+        set((state) =>
+          automaticUpdate(state, scopedThreadKey(ref), (current) =>
+            current.isOpen || !current.surfaces.some((surface) => surface.kind === "preview")
+              ? current
+              : { ...current, unseenActivity: true as const },
+          ),
         ),
       renameDevice: (ref, surfaceId, title) =>
         set((state) =>

@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- A globe pill above the composer shows how many browsers the chat has open while none is on
+  screen, like the mobile app; it opens them in the side panel and carries a dot for new ones.
 - Settings > Appearance > Chat font sizes only the text of chat messages (70 to 130 % of the
   interface size), so the chat can be smaller without shrinking buttons the way browser zoom does.
 - The file panel has a Download button for the open file. On phones its actions (rendered view,
@@ -84,6 +86,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Popping a browser out of the side panel again floats this chat's later browsers over the chat,
+  instead of keeping them in the panel; closing the floating browser leaves a dot on the panel
+  button, where the browser waits.
 - On a phone the composer is a full-width, square bar on the bottom edge of the window, over an
   opaque base, so chat text no longer scrolls into view below or beside it. A
   tinted surface, a firm top edge and a soft shadow set it apart from the chat history.

@@ -406,6 +406,7 @@ export function PreviewView({
       return;
     }
     usePreviewMiniPlayerStore.getState().open(threadRef, browserMiniPlayerSource(tabId));
+    useRightPanelStore.getState().undockBrowser(threadRef);
     useRightPanelStore.getState().close(threadRef);
   };
 

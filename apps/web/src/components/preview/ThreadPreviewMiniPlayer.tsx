@@ -460,6 +460,9 @@ function MiniPlayerShell({
 
   const close = () => {
     usePreviewMiniPlayerStore.getState().close(threadRef);
+    if (miniPlayer.source.kind === "browser") {
+      useRightPanelStore.getState().tuckBrowser(threadRef);
+    }
   };
 
   const beginGesture = (

@@ -295,7 +295,7 @@ describe("rightPanelStore", () => {
     expect(sheetChat.activeSurfaceId).toBe("plan");
   });
 
-  it("docks browsers the agent reveals once the user moved one into the panel, marking a closed panel", () => {
+  it("docks browsers the agent reveals once the user moved one into the panel, until one pops out again", () => {
     const store = useRightPanelStore.getState();
     const panel = () =>
       selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA);
@@ -317,6 +317,12 @@ describe("rightPanelStore", () => {
     store.dockRevealedBrowser(refA, "tab-3");
     expect(panel().activeSurfaceId).toBe("browser:tab-3");
     expect(panel().unseenActivity).toBeUndefined();
+
+    store.close(refA);
+    store.tuckBrowser(refA);
+    expect(panel().unseenActivity).toBe(true);
+    store.undockBrowser(refA);
+    expect(panel().browserDocked).toBeUndefined();
 
     store.openPlanByDefault(refB, "plan-1", false);
     expect(

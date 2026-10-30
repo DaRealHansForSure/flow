@@ -3170,7 +3170,23 @@ export default function ChatView(props: ChatViewProps) {
   };
   const onExpandTimelineImageStable = useStableCallback(onExpandTimelineImage);
   const shownThreadSyncPhase = activeEnvironmentUnavailable ? null : delayedThreadSyncPhase;
+  const browserSurfaceIds = rightPanelState.surfaces.flatMap((surface) =>
+    surface.kind === "preview" && surface.resourceId ? [surface.id] : [],
+  );
+  const browserNow =
+    activeThreadRef &&
+    browserSurfaceIds.length > 0 &&
+    shownPreviewMiniPlayer === null &&
+    !(rightPanelOpen && activeRightPanelKind === "preview")
+      ? {
+          count: browserSurfaceIds.length,
+          unseen: rightPanelState.unseenActivity === true,
+          onOpen: () =>
+            useRightPanelStore.getState().activateSurface(activeThreadRef, browserSurfaceIds[0]!),
+        }
+      : null;
   const hasThreadNow =
+    browserNow !== null ||
     childInputNow !== null ||
     backgroundWorkNow !== null ||
     goalNow !== null ||
@@ -3217,6 +3233,7 @@ export default function ChatView(props: ChatViewProps) {
           work={backgroundWorkNow}
           syncPhase={shownThreadSyncPhase}
           goal={goalNow}
+          browser={browserNow}
         />
         {threadStatusLine}
         {pendingGuestMessageCount > 0 && isServerThread && activeThread ? (
