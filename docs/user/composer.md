@@ -344,7 +344,11 @@ File links refer to the environment's machine, including when you connect remote
 Previews use the original file, even outside the workspace. Moving or deleting it
 can break the preview, so save a copy if you need to keep it.
 
-## Files outside the workspace
+## Files from chat links
+
+A file opened from a link in the chat, or from search, opens on its own without the file tree, and
+Markdown files open rendered. Switching one to source applies to that file only, and the tree is
+one click away. **Download file** saves the open file; on phones the file actions sit in one menu.
 
 Follow an agent's file link to read a report or other file outside the workspace.
 These files open read-only. An HTML file outside the workspace cannot load scripts,

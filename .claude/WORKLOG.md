@@ -1,24 +1,23 @@
 # Worklog
 
-Updated: 2026-10-30 16:10
+Updated: 2026-10-30 17:25
 
 ## Current focus
 
-- **Topic:** Release 0.2.1 (everything below is on develop)
+- **Topic:** release 0.2.1 prep
 - **Goal:** ship Plan mode and today's fixes as service and desktop 0.2.1
-- **Branch:** develop (pushed up to 9d13656a7; the first-page change e3f05ef3f is not pushed)
-- **Last step done:** a chat opens with only its newest turn (at most 200 entries); older turns
-  load in chunks of five while scrolling up. Test AppImage 0.2.1-dev.4 in release/.
-- **Next step:** owner checks dev.4 (chunked loading, file panel); then either the background
-  task output view (.plans/background-task-output.md) or release 0.2.1 (CHANGELOG [Unreleased]
-  -> [0.2.1], merge into main, "Flow release" workflow; needs the owner's OK)
-- **Open questions / blockers:** feat/windows-desktop waits for the Windows work; no
-  compatibility shims for the Play Store T3 app (owner: "we never do that"); four
-  client-runtime settings tests (server.test.ts, serverConfigProjection.test.ts) already fail
-  on develop
+- **Branch:** develop (about 25 commits not pushed, from e3f05ef3f on)
+- **Last step done:** settings tests fixed (stale fixtures), web reconnects quickly after a
+  long-hidden tab, plan-revision eval reproduces the owner's case on Opus (0/3 -> 2/3); no
+  AppImage built after 0.2.1-dev.4
+- **Next step:** push develop and build 0.2.1-dev.5 when the owner says so
+- **Open questions / blockers:** feat/windows-desktop stays unmerged (owner); no
+  compatibility shims for the Play Store T3 app (owner: "we never do that"); 21 eval plan files
+  in the Claude profile's plans folder stay (owner)
 
 ## Finished features
 
+- 2026-10-30 - Agents tab, Chat font, sidebar follows Last user message, browser zoom and globe pill, docked browser fixes, Revise reworks the plan, FalkorDB crash fix, user docs (develop)
 - 2026-10-30 - Chunked chat history, file panel (opens alone, rendered Markdown, Download, phone menu), docked browser, Brain dot, phone composer bar, Plan ready badge (develop)
 - 2026-10-30 - Phone layout fixes, Read image thumbnails, version info in About, SearchableSelect, React Compiler and test cleanup (develop)
 - 2026-10-30 - Plan as a permission mode, steps 1 to 8 plus Reopen (merged into develop)
@@ -36,6 +35,11 @@ Updated: 2026-10-30 16:10
 
 ## History
 
+- 2026-10-30 17:05 - User docs and worklog updated for the afternoon changes
+- 2026-10-30 16:55 - Revise reworks the plan, branch on checkout chats, floating browser drag, subagent bar, phone composer
+- 2026-10-30 16:30 - Browser zoom (pinch, Ctrl+wheel), composer contrast, snooze options on phones, Cite on Android, FalkorDB crash fix
+- 2026-10-30 16:10 - Agents tab, globe pill, browser pops out of the panel again
+- 2026-10-30 15:50 - Chat font, sidebar chats follow Last user message
 - 2026-10-30 16:10 - First page is the newest turn; worklog updated
 - 2026-10-30 15:40 - Markdown always opens rendered; AppImage 0.2.1-dev.4
 - 2026-10-30 15:25 - Chunked chat loading, file panel Download and phone menu; AppImage 0.2.1-dev.3

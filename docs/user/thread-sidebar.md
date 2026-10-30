@@ -108,7 +108,8 @@ after the drop.
 
 New threads appear above the active threads you have arranged. Settling clears a thread's active
 position, so using **Un-settle** returns it to the top. Pinning and snoozing preserve its active
-position until you move it again. Thread activity does not change the order. The settled shelf
+position until you move it again. Thread activity does not change the order, unless the
+[Working section or Last user message](#fold-working-threads-beta) orders the list. The settled shelf
 continues to use settlement time.
 
 If dragging is unavailable for one environment, update the T3 Code server running in that
@@ -143,7 +144,9 @@ or **Settings → General → Working section** on iOS and Android. Each device 
 choice.
 
 While this is on, the active list is ordered by when each thread last came back to you, so you
-cannot drag or move threads within it. Your saved order returns when you turn it off.
+cannot drag or move threads within it. When you turn it off, the active list follows **Settings →
+General → Project order**: on **Last user message** the thread you last wrote in comes first, and
+**Created at** and **Manual** keep your saved, draggable order.
 
 ### Group threads by project (beta)
 
@@ -256,7 +259,10 @@ the snooze. Enable **Snooze until limits reset** in thread behavior settings to
 snooze limit stops by default. Providers without a reset time offer manual
 retry and the normal snooze choices.
 
-On web and desktop, use **Agents** to follow work delegated to subagents.
+Long threads open at their newest turn and load older turns as you scroll up.
+
+On web and desktop, open the **Agents** tab of the right panel (**+ → Agents**, or `G`) to follow
+work delegated to subagents; it lists the thread's active and previous agents.
 On mobile, open a subagent from its conversation card or **Agents**. On iOS
 layouts with an inspector, its thread opens beside the parent. Maximize it to
 fill the screen; close the full-screen view to return to the parent and inspector.

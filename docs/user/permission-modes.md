@@ -37,13 +37,15 @@ composer:
 
 - **Accept** implements the plan in the thread's other mode. Its menu offers another mode or a
   new thread.
-- **Revise** sends your feedback; the agent writes a new version. To comment on a passage, select
+- **Revise** sends your feedback with a request to rework the plan into a new version without
+  starting on its steps. To comment on a passage, select
   it, choose **Comment**, and write a note. Comments are sent with the next revision.
 - **Decline** closes the plan and keeps the thread in Plan.
 
 Each plan shows its version and whether it was accepted, revised, or declined; the Plan tab lists
 earlier versions. **Reopen this plan**, in a closed plan's menu or the Plan tab, makes it the open
-plan again. Changes already made from it stay.
+plan again. Changes already made from it stay. On web and desktop, a thread whose plan waits for
+an answer shows **Plan ready** in the sidebar.
 
 ## Provider differences
 
