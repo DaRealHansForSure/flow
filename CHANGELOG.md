@@ -48,6 +48,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Cite button for selected answer text is a primary button the size of the plan's Comment
+  button. Both appear where the selection ends, also when it was dragged upwards, instead of where
+  it started.
 - The MCP tab asks the agent again once the chat's session starts, instead of staying on "The
   agent is not running" after the first message.
 - The "Worked for …" line above a finished turn opens and closes from anywhere on the row, not

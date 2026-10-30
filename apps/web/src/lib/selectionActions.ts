@@ -28,6 +28,32 @@ export function resolveSelectionActionPosition(options: {
 
 type SelectionRect = { left: number; top: number; right: number; bottom: number };
 
+/**
+ * Flow: the line where a drag ended, so a selection made upwards gets its action at the top, not
+ * on the line the drag started from. `selectionRect` for resolveSelectionActionPosition.
+ */
+export function selectionFocusRect(
+  range: Range,
+  selection: Selection | null,
+): { right: number; bottom: number } | null {
+  const rects = range.getClientRects();
+  const first = rects.item(0);
+  const last = rects.item(rects.length - 1);
+  const backward =
+    selection !== null &&
+    selection.anchorNode !== null &&
+    selection.focusNode !== null &&
+    (selection.anchorNode === selection.focusNode
+      ? selection.focusOffset < selection.anchorOffset
+      : (selection.anchorNode.compareDocumentPosition(selection.focusNode) &
+          Node.DOCUMENT_POSITION_PRECEDING) !==
+        0);
+  if (backward && first !== null) {
+    return { right: first.left, bottom: first.bottom };
+  }
+  return last ?? range.getBoundingClientRect();
+}
+
 export function isSelectionRectVisible(rect: SelectionRect, clips: readonly SelectionRect[]) {
   let { left, top, right, bottom } = rect;
   for (const clip of clips) {
