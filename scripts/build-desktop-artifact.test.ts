@@ -1668,6 +1668,26 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     assert.notInclude(error.message, secret);
   });
 
+  it.effect("builds the Windows installer and the portable app under distinct names", () =>
+    Effect.gen(function* () {
+      const config = yield* createBuildConfig(
+        "win",
+        "nsis,portable",
+        "1.2.3",
+        false,
+        false,
+        undefined,
+        undefined,
+      ).pipe(Effect.provideService(HostProcess.Platform, "linux"));
+      assert.deepStrictEqual((config.win as Record<string, unknown>).target, ["nsis", "portable"]);
+      const installer = (config.nsis as Record<string, unknown>).artifactName;
+      const portable = (config.portable as Record<string, unknown>).artifactName;
+      assert.notEqual(installer, portable);
+      assert.notEqual(installer, config.artifactName);
+      assert.notEqual(portable, config.artifactName);
+    }),
+  );
+
   it.effect("signs Windows builds with signtool on Windows and the jsign hook elsewhere", () =>
     Effect.gen(function* () {
       const signedWinConfig = (hostPlatform: string) =>

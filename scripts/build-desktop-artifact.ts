@@ -3039,13 +3039,19 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
   }
 
   if (platform === "win") {
+    const fileStem = BRAND.shortName.replaceAll(/[^a-zA-Z0-9_-]/g, "-");
     buildConfig.npmRebuild = false;
     buildConfig.nsis = {
       differentialPackage: true,
       include: "apps/desktop/resources/installer.nsh",
+      artifactName: `${fileStem}-Setup-\${version}-\${arch}.\${ext}`,
+    };
+    // Flow fork: "nsis,portable" builds the installer and the single-file app in one run.
+    buildConfig.portable = {
+      artifactName: `${fileStem}-\${version}-\${arch}-portable.\${ext}`,
     };
     const winConfig: Record<string, unknown> = {
-      target: [target],
+      target: target.split(","),
       icon: "icon.ico",
       // Smart App Control validates unpacked native libraries independently; sign them too.
       signExts: [".node", ".dll"],
