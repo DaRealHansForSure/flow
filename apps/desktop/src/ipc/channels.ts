@@ -80,6 +80,9 @@ export const RELAUNCH_WITH_LEGACY_BACKEND_CHANNEL = "desktop:relaunch-with-legac
 export const GET_FLOW_SERVICE_UPDATE_CHANNEL = "desktop:get-flow-service-update";
 export const RETRY_FLOW_SERVICE_UPDATE_CHANNEL = "desktop:retry-flow-service-update";
 export const SKIP_FLOW_SERVICE_UPDATE_CHANNEL = "desktop:skip-flow-service-update";
+// Flow: app-only by default, background service by choice.
+export const GET_BACKGROUND_MODE_CHANNEL = "desktop:get-background-mode";
+export const SWITCH_BACKGROUND_MODE_CHANNEL = "desktop:switch-background-mode";
 export const GET_WSL_STATE_CHANNEL = "desktop:get-wsl-state";
 export const SET_WSL_BACKEND_ENABLED_CHANNEL = "desktop:set-wsl-backend-enabled";
 export const SET_WSL_DISTRO_CHANNEL = "desktop:set-wsl-distro";

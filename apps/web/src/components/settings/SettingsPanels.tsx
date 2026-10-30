@@ -96,6 +96,7 @@ import {
 } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
 import { BackgroundActivitySettingsRow } from "./BackgroundActivitySettings";
+import { BackgroundModeSettingsRow } from "./BackgroundModeSettings";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { PullRequestLinksOpenInAppSetting } from "./IntegrationsSettings";
 import { StorageCleanupSections } from "./StorageSettings";
@@ -550,6 +551,10 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.confirmWindowClose !== DEFAULT_UNIFIED_SETTINGS.confirmWindowClose
       ? ["Confirm before closing"]
       : []),
+    // Flow: background mode; the desktop applies it at the next start.
+    ...(settings.runInBackground !== DEFAULT_UNIFIED_SETTINGS.runInBackground
+      ? [`Keep ${BRAND.name} running in the background`]
+      : []),
     ...(isTextGenerationModelDirty ? ["Text generation model"] : []),
     ...(settings.threadTitleInstructions !== DEFAULT_UNIFIED_SETTINGS.threadTitleInstructions
       ? ["Thread title instructions"]
@@ -667,6 +672,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       confirmQuit: DEFAULT_UNIFIED_SETTINGS.confirmQuit,
       // Flow: window close confirmation.
       confirmWindowClose: DEFAULT_UNIFIED_SETTINGS.confirmWindowClose,
+      runInBackground: DEFAULT_UNIFIED_SETTINGS.runInBackground,
       textGenerationModelSelection: DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection,
       threadTitleInstructions: DEFAULT_UNIFIED_SETTINGS.threadTitleInstructions,
       fontFamilySans: DEFAULT_UNIFIED_SETTINGS.fontFamilySans,
@@ -1050,6 +1056,13 @@ export function GeneralSettingsPanel() {
                 aria-label="Confirm before closing the window quits the app"
               />
             }
+          />
+        ) : null}
+        {isElectron ? (
+          <BackgroundModeSettingsRow
+            runInBackground={settings.runInBackground}
+            defaultRunInBackground={DEFAULT_UNIFIED_SETTINGS.runInBackground}
+            onRunInBackgroundChange={(runInBackground) => updateSettings({ runInBackground })}
           />
         ) : null}
       </SettingsSection>

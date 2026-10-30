@@ -4,6 +4,7 @@ import { receiveProviderAuthCallback, cancelProviderAuthCallback } from "./metho
 import * as DesktopIpc from "./DesktopIpc.ts";
 import { installNotificationBadge } from "./methods/notificationBadge.ts";
 import { getClientSettings, setClientSettings } from "./methods/clientSettings.ts";
+import { getBackgroundMode, switchBackgroundMode } from "./methods/backgroundMode.ts";
 import { getConnectionCatalog, setConnectionCatalog } from "./methods/connectionCatalog.ts";
 import {
   getLocalEnvironmentEnabled,
@@ -158,6 +159,8 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(getFlowServiceUpdate);
   yield* ipc.handle(retryFlowServiceUpdate);
   yield* ipc.handle(skipFlowServiceUpdate);
+  yield* ipc.handle(getBackgroundMode);
+  yield* ipc.handle(switchBackgroundMode);
 
   yield* ipc.handle(getWslState);
   yield* ipc.handle(setWslBackendEnabled);

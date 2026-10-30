@@ -667,6 +667,16 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quit confirmation desktop app exit close window button alt f4 ask"],
     desktopOnly: true,
   },
+  // Flow: app-only by default; the background service keeps chats running after quit.
+  {
+    id: "run-in-background",
+    title: `Keep ${BRAND.name} running in the background`,
+    to: "/settings/general",
+    searchTerms: [
+      "background service flow service systemd launchd autostart login quit close app only server chats phone remote",
+    ],
+    desktopOnly: true,
+  },
   {
     id: "text-generation-model",
     title: "Text generation model",
