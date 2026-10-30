@@ -9,10 +9,13 @@ const noHighlightedNodeIds: readonly string[] = [];
 export function BrainGraph({
   knowledge,
   compact = false,
+  fill = false,
   highlightedNodeIds = noHighlightedNodeIds,
 }: {
   readonly knowledge: BrainUiKnowledge;
   readonly compact?: boolean;
+  /** Grow to the parent's height instead of the fixed card height; the parent needs a definite height. */
+  readonly fill?: boolean;
   readonly highlightedNodeIds?: readonly string[];
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -132,7 +135,7 @@ export function BrainGraph({
   );
 
   return (
-    <div className="flow-brain-graph">
+    <div className={fill ? "flow-brain-graph fill" : "flow-brain-graph"}>
       <div className={compact ? "flow-brain-graph-canvas compact" : "flow-brain-graph-canvas"}>
         <div ref={host} className="flow-brain-graph-host" />
         {error && <p role="alert" className="flow-brain-alert">{error}</p>}

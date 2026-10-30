@@ -15,6 +15,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   fence's file name or, without one, the project's name plus date and time with an ending from
   the block's language, e.g. `example-20261030-010203.sh` (`.txt` when the language is unknown).
 
+- The knowledge graph opens in a large dialog: the button beside the counts on the Brain page
+  and the one on a chat's graph preview show it near full screen, with the chat's nodes
+  still highlighted.
+
 - `dev-flow.sh --seed --force` deletes the Dev Flow's chats and Brain and copies both fresh
   from your real data.
 
