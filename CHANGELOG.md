@@ -134,6 +134,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A chat started with No project only reads its Brain: nothing from it is recorded as notes,
+  Auto-Docs or Auto-Skills, the agent's save tools refuse it, and its folder can no longer be
+  connected to a Brain.
 - Two security fixes from T3 Code, taken ahead of the next sync: a failed clone no longer shows a
   token from the repository URL, and signed asset and upload URLs stay out of HTTP traces.
 - The Brain tab remembers which sections are open (graph, conversation notes, Auto-Docs,

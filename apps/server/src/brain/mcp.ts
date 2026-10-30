@@ -7,6 +7,8 @@ import { McpSchema, McpServer } from "effect/ai";
 import { McpInvocationContext } from "../mcp/McpInvocationContext.ts";
 import { makeBrainProjections } from "./brainProjections.ts";
 import { BrainService } from "./BrainService.ts";
+import { ServerConfig } from "../config.ts";
+import { isScratchWorkspace } from "./scratch.ts";
 import { originalBrainTools } from "./session-worker.ts";
 import { AnalyticsService } from "../telemetry/AnalyticsService.ts";
 
@@ -20,6 +22,7 @@ export const BrainToolkitRegistrationLive = Layer.effectDiscard(
     const service = yield* BrainService;
     const projections = yield* makeBrainProjections;
     const analytics = yield* AnalyticsService;
+    const { baseDir } = yield* ServerConfig;
     const tools = yield* Effect.promise(originalBrainTools);
     for (const tool of tools) {
       // oxlint-disable-next-line t3code/no-raw-mcp-registration -- See the import above.
@@ -43,6 +46,14 @@ export const BrainToolkitRegistrationLive = Layer.effectDiscard(
               .getProjectShellById(thread.value.projectId)
               .pipe(Effect.mapError(() => "Could not resolve the project's work folder."));
             const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
+            // Flow: No project chats only read their Brain; tools that write to it refuse them.
+            if (
+              tool.annotations?.readOnlyHint === false &&
+              isScratchWorkspace(baseDir, workspaceRoot)
+            )
+              return yield* Effect.fail(
+                "This chat has no project, so it can only read the Brain. Nothing was saved.",
+              );
             const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
             if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
             return yield* Effect.tryPromise({

@@ -244,7 +244,10 @@ without a brain** is remembered for the project across chats and devices. Chats 
 without Flow orientation or memory capture; you can connect a brain later in project settings.
 
 A chat without a project starts with no brain. To give it one, pick a brain from the **No Brain**
-menu on the new-chat screen before you send the first message; the chat keeps that choice.
+menu on the new-chat screen before you send the first message; the chat keeps that choice. Such a
+chat only reads its brain: it writes no conversation notes, Auto-Docs or Auto-Skills, and the
+agent cannot save to the brain from it. Chats without a project are not a project themselves, so
+they do not appear in project settings or as a brain's connected project.
 
 In a chat with a brain, the **Brain** tab of the right panel shows the graph, the chat's
 Auto-Docs and Auto-Skills, and the conversation notes. A new chat opens it by itself. Close it

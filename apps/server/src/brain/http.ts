@@ -21,6 +21,7 @@ import {
 } from "../auth/http.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
+import { isScratchWorkspace } from "./scratch.ts";
 import { makeBrainProjections } from "./brainProjections.ts";
 import { resolveChatCuration, resolveChatCurationOutputs } from "./chat-context.ts";
 import { AnalyticsService } from "../telemetry/AnalyticsService.ts";
@@ -236,6 +237,14 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
               if (Option.isNone(project))
                 throw new Error(
                   "Project not found on this computer. Retry after it finishes being created.",
+                );
+              // Flow: the No project folder is never a Brain source or connected project.
+              if (
+                command.workspaceId !== null &&
+                isScratchWorkspace(config.baseDir, project.value.workspaceRoot)
+              )
+                throw new Error(
+                  "No project chats cannot be connected to a Brain. Pick a Brain for the chat instead.",
                 );
               await bindProjectWithAgentTools({
                 folders: relatedProjects.flatMap((related) =>
