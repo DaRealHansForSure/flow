@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type {
   BrainDocument,
   BrainDocumentSummary,
@@ -244,6 +244,7 @@ export function BrainDocumentLibrary({
   workspaceId,
   compact = false,
   kind: selectedKind,
+  chatSwitches,
 }: {
   documents: readonly BrainDocumentSummary[];
   legacyMemories?: BrainKnowledge["memories"];
@@ -251,6 +252,11 @@ export function BrainDocumentLibrary({
   workspaceId: string;
   compact?: boolean;
   kind?: "doc" | "skill" | "memory";
+  /**
+   * Fork: one chat's documents. Both sections then show even while empty, each with the
+   * chat's switch for that kind in its header.
+   */
+  chatSwitches?: { readonly doc: ReactNode; readonly skill: ReactNode };
 }) {
   const [selected, setSelected] = useState<BrainDocumentSummary | null>(null);
   const [legacy, setLegacy] = useState<BrainKnowledge["memories"][number] | null>(null);
@@ -295,7 +301,8 @@ export function BrainDocumentLibrary({
       ).map((kind) => {
         const all = documents.filter((doc) => doc.kind === kind);
         const old = kind === "memory" ? legacyMemories : [];
-        if (!all.length && !old.length)
+        const isEmpty = !all.length && !old.length;
+        if (isEmpty && !chatSwitches)
           return selectedKind ? (
             <p
               key={kind}
@@ -338,6 +345,7 @@ export function BrainDocumentLibrary({
                   </p>
                 )}
               </div>
+              {kind === "doc" || kind === "skill" ? chatSwitches?.[kind] : null}
               <button
                 type="button"
                 aria-label={`${collapsed[kind] ? "Expand" : "Collapse"} ${label}`}
@@ -408,7 +416,12 @@ export function BrainDocumentLibrary({
                   <span className="line-clamp-4 block text-sm leading-relaxed">{doc.body}</span>
                 </button>
               ))}
-              {!visible.length && !oldVisible.length && (
+              {isEmpty && (
+                <p className="px-2 py-1 text-xs text-muted-foreground">
+                  No {label} from this chat yet.
+                </p>
+              )}
+              {!isEmpty && !visible.length && !oldVisible.length && (
                 <p className="p-3 text-xs text-muted-foreground">
                   No matching {kind === "skill" ? "skills" : "memories"}.
                 </p>
