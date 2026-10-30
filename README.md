@@ -27,6 +27,8 @@ This is the DaRealHansForSure/flow fork of Flow. [FORK.md](./FORK.md) explains w
 
 ## Install
 
+Replacing a Flow you already use? [Back it up first](./docs/user/install.md#back-up-an-existing-flow-first).
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/install.sh | bash
 ```

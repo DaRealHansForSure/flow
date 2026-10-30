@@ -15,6 +15,34 @@ and installing from a checkout. Desktop downloads are in the
 Flow includes its own Node runtime and ready-built dependencies. You do not need
 Node, npm, Homebrew, Docker, Git, or a compiler to install it.
 
+## Back up an existing Flow first
+
+Already using Flow on this computer, from upstream or an earlier release of this fork?
+Back it up before you install this version over it. Installing keeps your chats and
+Brain in place, but a backup is the only way back if the new version changes or damages
+them.
+
+1. Quit the Flow app. The backup stops the Flow service while it copies, and that ends
+   every running chat, so let them finish first.
+2. In a normal terminal, not in a Flow chat, list what the backup will hold:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/scripts/fork/backup-brain.sh | bash -s -- --dry-run
+   ```
+
+3. Take the backup. The service is stopped for the copy and started again afterwards:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/DaRealHansForSure/flow/release/scripts/fork/backup-brain.sh | bash -s -- --stop-service
+   ```
+
+4. Copy the new `~/Backups/flow-<date>-<time>` folder to another disk.
+
+The backup holds the Brain (its store, knowledge graph and agent registry) in
+`brain.tar`, and the chats, settings and provider secrets in `chats.tar`. `RESTORE.txt`
+in the same folder lists the commands to put them back. From a checkout of this fork,
+`scripts/fork/backup-brain.sh` does the same.
+
 ## Install with bash
 
 ```bash

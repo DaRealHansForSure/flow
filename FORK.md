@@ -86,6 +86,7 @@ every change.
   and the app's links point at DaRealHansForSure/flow, so `flow update` and the desktop updater
   follow this fork's releases. A machine that has upstream Flow switches once, either by
   accepting the service update the desktop app offers or by running this fork's `install.sh`.
+  [Back up first](./docs/user/install.md#back-up-an-existing-flow-first).
 - **One release run publishes both parts.** The "Flow release" workflow, run by hand on the
   `release` branch, publishes the service and the desktop app of the same version together, so
   the service version every app asks for exists.
