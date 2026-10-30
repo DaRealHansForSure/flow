@@ -2374,6 +2374,7 @@ export const layerWsRpc = (
         [WS_METHODS.mcpAppsCallTool]: (input) => mcpAppRequests.callTool(input),
         [WS_METHODS.mcpAppsToolInfo]: (input) => mcpAppRequests.toolInfo(input),
         [WS_METHODS.providerMcpList]: (input) => providerMcpServers.list(input),
+        [WS_METHODS.providerMcpCheck]: (input) => providerMcpServers.check(input),
         [WS_METHODS.mcpAppsUpdateModelContext]: (input) => mcpAppRequests.updateModelContext(input),
         [WS_METHODS.mcpAppsReadResource]: (input) => mcpAppRequests.readResource(input),
         [WS_METHODS.providerUploadFeedback]:

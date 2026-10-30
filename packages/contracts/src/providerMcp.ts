@@ -62,6 +62,23 @@ export const ProviderMcpListing = Schema.Union([
 ]);
 export type ProviderMcpListing = typeof ProviderMcpListing.Type;
 
+export const ProviderMcpCheckInput = Schema.Struct({ instanceId: ProviderInstanceId });
+export type ProviderMcpCheckInput = typeof ProviderMcpCheckInput.Type;
+
+/** A one-off provider process started only to read its MCP servers, then stopped. */
+export const ProviderMcpCheck = Schema.Union([
+  Schema.TaggedStruct("checked", {
+    instanceId: ProviderInstanceId,
+    profile: Schema.optional(Schema.String),
+    checkedAt: IsoDateTime,
+    servers: Schema.Array(ProviderMcpServer),
+  }),
+  Schema.TaggedStruct("unsupported", {
+    instanceId: ProviderInstanceId,
+  }),
+]);
+export type ProviderMcpCheck = typeof ProviderMcpCheck.Type;
+
 export const ProviderMcpListErrorReason = Schema.Literals(["thread-not-found", "request-failed"]);
 export type ProviderMcpListErrorReason = typeof ProviderMcpListErrorReason.Type;
 

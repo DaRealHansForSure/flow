@@ -163,6 +163,8 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.mcpAppsReadResource]: AuthOrchestrationReadScope,
   [WS_METHODS.mcpAppsUpdateModelContext]: AuthOrchestrationOperateScope,
   [WS_METHODS.providerMcpList]: AuthOrchestrationReadScope,
+  // Starts the provider and with it every one of the user's MCP servers.
+  [WS_METHODS.providerMcpCheck]: AuthProvidersManageScope,
   [WS_METHODS.subscribeVcsStatus]: AuthOrchestrationReadScope,
   [WS_METHODS.subscribeWorktreeSetup]: AuthOrchestrationReadScope,
   [WS_METHODS.worktreeSetupCancel]: AuthOrchestrationOperateScope,

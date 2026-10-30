@@ -2,6 +2,8 @@ import {
   ProviderMcpListError,
   type OrchestrationV2ProviderThread,
   type ProviderInstanceId,
+  type ProviderMcpCheck,
+  type ProviderMcpCheckInput,
   type ProviderMcpListInput,
   type ProviderMcpListing,
   type ThreadId,
@@ -15,6 +17,7 @@ import * as Option from "effect/Option";
 
 import * as ProviderSessionManager from "../orchestration-v2/ProviderSessionManager.ts";
 import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
+import * as ProviderInstanceRegistry from "./ProviderInstanceRegistry.ts";
 
 /** Asks running sessions only; opening a session would start the user's MCP servers. */
 export class ProviderMcpServers extends Context.Service<
@@ -23,6 +26,10 @@ export class ProviderMcpServers extends Context.Service<
     readonly list: (
       input: ProviderMcpListInput,
     ) => Effect.Effect<ProviderMcpListing, ProviderMcpListError>;
+    /** Starts a short-lived provider process, so only on an explicit user action. */
+    readonly check: (
+      input: ProviderMcpCheckInput,
+    ) => Effect.Effect<ProviderMcpCheck, ProviderMcpListError>;
   }
 >()("t3/provider/ProviderMcpServers") {}
 
@@ -32,6 +39,7 @@ const requestFailed = (cause: unknown) =>
 const make = Effect.gen(function* () {
   const threadManagement = yield* ThreadManagementService.ThreadManagementService;
   const providerSessions = yield* ProviderSessionManager.ProviderSessionManagerV2;
+  const instanceRegistry = yield* ProviderInstanceRegistry.ProviderInstanceRegistry;
 
   const threadRecords = (threadId: ThreadId) =>
     threadManagement
@@ -143,7 +151,22 @@ const make = Effect.gen(function* () {
       : yield* listForInstance(input.instanceId);
   });
 
-  return ProviderMcpServers.of({ list });
+  const check = Effect.fn("ProviderMcpServers.check")(function* (input: ProviderMcpCheckInput) {
+    const instance = yield* instanceRegistry.getInstance(input.instanceId);
+    if (instance?.checkMcpServers === undefined) {
+      return { _tag: "unsupported", instanceId: input.instanceId } satisfies ProviderMcpCheck;
+    }
+    const listing = yield* instance.checkMcpServers().pipe(Effect.mapError(requestFailed));
+    return {
+      _tag: "checked",
+      instanceId: input.instanceId,
+      ...(listing.profile === undefined ? {} : { profile: listing.profile }),
+      checkedAt: DateTime.formatIso(yield* DateTime.now),
+      servers: listing.servers,
+    } satisfies ProviderMcpCheck;
+  });
+
+  return ProviderMcpServers.of({ list, check });
 });
 
 export const layer = Layer.effect(ProviderMcpServers, make);

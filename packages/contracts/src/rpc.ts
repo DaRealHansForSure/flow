@@ -16,7 +16,13 @@ import {
   McpAppToolInfoInput,
   McpAppUpdateModelContextInput,
 } from "./mcpApps.ts";
-import { ProviderMcpListError, ProviderMcpListInput, ProviderMcpListing } from "./providerMcp.ts";
+import {
+  ProviderMcpCheck,
+  ProviderMcpCheckInput,
+  ProviderMcpListError,
+  ProviderMcpListInput,
+  ProviderMcpListing,
+} from "./providerMcp.ts";
 import {
   PeerLink,
   PeerLinkCreateInput,
@@ -426,6 +432,7 @@ export const WS_METHODS = {
   mcpAppsReadResource: "mcpApps.readResource",
   mcpAppsUpdateModelContext: "mcpApps.updateModelContext",
   providerMcpList: "providerMcp.list",
+  providerMcpCheck: "providerMcp.check",
 
   providerUploadFeedback: "provider.uploadFeedback",
   providerAuthStart: "provider.auth.start",
@@ -1382,6 +1389,12 @@ const WsProviderMcpListRpc = Rpc.make(WS_METHODS.providerMcpList, {
   error: Schema.Union([ProviderMcpListError, EnvironmentAuthorizationError]),
 });
 
+const WsProviderMcpCheckRpc = Rpc.make(WS_METHODS.providerMcpCheck, {
+  payload: ProviderMcpCheckInput,
+  success: ProviderMcpCheck,
+  error: Schema.Union([ProviderMcpListError, EnvironmentAuthorizationError]),
+});
+
 const WsAttachmentsDeleteRpc = Rpc.make(WS_METHODS.attachmentsDelete, {
   payload: AttachmentDeleteInput,
   error: EnvironmentAuthorizationError,
@@ -2077,6 +2090,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsMcpAppsReadResourceRpc,
   WsMcpAppsUpdateModelContextRpc,
   WsProviderMcpListRpc,
+  WsProviderMcpCheckRpc,
   WsProviderUploadFeedbackRpc,
   WsSubscribeVcsStatusRpc,
   WsSubscribeWorktreeSetupRpc,

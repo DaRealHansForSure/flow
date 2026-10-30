@@ -14,6 +14,7 @@ import * as Option from "effect/Option";
 import type * as ProviderAdapter from "@t3tools/provider-core/server/ProviderAdapter";
 import * as ProviderSessionManager from "../orchestration-v2/ProviderSessionManager.ts";
 import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
+import * as ProviderInstanceRegistry from "./ProviderInstanceRegistry.ts";
 import * as ProviderMcpServers from "./ProviderMcpServers.ts";
 
 const instanceId = ProviderInstanceId.make("claude");
@@ -54,6 +55,7 @@ function makeLayer(input: {
               providerThreads: [providerThreadFor(threadId)],
             } as never),
         }),
+        Layer.mock(ProviderInstanceRegistry.ProviderInstanceRegistry)({}),
         Layer.mock(ProviderSessionManager.ProviderSessionManagerV2)({
           get: () => Effect.succeed(input.live ? Option.some(runtime) : Option.none()),
           liveSessionsForInstance: () =>
