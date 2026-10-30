@@ -56,6 +56,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The composer's "Ask anything" hint is a clear grey, so in a dark theme it no longer looks like
+  text you typed.
 - The background work list shows each item's full name in a smaller font, wrapping over lines
   instead of cutting it off.
 - In the command palette's project list, No project has a second line like the projects, so every
