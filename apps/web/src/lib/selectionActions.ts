@@ -135,6 +135,18 @@ export function observeSelectionActions({
     pointer = { x: event.clientX, y: event.clientY };
     schedule(event.detail >= 2 ? SELECTION_MULTI_CLICK_INTERVAL_MS : 0);
   };
+  // A touch long press that selects text ends in pointercancel instead of mouseup; it
+  // finishes the gesture rather than dismissing it, so handle drags afterwards still count.
+  const onPointerCancel = (event: PointerEvent) => {
+    if (event.pointerType !== "mouse" && gestureActive) {
+      pointerDown = gestureActive = false;
+      pointer = null;
+      dismissed = false;
+      schedule(0);
+      return;
+    }
+    dismiss();
+  };
   const onKeyDown = (event: KeyboardEvent) => {
     if (isActionTarget(event.target) && event.key !== "Escape") return;
     if (event.key === "Escape") {
@@ -165,7 +177,7 @@ export function observeSelectionActions({
   element.addEventListener("pointerdown", onSelectionStart);
   view.addEventListener("pointerup", onPointerUp);
   view.addEventListener("mouseup", onMouseUp);
-  view.addEventListener("pointercancel", dismiss);
+  view.addEventListener("pointercancel", onPointerCancel);
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("focusin", onFocusIn);
   element.addEventListener("contextmenu", onContextMenu, true);
@@ -192,7 +204,7 @@ export function observeSelectionActions({
       element.removeEventListener("pointerdown", onSelectionStart);
       view.removeEventListener("pointerup", onPointerUp);
       view.removeEventListener("mouseup", onMouseUp);
-      view.removeEventListener("pointercancel", dismiss);
+      view.removeEventListener("pointercancel", onPointerCancel);
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("focusin", onFocusIn);
       element.removeEventListener("contextmenu", onContextMenu, true);
