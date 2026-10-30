@@ -1,11 +1,12 @@
 // Fork-only: the chat header's way into the Brain tab. It behaves like T3's diff toggle:
-// opens or focuses the tab, and a press while the tab is showing hides the panel. While
-// the tab is not showing, a static blue dot says the Brain is writing this chat's notes. An amber
+// opens or focuses the tab, and a press while the tab is showing hides the panel. A blue dot
+// says the chat's notes changed since the tab was last shown. An amber
 // icon says the Brain has not answered yet, a red one that it failed to answer.
 
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import { BrainCircuitIcon } from "lucide-react";
+import { useEffect } from "react";
 
 import { selectActiveRightPanel, useRightPanelStore } from "../../rightPanelStore";
 import { Toggle } from "../ui/toggle";
@@ -18,10 +19,19 @@ export function BrainHeaderButton({ threadRef }: { readonly threadRef: ScopedThr
   const brainShowing = useRightPanelStore(
     (state) => selectActiveRightPanel(state.byThreadKey, threadRef) === "brain",
   );
+  const unseenNotes = useChatBrainStatusStore(
+    (state) => state.unseenNotesByThreadKey[threadKey] === true,
+  );
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- showing the Brain tab marks its changed notes seen in the shared status store
+  useEffect(() => {
+    if (brainShowing && unseenNotes) {
+      useChatBrainStatusStore.getState().markNotesSeen(threadKey);
+    }
+  }, [brainShowing, unseenNotes, threadKey]);
   if (status === undefined) {
     return null;
   }
-  const showUpdateDot = status.updating && !brainShowing && status.failure === null;
+  const showChangeDot = unseenNotes && !brainShowing && status.failure === null;
   let label = "Show Brain";
   let iconClassName = "size-4";
   if (status.failure !== null) {
@@ -32,8 +42,8 @@ export function BrainHeaderButton({ threadRef }: { readonly threadRef: ScopedThr
     iconClassName = "size-4 text-warning";
   } else if (brainShowing) {
     label = "Hide Brain";
-  } else if (showUpdateDot) {
-    label = "Show Brain (updating notes, auto-docs, and skills)";
+  } else if (showChangeDot) {
+    label = "Show Brain (notes changed)";
   }
   return (
     <Tooltip>
@@ -48,10 +58,10 @@ export function BrainHeaderButton({ threadRef }: { readonly threadRef: ScopedThr
         >
           <BrainCircuitIcon className={iconClassName} />
         </Toggle>
-        {showUpdateDot ? (
+        {showChangeDot ? (
           <span
             aria-hidden
-            data-brain-update-dot
+            data-brain-change-dot
             className="pointer-events-none absolute top-1 right-1 size-1.5 rounded-full bg-info"
           />
         ) : null}

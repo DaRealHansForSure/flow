@@ -112,8 +112,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Cite shows for text selected by long press on a phone. The selection helper treated the
   touch's pointercancel as a dismissal, so touchscreens never saw it.
 
-- The Brain button's dot for notes being written is blue. It used the theme colour, which is
-  amber in some themes and looked like a warning.
+- The Brain button's blue dot appears only when the chat's notes really changed, and goes away
+  once you open the Brain tab. It used to show whenever the Brain counted as busy, even with the
+  notes agent off, and in the theme colour, which is amber in some themes.
 
 - The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
   `=` after a `#`, so a pairing link lost its token, and older builds left such addresses

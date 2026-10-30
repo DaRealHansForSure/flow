@@ -59,6 +59,7 @@ export function useChatBrain(input: {
   readonly revealPanelByDefault: boolean;
 }): ChatBrain {
   const { threadRef, environmentId, threadId, projectId, revealPanelByDefault } = input;
+  const threadKey = threadRef ? scopedThreadKey(threadRef) : null;
   const execute = useAtomCommand(brainCommand, { reportFailure: false });
   const sourceKey = `${environmentId}:${projectId}:${threadId ?? "draft"}`;
   const [loadedKey, setLoadedKey] = useState(sourceKey);
@@ -128,6 +129,9 @@ export function useChatBrain(input: {
           if (previousNotes && notesChanged(previousNotes, currentNotes)) {
             setChangedIds(changedNoteIds(previousNotes, currentNotes));
             setSavedNow(true);
+            if (threadKey !== null) {
+              useChatBrainStatusStore.getState().markNotesChanged(threadKey);
+            }
             clearTimeout(highlightTimer);
             highlightTimer = setTimeout(() => {
               setChangedIds([]);
@@ -169,15 +173,13 @@ export function useChatBrain(input: {
       clearTimeout(highlightTimer);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [environmentId, threadId, projectId, execute, sourceKey]);
+  }, [environmentId, threadId, projectId, execute, sourceKey, threadKey]);
 
   const brain = chatBrainWorkspace(response, threadId, projectId);
   const hasBrain = brain !== undefined;
   const updating = response?.chatMemories?.status === "extracting";
   const loading =
     response === null && failure === null && environmentId !== null && projectId !== null;
-  const threadKey = threadRef ? scopedThreadKey(threadRef) : null;
-
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- publishes the chat's Brain status to the header button and command palette
   useEffect(() => {
     if (threadKey === null) {
