@@ -66,9 +66,15 @@ export function PlanCommentSelection(props: {
         return;
       }
       const rects = range.getClientRects();
+      const lastRect = rects.item(rects.length - 1) ?? range.getBoundingClientRect();
+      // Scrolled out of sight: hide until the selection comes back.
+      if (lastRect.bottom < 0 || lastRect.top > window.innerHeight) {
+        setSelection(null);
+        return;
+      }
       const position = resolveSelectionActionPosition({
         bounds: container.getBoundingClientRect(),
-        selectionRect: rects.item(rects.length - 1) ?? range.getBoundingClientRect(),
+        selectionRect: lastRect,
         pointer: null,
         viewport: { width: window.innerWidth, height: window.innerHeight },
       });
@@ -83,6 +89,12 @@ export function PlanCommentSelection(props: {
     const schedule = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(update, SELECTION_SETTLE_MS);
+    };
+    // The popover is fixed to the window, so it is moved with the text on every scrolled frame.
+    let frame: number | undefined;
+    const onScroll = () => {
+      window.cancelAnimationFrame(frame ?? 0);
+      frame = window.requestAnimationFrame(update);
     };
     const onSelectionChange = () => {
       if (!mouseButtonDown) {
@@ -101,11 +113,14 @@ export function PlanCommentSelection(props: {
       }
     };
     document.addEventListener("selectionchange", onSelectionChange);
+    document.addEventListener("scroll", onScroll, true);
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("pointerup", onPointerUp, true);
     return () => {
       window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame ?? 0);
       document.removeEventListener("selectionchange", onSelectionChange);
+      document.removeEventListener("scroll", onScroll, true);
       document.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("pointerup", onPointerUp, true);
     };
