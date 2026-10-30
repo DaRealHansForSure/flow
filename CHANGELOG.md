@@ -23,6 +23,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A plan card keeps its menu at the top right; a long title wraps to two lines instead of pushing
+  the menu onto its own line on a phone.
 - Revise on a plan brings the message box into view, puts the cursor there and says "Describe what
   to change in the plan"; on a phone it looked as if nothing happened.
 - A subagent's chat opens at its prompt instead of behind "Load earlier turns": a chat that an

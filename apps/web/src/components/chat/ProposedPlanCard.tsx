@@ -52,11 +52,14 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   const revealRef = findRevealRef(() => setExpanded(true));
   return (
     <div className="rounded-2xl border border-border/80 bg-card/70 p-4 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
+      {/* Flow: the menu stays top right; a long title wraps to two lines and the status under it. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
           <Badge variant="secondary">Plan</Badge>
-          {}
-          <h3 data-thread-find-text="true" className="truncate text-sm font-medium text-foreground">
+          <h3
+            data-thread-find-text="true"
+            className="line-clamp-2 min-w-0 break-words text-sm font-medium text-foreground"
+          >
             {title}
           </h3>
           {statusLabel ? (
@@ -65,7 +68,14 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
         </div>
         <Menu>
           <MenuTrigger
-            render={<Button aria-label="Plan actions" size="icon-xs" variant="outline" />}
+            render={
+              <Button
+                aria-label="Plan actions"
+                size="icon-xs"
+                variant="outline"
+                className="shrink-0"
+              />
+            }
           >
             <EllipsisIcon aria-hidden="true" className="size-4" />
           </MenuTrigger>
