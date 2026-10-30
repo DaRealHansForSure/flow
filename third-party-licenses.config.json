@@ -962,6 +962,24 @@
       }
     },
     {
+      "name": "@reflink/reflink-linux-x64-musl",
+      "version": "0.1.19",
+      "sourceUrl": "https://github.com/pnpm/reflink",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) pnpm contributors"]
+      }
+    },
+    {
+      "name": "@reflink/reflink-win32-x64-msvc",
+      "version": "0.1.19",
+      "sourceUrl": "https://github.com/pnpm/reflink",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) pnpm contributors"]
+      }
+    },
+    {
       "name": "@flow/brain-ui",
       "version": "0.1.0",
       "license": "AGPL-3.0-only",
