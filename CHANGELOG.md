@@ -31,6 +31,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   edits amber and searches cyan, on the icon and as a thin rail beside expanded details.
 - Code and output inside a tool call or thinking block use a smaller code size than the
   conversation (80 % of the code font size), since they are reference, not the answer.
+- A provider's settings fold Runtime, Environment, Models and MCP servers under one header each,
+  with a short summary such as the number of models, so a card no longer runs several screens
+  long on a phone.
 - The status pill above the composer shows the turn's agents as in the mobile app ("2/3" while
   they work, "3 done" after); tapping it opens the Agents tab. Background work has no Open button
   any more: a row in its list opens that agent's chat.
