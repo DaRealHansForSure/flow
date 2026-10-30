@@ -2,6 +2,7 @@ import { ChevronDownIcon, GlobeIcon, ListOrderedIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { tickTextContent } from "~/lib/tickTextContent";
+import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popover";
 import { cn } from "~/lib/utils";
 import { STATUS_PILL_CLASS } from "./statusPill";
 import type { ThreadNowItem } from "./ThreadNow";
@@ -67,7 +68,27 @@ export function ComposerStatusControl(props: {
         <span aria-hidden className="flex shrink-0">
           {work.icon}
         </span>
-        <span className="min-w-0 truncate text-foreground">{work.title}</span>
+        {work.details ? (
+          <Popover>
+            <PopoverTrigger
+              render={
+                <button
+                  type="button"
+                  className="min-w-0 cursor-pointer truncate text-left text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                  aria-label="Show background work"
+                />
+              }
+            >
+              {work.title}
+            </PopoverTrigger>
+            <PopoverPopup side="top" align="center" className="w-[min(92vw,24rem)]">
+              <PopoverTitle className="mb-1">Background work</PopoverTitle>
+              {work.details}
+            </PopoverPopup>
+          </Popover>
+        ) : (
+          <span className="min-w-0 truncate text-foreground">{work.title}</span>
+        )}
         {work.actions ? (
           <span className="flex shrink-0 items-center gap-2 border-l border-border ps-3">
             {work.actions}

@@ -1,3 +1,4 @@
+import { cn } from "~/lib/utils";
 import type {
   OrchestrationV2PendingBackgroundTask,
   OrchestrationV2ProviderGoal,
@@ -157,6 +158,35 @@ export function backgroundWorkNowItem(input: {
       <span className="font-mono">{rows.map((row) => row.task.label).join(", ")}</span>
     ) : (
       rows.map((row) => row.task.label).join(", ")
+    ),
+    details: (
+      <ul className="flex flex-col divide-y divide-border">
+        {rows.map((row) => {
+          const childThreadId = row.childThreadId;
+          return (
+            <li key={row.task.taskId} className="flex items-center gap-3 py-2.5">
+              <span aria-hidden className="flex shrink-0 text-muted-foreground [&_svg]:size-4">
+                {isCommand(row) ? <TerminalIcon /> : <CircleDashedIcon />}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span
+                  className={cn("truncate text-sm text-foreground", isCommand(row) && "font-mono")}
+                >
+                  {row.task.label}
+                </span>
+                <span className="truncate text-muted-foreground text-xs">
+                  {row.activity ?? (isCommand(row) ? "Command" : "Subagent")}
+                </span>
+              </span>
+              {childThreadId === undefined ? null : (
+                <InlineButton tone="muted" onClick={() => onOpenThread(childThreadId)}>
+                  Open
+                </InlineButton>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     ),
     actions: (
       <>
