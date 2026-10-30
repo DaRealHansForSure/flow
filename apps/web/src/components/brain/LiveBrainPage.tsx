@@ -23,6 +23,7 @@ import { BrainPage } from "./BrainPage";
 import { BrainDocumentLibrary } from "./BrainDocuments";
 import { BrainSources, BrainIndexing } from "./BrainSources";
 import { BrainSelect, CreateBrainDialog, ConnectCloudDialog } from "./BrainControls";
+import { SearchableSelect } from "../SearchableSelect";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -92,8 +93,10 @@ export function LiveBrainPage({
       openSettings={openSettings}
       onSettingsClosed={onSettingsClosed}
       environmentSelector={
-        <BrainSelect
+        <SearchableSelect
           label="Brain computer"
+          searchLabel="Search computers"
+          emptyLabel="No matching computers."
           value={environmentId ?? ""}
           options={environments.map((entry) => ({
             value: entry.environmentId,
@@ -388,8 +391,10 @@ function BrainController({
                   Cursor on this computer, reads this brain and adds its conversations as notes.
                 </p>
               </div>
-              <BrainSelect
+              <SearchableSelect
                 label="Connect an existing project"
+                searchLabel="Search projects"
+                emptyLabel="No matching projects."
                 value=""
                 disabled={busy}
                 options={projects
