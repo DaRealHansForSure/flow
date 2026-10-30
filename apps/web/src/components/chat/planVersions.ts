@@ -1,10 +1,11 @@
 import type { ThreadStructure } from "@t3tools/client-runtime/state/shell";
-import type { OrchestrationV2PlanArtifact, PlanId } from "@t3tools/contracts";
+import type { OrchestrationV2PlanArtifact, PlanId, RunId } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 
 /** Flow: one proposed plan of a chat, numbered in the order the agent wrote them. */
 export interface PlanVersion {
   readonly id: PlanId;
+  readonly runId: RunId | null;
   readonly version: number;
   readonly status: OrchestrationV2PlanArtifact["status"];
   readonly planMarkdown: string;
@@ -50,6 +51,7 @@ export function deriveProposedPlanVersions(
     }
     versions.push({
       id: plan.id,
+      runId: plan.runId,
       status: plan.status,
       planMarkdown,
       updatedAt: item?.updatedAt ?? "",

@@ -6,6 +6,7 @@ import { lazy, Suspense, useState } from "react";
 
 import ChatMarkdown from "~/components/ChatMarkdown";
 import { MorphIcon } from "~/components/MorphIcon";
+import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Select,
@@ -51,7 +52,7 @@ function PlanDocument(props: {
   readonly cwd: string | undefined;
   readonly workspaceRoot: string | undefined;
 }) {
-  const { versions, review } = usePlanReview();
+  const { versions, review, reopen } = usePlanReview();
   // Another version stays shown until a new plan arrives, which remounts this document.
   const [selectedPlanId, setSelectedPlanId] = useState(props.plan.id);
   const plan = versions.find((version) => version.id === selectedPlanId) ?? props.plan;
@@ -125,6 +126,12 @@ function PlanDocument(props: {
       {reviewable ? (
         <div className="flex shrink-0 justify-end border-b border-border/60 px-3 py-2">
           <PlanReviewActions review={review} />
+        </div>
+      ) : reopen !== null && plan.status !== "active" ? (
+        <div className="flex shrink-0 justify-end border-b border-border/60 px-3 py-2">
+          <Button size="sm" variant="outline" onClick={() => reopen(plan.id)}>
+            Reopen this plan
+          </Button>
         </div>
       ) : null}
       {reviewable && rendered ? (

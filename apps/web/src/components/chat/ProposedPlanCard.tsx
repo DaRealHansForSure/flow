@@ -34,7 +34,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const fileActions = usePlanFileActions({ planMarkdown, environmentId, workspaceRoot });
-  const { versions, review } = usePlanReview();
+  const { versions, review, reopen } = usePlanReview();
   const version = versions.find((candidate) => candidate.id === planId);
   const statusLabel = version ? planVersionLabel(version, versions.length) : null;
   const reviewable = review !== null && review.planId === planId;
@@ -70,6 +70,9 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
             <EllipsisIcon aria-hidden="true" className="size-4" />
           </MenuTrigger>
           <MenuPopup align="end">
+            {reopen !== null && version !== undefined && version.status !== "active" ? (
+              <MenuItem onClick={() => reopen(planId)}>Reopen this plan</MenuItem>
+            ) : null}
             {threadRef ? (
               <MenuItem onClick={() => useRightPanelStore.getState().open(threadRef, "plan")}>
                 Open in Plan tab

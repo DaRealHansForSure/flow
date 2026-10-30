@@ -34,9 +34,15 @@ export interface PlanReview {
 interface PlanReviewState {
   readonly versions: ReadonlyArray<PlanVersion>;
   readonly review: PlanReview | null;
+  /** Makes a closed plan the open one again and switches the chat to Plan; null when unavailable. */
+  readonly reopen: ((planId: PlanId) => void) | null;
 }
 
-const PlanReviewContext = createContext<PlanReviewState>({ versions: [], review: null });
+const PlanReviewContext = createContext<PlanReviewState>({
+  versions: [],
+  review: null,
+  reopen: null,
+});
 
 export const PlanReviewProvider = PlanReviewContext.Provider;
 

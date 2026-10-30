@@ -73,6 +73,7 @@ import {
   type ThreadId,
   ProviderInteractionMode,
   resolveIdleCompaction,
+  type PlanId,
   RuntimeMode,
 } from "@t3tools/contracts";
 import {
@@ -1362,9 +1363,22 @@ export default function ChatView(props: ChatViewProps) {
   const onHeldRequestIdsChange = useStableCallback((requestIds: ReadonlySet<string>) => {
     setHeldApprovalRequestIds((current) => (shallow(current, requestIds) ? current : requestIds));
   });
+  // Flow: the open plan wins over a newer closed one, so a reopened older plan is the one answered.
+  const planVersions = deriveProposedPlanVersions(serverProjection);
+  const openPlanVersion = planVersions.findLast((version) => version.status === "active");
   const activeProposedPlan = (() => {
     if (!latestRunSettled) {
       return null;
+    }
+    if (openPlanVersion !== undefined) {
+      return {
+        id: openPlanVersion.id,
+        runId: openPlanVersion.runId,
+        planMarkdown: openPlanVersion.planMarkdown,
+        status: openPlanVersion.status,
+        createdAt: openPlanVersion.updatedAt,
+        updatedAt: openPlanVersion.updatedAt,
+      };
     }
     return findLatestProposedPlan(serverProjection, activeLatestRun?.runId ?? null);
   })();
@@ -2948,6 +2962,19 @@ export default function ChatView(props: ChatViewProps) {
       });
     }
   });
+  const reopenProposedPlan = useAtomCommand(threadEnvironment.reopenProposedPlan);
+  const reopenPlanStable = useStableCallback(async (planId: PlanId) => {
+    if (!activeThread) {
+      return;
+    }
+    const result = await reopenProposedPlan({
+      environmentId,
+      input: { threadId: activeThread.id, planId },
+    });
+    if (result._tag === "Success") {
+      handleInteractionModeChange("plan");
+    }
+  });
   const addComposerReviewComment = useComposerDraftStore((store) => store.addReviewComment);
   const commentOnPlanStable = useStableCallback((passage: string, note: string) => {
     if (activeProposedPlan) {
@@ -2970,10 +2997,11 @@ export default function ChatView(props: ChatViewProps) {
     runtimeMode,
     activeProviderStatus?.supportedRuntimeModes,
   );
-  const planVersions = deriveProposedPlanVersions(serverProjection);
   const reviewDisabled = isSendBusy || activeEnvironmentUnavailable;
   const planReviewState = {
     versions: planVersions,
+    reopen:
+      isServerThread && !reviewDisabled ? (planId: PlanId) => void reopenPlanStable(planId) : null,
     review:
       reviewablePlanId === null
         ? null
@@ -3266,7 +3294,7 @@ export default function ChatView(props: ChatViewProps) {
         onPendingChange: handleFilePendingChangeStable,
       }}
       brain={{ threadId: brainThreadId, chatBrain }}
-      plan={{ plan: planVersions.at(-1) ?? null, cwd: gitCwd ?? undefined }}
+      plan={{ plan: openPlanVersion ?? planVersions.at(-1) ?? null, cwd: gitCwd ?? undefined }}
     />
   ) : null;
   const panelToggleControlProps = {

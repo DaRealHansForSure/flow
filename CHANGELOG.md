@@ -24,6 +24,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   tab, choose Comment and write a note. Each comment becomes a chip in the composer and is
   sent, with the quoted passage, when you Revise.
 
+- An accepted, declined or revised plan can be reopened from its card's menu or the Plan
+  tab. The chat goes back to Plan with that version as the open plan, ready to Accept,
+  Revise or Decline again; changes already made from it are kept.
+
 ### Changed
 
 - Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
