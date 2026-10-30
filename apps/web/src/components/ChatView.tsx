@@ -3595,7 +3595,9 @@ export default function ChatView(props: ChatViewProps) {
               className={
                 isDraftHeroState
                   ? "pointer-events-none absolute inset-0 z-20 flex items-center"
-                  : "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
+                  : // Flow: on a phone the composer sits on the bottom edge over an opaque base, so
+                    // the chat never shows below or beside it.
+                    "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 max-sm:bg-linear-to-t max-sm:from-background max-sm:from-60% max-sm:to-transparent sm:pt-2"
               }
             >
               <div ref={draftHeroTransitionGroupRef} className="chat-composer-lane w-full">
@@ -3884,7 +3886,7 @@ export default function ChatView(props: ChatViewProps) {
                     </ComposerSurface.Shell>
                     <div
                       aria-hidden
-                      className="h-[calc(env(safe-area-inset-bottom)+1rem)] sm:h-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+                      className="h-[env(safe-area-inset-bottom)] sm:h-[calc(env(safe-area-inset-bottom)+1.25rem)]"
                     />
                   </div>
                 </div>
