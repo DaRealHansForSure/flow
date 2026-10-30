@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Settings > About no longer offers T3 Code's update tracks (Stable or Nightly, which pointed at
+  T3 Code's own nightly builds) or its `t3` command; Flow updates from this fork's releases only.
 - Opening a chat that no longer exists, or that belongs to a computer the app is not connected to,
   shows "This chat could not be opened" after ten seconds, with Go to start and Retry, instead of a
   blank page.
