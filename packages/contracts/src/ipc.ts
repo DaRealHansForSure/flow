@@ -766,6 +766,21 @@ export const DesktopFlowServiceRecoveryResultSchema = Schema.Struct({
   detail: Schema.NullOr(Schema.String),
 });
 
+/**
+ * Flow: which server this launch of the desktop app uses, its own (ends when the
+ * app quits) or the background service. `activeMode` is null before the launch
+ * has decided; `canSwitch` is false for builds that never touch the service.
+ */
+export interface DesktopBackgroundModeState {
+  activeMode: "own-server" | "attach" | null;
+  canSwitch: boolean;
+}
+
+export const DesktopBackgroundModeStateSchema = Schema.Struct({
+  activeMode: Schema.NullOr(Schema.Literals(["own-server", "attach"])),
+  canSwitch: Schema.Boolean,
+});
+
 export type DesktopPreviewNavStatus =
   | { kind: "Idle" }
   | { kind: "Loading"; url: string; title: string }
@@ -1304,6 +1319,11 @@ export interface DesktopBridge {
   retryFlowServiceUpdate?: () => Promise<DesktopFlowServiceRecoveryResult>;
   /** Flow: gives up on a failed update and reattaches to the service that is there. */
   skipFlowServiceUpdate?: () => Promise<DesktopFlowServiceRecoveryResult>;
+  /** Flow: whether this launch runs its own server or attaches to the background service. */
+  getBackgroundMode?: () => Promise<DesktopBackgroundModeState>;
+  /** Flow: saves `runInBackground`; when this launch runs the other mode, moves the
+      service over and relaunches the app. Never rejects. */
+  switchBackgroundMode?: (runInBackground: boolean) => Promise<DesktopFlowServiceRecoveryResult>;
   getWslState: () => Promise<DesktopWslState>;
   setWslBackendEnabled: (enabled: boolean) => Promise<DesktopWslState>;
   setWslDistro: (distro: string | null) => Promise<DesktopWslState>;

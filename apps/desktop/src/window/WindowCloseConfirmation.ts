@@ -40,6 +40,8 @@ export interface WindowCloseConfirmationOptions {
   readonly platform: NodeJS.Platform;
   readonly appName: string;
   readonly isAppQuitting: () => boolean;
+  /** True when the app runs its own server, which quitting stops. */
+  readonly isOwnServerRunning: () => boolean;
   /** Resolves to the `confirmWindowClose` client setting; never rejects. */
   readonly isConfirmationEnabled: () => Promise<boolean>;
   /** Saves `confirmWindowClose: false`; never rejects. */
@@ -50,6 +52,14 @@ export interface WindowCloseConfirmationOptions {
  * Returns the main window's "close" handler, which holds the close until the user confirms
  * that quitting the app is intended.
  */
+/** The confirmation's detail line. Without a background service, quitting ends Flow itself. */
+function describeWindowCloseDetail(appName: string, isOwnServerRunning: boolean): string {
+  if (isOwnServerRunning) {
+    return `Closing this window quits ${appName}. Quitting stops ${appName}, and running chats end.`;
+  }
+  return `Closing this window quits ${appName}.`;
+}
+
 export function makeWindowCloseHandler(
   window: Electron.BrowserWindow,
   options: WindowCloseConfirmationOptions,
@@ -77,7 +87,7 @@ export function makeWindowCloseHandler(
       type: "question",
       title: options.appName,
       message: `Quit ${options.appName}?`,
-      detail: `Closing this window quits ${options.appName}.`,
+      detail: describeWindowCloseDetail(options.appName, options.isOwnServerRunning()),
       buttons: ["Quit", "Cancel"],
       defaultId: CANCEL_BUTTON_INDEX,
       cancelId: CANCEL_BUTTON_INDEX,

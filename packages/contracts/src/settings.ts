@@ -415,6 +415,9 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   // Flow: asks before closing the window quits the app (Windows and Linux).
   confirmWindowClose: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  // Flow: off runs the app's own server, which ends when the app quits; on attaches to the
+  // background service. The desktop reads it once per launch, so a change needs a restart.
+  runInBackground: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   confirmThreadArchive: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   confirmThreadDelete: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   confirmThreadUnpin: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
@@ -1722,6 +1725,8 @@ export const ClientSettingsPatch = Schema.Struct({
   confirmQuit: Schema.optionalKey(QuitConfirmationMode),
   // Flow: see confirmWindowClose in ClientSettingsSchema.
   confirmWindowClose: Schema.optionalKey(Schema.Boolean),
+  // Flow: see runInBackground in ClientSettingsSchema.
+  runInBackground: Schema.optionalKey(Schema.Boolean),
   confirmThreadArchive: Schema.optionalKey(Schema.Boolean),
   confirmThreadDelete: Schema.optionalKey(Schema.Boolean),
   confirmThreadUnpin: Schema.optionalKey(Schema.Boolean),

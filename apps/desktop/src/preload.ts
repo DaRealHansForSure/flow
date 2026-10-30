@@ -190,6 +190,9 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   getFlowServiceUpdate: () => ipcRenderer.invoke(IpcChannels.GET_FLOW_SERVICE_UPDATE_CHANNEL),
   retryFlowServiceUpdate: () => ipcRenderer.invoke(IpcChannels.RETRY_FLOW_SERVICE_UPDATE_CHANNEL),
   skipFlowServiceUpdate: () => ipcRenderer.invoke(IpcChannels.SKIP_FLOW_SERVICE_UPDATE_CHANNEL),
+  getBackgroundMode: () => ipcRenderer.invoke(IpcChannels.GET_BACKGROUND_MODE_CHANNEL),
+  switchBackgroundMode: (runInBackground) =>
+    ipcRenderer.invoke(IpcChannels.SWITCH_BACKGROUND_MODE_CHANNEL, runInBackground),
   getWslState: () => ipcRenderer.invoke(IpcChannels.GET_WSL_STATE_CHANNEL),
   setWslBackendEnabled: (enabled) =>
     ipcRenderer.invoke(IpcChannels.SET_WSL_BACKEND_ENABLED_CHANNEL, enabled),

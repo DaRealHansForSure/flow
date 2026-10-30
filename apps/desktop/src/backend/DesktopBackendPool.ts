@@ -19,6 +19,7 @@ import { HttpClient } from "effect/http";
 import { ChildProcessSpawner } from "effect/process";
 
 import * as DesktopAttachedBackend from "./DesktopAttachedBackend.ts";
+import * as DesktopBackgroundMode from "./DesktopBackgroundMode.ts";
 import * as DesktopBackendConfiguration from "./DesktopBackendConfiguration.ts";
 import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import * as DesktopServerExposure from "./DesktopServerExposure.ts";
@@ -26,8 +27,6 @@ import * as DesktopServiceAdoption from "./DesktopServiceAdoption.ts";
 import * as DesktopServiceSyncState from "./DesktopServiceSyncState.ts";
 import * as ServiceVersionSync from "./ServiceVersionSync.ts";
 import * as FlowService from "./flowService.ts";
-import * as FlowServiceRecovery from "./flowServiceRecovery.ts";
-import { flowServiceSupportsHost } from "./serviceDiscovery.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopState from "../app/DesktopState.ts";
@@ -270,19 +269,13 @@ export const layer = Layer.effect(
       },
     );
 
-    // The primary attaches to the `flow` service. The private-child backend is
-    // the one-release rollback: FLOW_DESKTOP_LEGACY_BACKEND, or a one-shot marker
-    // from the recovery screen, consumed on read so the next launch attaches.
-    // Intel Macs and Windows have no Flow CLI build, so no service to attach to.
+    // Flow: whether the primary runs the app's own server or attaches to the
+    // `flow` service is decided per launch by DesktopBackgroundMode, which may
+    // ask first, so the primary is built on first use rather than here.
+    const backgroundMode = yield* DesktopBackgroundMode.DesktopBackgroundMode;
     const hostPlatform = yield* HostProcess.Platform;
-    const hostArchitecture = yield* HostProcess.Architecture;
     const hostUserId = yield* HostProcess.UserId;
-    const hostEnvironment = yield* HostProcess.Environment;
     const hostExecutablePath = yield* HostProcess.ExecutablePath;
-    const legacyPrimaryRequested =
-      !flowServiceSupportsHost(hostPlatform, hostArchitecture) ||
-      hostEnvironment.FLOW_DESKTOP_LEGACY_BACKEND === "1" ||
-      FlowServiceRecovery.consumeLegacyBackendMarker(environment.stateDir);
 
     const attachRecovery = yield* makeAttachFailureHandler({
       adopt: () =>
@@ -399,23 +392,32 @@ export const layer = Layer.effect(
 
     // Flow: an attached primary steps aside while the app updates the service.
     const serviceSyncState = yield* DesktopServiceSyncState.DesktopServiceSyncState;
-    const primary = legacyPrimaryRequested
-      ? yield* makeLegacyPrimary
-      : ServiceVersionSync.parkWhileUpdating(
-          yield* makeAttachedPrimary,
-          DesktopServiceSyncState.isParked(serviceSyncState),
-        );
 
     const instancesRef = yield* SynchronizedRef.make<
       ReadonlyMap<BackendInstanceId, RegisteredInstance>
-    >(
-      new Map([
-        [
-          DesktopBackendManager.PRIMARY_INSTANCE_ID,
-          { _tag: "Active", instance: primary, scope: Option.none() },
-        ],
-      ]),
-    );
+    >(new Map());
+    const resolvedPrimaryRef = yield* Ref.make(Option.none<DesktopBackendInstance>());
+
+    const buildPrimary = Effect.gen(function* () {
+      const { mode } = yield* backgroundMode.resolve;
+      const instance =
+        mode === "own-server"
+          ? yield* makeLegacyPrimary
+          : ServiceVersionSync.parkWhileUpdating(
+              yield* makeAttachedPrimary,
+              DesktopServiceSyncState.isParked(serviceSyncState),
+            );
+      yield* SynchronizedRef.update(instancesRef, (current) =>
+        new Map(current).set(DesktopBackendManager.PRIMARY_INSTANCE_ID, {
+          _tag: "Active",
+          instance,
+          scope: Option.none(),
+        }),
+      );
+      yield* Ref.set(resolvedPrimaryRef, Option.some(instance));
+      return instance;
+    }).pipe(Scope.provide(layerScope), Effect.provide(factoryContext));
+    const primary = yield* Effect.cached(buildPrimary);
 
     const register: DesktopBackendPool["Service"]["register"] = (spec) =>
       Effect.suspend(() =>
@@ -537,12 +539,21 @@ export const layer = Layer.effect(
           ),
         ),
       ),
-      primary: Effect.succeed(primary),
-      primaryHttpBaseUrl: primaryHttpBaseUrl(primary),
+      primary,
+      // Never builds the primary: a request before the launch's mode is known gets no server.
+      primaryHttpBaseUrl: Ref.get(resolvedPrimaryRef).pipe(
+        Effect.flatMap(
+          Option.match({
+            onNone: () => Effect.succeedNone,
+            onSome: primaryHttpBaseUrl,
+          }),
+        ),
+      ),
       register,
       unregister,
       retryPrimaryAttach: attachRecovery.allowAdoption.pipe(
-        Effect.andThen(Effect.forkIn(primary.start, layerScope)),
+        Effect.andThen(primary),
+        Effect.flatMap((instance) => Effect.forkIn(instance.start, layerScope)),
         Effect.asVoid,
       ),
     });
