@@ -259,7 +259,7 @@ the snooze. Enable **Snooze until limits reset** in thread behavior settings to
 snooze limit stops by default. Providers without a reset time offer manual
 retry and the normal snooze choices.
 
-Long threads open at their newest turn and load older turns as you scroll up.
+Long threads open with their last five turns and load five older turns at a time as you scroll up.
 
 On web and desktop, open the **Agents** tab of the right panel (**+ → Agents**, or `G`) to follow
 work delegated to subagents; it lists the thread's active and previous agents.

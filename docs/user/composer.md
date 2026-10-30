@@ -73,6 +73,16 @@ Press `Option+Up` on macOS or `Alt+Up` on Windows and Linux with the cursor at t
 start of the composer to edit the most recently queued message. Change
 `thread.editQueuedMessage` to use another shortcut.
 
+To pick for a single message on web and desktop, hold the send button while the agent works, or
+right-click it, and choose **Steer now** or **Queue**.
+
+### Status above the composer
+
+While the agent works, a status pill above the composer shows the thread's background commands and
+subagents with **Stop**, how long the turn has run, its open browsers and its queued messages. Tap
+the background work to list every item by its full name; on a phone the list opens as a sheet from
+the bottom. The round button beside the pill scrolls back to the end of the chat.
+
 Mobile has the same choice under **Settings → Chat**. While a turn is
 running the send button shows which action it will take. Long-press it to use the
 other action for a single message, or hold `Cmd` while sending from a hardware

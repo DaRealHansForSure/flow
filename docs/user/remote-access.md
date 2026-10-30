@@ -246,8 +246,8 @@ On web and desktop, a browser the agent opens floats over the chat; drag it anyw
 chat history. Choose **Open in right panel** to move it into the side panel. That choice sticks
 for the thread: browsers the agent opens later join the panel as tabs, and a tab that arrives
 while the panel is closed puts a dot on the panel button. **Float preview over chat** in the panel
-brings it back, and later browsers float again. While no browser is on screen, a globe pill above
-the composer shows how many the thread has open and opens them in the side panel.
+brings it back, and later browsers float again. While no browser is on screen, a globe in the status pill
+above the composer shows how many the thread has open and opens the newest in the side panel.
 
 To magnify a browser on your screen without zooming the page itself, pinch on a phone, or use
 Ctrl + mouse wheel or a trackpad pinch on a computer. A badge shows the zoom; select it to reset.
