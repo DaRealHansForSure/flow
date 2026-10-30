@@ -3,13 +3,10 @@ import { composerDraftHasUserContent, useComposerDraftStore } from "~/composerDr
 import { resolveEnvironmentMachineKind, type ScopedProjectRef } from "@t3tools/contracts";
 import { scopedProjectKey, scopeProjectRef } from "@t3tools/client-runtime/environment";
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
-import { FolderPlusIcon } from "lucide-react";
-import { useAtomValue } from "@effect/atom-react";
+import { FolderPlusIcon, SquareDashedIcon } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { openCommandPalette } from "~/commandPaletteBus";
-import { shortcutLabelForCommand } from "~/keybindings";
-import { primaryServerKeybindingsAtom } from "~/state/server";
 import { useNewThreadHandler } from "~/hooks/useHandleNewThread";
 import { useScratchProject } from "~/hooks/useScratchProject";
 import { isTriagePrompt } from "~/hooks/useStartTriage";
@@ -56,6 +53,8 @@ import { resolveProjectDefaultProviderModelSelection } from "../../providerInsta
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
 
 const ADD_PROJECT_VALUE = "add-project";
+// Flow: "No project" leads the picker instead of a separate link under it.
+const NO_PROJECT_VALUE = "no-project";
 
 interface PickerItem {
   readonly value: string;
@@ -93,7 +92,6 @@ export function DraftHeroHeadline({
   const openAddProject = () => openCommandPalette({ open: "add-project" });
   const { scratchEnvironmentId, scratchWorkspaceRootFor, openScratchProject } = useScratchProject();
   const openProjectDraft = useNewThreadHandler();
-  const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
   const pickerFilter = useComboboxFilter();
@@ -159,7 +157,9 @@ export function DraftHeroHeadline({
     activeProject !== null &&
     isScratchProject(activeProject, scratchWorkspaceRootFor(activeProject.environmentId));
 
+  const noProjectItem: PickerItem = { value: NO_PROJECT_VALUE, label: "No project" };
   const pickerItems: readonly PickerItem[] = [
+    ...(scratchWorkspaceRoot === null ? [] : [noProjectItem]),
     ...menuEntries.map(({ group }) => ({ value: group.projectKey, label: group.displayName })),
     { value: ADD_PROJECT_VALUE, label: "Add project" },
   ];
@@ -172,7 +172,9 @@ export function DraftHeroHeadline({
             item.value !== ADD_PROJECT_VALUE &&
             pickerFilter.contains(item, pickerSearch, (candidate) => candidate.label),
         );
-  const selectedPickerItem = pickerItems.find((item) => item.value === activeProjectKey) ?? null;
+  const selectedPickerItem = isScratchDraft
+    ? noProjectItem
+    : (pickerItems.find((item) => item.value === activeProjectKey) ?? null);
 
   // The picker can change the draft's target while the no-project home is
   // still being opened; a stale continuation must not retarget it again. Picking
@@ -293,6 +295,14 @@ export function DraftHeroHeadline({
           openAddProject();
           return;
         }
+        if (item.value === NO_PROJECT_VALUE) {
+          void startScratch().then((started) => {
+            if (started) {
+              document.querySelector<HTMLElement>("[data-draft-project-trigger]")?.focus();
+            }
+          });
+          return;
+        }
         const entry = projectEntryByKey.get(item.value);
         if (!entry || item.value === activeProjectKey) {
           return;
@@ -334,6 +344,8 @@ export function DraftHeroHeadline({
               <ComboboxItem key={item.value} hideIndicator value={item}>
                 {item.value === ADD_PROJECT_VALUE ? (
                   <FolderPlusIcon className="size-4 shrink-0" />
+                ) : item.value === NO_PROJECT_VALUE ? (
+                  <SquareDashedIcon className="size-4 shrink-0" />
                 ) : entry ? (
                   <ProjectFavicon project={entry.group} className="size-4 shrink-0" />
                 ) : null}
@@ -366,31 +378,6 @@ export function DraftHeroHeadline({
     </button>
   );
 
-  const noProjectShortcut = shortcutLabelForCommand(keybindings, "chat.newWithoutProject");
-  const orStartWithoutProject =
-    scratchWorkspaceRoot !== null && !isScratchDraft && (hasResolvedProject || canChooseProject) ? (
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <InlineButton
-              tone="link"
-              className="pointer-events-auto"
-              onClick={() =>
-                void startScratch().then((started) => {
-                  if (started) {
-                    document.querySelector<HTMLElement>("[data-draft-project-trigger]")?.focus();
-                  }
-                })
-              }
-            />
-          }
-        >
-          or start without a project
-        </TooltipTrigger>
-        {noProjectShortcut ? <TooltipPopup side="bottom">{noProjectShortcut}</TooltipPopup> : null}
-      </Tooltip>
-    ) : null;
-
   if (isScratchDraft && isTriageDraftPrompt) {
     const environment = environments.find(
       (entry) => entry.environmentId === activeProject.environmentId,
@@ -420,26 +407,22 @@ export function DraftHeroHeadline({
           )}
         </h1>
       )}
-      {scratchWorkspaceRoot === null ? null : (
+      {scratchWorkspaceRoot === null || !isScratchDraft ? null : (
         <p className="mt-2 flex h-6 w-full items-center justify-center text-sm">
-          {isScratchDraft ? (
-            <span className="flex items-center gap-2">
-              {projectSelector}
-              {activeProject !== null && draftThreadId !== null ? (
-                <ScratchBrainPicker
-                  environmentId={activeProject.environmentId}
-                  threadId={draftThreadId}
-                  selectedBrainId={scratchBrainId}
-                  onSelectedBrainIdChange={(brainId) => {
-                    scratchBrainChosenRef.current = true;
-                    setScratchBrainId(brainId);
-                  }}
-                />
-              ) : null}
-            </span>
-          ) : (
-            orStartWithoutProject
-          )}
+          <span className="flex items-center gap-2">
+            {projectSelector}
+            {activeProject !== null && draftThreadId !== null ? (
+              <ScratchBrainPicker
+                environmentId={activeProject.environmentId}
+                threadId={draftThreadId}
+                selectedBrainId={scratchBrainId}
+                onSelectedBrainIdChange={(brainId) => {
+                  scratchBrainChosenRef.current = true;
+                  setScratchBrainId(brainId);
+                }}
+              />
+            ) : null}
+          </span>
         </p>
       )}
     </div>
