@@ -120,6 +120,12 @@ restart_service() {
 }
 
 if [[ "${service_was_active}" == true ]]; then
+    # Stopping the service from one of its chats kills this script before it restarts it.
+    if grep -q "/${SERVICE_UNIT}" /proc/self/cgroup 2> /dev/null || [[ -n "${FLOW_SERVICE_MANAGED:-}" ]]; then
+        echo "backup-brain: this shell runs inside Flow; stopping the service would end it." >&2
+        echo "Close Flow and run the script from a normal terminal." >&2
+        exit 1
+    fi
     systemctl --user stop "${SERVICE_UNIT}"
     trap restart_service EXIT
 fi
