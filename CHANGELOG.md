@@ -71,8 +71,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- On a phone the composer sits on the bottom edge of the window over an opaque base, so chat
-  text no longer scrolls into view below or beside it.
+- On a phone the composer is a full-width bar on the bottom edge of the window, square at the
+  bottom, over an opaque base, so chat text no longer scrolls into view below or beside it.
 
 - In the desktop app every button at the top right can be clicked again. A fixed strip kept
   them out of the window's drag area and was too narrow for four buttons, so the leftmost one
