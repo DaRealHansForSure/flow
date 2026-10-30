@@ -88,6 +88,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Settings > Threads > Snooze options fit a phone screen instead of pushing the page sideways.
 - Selecting answer text with a long press on an Android phone shows the Cite button again.
 - A dropped connection to the Brain's FalkorDB no longer takes the whole Flow server down, and
   every running chat with it.
