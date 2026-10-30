@@ -7,6 +7,8 @@ import {
   type AgentSessionProjectCandidate,
   type AuthEnvironmentScope,
   type AuthSessionState,
+  type BrainCommand,
+  type BrainResponse,
 } from "@t3tools/contracts";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { expect, it, vi } from "vite-plus/test";
@@ -31,6 +33,7 @@ const state = vi.hoisted(() => ({
   importThreads: vi.fn(),
   refreshProviders: vi.fn(),
   connectPairing: vi.fn(),
+  brainCommand: vi.fn(),
   completeOnboarding: vi.fn(),
   onDone: vi.fn(),
   scan: vi.fn(),
@@ -117,10 +120,19 @@ vi.mock(import("../../connection/onboarding"), async (original) => ({
   ...(await original()),
   connectPairing: "connectPairing" as never,
 }));
+vi.mock(import("../../state/brain"), async (original) => ({
+  ...(await original()),
+  brainCommand: "brainCommand" as never,
+}));
 vi.mock(import("../../state/use-atom-command"), async (original) => ({
   ...(await original()),
   useAtomCommand: ((
-    command: "createProject" | "importThreads" | "refreshProviders" | "connectPairing",
+    command:
+      | "createProject"
+      | "importThreads"
+      | "refreshProviders"
+      | "connectPairing"
+      | "brainCommand",
   ) => state[command]) as never,
 }));
 vi.mock(import("../settings/ChatGptWelcomeCoordinator"), async (original) => ({
@@ -214,6 +226,33 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+const readyClaude = {
+  driver: "claudeAgent",
+  instanceId: "claudeAgent",
+  enabled: true,
+  installed: true,
+  status: "ready",
+  auth: { status: "authenticated" },
+};
+
+// The wizard's Brain steps: reading this computer's Brains, creating one, and the finish step's
+// coding agent check, which finds none so the step offers to start right away.
+function brainReply({ input }: { input: BrainCommand }) {
+  const response = {
+    state: {
+      database: { status: "ready", message: "" },
+      embeddings: { status: "ready", message: "" },
+      github: { connected: false, login: "", message: "" },
+      clis: [{ id: "claude", installed: true }],
+      workspaces: [],
+    },
+    error: null,
+    createdWorkspaceId: input.action === "create" ? "brain-1" : null,
+    agentTools: input.action === "agentTools" ? { detected: [], installed: [] } : undefined,
+  };
+  return Promise.resolve(AsyncResult.success(response as unknown as BrainResponse));
+}
+
 function pageText() {
   return document.body.textContent ?? "";
 }
@@ -232,6 +271,11 @@ async function click(label: string) {
   await act(async () => target.click());
 }
 
+async function startUsingFlow() {
+  await vi.waitFor(() => expect(button("Start using Flow").disabled).toBe(false));
+  await click("Start using Flow");
+}
+
 async function mountImport(remote = false) {
   state.selectedEnvironment = remote ? "remote" : "primary";
   await using stack = new AsyncDisposableStack();
@@ -243,8 +287,15 @@ async function mountImport(remote = false) {
     ),
   );
   await click("Continue");
-  await click("Continue");
-  expect(pageText()).toContain("Import your projects");
+  await vi.waitFor(() => expect(button("Create Brain").disabled).toBe(false));
+  await click("Create Brain");
+  await vi.waitFor(() => expect(pageText()).toContain("Which projects belong to this Brain?"));
+  // Nothing is preselected, so pick every suggested project.
+  for (const checkbox of document.querySelectorAll<HTMLElement>('[role="checkbox"]')) {
+    if (checkbox.getAttribute("aria-checked") !== "true") {
+      await act(async () => checkbox.click());
+    }
+  }
   stack.move();
   return screen;
 }
@@ -263,7 +314,7 @@ function setup() {
     );
   }
   state.projects = Atom.make<ReadonlyArray<Project>>([]).pipe(Atom.keepAlive);
-  state.providers = Atom.make<ReadonlyArray<never>>([]).pipe(Atom.keepAlive);
+  state.providers = Atom.make([readyClaude]).pipe(Atom.keepAlive);
   state.config = Atom.make(null).pipe(Atom.keepAlive);
   state.candidates = [candidate("/projects/first"), candidate("/projects/second")];
   state.createProject
@@ -274,6 +325,7 @@ function setup() {
     .mockResolvedValue(AsyncResult.success({ importedCount: 1, skippedCount: 0 }));
   state.refreshProviders.mockReset().mockResolvedValue(AsyncResult.success(undefined));
   state.connectPairing.mockReset().mockResolvedValue(AsyncResult.success(remoteId));
+  state.brainCommand.mockReset().mockImplementation(brainReply);
   state.completeOnboarding.mockReset().mockResolvedValue(undefined);
   state.onDone.mockReset();
   state.scan.mockReset();
@@ -290,7 +342,7 @@ it("rechecks after project creation and can retry its history without recreating
     return recordProject(input);
   });
   await using _screen = await mountImport();
-  await click("Import 2 projects");
+  await click("Open Brain");
   expect(state.createProject).toHaveBeenCalledOnce();
   await act(async () => {
     setGrant(primaryId, false);
@@ -303,10 +355,11 @@ it("rechecks after project creation and can retry its history without recreating
   expect(pageText()).toContain(permissionMessage);
 
   await act(async () => setGrant(primaryId, true));
-  await click("Import 2 projects");
+  await click("Open Brain");
   expect(state.createProject).toHaveBeenCalledTimes(2);
   expect(state.importThreads).toHaveBeenCalledTimes(2);
-  expect(state.onDone).toHaveBeenCalledOnce();
+  await startUsingFlow();
+  await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
 });
 
 it("completes accepted imports when permission is revoked after the final server write", async () => {
@@ -317,7 +370,7 @@ it("completes accepted imports when permission is revoked after the final server
     AsyncResult.success(await imported.promise),
   );
   await using _screen = await mountImport();
-  await click("Import 1 project");
+  await click("Open Brain");
   await act(async () => {
     setGrant(primaryId, false);
     imported.resolve({ importedCount: 1, skippedCount: 0 });
@@ -325,7 +378,8 @@ it("completes accepted imports when permission is revoked after the final server
   });
   expect(state.createProject).toHaveBeenCalledOnce();
   expect(state.importThreads).toHaveBeenCalledOnce();
-  expect(state.completeOnboarding).toHaveBeenCalledOnce();
+  await startUsingFlow();
+  await vi.waitFor(() => expect(state.completeOnboarding).toHaveBeenCalledOnce());
   expect(state.onDone).toHaveBeenCalledOnce();
 });
 
@@ -338,13 +392,14 @@ it("finishes setup without landing when the imported project never reaches the c
   state.completeOnboarding.mockRejectedValueOnce(new Error("offline"));
   await using _screen = await mountImport();
 
-  await click("Import 1 project");
+  await click("Open Brain");
+  await startUsingFlow();
   await vi.waitFor(() => expect(state.completeOnboarding).toHaveBeenCalledOnce());
-  // A failed completion hands the step back instead of leaving it importing.
-  await vi.waitFor(() => expect(button("Import 1 project").disabled).toBe(false));
+  // A failed completion hands the step back so it can be retried.
   expect(state.onDone).not.toHaveBeenCalled();
 
-  await click("Import 1 project");
+  await startUsingFlow();
   await vi.waitFor(() => expect(state.onDone).toHaveBeenCalledOnce());
-  expect(state.onDone).toHaveBeenCalledWith(undefined);
+  // No project to land on, only the Brain the wizard created.
+  expect(state.onDone).toHaveBeenCalledWith({ environmentId: primaryId, brainId: "brain-1" });
 });
