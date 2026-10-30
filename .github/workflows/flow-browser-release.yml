@@ -203,7 +203,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.version.outputs.commit }}
-          sparse-checkout: scripts/publish-release-assets.mjs
+          sparse-checkout: |
+            scripts/publish-release-assets.mjs
+            scripts/fork/changelog-section.mjs
+            CHANGELOG.md
           sparse-checkout-cone-mode: false
           path: release-scripts
       - uses: actions/setup-node@v4
@@ -217,11 +220,10 @@ jobs:
           FLOW_COMMIT: ${{ needs.version.outputs.commit }}
         run: |
           set -euo pipefail
+          version="${FLOW_TAG#flow-v}"
+          # Flow fork: the release text is the version's CHANGELOG.md section. No
+          # flow-cloud-cli-v* mirror: this fork's CLIs only read flow-v* tags.
+          notes=$(node release-scripts/scripts/fork/changelog-section.mjs "$version" release-scripts/CHANGELOG.md) ||
+            notes="See CHANGELOG.md for the changes in $version."
           node release-scripts/scripts/publish-release-assets.mjs "$FLOW_TAG" release-browser \
-            --title "Flow ${FLOW_TAG#flow-v}" --target "$FLOW_COMMIT" --generate-notes --latest
-          # CLIs installed from the dashboard before the feeds were unified only
-          # watch this tag name. One update moves them onto flow-v*; drop this
-          # mirror once no supported install predates the unification.
-          node release-scripts/scripts/publish-release-assets.mjs "flow-cloud-cli-v${FLOW_TAG#flow-v}" release-browser \
-            --title "Flow ${FLOW_TAG#flow-v} (earlier Cloud CLI installs)" --target "$FLOW_COMMIT" \
-            --notes "Same files as $FLOW_TAG, for CLIs installed from the dashboard before the feeds were unified."
+            --title "Flow $version" --target "$FLOW_COMMIT" --notes "$notes" --latest
