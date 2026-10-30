@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Running background commands and subagents show as a chip at the end of the chat instead of
+  a plain line of text, so their Stop button reads as part of one control.
+
 ### Fixed
 
 - The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
