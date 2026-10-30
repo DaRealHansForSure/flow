@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The install guide starts with backing up a Flow already in use (`backup-brain.sh`, also
+  runnable straight from the release branch), and the README links to it.
+
 - `scripts/fork/uninstall-flow.sh` removes the installed Flow (service, releases, `flow`
   command, AppImages, app settings and menu entries) and never touches chats or the Brain.
   Without `--yes` it only lists what it would remove; it refuses to run from inside Flow.
