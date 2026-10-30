@@ -77,25 +77,28 @@ function PlanDocument(props: {
           </span>
         </div>
         {versions.length > 1 ? (
-          <Select
-            value={plan.id}
-            onValueChange={(value) => {
-              if (value) {
-                setSelectedPlanId(value);
-              }
-            }}
-          >
-            <SelectTrigger size="xs" aria-label="Plan version">
-              <SelectValue>{statusLabel ?? `Version ${plan.version}`}</SelectValue>
-            </SelectTrigger>
-            <SelectPopup align="end" alignItemWithTrigger={false}>
-              {versions.toReversed().map((version) => (
-                <SelectItem key={version.id} value={version.id}>
-                  {planVersionLabel(version, versions.length)}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
+          // The trigger fills its parent; this keeps it to its content so the title can truncate.
+          <div className="shrink-0">
+            <Select
+              value={plan.id}
+              onValueChange={(value) => {
+                if (value) {
+                  setSelectedPlanId(value);
+                }
+              }}
+            >
+              <SelectTrigger size="xs" aria-label="Plan version">
+                <SelectValue>{statusLabel ?? `Version ${plan.version}`}</SelectValue>
+              </SelectTrigger>
+              <SelectPopup align="end" alignItemWithTrigger={false}>
+                {versions.toReversed().map((version) => (
+                  <SelectItem key={version.id} value={version.id}>
+                    {planVersionLabel(version, versions.length)}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
+          </div>
         ) : statusLabel ? (
           <span className="shrink-0 text-muted-foreground text-xs">{statusLabel}</span>
         ) : null}
