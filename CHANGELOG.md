@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- A step that read an image shows a small thumbnail at the end of its row; tapping it opens the
+  picture. A folded group of such steps ("Read 3 files") previews up to three of them.
 - A Plan tab in the right panel shows the chat's latest plan like an opened `Plan.md`, as
   rendered Markdown or raw text, with Copy, Download and Save as file. It opens on its own
   for each new plan, and from the plan card's menu or the panel's + menu.
