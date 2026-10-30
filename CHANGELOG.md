@@ -31,6 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The "Worked for …" line above a finished turn opens and closes from anywhere on the row, not
+  only on its words.
 - The phone sidebar follows the panel animation setting; at 0 ms it opens and closes without
   sliding.
 - On a phone the left menu's button hides while the side panel is open, and the panel's tabs start
