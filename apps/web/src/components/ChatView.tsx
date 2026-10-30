@@ -1365,6 +1365,25 @@ export default function ChatView(props: ChatViewProps) {
     }
     return findLatestProposedPlan(serverProjection, activeLatestRun?.runId ?? null);
   })();
+  // Flow: the Plan tab shows the newest plan of any turn and opens on its own for each new one.
+  const latestPlan = findLatestProposedPlan(serverProjection, null);
+  const openPlanSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "plan");
+    }
+  });
+  const autoOpenPlanId = hasActionableProposedPlan(activeProposedPlan)
+    ? (activeProposedPlan?.id ?? null)
+    : null;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the Plan tab in the right panel store once per new proposed plan
+  useEffect(() => {
+    if (activeThreadRef === null || autoOpenPlanId === null) {
+      return;
+    }
+    useRightPanelStore
+      .getState()
+      .openPlanByDefault(activeThreadRef, autoOpenPlanId, !shouldUsePlanSidebarSheet);
+  }, [activeThreadRef, autoOpenPlanId, shouldUsePlanSidebarSheet]);
   const showPlanFollowUpPrompt = shouldShowPlanFollowUpPrompt({
     pendingUserInputCount: pendingUserInputs.length,
     interactionMode,
@@ -3189,6 +3208,7 @@ export default function ChatView(props: ChatViewProps) {
         onPendingChange: handleFilePendingChangeStable,
       }}
       brain={{ threadId: brainThreadId, chatBrain }}
+      plan={{ plan: latestPlan, cwd: gitCwd ?? undefined }}
     />
   ) : null;
   const panelToggleControlProps = {
@@ -3904,6 +3924,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
           onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
+          onAddPlan={latestPlan ? openPlanSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}

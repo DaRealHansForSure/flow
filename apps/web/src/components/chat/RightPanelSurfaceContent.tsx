@@ -25,6 +25,8 @@ import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavail
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
 import { ChatBrainPanel } from "../brain/ChatBrainPanel";
 import type { ChatBrain } from "../brain/useChatBrain";
+import type { LatestProposedPlanState } from "../../session-logic";
+import { PlanPanel } from "./PlanPanel";
 
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
@@ -56,6 +58,12 @@ interface RightPanelBrainProps {
   readonly chatBrain: ChatBrain;
 }
 
+/** Flow: the chat's latest proposed plan, shown in the Plan tab. */
+interface RightPanelPlanProps {
+  readonly plan: LatestProposedPlanState | null;
+  readonly cwd: string | undefined;
+}
+
 interface RightPanelFileProps {
   readonly projectName: string | null;
   readonly workspaceRoot: string | undefined;
@@ -85,6 +93,7 @@ export function RightPanelSurfaceContent(props: {
   readonly pullRequest: RightPanelPullRequestProps;
   readonly files: RightPanelFileProps;
   readonly brain: RightPanelBrainProps;
+  readonly plan: RightPanelPlanProps;
 }) {
   const { surface, threadRef, visible } = props;
   if (surface === null) return null;
@@ -183,6 +192,17 @@ export function RightPanelSurfaceContent(props: {
           environmentId={props.environmentId}
           threadId={props.brain.threadId}
           chatBrain={props.brain.chatBrain}
+        />
+      );
+    // Flow: the Plan tab.
+    case "plan":
+      return (
+        <PlanPanel
+          environmentId={props.environmentId}
+          threadRef={threadRef}
+          plan={props.plan.plan}
+          cwd={props.plan.cwd}
+          workspaceRoot={props.files.workspaceRoot}
         />
       );
     case "device":

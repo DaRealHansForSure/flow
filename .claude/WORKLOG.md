@@ -1,6 +1,6 @@
 # Worklog
 
-Updated: 2026-10-30 09:30
+Updated: 2026-10-30 10:15
 
 ## Current focus
 
@@ -8,10 +8,10 @@ Updated: 2026-10-30 09:30
 - **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
   accepted, revised or declined with comments; commands always ask while in Plan
 - **Branch:** feat/plan-permission-mode (from develop), one commit per step
-- **Last step done:** Step 3: Plan as default permissions in Settings plus "After the
-  plan" row (`defaultInteractionMode` setting); new threads start with the defaults
-- **Next step:** Step 4: Plan tab in the right pane (opens like a file, Markdown or raw,
-  opens automatically, optional "Save as file")
+- **Last step done:** Step 4: Plan tab (`PlanPanel.tsx`, "plan" surface, opens once per
+  plan via `openPlanByDefault`); card's save logic moved to `usePlanFileActions.tsx`
+- **Next step:** Step 5: Accept (with follow-up mode) / Revise (new version) / Decline
+  (stays in Plan); status and versions stored on the server
 - **Open questions / blockers:** Playwright runs with PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64;
   mobile still has its own legacy plan switch (step 7)
 
@@ -30,6 +30,8 @@ Updated: 2026-10-30 09:30
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 10:15 - Plan permission mode step 4 committed (Plan tab)
 
 - 2026-10-30 09:30 - Plan permission mode step 3 committed (Settings default, After the plan)
 

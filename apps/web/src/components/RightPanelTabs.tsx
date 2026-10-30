@@ -29,6 +29,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
   BrainCircuitIcon,
+  PencilRulerIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -133,6 +134,7 @@ export interface RightPanelTabsProps {
   onAddDevice: () => void;
   /** Flow: offered only in a chat with a Brain. */
   onAddBrain?: (() => void) | undefined;
+  onAddPlan?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -275,8 +277,14 @@ function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement })
   );
 }
 
-/** Flow: the Brain entry of the surface launchers, disabled when the chat has no Brain. */
-function brainSurfaceActions(onAddBrain: (() => void) | undefined) {
+/**
+ * Flow: the Brain and Plan entries of the surface launchers, disabled when the chat has no
+ * Brain or no plan.
+ */
+function flowSurfaceActions(
+  onAddBrain: (() => void) | undefined,
+  onAddPlan: (() => void) | undefined,
+) {
   return [
     {
       label: "Brain",
@@ -285,6 +293,14 @@ function brainSurfaceActions(onAddBrain: (() => void) | undefined) {
       available: onAddBrain !== undefined,
       disabledReason: "This chat has no Brain. Connect one in Settings > Brain.",
       onClick: onAddBrain ?? (() => {}),
+    },
+    {
+      label: "Plan",
+      icon: PencilRulerIcon,
+      shortcut: "A",
+      available: onAddPlan !== undefined,
+      disabledReason: "This chat has no plan yet. Switch to Plan to make one.",
+      onClick: onAddPlan ?? (() => {}),
     },
   ];
 }
@@ -322,6 +338,7 @@ function RightPanelEmptyState(props: {
   onAddPullRequests: () => void;
   onAddDevice: () => void;
   onAddBrain: (() => void) | undefined;
+  onAddPlan: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -390,8 +407,8 @@ function RightPanelEmptyState(props: {
       disabledReason: SURFACE_UNAVAILABLE_HINTS.device,
       onClick: props.onAddDevice,
     },
-    // Flow: the Brain tab, disabled in a chat without a Brain.
-    ...brainSurfaceActions(props.onAddBrain),
+    // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan),
   ] as const;
 
   type SurfaceAction = (typeof actions)[number];
@@ -578,6 +595,9 @@ function surfaceTitle(
     // Flow: the Brain tab.
     case "brain":
       return "Brain";
+    // Flow: the Plan tab, named like the file it can be saved as.
+    case "plan":
+      return "Plan.md";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -671,6 +691,8 @@ function SurfaceIcon({
     // Flow: the Brain tab.
     case "brain":
       return <BrainCircuitIcon className="size-3 shrink-0" />;
+    case "plan":
+      return <PencilRulerIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -1092,8 +1114,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       disabledReason: SURFACE_DISABLED_REASONS.device,
       onClick: props.onAddDevice,
     },
-    // Flow: the Brain tab, disabled in a chat without a Brain.
-    ...brainSurfaceActions(props.onAddBrain),
+    // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan),
   ] as const;
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1469,6 +1491,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddPullRequests={props.onAddPullRequests}
             onAddDevice={props.onAddDevice}
             onAddBrain={props.onAddBrain}
+            onAddPlan={props.onAddPlan}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}

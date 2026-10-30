@@ -23,6 +23,8 @@ const RIGHT_PANEL_KINDS = [
   "pull-requests",
   // Flow: the chat's Brain context.
   "brain",
+  // Flow: the chat's latest proposed plan.
+  "plan",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -78,7 +80,9 @@ export type RightPanelSurface =
     }
   | { id: "pull-requests"; kind: "pull-requests" }
   // Flow: one Brain tab per chat.
-  | { id: "brain"; kind: "brain" };
+  | { id: "brain"; kind: "brain" }
+  // Flow: one Plan tab per chat, showing its latest proposed plan.
+  | { id: "plan"; kind: "plan" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 14;
@@ -97,6 +101,8 @@ export interface ThreadRightPanelState {
   dismissedDeviceSurfaceIds?: string[];
   maximized?: true;
   proactiveDiffTurnId?: RunId;
+  /** Flow: the plan the Plan tab last opened for on its own, so a closed tab stays closed. */
+  proactivePlanId?: string;
 }
 
 export interface ThreadPanelVisibility {
@@ -129,6 +135,8 @@ interface RightPanelStoreState {
   openDevice: (ref: ScopedThreadRef, target: DeviceTabTarget, automatic?: boolean) => void;
   /** Flow: a chat with a Brain starts with its tab, until the user closes it in that chat. */
   openBrainByDefault: (ref: ScopedThreadRef, revealPanel: boolean) => void;
+  /** Flow: each new proposed plan opens the Plan tab once; closing it holds until the next plan. */
+  openPlanByDefault: (ref: ScopedThreadRef, planId: string, revealPanel: boolean) => void;
   renameDevice: (ref: ScopedThreadRef, surfaceId: string, title: string) => void;
   openBrowser: (ref: ScopedThreadRef, tabId: string | null) => void;
   openFile: (ref: ScopedThreadRef, relativePath: string, line?: number) => void;
@@ -222,6 +230,9 @@ const singletonSurface = (
     // Flow: the Brain tab.
     case "brain":
       return { id: "brain", kind };
+    // Flow: the Plan tab.
+    case "plan":
+      return { id: "plan", kind };
   }
 };
 
@@ -321,7 +332,8 @@ const updateThreadStateMap = (
     next.activeSurfaceId === null &&
     next.surfaces.length === 0 &&
     !next.dismissedDeviceSurfaceIds?.length &&
-    next.proactiveDiffTurnId === undefined
+    next.proactiveDiffTurnId === undefined &&
+    next.proactivePlanId === undefined
   ) {
     if (!(threadKey in byThreadKey)) return byThreadKey;
     const { [threadKey]: _removed, ...rest } = byThreadKey;
@@ -561,6 +573,9 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
                   ...(typeof validThreadState?.proactiveDiffTurnId === "string"
                     ? { proactiveDiffTurnId: RunId.make(validThreadState.proactiveDiffTurnId) }
                     : {}),
+                  ...(typeof validThreadState?.proactivePlanId === "string"
+                    ? { proactivePlanId: validThreadState.proactivePlanId }
+                    : {}),
                   ...(Array.isArray(validThreadState?.dismissedDeviceSurfaceIds)
                     ? {
                         dismissedDeviceSurfaceIds:
@@ -696,6 +711,16 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
               return { ...current, surfaces };
             }
             return { ...current, isOpen: revealPanel, surfaces, activeSurfaceId: "brain" };
+          }),
+        ),
+      openPlanByDefault: (ref, planId, revealPanel) =>
+        set((state) =>
+          automaticUpdate(state, scopedThreadKey(ref), (current) => {
+            if (current.proactivePlanId === planId) {
+              return current;
+            }
+            const opened = upsertSurface(current, singletonSurface("plan"));
+            return { ...opened, isOpen: revealPanel || current.isOpen, proactivePlanId: planId };
           }),
         ),
       renameDevice: (ref, surfaceId, title) =>

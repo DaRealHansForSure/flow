@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A Plan tab in the right panel shows the chat's latest plan like an opened `Plan.md`, as
+  rendered Markdown or raw text, with Copy, Download and Save as file. It opens on its own
+  for each new plan, and from the plan card's menu or the panel's + menu.
+
 ### Changed
 
 - Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
