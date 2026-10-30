@@ -164,7 +164,8 @@ export const RightPanelMaximizeControl = memo(function RightPanelMaximizeControl
       <TooltipTrigger
         render={
           <Toggle
-            className="shrink-0 [-webkit-app-region:no-drag]"
+            // Flow: on a phone the panel already fills the screen, so there is nothing to enlarge.
+            className="shrink-0 [-webkit-app-region:no-drag] max-sm:hidden"
             pressed={maximized}
             onPressedChange={onToggle}
             aria-label={label}

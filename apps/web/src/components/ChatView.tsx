@@ -4,7 +4,8 @@ import { workspaceAreaProps } from "../lib/workspaceFocus";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
 import { queuedRunEditBlockedReason } from "@t3tools/client-runtime/queued-run-edit";
-import { ScrollToEndButton, WorkspaceFileDropOverlay } from "./chat/TimelineOverlays";
+import { WorkspaceFileDropOverlay } from "./chat/TimelineOverlays";
+import { ComposerStatusControl } from "./chat/ComposerStatusControl";
 import { usePasteToFocusComposer } from "./chat/usePasteToFocusComposer";
 import { announcedRun, isDetailBehindShell } from "./chat/threadActivityAnnouncement";
 import {
@@ -3193,12 +3194,7 @@ export default function ChatView(props: ChatViewProps) {
               .activateSurface(activeThreadRef, browserSurfaceIds.at(-1)!),
         }
       : null;
-  const hasThreadNow =
-    browserNow !== null ||
-    childInputNow !== null ||
-    backgroundWorkNow !== null ||
-    goalNow !== null ||
-    shownThreadSyncPhase !== null;
+  const hasThreadNow = childInputNow !== null || goalNow !== null || shownThreadSyncPhase !== null;
   const queuedRunCount = serverProjection ? getUserQueuedThreadRuns(serverProjection).length : 0;
   // The queue control is mounted for every server thread but joins the footer only while it shows
   // something, by its own rule: an optimistic message stops counting once the server has it.
@@ -3209,13 +3205,12 @@ export default function ChatView(props: ChatViewProps) {
         message.inputIntent === "queued_turn" &&
         !serverProjection?.messages.some((committed) => committed.id === message.id),
     );
-  const scrollToEndSummary =
-    [
-      childInputNow === null ? null : "Subagent waiting",
-      queuedRunCount === 0 ? null : `${queuedRunCount} queued`,
-    ]
-      .filter((part) => part !== null)
-      .join(" · ") || null;
+  // Flow: the status control above the composer stays put; leave room for it at the end.
+  const statusControlPinned =
+    backgroundWorkNow !== null ||
+    activeWorkStartedAt !== null ||
+    browserNow !== null ||
+    queuedRunCount > 0;
   // The end of the timeline holds the thread's present and next turns: what it is doing now,
   // its lifecycle status, guest messages awaiting you, then your queued messages.
   const timelineFooter =
@@ -3223,7 +3218,8 @@ export default function ChatView(props: ChatViewProps) {
     !hasThreadNow &&
     threadStatusLine === null &&
     pendingGuestMessageCount === 0 &&
-    !hasQueuedTurns ? null : (
+    !hasQueuedTurns &&
+    !statusControlPinned ? null : (
       <>
         {pendingHandoff === null ? null : (
           <div className="chat-content-lane">
@@ -3238,10 +3234,9 @@ export default function ChatView(props: ChatViewProps) {
         <ThreadNow
           key={routeThreadKey}
           attention={childInputNow}
-          work={backgroundWorkNow}
+          work={null}
           syncPhase={shownThreadSyncPhase}
           goal={goalNow}
-          browser={browserNow}
         />
         {threadStatusLine}
         {pendingGuestMessageCount > 0 && isServerThread && activeThread ? (
@@ -3252,6 +3247,7 @@ export default function ChatView(props: ChatViewProps) {
           />
         ) : null}
         {hasQueuedTurns ? queuedRunsControl : null}
+        {statusControlPinned ? <div aria-hidden className="h-12" /> : null}
       </>
     );
 
@@ -3601,10 +3597,14 @@ export default function ChatView(props: ChatViewProps) {
                   : { historyControls: threadHistoryControls })}
               />
 
-              {showScrollToBottom && !isThreadFindActive && (
-                <ScrollToEndButton
+              {isThreadFindActive ? null : (
+                <ComposerStatusControl
                   bottom={scrollToEndClearance + 4}
-                  summary={scrollToEndSummary}
+                  work={backgroundWorkNow}
+                  workingSince={activeWorkStartedAt}
+                  browsers={browserNow}
+                  queuedCount={queuedRunCount}
+                  showScrollToEnd={showScrollToBottom}
                   onScrollToEnd={() => scrollToEnd(true)}
                 />
               )}

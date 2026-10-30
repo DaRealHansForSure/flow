@@ -2142,6 +2142,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     );
   };
   const handleSubmitMessageStable = useStableCallback(handleSubmitMessage);
+  const sendWithModeStable = useStableCallback((mode: "steer" | "queue") => {
+    submitComposer(undefined, mode);
+  });
   const submitCitationAndSend = () => {
     submitComposer(
       undefined,
@@ -3519,6 +3522,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     preserveComposerFocusOnPointerDown={isMobileViewport}
                     isEditingQueuedMessage={isEditingQueuedMessage}
                     onSubmitMessage={handleSubmitMessageStable}
+                    onSendWithMode={sendWithModeStable}
                     onResume={onResume}
                     onPreviousPendingQuestion={onPreviousActivePendingUserInputQuestion}
                     onInterrupt={handleInterruptPrimaryActionStable}

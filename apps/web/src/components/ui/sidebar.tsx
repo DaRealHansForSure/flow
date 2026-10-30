@@ -310,7 +310,8 @@ function Sidebar({
           <SheetPopup
             ref={setMobileSheetElement}
             className={cn(
-              "w-(--sidebar-width) max-w-none bg-sidebar surface-grain p-0 text-sidebar-foreground",
+              // Flow: a small portrait screen gives the sidebar its full width.
+              "w-(--sidebar-width) max-w-none bg-sidebar surface-grain p-0 text-sidebar-foreground max-sm:w-full max-sm:border-e-0",
               className,
             )}
             data-mobile="true"
