@@ -251,7 +251,8 @@ panel lists the MCP servers the chat's running agent has loaded: Flow's own,
 your own, plugins and claude.ai connectors, with their status and tools. A
 server that failed or needs a sign-in is shown at the top. The list comes from
 the running agent, so it is empty until the chat's first message. Claude, Codex
-and OpenCode report their servers; other providers say they do not.
+and OpenCode report their servers; other providers say they do not. **Settings → Providers**
+shows the same list under **MCP servers** for each provider's running chat.
 
 Provider commands must start the message to run. T3 Code commands such as
 `/model` and `/plan`, and skill mentions, work on any line.

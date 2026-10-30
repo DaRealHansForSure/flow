@@ -65,6 +65,7 @@ import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { SettingResetButton, SettingsRow, SettingsSection } from "./settingsLayout";
 import { AcpSessionManagementSection } from "./AcpSessionManagementSection";
 import { FoldedSettingsSection } from "./FoldedSettingsSection";
+import { McpSettingsSection } from "../mcp/McpServersView";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
 import {
   getProviderVersionAdvisoryPresentation,
@@ -1235,6 +1236,21 @@ export function ProviderInstanceCard({
           projects={acpProjects}
           readOnly={readOnly}
         />
+      ) : null}
+
+      {/* Flow: folded so the running agent is asked only when the section is opened. */}
+      {environmentId !== undefined && liveProvider !== undefined ? (
+        <FoldedSettingsSection
+          id={`provider-instance-${instanceId}-mcp`}
+          title="MCP servers"
+          headerPlacement="outside"
+        >
+          <McpSettingsSection
+            environmentId={environmentId}
+            instanceId={instanceId}
+            providerName={displayName}
+          />
+        </FoldedSettingsSection>
       ) : null}
 
       {driverOption !== undefined ? (

@@ -21,6 +21,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Failed servers and servers that need a sign-in are shown at the top. Open it with `/mcp`,
   **Show MCP servers** in the command palette or the panel's + menu. Claude, Codex and OpenCode
   report their servers.
+- Settings > Providers has an MCP servers section on each provider that shows the same list for
+  that provider's most recently used running chat, with a link to it.
 
 ### Changed
 
