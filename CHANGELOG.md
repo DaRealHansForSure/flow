@@ -69,6 +69,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The knowledge graph's "open larger" button sits in the graph's top right corner on both the
+  Brain page and the chat's Brain tab; the second one in the Brain tab's header is gone.
+
 - Dragging the knowledge graph shows the move cursor.
 
 - The project name in the new-chat headline is shown in the accent colour, so it reads as the

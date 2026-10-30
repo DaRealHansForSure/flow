@@ -43,8 +43,8 @@ export interface BrainWorkspaceViewProps {
   readonly docs?: ReactNode;
   readonly skills?: ReactNode;
   readonly onCreate?: () => void;
-  /** Controls placed beside the counts in the knowledge graph card header. */
-  readonly graphActions?: ReactNode;
+  /** Controls shown in the knowledge graph's top right corner (fork). */
+  readonly graphCorner?: ReactNode;
 }
 
 export interface BrainUiDocumentSummary {

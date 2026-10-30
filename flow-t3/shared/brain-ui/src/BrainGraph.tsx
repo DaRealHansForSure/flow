@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { FalkorDBCanvas, GraphNode } from "@falkordb/canvas";
 import { XIcon } from "lucide-react";
@@ -11,12 +12,15 @@ export function BrainGraph({
   compact = false,
   fill = false,
   highlightedNodeIds = noHighlightedNodeIds,
+  corner,
 }: {
   readonly knowledge: BrainUiKnowledge;
   readonly compact?: boolean;
   /** Grow to the parent's height instead of the fixed card height; the parent needs a definite height. */
   readonly fill?: boolean;
   readonly highlightedNodeIds?: readonly string[];
+  /** Controls shown in the graph's top right corner, e.g. the host's "open larger" button. */
+  readonly corner?: ReactNode;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<FalkorDBCanvas | null>(null);
@@ -138,6 +142,7 @@ export function BrainGraph({
     <div className={fill ? "flow-brain-graph fill" : "flow-brain-graph"}>
       <div className={compact ? "flow-brain-graph-canvas compact" : "flow-brain-graph-canvas"}>
         <div ref={host} className="flow-brain-graph-host" />
+        {corner ? <div className="flow-brain-graph-corner">{corner}</div> : null}
         {error && <p role="alert" className="flow-brain-alert">{error}</p>}
         {selected && (
           <article className="flow-brain-node-details">
