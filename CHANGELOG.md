@@ -56,6 +56,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The background work list shows each item's full name in a smaller font, wrapping over lines
+  instead of cutting it off.
 - In the command palette's project list, No project has a second line like the projects, so every
   row is as tall and easy to tap.
 - On a phone the idle composer shows "Ask anything..." in a rounded, outlined field in a muted

@@ -164,17 +164,24 @@ export function backgroundWorkNowItem(input: {
         {rows.map((row) => {
           const childThreadId = row.childThreadId;
           return (
-            <li key={row.task.taskId} className="flex items-center gap-3 py-2.5">
-              <span aria-hidden className="flex shrink-0 text-muted-foreground [&_svg]:size-4">
+            <li key={row.task.taskId} className="flex items-start gap-3 py-2.5">
+              <span
+                aria-hidden
+                className="mt-0.5 flex shrink-0 text-muted-foreground [&_svg]:size-4"
+              >
                 {isCommand(row) ? <TerminalIcon /> : <CircleDashedIcon />}
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
+                {/* The full name wraps, as in the mobile app; the pill above stays one line. */}
                 <span
-                  className={cn("truncate text-sm text-foreground", isCommand(row) && "font-mono")}
+                  className={cn(
+                    "wrap-anywhere text-foreground text-xs leading-snug",
+                    isCommand(row) && "font-mono",
+                  )}
                 >
                   {row.task.label}
                 </span>
-                <span className="truncate text-muted-foreground text-xs">
+                <span className="text-muted-foreground text-xs">
                   {row.activity ?? (isCommand(row) ? "Command" : "Subagent")}
                 </span>
               </span>
