@@ -23,6 +23,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { HighlightedCodeLines } from "./HighlightedCodeLines";
 import {
   codeBlockDownloadFileName,
+  codeBlockDownloadStem,
   createHighlightCacheKey,
   estimateHighlightedSize,
   extractFenceLanguage,
@@ -150,6 +151,7 @@ export function MarkdownCodeBlock({
   viewToggle,
   canWrap = true,
   diagram = false,
+  downloadFolder,
   children,
 }: {
   code: string;
@@ -161,6 +163,8 @@ export function MarkdownCodeBlock({
   viewToggle?: ReactNode;
   canWrap?: boolean;
   diagram?: boolean;
+  /** The chat's working folder; its name starts generated download file names. */
+  downloadFolder?: string | undefined;
   children: ReactNode;
 }) {
   const { copyToClipboard, isCopied: copied } = useCopyToClipboard({
@@ -194,7 +198,8 @@ export function MarkdownCodeBlock({
 
   const handleDownload = () => {
     try {
-      downloadCodeBlock(codeBlockDownloadFileName(language, fenceTitle), code);
+      const stem = codeBlockDownloadStem(downloadFolder, new Date());
+      downloadCodeBlock(codeBlockDownloadFileName(language, fenceTitle, stem), code);
     } catch (cause) {
       reportMarkdownActionFailure(
         {

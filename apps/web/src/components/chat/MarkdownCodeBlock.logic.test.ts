@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { codeBlockDownloadFileName } from "./MarkdownCodeBlock.logic";
+import { codeBlockDownloadFileName, codeBlockDownloadStem } from "./MarkdownCodeBlock.logic";
 
 describe("codeBlockDownloadFileName", () => {
   it.each([
@@ -37,5 +37,27 @@ describe("codeBlockDownloadFileName", () => {
     ["dockerfile", "Containerfile", "Containerfile"],
   ])("names a %s block titled %s as %s", (language, fenceTitle, expected) => {
     expect(codeBlockDownloadFileName(language, fenceTitle)).toBe(expected);
+  });
+});
+
+describe("codeBlockDownloadStem", () => {
+  const now = new Date(2026, 9, 30, 1, 2, 3);
+  it.each([
+    ["/projects/example", "example-20261030-010203"],
+    ["/projects/example/", "example-20261030-010203"],
+    ["C:\\work\\My Project", "My-Project-20261030-010203"],
+    ["/projects/.hidden", "hidden-20261030-010203"],
+    [undefined, "snippet-20261030-010203"],
+  ])("names a block from %s as %s", (projectFolder, expected) => {
+    expect(codeBlockDownloadStem(projectFolder, now)).toBe(expected);
+  });
+
+  it("uses the stem for blocks without a file name", () => {
+    expect(codeBlockDownloadFileName("sh", null, "example-20261030-010203")).toBe(
+      "example-20261030-010203.sh",
+    );
+    expect(codeBlockDownloadFileName("sh", "install", "example-20261030-010203")).toBe(
+      "install.sh",
+    );
   });
 });

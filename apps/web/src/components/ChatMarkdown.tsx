@@ -1551,6 +1551,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
       onRunShellCommand,
       inline,
       mathEnabled,
+      cwd,
     } = use(ChatMarkdownRendererContext);
     const text = use(ChatMarkdownTextContext);
     const codeBlock = extractCodeBlock(children);
@@ -1598,6 +1599,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
           theme={resolvedTheme}
           isStreaming={isStreaming && !isClosedCodeFence(node, text, codeBlock.code)}
           onExpand={(src) => expandMedia({ images: [{ src, name: "Mermaid diagram" }], index: 0 })}
+          downloadFolder={cwd}
         >
           {highlightedCode}
         </MarkdownMermaidCodeBlock>
@@ -1615,6 +1617,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
             : undefined
         }
         isStreaming={isStreaming}
+        downloadFolder={cwd}
       >
         {highlightedCode}
       </MarkdownCodeBlock>
