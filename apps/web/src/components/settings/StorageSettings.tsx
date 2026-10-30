@@ -163,6 +163,28 @@ function RetentionControl({
   );
 }
 
+/** An on/off rule laid out like RetentionControl: its state as text beside the switch. */
+function RuleSwitch({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-muted-foreground">{checked ? "On" : "Off"}</span>
+      <Switch
+        aria-label={label}
+        checked={checked}
+        onCheckedChange={(enabled) => onChange(Boolean(enabled))}
+      />
+    </div>
+  );
+}
+
 const KEEP_WHEN_LABELS = {
   "any-local-files": "Any local files",
   "uncommitted-changes": "Uncommitted changes",
@@ -774,10 +796,10 @@ export function StorageCleanupSections() {
           description="Delete folders under scratch that no chat uses any more, such as those of deleted No project chats. Folders younger than an hour are kept."
           serverScoped
           control={
-            <Switch
+            <RuleSwitch
+              label="Delete unused No project folders"
               checked={settings.scratchFolders}
-              onCheckedChange={(checked) => update({ scratchFolders: Boolean(checked) })}
-              aria-label="Delete unused No project folders"
+              onChange={(scratchFolders) => update({ scratchFolders })}
             />
           }
         />
