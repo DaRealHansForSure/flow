@@ -1,20 +1,24 @@
-import type {
-  EnvironmentId,
-  ProviderInstanceId,
-  ProviderMcpListInput,
-  ProviderMcpListing,
-  ThreadId,
+import {
+  AuthProvidersManageScope,
+  type EnvironmentId,
+  type ProviderInstanceId,
+  type ProviderMcpCheck,
+  type ProviderMcpListInput,
+  type ProviderMcpListing,
+  type ThreadId,
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { Link } from "@tanstack/react-router";
 import { PlugIcon, PowerOffIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";
 import { deriveProviderInstanceEntries } from "~/providerInstances";
 import { useEnvironmentProviders } from "~/state/environments";
 import { mcpAppEnvironment } from "~/state/mcpApps";
 import { useEnvironmentQuery } from "~/state/query";
+import { useEnvironmentScope } from "~/state/session";
+import { useAtomCommand } from "~/state/use-atom-command";
 import { buildThreadRouteParams } from "~/threadRoutes";
 import { formatShortTimestamp } from "~/timestampFormat";
 import { Button } from "../ui/button";
@@ -146,7 +150,16 @@ export function McpPanel(props: {
   );
 }
 
-/** Settings > Providers: the servers of the instance's most recently updated running chat. */
+type CheckState =
+  | { readonly status: "idle" }
+  | { readonly status: "checking" }
+  | { readonly status: "done"; readonly result: ProviderMcpCheck }
+  | { readonly status: "failed"; readonly message: string };
+
+/**
+ * Settings > Providers: the servers of the instance's most recently updated running chat, or,
+ * behind a button, a one-off check that starts the provider just to read them.
+ */
 export function McpSettingsSection(props: {
   readonly environmentId: EnvironmentId;
   readonly instanceId: ProviderInstanceId;
@@ -155,26 +168,104 @@ export function McpSettingsSection(props: {
   const query = useProviderMcpListing(props.environmentId, { instanceId: props.instanceId });
   const listing = query.data;
   const timestampFormat = useClientSettings((settings) => settings.timestampFormat);
+  const canManageProviders = useEnvironmentScope(props.environmentId, AuthProvidersManageScope);
+  const checkServers = useAtomCommand(mcpAppEnvironment.checkProviderServers, {
+    reportFailure: false,
+  });
+  const [check, setCheck] = useState<CheckState>({ status: "idle" });
+
+  const runCheck = async () => {
+    setCheck({ status: "checking" });
+    const result = await checkServers({
+      environmentId: props.environmentId,
+      input: { instanceId: props.instanceId },
+    });
+    if (result._tag === "Success") {
+      setCheck({ status: "done", result: result.value });
+      return;
+    }
+    setCheck({
+      status: "failed",
+      message:
+        "error" in result.cause && result.cause.error instanceof Error
+          ? result.cause.error.message
+          : `${props.providerName} did not report its MCP servers.`,
+    });
+  };
+
+  const hint = (text: ReactNode) => (
+    <p className="px-3 pt-3 text-muted-foreground text-xs sm:px-4">{text}</p>
+  );
+  const checkButton = (label: string) => (
+    <Button
+      size="compact"
+      variant="outline"
+      onClick={() => void runCheck()}
+      disabled={check.status === "checking"}
+    >
+      <RefreshIcon refreshing={check.status === "checking"} />
+      {check.status === "checking" ? "Checking..." : label}
+    </Button>
+  );
+
+  if (check.status === "done" && check.result._tag === "checked") {
+    const result = check.result;
+    return (
+      <div className="flex flex-col">
+        <div className="flex items-start gap-2 px-3 pt-3 sm:px-4">
+          <p className="min-w-0 flex-1 text-muted-foreground text-xs">
+            Checked by starting {props.providerName} once ·{" "}
+            {formatShortTimestamp(result.checkedAt, timestampFormat)}
+            {result.profile ? (
+              <>
+                {" "}
+                · <span className="font-mono">{result.profile}</span>
+              </>
+            ) : null}
+            . Project servers show in a chat's MCP tab.
+          </p>
+          {checkButton("Check again")}
+        </div>
+        {result.servers.length === 0 ? (
+          hint(`${props.providerName} has no MCP servers configured.`)
+        ) : (
+          <McpServerList servers={result.servers} />
+        )}
+      </div>
+    );
+  }
 
   if (listing === null) {
-    return (
-      <div className="px-3 py-3 text-muted-foreground text-xs sm:px-4">
-        {query.error ?? `Asking ${props.providerName} for its MCP servers...`}
-      </div>
+    return hint(query.error ?? `Asking ${props.providerName} for its MCP servers...`);
+  }
+  if (
+    listing._tag === "unsupported" ||
+    (check.status === "done" && check.result._tag === "unsupported")
+  ) {
+    return hint(
+      <>
+        {props.providerName} does not tell Flow which MCP servers it loaded. Flow's own tools (
+        <code>t3-code</code>) are always there.
+      </>,
     );
   }
   if (listing._tag === "no-session") {
     return (
-      <div className="px-3 py-3 text-muted-foreground text-xs sm:px-4">
-        No chat with {props.providerName} is running. Its MCP servers show here while one runs.
-      </div>
-    );
-  }
-  if (listing._tag === "unsupported") {
-    return (
-      <div className="px-3 py-3 text-muted-foreground text-xs sm:px-4">
-        {props.providerName} does not tell Flow which MCP servers it loaded. Flow's own tools (
-        <code>t3-code</code>) are always there.
+      <div className="flex flex-col gap-2 px-3 py-3 sm:px-4">
+        <p className="text-muted-foreground text-xs">
+          No chat with {props.providerName} is running. Check servers starts {props.providerName}{" "}
+          for a moment to list them; that also starts every MCP server it is configured with.
+        </p>
+        {check.status === "failed" ? (
+          <p className="text-destructive text-xs">{check.message}</p>
+        ) : null}
+        {canManageProviders ? (
+          <div>{checkButton("Check servers")}</div>
+        ) : (
+          <p className="text-muted-foreground text-xs">
+            Checking needs permission to manage providers on this environment.
+          </p>
+        )}
       </div>
     );
   }
@@ -209,9 +300,7 @@ export function McpSettingsSection(props: {
         </Button>
       </div>
       {listing.servers.length === 0 ? (
-        <div className="px-3 py-3 text-muted-foreground text-xs sm:px-4">
-          {props.providerName} has no MCP servers loaded.
-        </div>
+        hint(`${props.providerName} has no MCP servers loaded.`)
       ) : (
         <McpServerList servers={listing.servers} />
       )}

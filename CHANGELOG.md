@@ -22,7 +22,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   **Show MCP servers** in the command palette or the panel's + menu. Claude, Codex and OpenCode
   report their servers.
 - Settings > Providers has an MCP servers section on each provider that shows the same list for
-  that provider's most recently used running chat, with a link to it.
+  that provider's most recently used running chat, with a link to it. Without a running chat,
+  **Check servers** starts Claude once to list its servers.
 
 ### Changed
 

@@ -30,6 +30,11 @@ export function createMcpAppEnvironmentAtoms<R, E>(
       label: "environment-data:provider-mcp:list",
       tag: WS_METHODS.providerMcpList,
     }),
+    /** Starts the provider once to read its MCP servers; only on an explicit user action. */
+    checkProviderServers: createEnvironmentRpcCommand(runtime, {
+      label: "environment-command:provider-mcp:check",
+      tag: WS_METHODS.providerMcpCheck,
+    }),
     updateModelContext: createEnvironmentRpcCommand(runtime, {
       label: "environment-command:mcp-apps:update-model-context",
       tag: WS_METHODS.mcpAppsUpdateModelContext,

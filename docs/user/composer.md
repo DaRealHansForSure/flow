@@ -252,7 +252,8 @@ your own, plugins and claude.ai connectors, with their status and tools. A
 server that failed or needs a sign-in is shown at the top. The list comes from
 the running agent, so it is empty until the chat's first message. Claude, Codex
 and OpenCode report their servers; other providers say they do not. **Settings → Providers**
-shows the same list under **MCP servers** for each provider's running chat.
+shows the same list under **MCP servers** for each provider's running chat; without one,
+**Check servers** starts Claude for a moment to list them, which also starts its MCP servers.
 
 Provider commands must start the message to run. T3 Code commands such as
 `/model` and `/plan`, and skill mentions, work on any line.
