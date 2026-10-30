@@ -2622,4 +2622,12 @@ code {
     border-inline-width: 0;
     border-bottom-width: 0;
   }
+  /* A tinted surface, a firm top edge and a shadow set the bar apart from the chat history. */
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"] {
+    --chat-composer-glass-surface: var(--muted);
+    --chat-composer-outline: var(--border);
+  }
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-host"] {
+    box-shadow: 0 -8px 24px -12px rgb(0 0 0 / 0.25);
+  }
 }
