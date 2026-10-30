@@ -2646,6 +2646,8 @@ code {
    from these variables, so a new touch rule reuses them instead of repeating sizes. */
 :root {
   --touch-control-size: 2.5rem;
+  /* A one-line text field you tap to type in, such as the resting phone composer. */
+  --touch-field-height: 3rem;
   --touch-icon-size: 1.25rem;
   /* Where an icon starts inside a touch control: tabs use it so their icons line up with buttons. */
   --touch-control-icon-inset: calc((var(--touch-control-size) - var(--touch-icon-size)) / 2);

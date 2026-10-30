@@ -3258,7 +3258,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   type="button"
                   data-chat-composer-transition-prompt="true"
                   className={cn(
-                    "flex h-10 min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-3 text-left text-sm focus:outline-none",
+                    "flex h-(--touch-field-height) min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-4 text-left text-sm focus:outline-none",
                     prompt.trim() ? "text-foreground" : "text-muted-foreground",
                   )}
                   onPointerDown={(event) => event.preventDefault()}
@@ -3277,7 +3277,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 <button
                   type="button"
                   data-chat-composer-transition-actions="true"
-                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-message-action text-message-action-foreground hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground"
+                  className="flex size-(--touch-field-height) shrink-0 items-center justify-center rounded-full bg-message-action text-message-action-foreground hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground"
                   disabled={collapsedComposerPrimaryActionDisabled}
                   aria-label={collapsedComposerPrimaryActionLabel}
                   onPointerDown={(event) => event.preventDefault()}

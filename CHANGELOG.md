@@ -29,6 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The resting phone composer's message field and send button are 48 px high instead of 40 px.
 - The right side panel, its Plan tab included, has the same background as the left sidebar.
 - The resting phone composer keeps the attach button left of the message field; files picked there
   open the composer with the cursor in it.
