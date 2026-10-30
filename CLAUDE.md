@@ -34,8 +34,9 @@ git config pull.ff only
 ## Branches
 
 - `main` holds releases. `develop` collects finished work.
-- Every change goes on its own branch from `develop` (`feat/...`, `fix/...`, `docs/...`),
-  merged with `git merge --no-ff` into `develop`, then `develop` into `main`.
+- Work that takes several commits goes on its own branch from `develop` (`feat/...`,
+  `fix/...`, `docs/...`), merged with `git merge --no-ff` into `develop`. A change that is a
+  single commit goes straight onto `develop`. `develop` reaches `main` with `--no-ff`.
 - Never rebase history that has already been pushed.
 
 ## How the owner wants work done
@@ -48,8 +49,9 @@ These rules come from the owner and override the upstream guidance above where t
 - **One branch per topic, not per commit.** A branch carries one feature or piece of
   work (`feat/dev-flow`, `fix/service-network-access`) as several logical commits, cut
   from `develop` and merged once with `--no-ff` when the topic is done. Follow-up fixes
-  to unmerged work go onto the same branch. Do not commit work directly to `develop` or
-  `main`, and delete a topic branch once it is merged.
+  to unmerged work go onto the same branch. A change that is only one commit (a small fix,
+  a docs or worklog update) is committed directly on `develop` without a branch. Never
+  commit directly to `main`, and delete a topic branch once it is merged.
 - **Tests only when they pay.** Run tests after a big feature is complete or when the owner
   asks, not after every small edit. Typecheck and lint the touched scope before committing.
 - **CHANGELOG.md.** Every user-visible fork change gets a line under `[Unreleased]` in the
