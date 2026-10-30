@@ -94,6 +94,7 @@ import {
   SettingsRow,
   SettingsSection,
 } from "./settingsLayout";
+import { AboutComponentVersions } from "./AboutComponentVersions";
 import { searchableSetting } from "./settingsSearch";
 import { BackgroundActivitySettingsRow } from "./BackgroundActivitySettings";
 import { BackgroundModeSettingsRow } from "./BackgroundModeSettings";
@@ -146,7 +147,7 @@ const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("codex");
 function AboutVersionTitle() {
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span>Version</span>
+      <span>Web app</span>
       <code className="text-2xs font-medium text-muted-foreground">{APP_VERSION}</code>
     </span>
   );
@@ -2047,6 +2048,7 @@ export function AboutSettingsPanel() {
             />
           </>
         )}
+        <AboutComponentVersions />
         <MobileAppSettingsRow />
       </SettingsSection>
 
