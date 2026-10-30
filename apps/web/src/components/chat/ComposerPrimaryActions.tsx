@@ -162,7 +162,8 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
             type="button"
             className={cn(
               "flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-destructive/90 text-white shadow-xs shadow-destructive/24 inset-shadow-control-highlight transition-colors duration-150 hover:bg-destructive active:inset-shadow-control-pressed active:shadow-none [&_svg]:pointer-events-none",
-              insidePendingAction ? "size-8 sm:size-7" : "size-8 sm:h-8 sm:w-8",
+              // Flow: as big as the send button, so the row keeps its height when text arrives.
+              insidePendingAction ? "size-8 sm:size-7" : "size-9 sm:size-8",
             )}
             {...pointerFocusProps}
             disabled={!canOperateThread}

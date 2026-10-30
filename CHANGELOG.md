@@ -109,6 +109,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone the composer no longer grows a few pixels when text arrives: the stop button is as\n big as the send button.
 - The globe pill opens the newest browser tab instead of the first one, which could be an empty
   leftover; and an empty browser tab's list no longer sits under its control bar.
 - Finished subagents show Done (or how they ended) in Lineage and the Agents tab, matching the
