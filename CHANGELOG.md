@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The right side panel has the same background as the left sidebar.
 - The resting phone composer keeps the attach button left of the message field; files picked there
   open the composer with the cursor in it.
 - Work rows tell their kind apart by colour: thinking blue, commands green, tools violet, file
