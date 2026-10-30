@@ -20,6 +20,31 @@ and modes you choose in a draft keep their permissions.
 Approve or reject requests in the conversation to let the agent continue. Permission modes do
 not prevent the agent from asking questions about the task.
 
+## Plan
+
+**Plan** is the fifth mode, offered for providers with their own plan mode (Claude, Codex,
+Cursor, and OpenCode). The agent reads and plans instead of changing files, and every command
+asks for approval, even in a thread that otherwise runs in **Full access**. Switch to it in the
+permission picker, with `Shift+Tab`, or with `/plan`; `/default` leaves it.
+
+Plan keeps the thread's other mode for afterwards. To start new threads in Plan, choose it as the
+default in **Settings → Threads → New threads → Permissions**, then pick the mode accepted plans
+continue in under **After the plan**.
+
+A finished plan opens in the **Plan** tab of the side panel, rendered or as Markdown source, where
+you can copy, download, or save it as a file. Answer it from the tab, the plan card, or the
+composer:
+
+- **Accept** implements the plan in the thread's other mode. Its menu offers another mode or a
+  new thread.
+- **Revise** sends your feedback; the agent writes a new version. To comment on a passage, select
+  it, choose **Comment**, and write a note. Comments are sent with the next revision.
+- **Decline** closes the plan and keeps the thread in Plan.
+
+Each plan shows its version and whether it was accepted, revised, or declined; the Plan tab lists
+earlier versions. **Reopen this plan**, in a closed plan's menu or the Plan tab, makes it the open
+plan again. Changes already made from it stay.
+
 ## Provider differences
 
 Providers enforce permissions differently. Some read-only actions can proceed in **Supervised**.
