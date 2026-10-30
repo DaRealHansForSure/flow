@@ -150,27 +150,23 @@ export function CreateBrainDialog({
       return;
     setBusy(true);
     setError("");
-    try {
-      const result = await send(
-        location === "remote"
-          ? connectCloudCommand({ endpoint, email, password, cli: selected })
-          : { action: "create", name, cli: selected! },
-      );
-      const outcome = connectCloudOutcome(
-        result,
-        "Could not create the brain. Check the connection and retry.",
-      );
-      if (!outcome.ok) {
-        setError(outcome.error);
-        return;
-      }
-      setPassword("");
-      onCreated(outcome.workspaceId);
-      onOpenChange(false);
-      setName(initialName);
-    } finally {
-      setBusy(false);
+    const result = await send(
+      location === "remote"
+        ? connectCloudCommand({ endpoint, email, password, cli: selected })
+        : { action: "create", name, cli: selected! },
+    ).finally(() => setBusy(false));
+    const outcome = connectCloudOutcome(
+      result,
+      "Could not create the brain. Check the connection and retry.",
+    );
+    if (!outcome.ok) {
+      setError(outcome.error);
+      return;
     }
+    setPassword("");
+    onCreated(outcome.workspaceId);
+    onOpenChange(false);
+    setName(initialName);
   }
   return (
     <Dialog
@@ -364,19 +360,17 @@ export function ConnectCloudDialog({
     if (busy) return;
     setBusy(true);
     setError("");
-    try {
-      const result = await send(connectCloudCommand({ endpoint, email, password }, workspace?.id));
-      const outcome = connectCloudOutcome(result, "Could not connect to the cloud Brain.");
-      if (!outcome.ok) {
-        setError(outcome.error);
-        return;
-      }
-      setPassword("");
-      onConnected(outcome.workspaceId);
-      onOpenChange(false);
-    } finally {
-      setBusy(false);
+    const result = await send(
+      connectCloudCommand({ endpoint, email, password }, workspace?.id),
+    ).finally(() => setBusy(false));
+    const outcome = connectCloudOutcome(result, "Could not connect to the cloud Brain.");
+    if (!outcome.ok) {
+      setError(outcome.error);
+      return;
     }
+    setPassword("");
+    onConnected(outcome.workspaceId);
+    onOpenChange(false);
   }
   return (
     <Dialog
