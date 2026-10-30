@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- A globe pill above the composer shows how many browsers the chat has open while none is on
+  screen, like the mobile app; it opens them in the side panel and carries a dot for new ones.
 - Settings > Appearance > Chat font sizes only the text of chat messages (70 to 130 % of the
   interface size), so the chat can be smaller without shrinking buttons the way browser zoom does.
 - The file panel has a Download button for the open file. On phones its actions (rendered view,
