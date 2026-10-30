@@ -63,6 +63,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone the sidebar covers the chat and the side panel cleanly: what is behind it is dimmed,
+  and the header and panel buttons no longer show through on top of it.
+
 - The computer picker in Brain settings and "Connect an existing project" search computers and
   projects; they had taken over the Brain picker's "Search Brains" box.
 

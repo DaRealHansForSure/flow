@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 
 import type { ThreadPanelPresentation } from "../../rightPanelLayout";
 import { PopoverCreateHandle, PopoverTrigger } from "../ui/popover";
+import { useMobileSidebarSheetMounted } from "../ui/sidebar";
 import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
@@ -186,9 +187,14 @@ export function WorkspaceTitlebarControls(props: {
   readonly onToggleMaximized: () => void;
   readonly children: ReactNode;
 }) {
+  // Flow: these float above every sheet, so they step aside while the phone sidebar is open.
+  const mobileSidebarOpen = useMobileSidebarSheetMounted();
   return (
     <div
-      className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] z-50 mr-px flex h-[var(--workspace-topbar-height)] items-center gap-1 [-webkit-app-region:no-drag]"
+      className={cn(
+        "pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] z-50 mr-px flex h-[var(--workspace-topbar-height)] items-center gap-1 [-webkit-app-region:no-drag]",
+        mobileSidebarOpen && "hidden",
+      )}
       data-workspace-titlebar-controls
     >
       {props.showMaximizeControl ? (

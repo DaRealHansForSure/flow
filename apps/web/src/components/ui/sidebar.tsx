@@ -92,6 +92,12 @@ function useSidebar() {
   return context;
 }
 
+/** Flow: whether the phone sidebar sheet is on screen; false outside a SidebarProvider. */
+function useMobileSidebarSheetMounted(): boolean {
+  const context = React.use(SidebarContext);
+  return context !== null && context.isMobile && context.mobileSheetMounted;
+}
+
 function useSidebarVisibility() {
   const { isMobile, open, openMobile } = useSidebar();
   return isMobile ? openMobile : open;
@@ -859,6 +865,7 @@ export {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useMobileSidebarSheetMounted,
   useSidebar,
   useSidebarVisibility,
 };

@@ -79,7 +79,9 @@ function SheetPopup({
 
   return (
     <SheetPortal keepMounted={keepMounted}>
+      {/* Flow: a sheet opened over another (phone sidebar over the side panel) still dims it. */}
       <SheetBackdrop
+        forceRender
         className={
           instant
             ? "transition-none! data-ending-style:opacity-100! data-starting-style:opacity-100!"
