@@ -274,10 +274,9 @@ Open **Brain → Sources** to add the code and context Flow can learn from. Conn
 repository or choose a local folder. Public GitHub repositories work without signing in; private
 repositories use the selected machine's GitHub CLI authentication from **Settings → Source control**.
 
-Linear, Fireflies.ai, meeting notes, and the Slack bot are shown as upcoming source types and cannot
-be connected from this page yet.
-
-![Flow Brain sources, including GitHub repositories, local folders, and upcoming integrations](../images/flow-brain-sources.webp)
+**Connected projects** below the sources lists every project that uses the brain, with its source
+status and recent activity. Search it, sort it by any column, and tap a status to see what it means.
+Use **Connect an existing project** above the table to add another one.
 
 ### Conversation notes, Auto-Docs, and Auto-Skills
 
