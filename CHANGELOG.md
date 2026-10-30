@@ -27,6 +27,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, opening a chat from the sidebar shows the chat itself; its side panel no longer
+  covers it.
 - A plan card keeps its menu at the top right; a long title wraps to two lines instead of pushing
   the menu onto its own line on a phone.
 - Revise on a plan brings the message box into view, puts the cursor there and says "Describe what

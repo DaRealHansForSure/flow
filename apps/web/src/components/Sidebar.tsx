@@ -249,6 +249,7 @@ import { SidebarHeaderIconButton, SidebarThreadHeader } from "./sidebar/SidebarT
 import { TooltipProvider } from "./ui/tooltip";
 import { composerDraftHasUserContent, DraftId, useComposerDraftStore } from "../composerDraftStore";
 import { useThreadRouteTarget } from "../hooks/useThreadRouteTarget";
+import { useRightPanelStore } from "../rightPanelStore";
 import {
   SidebarSearchResultRow,
   SortableThreadRow,
@@ -1403,6 +1404,8 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     setSelectionAnchor(scopedThreadKey(threadRef));
     if (isMobile) {
       setOpenMobile(false);
+      // Flow: a chat opened from the sidebar on a phone shows the chat itself, not its side panel.
+      useRightPanelStore.getState().close(threadRef);
     }
     return router.navigate({
       to: "/$environmentId/$threadId",
