@@ -1322,7 +1322,8 @@ const OrchestrationV2PlanArtifactBaseFields = {
   threadId: ThreadId,
   runId: Schema.NullOr(RunId),
   nodeId: NodeId,
-  status: Schema.Literals(["draft", "active", "completed", "superseded"]),
+  // Flow: "declined" marks a proposed plan the user turned down; the chat stays in Plan.
+  status: Schema.Literals(["draft", "active", "completed", "superseded", "declined"]),
   detailInTurnItem: Schema.optional(Schema.Literal(true)),
 } as const;
 
@@ -3224,6 +3225,20 @@ export const OrchestrationV2Command = Schema.Union([
     commandId: CommandId,
     threadId: ThreadId,
     requestId: RuntimeRequestId,
+  }),
+  // Flow: turns down the thread's active proposed plan.
+  Schema.Struct({
+    type: Schema.Literal("thread.proposed-plan.decline"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    planId: PlanId,
+  }),
+  // Flow: makes a closed proposed plan the thread's open one again.
+  Schema.Struct({
+    type: Schema.Literal("thread.proposed-plan.reopen"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    planId: PlanId,
   }),
   Schema.Struct({
     type: Schema.Literal("checkpoint.rollback"),

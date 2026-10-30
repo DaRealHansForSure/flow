@@ -41,7 +41,6 @@ import { cn } from "~/lib/utils";
 import { textDirection } from "~/textDirection";
 import { useClientSettings } from "../../hooks/useSettings";
 import { GuestShareIndicator } from "./GuestShareControls";
-import { BrainHeaderButton } from "../brain/BrainHeaderButton";
 
 interface ChatHeaderProps {
   activeThreadEnvironmentId: EnvironmentId;
@@ -53,6 +52,8 @@ interface ChatHeaderProps {
   parentThreadLink: { threadId: ThreadId; title: string } | null;
   onOpenThread: (threadId: ThreadId) => void;
   rightPanelOpen: boolean;
+  /** Flow: the Brain button joins the floating panel buttons, which need one more slot. */
+  brainControlShown?: boolean;
   onNewThreadInProject: () => void;
   onOpenProjectSettings?: (() => void) | undefined;
 }
@@ -79,6 +80,7 @@ export const ChatHeader = memo(function ChatHeader({
   parentThreadLink,
   onOpenThread,
   rightPanelOpen,
+  brainControlShown = false,
   onNewThreadInProject,
   onOpenProjectSettings,
 }: ChatHeaderProps) {
@@ -278,7 +280,14 @@ export const ChatHeader = memo(function ChatHeader({
       ref={breadcrumbContainerRef}
       className={cn(
         "flex min-w-0 flex-1 items-center gap-2 sm:gap-3",
-        rightPanelOpen ? "pr-10" : "pr-24",
+        // Room for the floating panel buttons; Flow adds the Brain button to them.
+        rightPanelOpen
+          ? brainControlShown
+            ? "pr-16"
+            : "pr-10"
+          : brainControlShown
+            ? "pr-34"
+            : "pr-24",
       )}
       onContextMenu={handleHeaderContextMenu}
     >
@@ -425,8 +434,6 @@ export const ChatHeader = memo(function ChatHeader({
         </WorkspaceBreadcrumbItem>
       </WorkspaceBreadcrumb>
       {isServerThread ? <GuestShareIndicator threadRef={activeThreadRef} /> : null}
-      {/* Flow: opens the chat's Brain tab; hidden for a chat without a Brain. */}
-      <BrainHeaderButton threadRef={activeThreadRef} />
     </div>
   );
 });

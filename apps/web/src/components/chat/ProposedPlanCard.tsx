@@ -1,44 +1,22 @@
 import { proposedPlanTitle, stripDisplayedPlanMarkdown } from "@t3tools/shared/proposedPlanText";
-import { memo, useState, useId } from "react";
+import { memo, useState } from "react";
 import { findRevealRef } from "./markdownFindContext";
-import {
-  isAtomCommandInterrupted,
-  squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
-import {
-  AuthFilesystemWriteScope,
-  type EnvironmentId,
-  type ScopedThreadRef,
-} from "@t3tools/contracts";
-import {
-  buildCollapsedProposedPlanPreviewMarkdown,
-  buildProposedPlanMarkdownFilename,
-  downloadPlanAsTextFile,
-  normalizePlanMarkdownForExport,
-} from "../../proposedPlan";
+import type { EnvironmentId, PlanId, ScopedThreadRef } from "@t3tools/contracts";
+import { buildCollapsedProposedPlanPreviewMarkdown } from "../../proposedPlan";
 import ChatMarkdown from "../ChatMarkdown";
 import { EllipsisIcon } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { cn } from "~/lib/utils";
 import { Badge } from "../ui/badge";
-import {
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogPopup,
-  DialogTitle,
-} from "../ui/dialog";
-import { stackedThreadToast, toastManager } from "../ui/toast";
-import { projectEnvironment } from "~/state/projects";
-import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
-import { useAtomCommand } from "~/state/use-atom-command";
-import { readEnvironmentScope, useEnvironmentScope } from "~/state/session";
+import { useRightPanelStore } from "../../rightPanelStore";
+import { PlanCommentSelection } from "./PlanCommentSelection";
+import { PlanReviewActions, usePlanReview } from "./planReview";
+import { planVersionLabel } from "@t3tools/client-runtime/state/plan-versions";
+import { usePlanFileActions } from "./usePlanFileActions";
 
 export const ProposedPlanCard = memo(function ProposedPlanCard({
+  planId,
   planMarkdown,
   environmentId,
   threadRef,
@@ -46,6 +24,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   workspaceRoot,
   findActive = false,
 }: {
+  planId: PlanId;
   planMarkdown: string;
   environmentId: EnvironmentId;
   threadRef?: ScopedThreadRef | undefined;
@@ -54,25 +33,12 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   findActive?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const canWriteFiles = useEnvironmentScope(environmentId, AuthFilesystemWriteScope);
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [lastSavePath, setLastSavePath] = useState("");
-  const [isSavingToWorkspace, setIsSavingToWorkspace] = useState(false);
-  const writeProjectFile = useAtomCommand(projectEnvironment.writeFile, {
-    reportFailure: false,
-  });
-  const { copyToClipboard, isCopied } = useCopyToClipboard({
-    target: "plan",
-    onError: (error) => {
-      toastManager.add(
-        stackedThreadToast({
-          type: "error",
-          title: "Could not copy plan",
-          description: error instanceof Error ? error.message : "An error occurred while copying.",
-        }),
-      );
-    },
-  });
+  const fileActions = usePlanFileActions({ planMarkdown, environmentId, workspaceRoot });
+  const { versions, review, reopen } = usePlanReview();
+  const version = versions.find((candidate) => candidate.id === planId);
+  const statusLabel = version ? planVersionLabel(version, versions.length) : null;
+  const reviewable = review !== null && review.planId === planId;
+  const [commentArea, setCommentArea] = useState<HTMLElement | null>(null);
   const title = proposedPlanTitle(planMarkdown) ?? "Proposed plan";
   const lineCount = planMarkdown.split("\n").length;
   const canCollapse = planMarkdown.length > 900 || lineCount > 20;
@@ -84,79 +50,6 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   // Mount clipped plans during find to count hidden matches without revealing them.
   const showPreview = isCollapsed && !findActive;
   const revealRef = findRevealRef(() => setExpanded(true));
-  const downloadFilename = buildProposedPlanMarkdownFilename(planMarkdown);
-  const saveContents = normalizePlanMarkdownForExport(planMarkdown);
-
-  const handleDownload = () => {
-    downloadPlanAsTextFile(downloadFilename, saveContents);
-  };
-
-  const handleCopyPlan = () => {
-    copyToClipboard(saveContents);
-  };
-
-  const openSaveDialog = () => {
-    if (!canWriteFiles) return;
-    if (!workspaceRoot) {
-      toastManager.add(
-        stackedThreadToast({
-          type: "error",
-          title: "Workspace path is unavailable",
-          description: "This thread does not have a workspace path to save into.",
-        }),
-      );
-      return;
-    }
-    setIsSaveDialogOpen(true);
-  };
-
-  const handleSaveToWorkspace = (savePath: string) => {
-    const relativePath = savePath.trim();
-    if (!workspaceRoot || !readEnvironmentScope(environmentId, AuthFilesystemWriteScope)) {
-      return;
-    }
-    if (!relativePath) {
-      toastManager.add({
-        type: "warning",
-        title: "Enter a workspace path",
-      });
-      return;
-    }
-
-    setLastSavePath(savePath);
-    setIsSavingToWorkspace(true);
-    void (async () => {
-      const result = await writeProjectFile({
-        environmentId,
-        input: {
-          cwd: workspaceRoot,
-          relativePath,
-          contents: saveContents,
-        },
-      });
-      setIsSavingToWorkspace(false);
-      if (result._tag === "Success") {
-        setIsSaveDialogOpen(false);
-        toastManager.add({
-          type: "success",
-          title: "Plan saved to workspace",
-          description: result.value.relativePath,
-        });
-        return;
-      }
-      if (!isAtomCommandInterrupted(result)) {
-        const error = squashAtomCommandFailure(result);
-        toastManager.add(
-          stackedThreadToast({
-            type: "error",
-            title: "Could not save plan",
-            description: error instanceof Error ? error.message : "An error occurred while saving.",
-          }),
-        );
-      }
-    })();
-  };
-
   return (
     <div className="rounded-2xl border border-border/80 bg-card/70 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -166,6 +59,9 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
           <h3 data-thread-find-text="true" className="truncate text-sm font-medium text-foreground">
             {title}
           </h3>
+          {statusLabel ? (
+            <span className="shrink-0 text-muted-foreground text-xs">{statusLabel}</span>
+          ) : null}
         </div>
         <Menu>
           <MenuTrigger
@@ -174,20 +70,25 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
             <EllipsisIcon aria-hidden="true" className="size-4" />
           </MenuTrigger>
           <MenuPopup align="end">
-            <MenuItem onClick={handleCopyPlan}>
-              {isCopied ? "Copied!" : "Copy to clipboard"}
+            {reopen !== null && version !== undefined && version.status !== "active" ? (
+              <MenuItem onClick={() => reopen(planId)}>Reopen this plan</MenuItem>
+            ) : null}
+            {threadRef ? (
+              <MenuItem onClick={() => useRightPanelStore.getState().open(threadRef, "plan")}>
+                Open in Plan tab
+              </MenuItem>
+            ) : null}
+            <MenuItem onClick={fileActions.copy}>
+              {fileActions.isCopied ? "Copied!" : "Copy to clipboard"}
             </MenuItem>
-            <MenuItem onClick={handleDownload}>Download as markdown</MenuItem>
-            <MenuItem
-              onClick={openSaveDialog}
-              disabled={!canWriteFiles || !workspaceRoot || isSavingToWorkspace}
-            >
+            <MenuItem onClick={fileActions.download}>Download as markdown</MenuItem>
+            <MenuItem onClick={fileActions.openSaveDialog} disabled={!fileActions.canSave}>
               Save to workspace
             </MenuItem>
           </MenuPopup>
         </Menu>
       </div>
-      <div className="mt-4">
+      <div className="mt-4" ref={setCommentArea}>
         <div
           ref={revealRef}
           className={cn("relative", isCollapsed && "max-h-104 overflow-hidden")}
@@ -231,78 +132,15 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
         ) : null}
       </div>
 
-      <Dialog
-        open={isSaveDialogOpen}
-        onOpenChange={(open) => {
-          if (!isSavingToWorkspace) {
-            setIsSaveDialogOpen(open);
-          }
-        }}
-      >
-        <DialogPopup className="max-w-xl">
-          <SavePlanToWorkspaceForm
-            initialPath={lastSavePath || downloadFilename}
-            placeholder={downloadFilename}
-            workspaceRoot={workspaceRoot}
-            canWriteFiles={canWriteFiles}
-            saving={isSavingToWorkspace}
-            onCancel={() => setIsSaveDialogOpen(false)}
-            onSave={handleSaveToWorkspace}
-          />
-        </DialogPopup>
-      </Dialog>
+      {reviewable ? (
+        <div className="mt-4 flex justify-end">
+          <PlanReviewActions review={review} />
+        </div>
+      ) : null}
+      {reviewable ? (
+        <PlanCommentSelection container={commentArea} onComment={review.comment} />
+      ) : null}
+      {fileActions.saveDialog}
     </div>
   );
 });
-
-function SavePlanToWorkspaceForm({
-  initialPath,
-  placeholder,
-  workspaceRoot,
-  canWriteFiles,
-  saving,
-  onCancel,
-  onSave,
-}: {
-  initialPath: string;
-  placeholder: string;
-  workspaceRoot: string | undefined;
-  canWriteFiles: boolean;
-  saving: boolean;
-  onCancel: () => void;
-  onSave: (path: string) => void;
-}) {
-  const [savePath, setSavePath] = useState(initialPath);
-  const savePathInputId = useId();
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Save plan to workspace</DialogTitle>
-        <DialogDescription>
-          Enter a path relative to <code>{workspaceRoot ?? "the workspace"}</code>.
-        </DialogDescription>
-      </DialogHeader>
-      <DialogPanel>
-        <label htmlFor={savePathInputId} className="grid gap-1.5">
-          <span className="text-xs font-medium text-foreground">Workspace path</span>
-          <Input
-            id={savePathInputId}
-            value={savePath}
-            onChange={(event) => setSavePath(event.target.value)}
-            placeholder={placeholder}
-            spellCheck={false}
-            disabled={saving}
-          />
-        </label>
-      </DialogPanel>
-      <DialogFooter>
-        <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
-          Cancel
-        </Button>
-        <Button size="sm" onClick={() => onSave(savePath)} disabled={!canWriteFiles || saving}>
-          {saving ? "Saving..." : "Save"}
-        </Button>
-      </DialogFooter>
-    </>
-  );
-}

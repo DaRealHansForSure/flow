@@ -519,6 +519,7 @@ export function ThreadWorkLog(props: ThreadWorkLogProps) {
   if (plan?.type === "proposed_plan") {
     return (
       <ProposedPlanCard
+        planId={plan.planId}
         environmentId={props.environmentId}
         workspaceRoot={props.workspaceRoot}
         markdown={plan.markdown}

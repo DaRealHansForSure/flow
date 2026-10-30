@@ -8,10 +8,20 @@ import { cn, isMacPlatform } from "~/lib/utils";
 import { useShortcutModifierState } from "../../shortcutModifierState";
 import { StageBackdropButtonArt, useSidebarStageBackdropVariant } from "../SidebarStageBackdrop";
 import { Button } from "../ui/button";
-import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
+import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "../ui/menu";
 import { Spinner } from "../ui/spinner";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { composerFloatingLayerProps } from "./composerEventScope";
+import { usePlanReview } from "./planReview";
+import { runtimeModeConfig } from "./runtimeModeConfig";
 import {
   alternateComposerDispatchAction,
   resolveComposerDispatchMode,
@@ -107,6 +117,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
   keepFullHistory = false,
   onToggleKeepFullHistory,
 }: ComposerPrimaryActionsProps) {
+  const { review: planReview } = usePlanReview();
   const pointerFocusProps = preserveComposerFocusOnPointerDown
     ? { onPointerDown: preventPointerFocus }
     : undefined;
@@ -210,7 +221,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           {...pointerFocusProps}
           disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
         >
-          {isSendBusy ? "Sending..." : "Refine"}
+          {isSendBusy ? "Sending..." : "Revise"}
         </button>
       );
     }
@@ -223,7 +234,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           {...pointerFocusProps}
           disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
         >
-          {isSendBusy ? "Sending..." : "Implement"}
+          {isSendBusy ? "Sending..." : "Accept"}
         </button>
         <Menu>
           <MenuTrigger
@@ -234,7 +245,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
                   messageActionPillClassName,
                   "h-9 rounded-l-none border-l border-message-action-foreground/20 px-2 sm:h-8",
                 )}
-                aria-label="Implementation actions"
+                aria-label="Accept with other permissions"
                 onMouseDown={
                   preserveComposerFocusOnPointerDown ? (event) => event.preventDefault() : undefined
                 }
@@ -245,14 +256,51 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
             <ChevronDownIcon className="size-3.5" />
           </MenuTrigger>
           <MenuPopup align="end" side="top" {...composerFloatingLayerProps}>
+            {planReview !== null ? (
+              <>
+                <MenuGroup>
+                  <MenuGroupLabel>Accept and continue with</MenuGroupLabel>
+                  {planReview.runtimeModes.map((mode) => {
+                    const option = runtimeModeConfig[mode];
+                    const Icon = option.icon;
+                    return (
+                      <MenuItem
+                        key={mode}
+                        disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
+                        onClick={() => {
+                          if (canOperateThread) planReview.accept(mode);
+                        }}
+                      >
+                        <Icon aria-hidden="true" className="size-3.5" />
+                        {option.label}
+                        {mode === planReview.runtimeMode ? (
+                          <span className="ms-auto text-muted-foreground text-xs">Current</span>
+                        ) : null}
+                      </MenuItem>
+                    );
+                  })}
+                </MenuGroup>
+                <MenuSeparator />
+              </>
+            ) : null}
             <MenuItem
               disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
               onClick={() => {
                 if (canOperateThread) onImplementPlanInNewThread();
               }}
             >
-              Implement in a new thread
+              Accept in a new thread
             </MenuItem>
+            {planReview !== null ? (
+              <MenuItem
+                disabled={isSendBusy || isEnvironmentUnavailable}
+                onClick={() => {
+                  if (canOperateThread) planReview.decline();
+                }}
+              >
+                Decline
+              </MenuItem>
+            ) : null}
           </MenuPopup>
         </Menu>
       </div>

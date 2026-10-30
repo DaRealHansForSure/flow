@@ -2,7 +2,10 @@ import { useComposerTypingGuard } from "./useComposerTypingGuard";
 import { insertAttachmentReferencesForDraft } from "./composerAttachmentReferences";
 import { DESKTOP_PASTE_AS_TEXT_EVENT } from "../../lib/desktopPasteAsText";
 import {
+  type PermissionMode,
+  planPermissionModeOption,
   resolveCompatibleRuntimeMode,
+  resolvePermissionMode,
   runtimeModeConfig,
   runtimeModeOptions as runtimeModes,
 } from "./runtimeModeConfig";
@@ -276,6 +279,8 @@ import {
   usePreparingComposerImages,
 } from "./preparingComposerImages";
 import { ComposerControlsBar } from "./ComposerControlsBar";
+import { heldMissingProvider } from "./missingProviderBanner";
+import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
 
 function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
@@ -414,7 +419,9 @@ export interface ChatComposerProps {
   threadSyncPhase: ThreadSyncPhase | null;
 
   runtimeMode: RuntimeMode;
-  defaultRuntimeMode?: RuntimeMode;
+  defaultPermissionMode?: PermissionMode;
+  /** Flow: the chat's own provider instance when it is not set up here; null when it is. */
+  missingProviderInstanceId?: ProviderInstanceId | null;
   interactionMode: ProviderInteractionMode;
 
   lockedProvider: ProviderDriverKind | null;
@@ -914,8 +921,17 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     selectedProviderEntry?.snapshot,
     selectedModel,
   );
+  // Flow: a missing provider is never swapped silently; only a model picked by hand replaces it.
+  const missingProviderInstanceId = heldMissingProvider({
+    missingInstanceId: props.missingProviderInstanceId,
+    draftActiveProvider: composerDraft.activeProvider,
+    draftSelectionExplicit: composerDraft.modelSelectionExplicit,
+  });
   const sendDisabledReason =
     externalSendDisabledReason ??
+    (missingProviderInstanceId === null
+      ? null
+      : `This chat's provider "${missingProviderInstanceId}" is not set up here. Pick another model, or set it up in Settings.`) ??
     (multipleModelSelections?.length === 0 ? "Select at least one model." : null) ??
     (activePendingProgress
       ? attachmentBlockReason
@@ -939,9 +955,20 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const selectedPromptEffort = composerProviderState.promptEffort;
   const selectedModelOptionsForDispatch = composerProviderState.modelOptionsForDispatch;
   const { enabled: planModeUiEnabled, interactionMode } = resolveComposerInteractionMode({
-    planModeEnabled: settings.planModeEnabled,
     provider: selectedProviderStatus,
     interactionMode: requestedInteractionMode,
+  });
+  const permissionMode = resolvePermissionMode(compatibleRuntimeMode, interactionMode);
+  const permissionModeOptions = planModeUiEnabled
+    ? [...compatibleRuntimeModeOptions, planPermissionModeOption]
+    : compatibleRuntimeModeOptions;
+  const handlePermissionModeChange = useStableCallback((mode: PermissionMode) => {
+    if (mode === "plan") {
+      handleInteractionModeChange("plan");
+      return;
+    }
+    handleInteractionModeChange("default");
+    handleRuntimeModeChange(mode);
   });
   const selectedModelSelection: ModelSelection = createModelSelection(
     selectedInstanceId,
@@ -2302,14 +2329,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       reportedModelSelection={reportedModelSelection}
       promptUltrathink={promptUltrathink}
       onPromptEdit={editPromptFromTraitsStable}
-      planModeEnabled={settings.planModeEnabled}
-      planModeUiEnabled={planModeUiEnabled}
-      interactionMode={interactionMode}
-      compatibleRuntimeMode={compatibleRuntimeMode}
-      defaultRuntimeMode={props.defaultRuntimeMode}
-      compatibleRuntimeModeOptions={compatibleRuntimeModeOptions}
-      toggleInteractionMode={toggleInteractionMode}
-      handleRuntimeModeChange={handleRuntimeModeChange}
+      permissionMode={permissionMode}
+      defaultPermissionMode={props.defaultPermissionMode}
+      missingProviderInstanceId={missingProviderInstanceId}
+      permissionModeOptions={permissionModeOptions}
+      handlePermissionModeChange={handlePermissionModeChange}
       composerControlsCollapsed={composerControlsCollapsed}
       effortDisplay={settings.effortDisplay}
       permissionsShownInStrip={props.permissionsShownInStrip}
@@ -2826,7 +2850,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           reportedModelSelection,
           prompt: promptRef.current,
           cursor: readComposerSnapshotStable().expandedCursor,
-          planModeEnabled: settings.planModeEnabled,
+          planModeEnabled: false,
           direction,
         });
         if (!change) return;
@@ -3020,7 +3044,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       selectedModel,
       selectedInstanceId,
       reportedModelSelection,
-      settings.planModeEnabled,
       selectedModelSelection,
       multipleModelSelections,
       setMultipleModelSelections,
@@ -3209,8 +3232,13 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   onClick={expandMobileComposerStable}
                   aria-label="Expand composer"
                 >
-                  {prompt.trim() ||
-                    (showProviderUnavailable ? "Enable a provider in Settings" : "Ask anything...")}
+                  {prompt.trim() ? (
+                    <CollapsedComposerPrompt prompt={prompt.trim()} />
+                  ) : showProviderUnavailable ? (
+                    "Enable a provider in Settings"
+                  ) : (
+                    "Ask anything..."
+                  )}
                 </button>
                 {collapsedComposerImagePreviews}
                 <button

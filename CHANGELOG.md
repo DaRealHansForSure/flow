@@ -8,20 +8,61 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- A Plan tab in the right panel shows the chat's latest plan like an opened `Plan.md`, as
+  rendered Markdown or raw text, with Copy, Download and Save as file. It opens on its own
+  for each new plan, and from the plan card's menu or the panel's + menu.
+
+- Plans are answered with Accept, Revise or Decline in the composer, the plan card and the
+  Plan tab. Accept continues in the chat's permission mode or one picked from its menu, or
+  in a new thread; Revise asks for feedback and makes a new version; Decline keeps the chat
+  in Plan. Each plan shows its version and whether it was accepted, revised or declined,
+  and the Plan tab can show earlier versions.
+
+- Passages of an open plan can be commented on: select text in the plan card or the Plan
+  tab, choose Comment and write a note. Each comment becomes a chip in the composer and is
+  sent, with the quoted passage, when you Revise.
+
+- An accepted, declined or revised plan can be reopened from its card's menu or the Plan
+  tab. The chat goes back to Plan with that version as the open plan, ready to Accept,
+  Revise or Decline again; changes already made from it are kept.
+
 ### Changed
+
+- Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
+  "Plan" chip, with Shift+Tab and `/plan` still switching to it. It replaces the separate
+  Build/Plan toggle and the Legacy settings switch, and is available for every provider
+  that plans.
+
+- While a chat is in Plan, every command asks first with every provider, even in a chat set
+  to Full access or Auto. The chat's own mode applies again once it leaves Plan.
+
+- Plan can be the default permission mode (Settings, Threads, Permissions), with an
+  "After the plan" row for the mode a thread switches to once its plan is accepted. New
+  threads always start with these defaults instead of copying the previous thread's mode.
+
+- The mobile app offers Plan in the thread's Runtime list and as a default in the server
+  settings, with an "After the plan" choice; new tasks start with that default. The Legacy
+  "Plan Mode" switch is gone.
+
+- The mobile app's plan cards show their version and status and offer Accept (with a menu
+  for the permissions to continue in, and Decline), Revise (asks for feedback) and Reopen.
 
 - Running background commands and subagents show as a chip at the end of the chat instead of
   a plain line of text, so their Stop button reads as part of one control.
 
 ### Fixed
 
+- A chat whose provider instance is missing or turned off says so: its model shows in red,
+  a notice links to the provider settings, and sending waits until you pick another model.
+  It no longer switches to another instance silently, and Plan can be chosen in it again.
+
 - Cite shows for text selected by long press on a phone. The selection helper treated the
   touch's pointercancel as a dismissal, so touchscreens never saw it.
 
 - The Brain button's dot for notes being written is blue. It used the theme colour, which is
   amber in some themes and looked like a warning.
-
-### Fixed
 
 - The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
   `=` after a `#`, so a pairing link lost its token, and older builds left such addresses

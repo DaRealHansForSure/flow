@@ -2,7 +2,16 @@ import { useState, type ReactNode } from "react";
 import type { BrainCli, BrainState, BrainCommand, BrainResponse } from "@t3tools/contracts";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "../ui/select";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import {
+  Combobox,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxSearchInput,
+  ComboboxTrigger,
+} from "../ui/combobox";
 import {
   Dialog,
   DialogPopup,
@@ -21,49 +30,90 @@ export type SendBrainCommand = (
 export const cliName = (cli: BrainCli) =>
   cli === "claude" ? "Claude Code" : cli === "codex" ? "Codex" : "OpenCode";
 
+/** Fork-only: a searchable Brain list with each Brain's icon, like the project picker. */
 export function BrainSelect({
   label,
   value,
   options,
   onChange,
   disabled = false,
+  compact = false,
 }: {
   label: string;
   value: string;
-  options: readonly { value: string; label: string; icon?: ReactNode; disabled?: boolean }[];
+  options: readonly BrainSelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** A small ghost trigger for inline use, such as next to the new-chat headline. */
+  compact?: boolean;
 }) {
-  const selected = options.find((option) => option.value === value);
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const filteredOptions = needle
+    ? options.filter((option) => option.label.toLowerCase().includes(needle))
+    : options;
+  const selected = options.find((option) => option.value === value) ?? null;
   return (
-    <Select
-      value={value}
+    <Combobox
       items={options}
-      onValueChange={(next) => next !== null && onChange(next)}
-      disabled={disabled}
+      filteredItems={filteredOptions}
+      autoHighlight
+      itemToStringLabel={(option) => option.label}
+      isItemEqualToValue={(a, b) => a.value === b.value}
+      value={selected}
+      onOpenChange={(open) => {
+        if (!open) {
+          setQuery("");
+        }
+      }}
+      onValueChange={(option) => {
+        if (option && !option.disabled && option.value !== value) {
+          onChange(option.value);
+        }
+      }}
     >
-      <SelectTrigger aria-label={label} className="w-auto min-w-40 max-w-full">
-        <SelectValue placeholder={label}>
-          {selected?.icon ? (
-            <span className="flex min-w-0 items-center gap-2">
-              {selected.icon}
-              <span className="truncate">{selected.label}</span>
-            </span>
-          ) : undefined}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectPopup>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
-            <span className="flex min-w-0 items-center gap-2">
+      <ComboboxTrigger
+        render={
+          <Button
+            type="button"
+            variant={compact ? "ghost" : "outline"}
+            size={compact ? "xs" : "sm"}
+            disabled={disabled}
+            aria-label={label}
+          />
+        }
+      >
+        {selected?.icon}
+        <span className="max-w-60 truncate">{selected?.label ?? label}</span>
+        <ChevronDownIcon className="opacity-60" />
+      </ComboboxTrigger>
+      <ComboboxPopup align="start" className="w-64">
+        <ComboboxSearchInput
+          aria-label="Search Brains"
+          placeholder="Search Brains"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <ComboboxEmpty>No matching Brains.</ComboboxEmpty>
+        <ComboboxList>
+          {(option: BrainSelectOption) => (
+            <ComboboxItem key={option.value} value={option} disabled={option.disabled}>
               {option.icon}
-              <span className="truncate">{option.label}</span>
-            </span>
-          </SelectItem>
-        ))}
-      </SelectPopup>
-    </Select>
+              <span className="min-w-0 flex-1 truncate">{option.label}</span>
+              {option.value === value ? <CheckIcon className="ml-auto" /> : null}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxPopup>
+    </Combobox>
   );
+}
+
+export interface BrainSelectOption {
+  readonly value: string;
+  readonly label: string;
+  readonly icon?: ReactNode;
+  readonly disabled?: boolean;
 }
 
 export function CreateBrainDialog({

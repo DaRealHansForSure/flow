@@ -9,7 +9,9 @@ import { useEffect, useState } from "react";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { brainCommand } from "../../state/brain";
 import { toastManager } from "../ui/toast";
-import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../ui/select";
+import { BrainCircuitIcon } from "lucide-react";
+import { BrainSelect } from "../brain/BrainControls";
+import { BrainIcon } from "../brain/BrainIcon";
 
 const NO_BRAIN_VALUE = "none";
 
@@ -66,27 +68,24 @@ export function ScratchBrainPicker(props: {
   if (brains.length === 0) {
     return null;
   }
-  const selectedBrainName = brains.find((brain) => brain.id === selectedBrainId)?.name;
-  let triggerLabel = "No Brain";
-  if (selectedBrainId !== null) {
-    triggerLabel = `Brain: ${selectedBrainName ?? selectedBrainId}`;
-  }
   return (
-    <Select
+    <BrainSelect
+      compact
+      label="Brain for this chat"
       value={selectedBrainId ?? NO_BRAIN_VALUE}
-      onValueChange={(value) => chooseBrain(String(value))}
-    >
-      <SelectTrigger size="compact" variant="ghost" aria-label="Brain for this chat">
-        <SelectValue>{triggerLabel}</SelectValue>
-      </SelectTrigger>
-      <SelectPopup>
-        <SelectItem value={NO_BRAIN_VALUE}>No Brain</SelectItem>
-        {brains.map((brain) => (
-          <SelectItem key={brain.id} value={brain.id}>
-            {brain.name}
-          </SelectItem>
-        ))}
-      </SelectPopup>
-    </Select>
+      options={[
+        {
+          value: NO_BRAIN_VALUE,
+          label: "No Brain",
+          icon: <BrainCircuitIcon className="size-4 shrink-0 text-muted-foreground" />,
+        },
+        ...brains.map((brain) => ({
+          value: brain.id,
+          label: brain.name,
+          icon: <BrainIcon id={brain.id} />,
+        })),
+      ]}
+      onChange={chooseBrain}
+    />
   );
 }

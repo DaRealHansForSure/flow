@@ -1,22 +1,20 @@
 # Worklog
 
-Updated: 2026-10-30 03:30
+Updated: 2026-10-30 11:45
 
 ## Current focus
 
-- **Topic:** First own release 0.2.0 (AppImage plus service from DaRealHansForSure/flow)
-- **Goal:** The machine runs this fork's Flow, installed and updated only from the fork
-- **Branch:** chore/release-0.2.0-rerun into develop, main and release; feat/windows-desktop
-  (one commit, not pushed) waits for the Windows desktop work
-- **Last step done:** 0.2.0 releases and tags deleted for a clean rerun; release fixes merged:
-  pnpm 12 lockfile, reflink licences, Windows install pinned to the build machine, one release
-  page per version with the CHANGELOG section as its text (desktop appends to flow-vX.Y.Z)
-- **Next step:** Owner runs "Flow release" on `release` with 0.2.0; then Windows desktop app
-  (build on windows-2025, better-sqlite3 for Electron 44, leave Brain payloads out) and the
-  plan permission mode
-- **Open questions / blockers:** Actions and workflow write permission must be on in the fork;
-  the "Keep Flow running in the background" Settings row is untested in a real app; codex/opencode curator flags untested; four Brain web tests need a rewrite without
-  react-test-renderer; DesktopPreReadyPlatform has 4 failing tests already on develop
+- **Topic:** Plan as a permission mode (concept: 9 steps, owner approved 2026-10-30)
+- **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
+  accepted, revised or declined with comments; commands always ask while in Plan
+- **Branch:** feat/plan-permission-mode (from develop), one commit per step
+- **Last step done:** Step 7 (mobile): Plan in the Runtime list and server settings, legacy
+  switch removed, plan cards with Accept/Revise/Decline/Reopen (`plan-review.tsx`); plan
+  versions and the implementation prompt now shared (client-runtime, shared)
+- **Next step:** Step 8 docs (`docs/user/` Plan section); optional native Cite and plan
+  Comment via the selection menu (needs a fork Android build to test)
+- **Open questions / blockers:** native mobile changes are untested on a device (owner uses
+  the Play Store T3 app); shared dev server for phone tests runs on ~/.flow-dev
 
 ## Finished features
 
@@ -33,6 +31,22 @@ Updated: 2026-10-30 03:30
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 11:45 - Step 7 mobile committed; web fixes from phone tests merged (Cite on touch, chips, comments)
+
+- 2026-10-30 12:40 - Reopen for closed plans committed (owner request while testing)
+
+- 2026-10-30 12:10 - Plan permission mode step 6 committed (comments on plan passages)
+
+- 2026-10-30 11:20 - Plan permission mode step 5 committed (Accept, Revise, Decline)
+
+- 2026-10-30 10:15 - Plan permission mode step 4 committed (Plan tab)
+
+- 2026-10-30 09:30 - Plan permission mode step 3 committed (Settings default, After the plan)
+
+- 2026-10-30 09:00 - Plan permission mode step 2 committed (Supervised in Plan)
+
+- 2026-10-30 08:50 - Plan permission mode step 1 committed on feat/plan-permission-mode
 
 - 2026-10-30 02:05 - app-only merged, 67 focused tests pass, AppImage rebuild started
 - 2026-10-30 01:50 - backup-brain.sh refuses --stop-service from inside Flow; install guide backup step

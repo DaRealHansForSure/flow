@@ -28,6 +28,8 @@ export interface PanelLayoutControlsProps {
   onToggleTerminal: () => void;
   onToggleThreadPanel: () => void;
   onToggleRightPanel: () => void;
+  /** Flow: the Brain toggle, first in the group so it shares its spacing. */
+  brainControl?: ReactNode;
 }
 
 export const PanelLayoutControls = memo(function PanelLayoutControls({
@@ -48,6 +50,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
   onToggleTerminal,
   onToggleThreadPanel,
   onToggleRightPanel,
+  brainControl,
 }: PanelLayoutControlsProps) {
   const threadPanelToggle = (
     <Toggle
@@ -82,6 +85,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
       className="flex h-full shrink-0 items-center gap-1 [-webkit-app-region:no-drag]"
       data-panel-layout-controls
     >
+      {brainControl}
       {showThreadPanelControl ? threadPanelControl : null}
       {showTerminalControl ? (
         <Tooltip>

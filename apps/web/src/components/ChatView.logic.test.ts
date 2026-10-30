@@ -6,6 +6,7 @@ import {
   withMessageContext,
   deriveAvailableRevertTurnCounts,
   deriveWorkspaceMutationId,
+  resolveComposerInteractionMode,
 } from "./ChatView.logic";
 import { recallCheckoutIsRepo, rememberCheckoutIsRepo } from "./ChatView.logic";
 import { ProviderDriverKind, type ServerProvider } from "@t3tools/contracts";
@@ -1176,5 +1177,20 @@ describe("deriveWorkspaceMutationId", () => {
     expect(deriveWorkspaceMutationId([item("reply", "assistant_message", "completed")], null)).toBe(
       null,
     );
+  });
+});
+
+describe("resolveComposerInteractionMode", () => {
+  it("offers Plan for every provider that plans, without a settings switch", () => {
+    expect(resolveComposerInteractionMode({ provider: {}, interactionMode: "plan" })).toEqual({
+      enabled: true,
+      interactionMode: "plan",
+    });
+    expect(
+      resolveComposerInteractionMode({
+        provider: { showInteractionModeToggle: false },
+        interactionMode: "plan",
+      }),
+    ).toEqual({ enabled: false, interactionMode: "default" });
   });
 });

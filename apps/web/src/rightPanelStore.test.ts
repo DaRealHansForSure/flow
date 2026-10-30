@@ -271,6 +271,30 @@ describe("rightPanelStore", () => {
     expect(store.getUserActionRevision(refB)).toBe(0);
   });
 
+  // Flow: the Plan tab opens for each new proposed plan.
+  it("opens the Plan tab once per plan, keeps it closed across reload, and reopens for the next plan", () => {
+    const store = useRightPanelStore.getState();
+    store.openFile(refA, "src/app.ts");
+    store.openPlanByDefault(refA, "plan-1", true);
+    expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("plan");
+
+    store.closeSurface(refA, "plan");
+    const persisted = JSON.parse(
+      JSON.stringify({ byThreadKey: useRightPanelStore.getState().byThreadKey }),
+    );
+    useRightPanelStore.setState(migratePersistedRightPanelState(persisted));
+    store.openPlanByDefault(refA, "plan-1", true);
+    expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("file");
+
+    store.openPlanByDefault(refA, "plan-2", true);
+    expect(selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, refA)).toBe("plan");
+
+    store.openPlanByDefault(refB, "plan-3", false);
+    const sheetChat = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB);
+    expect(sheetChat.isOpen).toBe(false);
+    expect(sheetChat.activeSurfaceId).toBe("plan");
+  });
+
   const completedDiff = { kind: "diff", turnId: RunId.make("turn-1") } as const;
   const linkedPullRequest = pullRequestSurface({
     projectId: "project-a",
