@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- A chat whose plan waits for Accept, Revise or Decline shows a violet "Plan ready" badge in
+  the sidebar, in the desktop and web apps, where finished chats show "Done". It does not fade
+  like finished chats, and a closed project folder shows its attention dot.
 - Settings > About lists the version of each part: the web app, the Flow service it is connected
   to, and the desktop app when it runs in one.
 - A step that read an image shows a small thumbnail at the end of its row; tapping it opens the
