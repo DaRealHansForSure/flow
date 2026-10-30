@@ -65,6 +65,10 @@ export function attachTerminalFontZoomGestures(
     const distance = touchDistance(event.touches);
     if (distance > 0) {
       pinch = { distance, size: zoom.read() };
+      // The browser picks its gesture when the touch starts; cancelling here keeps it off the page.
+      if (event.cancelable) {
+        event.preventDefault();
+      }
     }
   };
   const onTouchMove = (event: TouchEvent) => {

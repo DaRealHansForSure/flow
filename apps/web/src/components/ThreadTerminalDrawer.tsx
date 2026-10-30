@@ -1171,10 +1171,11 @@ function TerminalSessionViewport({
   };
   return (
     <div className="relative h-full w-full">
+      {/* Flow: no pinch-zoom here, so a pinch resizes the terminal font instead of the page. */}
       <div
         ref={attachContainer}
         tabIndex={-1}
-        className="relative h-full w-full overflow-hidden bg-(--terminal-background)"
+        className="relative h-full w-full touch-pan-x touch-pan-y overflow-hidden bg-(--terminal-background)"
       />
       {fontSizeOffset === 0 ? null : (
         <Button
