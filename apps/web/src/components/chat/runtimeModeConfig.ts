@@ -54,6 +54,10 @@ export const planPermissionModeOption: PermissionModeOption = {
   icon: PencilRulerIcon,
 };
 
+export function permissionModeConfig(mode: PermissionMode): PermissionModeOption {
+  return mode === "plan" ? planPermissionModeOption : { mode, ...runtimeModeConfig[mode] };
+}
+
 /** Plan sits on top of the remembered runtime mode, which applies again once Plan ends. */
 export function resolvePermissionMode(
   runtimeMode: RuntimeMode,

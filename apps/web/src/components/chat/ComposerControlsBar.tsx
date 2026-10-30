@@ -16,7 +16,6 @@ import {
   type ModelSelection,
   type ProviderDriverKind,
   type ProviderInstanceId,
-  type RuntimeMode,
   type ServerProvider,
 } from "@t3tools/contracts";
 import type { EffortDisplay } from "@t3tools/contracts/settings";
@@ -54,7 +53,7 @@ export function ComposerControlsBar(props: {
   /** The strip under a new thread names the permissions, so the row does not repeat them. */
   permissionsShownInStrip: boolean;
   permissionMode: PermissionMode;
-  defaultRuntimeMode: RuntimeMode | undefined;
+  defaultPermissionMode: PermissionMode | undefined;
   permissionModeOptions: ReadonlyArray<PermissionModeOption>;
   handlePermissionModeChange: (mode: PermissionMode) => void;
   composerControlsCollapsed: boolean;
@@ -98,7 +97,7 @@ export function ComposerControlsBar(props: {
     promptUltrathink,
     onPromptEdit,
     permissionMode,
-    defaultRuntimeMode,
+    defaultPermissionMode,
     permissionModeOptions,
     handlePermissionModeChange,
     composerControlsCollapsed,
@@ -141,7 +140,7 @@ export function ComposerControlsBar(props: {
     onPromptEdit,
     planModeEnabled: false,
   });
-  const accessMatchesDefault = permissionMode === defaultRuntimeMode;
+  const accessMatchesDefault = permissionMode === defaultPermissionMode;
   const permissionsChipHidden = accessMatchesDefault || props.permissionsShownInStrip;
   const providerTraitsPickerInput = {
     provider: selectedProvider,

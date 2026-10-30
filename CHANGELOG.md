@@ -18,6 +18,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - While a chat is in Plan, every command asks first with every provider, even in a chat set
   to Full access or Auto. The chat's own mode applies again once it leaves Plan.
 
+- Plan can be the default permission mode (Settings, Threads, Permissions), with an
+  "After the plan" row for the mode a thread switches to once its plan is accepted. New
+  threads always start with these defaults instead of copying the previous thread's mode.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added

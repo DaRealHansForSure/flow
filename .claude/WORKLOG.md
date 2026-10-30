@@ -1,6 +1,6 @@
 # Worklog
 
-Updated: 2026-10-30 09:00
+Updated: 2026-10-30 09:30
 
 ## Current focus
 
@@ -8,12 +8,12 @@ Updated: 2026-10-30 09:00
 - **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
   accepted, revised or declined with comments; commands always ask while in Plan
 - **Branch:** feat/plan-permission-mode (from develop), one commit per step
-- **Last step done:** Step 2: Plan turns run as Supervised for every provider
-  (`RuntimePolicy.ts`); step 1 put Plan in the picker and removed the Legacy switch
-- **Next step:** Step 3: Plan selectable in Settings "Default permissions", an "After the
-  plan" row, new chats always start with the Settings default
-- **Open questions / blockers:** Playwright Chromium missing, so web browser tests do not
-  run here; mobile still has its own legacy plan switch (step 7)
+- **Last step done:** Step 3: Plan as default permissions in Settings plus "After the
+  plan" row (`defaultInteractionMode` setting); new threads start with the defaults
+- **Next step:** Step 4: Plan tab in the right pane (opens like a file, Markdown or raw,
+  opens automatically, optional "Save as file")
+- **Open questions / blockers:** Playwright runs with PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64;
+  mobile still has its own legacy plan switch (step 7)
 
 ## Finished features
 
@@ -30,6 +30,8 @@ Updated: 2026-10-30 09:00
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 09:30 - Plan permission mode step 3 committed (Settings default, After the plan)
 
 - 2026-10-30 09:00 - Plan permission mode step 2 committed (Supervised in Plan)
 

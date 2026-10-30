@@ -920,8 +920,11 @@ export default function ChatView(props: ChatViewProps) {
   const [, setThreadErrorBannerDismissTick] = useState(0);
   const threadErrorIsServerRuntimeError =
     localServerError === null && visibleThreadError === serverRuntime?.lastError;
-  const defaultRuntimeMode = resolveProjectSettings(settings, activeThread?.projectId ?? null)
-    .settings.defaultRuntimeMode;
+  const projectDefaults = resolveProjectSettings(
+    settings,
+    activeThread?.projectId ?? null,
+  ).settings;
+  const defaultRuntimeMode = projectDefaults.defaultRuntimeMode;
   const runtimeMode =
     composerRuntimeMode ??
     (isServerThread ? activeThread?.runtimeMode : undefined) ??
@@ -3589,7 +3592,10 @@ export default function ChatView(props: ChatViewProps) {
                                 activeEnvironmentUnavailable ? null : threadSyncPhase
                               }
                               runtimeMode={runtimeMode}
-                              defaultRuntimeMode={defaultRuntimeMode}
+                              defaultPermissionMode={resolvePermissionMode(
+                                defaultRuntimeMode,
+                                projectDefaults.defaultInteractionMode,
+                              )}
                               interactionMode={interactionMode}
                               lockedProvider={modelPickerLockedProvider}
                               providerStatuses={providerStatuses as ServerProvider[]}

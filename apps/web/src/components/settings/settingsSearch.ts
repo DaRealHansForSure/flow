@@ -273,8 +273,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/threads",
     scope: "project-defaults",
     searchTerms: [
-      "new thread default runtime mode supervised approvals auto accept edits full access",
+      "new thread default runtime mode supervised approvals auto accept edits full access plan",
     ],
+  },
+  {
+    id: "after-plan-permissions",
+    title: "Permissions after the plan",
+    to: "/settings/threads",
+    scope: "project-defaults",
+    searchTerms: ["plan accept implement default runtime mode"],
   },
   {
     id: "color-scheme",

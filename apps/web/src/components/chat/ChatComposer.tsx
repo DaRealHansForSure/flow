@@ -417,7 +417,7 @@ export interface ChatComposerProps {
   threadSyncPhase: ThreadSyncPhase | null;
 
   runtimeMode: RuntimeMode;
-  defaultRuntimeMode?: RuntimeMode;
+  defaultPermissionMode?: PermissionMode;
   interactionMode: ProviderInteractionMode;
 
   lockedProvider: ProviderDriverKind | null;
@@ -2317,7 +2317,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       promptUltrathink={promptUltrathink}
       onPromptEdit={editPromptFromTraitsStable}
       permissionMode={permissionMode}
-      defaultRuntimeMode={props.defaultRuntimeMode}
+      defaultPermissionMode={props.defaultPermissionMode}
       permissionModeOptions={permissionModeOptions}
       handlePermissionModeChange={handlePermissionModeChange}
       composerControlsCollapsed={composerControlsCollapsed}
