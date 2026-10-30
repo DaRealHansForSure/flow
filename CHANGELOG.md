@@ -118,6 +118,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The background work list closes on any press outside it, including in the composer.
 - An empty composer's send button looks disabled (grey) instead of a ready blue, also in the
   collapsed phone composer.
 - On a phone the composer no longer grows a few pixels when text arrives: the stop button is as\n big as the send button.

@@ -1,5 +1,5 @@
 import { ChevronDownIcon, GlobeIcon, ListOrderedIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { tickTextContent } from "~/lib/tickTextContent";
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popover";
@@ -12,6 +12,49 @@ export interface ComposerStatusBrowsers {
   readonly count: number;
   readonly unseen: boolean;
   readonly onOpen: () => void;
+}
+
+/**
+ * Closes on any press outside, caught in the capture phase: the composer handles its own presses
+ * and would otherwise keep the popover open.
+ */
+function BackgroundWorkPopover(props: { readonly title: ReactNode; readonly details: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- listens to document presses outside React while the popover is open
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (target && (popupRef.current?.contains(target) || triggerRef.current?.contains(target))) {
+        return;
+      }
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress, true);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePress, true);
+  }, [open]);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <button
+            ref={triggerRef}
+            type="button"
+            className="min-w-0 cursor-pointer truncate text-left text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            aria-label="Show background work"
+          />
+        }
+      >
+        {props.title}
+      </PopoverTrigger>
+      <PopoverPopup ref={popupRef} side="top" align="center" className="w-[min(92vw,24rem)]">
+        <PopoverTitle className="mb-1">Background work</PopoverTitle>
+        {props.details}
+      </PopoverPopup>
+    </Popover>
+  );
 }
 
 const SEGMENT_CLASS =
@@ -69,23 +112,7 @@ export function ComposerStatusControl(props: {
           {work.icon}
         </span>
         {work.details ? (
-          <Popover>
-            <PopoverTrigger
-              render={
-                <button
-                  type="button"
-                  className="min-w-0 cursor-pointer truncate text-left text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-                  aria-label="Show background work"
-                />
-              }
-            >
-              {work.title}
-            </PopoverTrigger>
-            <PopoverPopup side="top" align="center" className="w-[min(92vw,24rem)]">
-              <PopoverTitle className="mb-1">Background work</PopoverTitle>
-              {work.details}
-            </PopoverPopup>
-          </Popover>
+          <BackgroundWorkPopover title={work.title} details={work.details} />
         ) : (
           <span className="min-w-0 truncate text-foreground">{work.title}</span>
         )}
