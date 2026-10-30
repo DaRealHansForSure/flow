@@ -1,6 +1,6 @@
 # Worklog
 
-Updated: 2026-10-30 23:10
+Updated: 2026-10-30 23:45
 
 ## Current focus
 
@@ -15,24 +15,9 @@ Updated: 2026-10-30 23:10
   - Tests written but not run: threadHistoryPaging, ThreadFind, usageLimitTone, phoneNavigation.
   - feat/windows-desktop stays unmerged; no shims for the Play Store T3 app.
 
-## Also open: MCP view
-
-- **Topic:** MCP view (feat/mcp-view, 7 commits on develop ed8a896ab, not merged, not pushed)
-- **Goal:** let the user see the MCP servers of the chat's running agent: MCP tab in the right
-  panel (`/mcp`, command palette, + menu) and an MCP servers section in Settings > Providers
-- **Last step done:** Check servers in Settings starts Claude once (providers:manage) when no
-  chat runs; provider cards fold Runtime, Environment, Models and MCP servers under headers.
-  Both checked live in `vp run dev` (port 7133)
-- **Next step:** owner review; merge feat/mcp-view into develop with --no-ff when the owner
-  says so. Later: Check servers for Codex and OpenCode, reconnect/enable/sign-in actions,
-  config-file listing for Cursor and Antigravity
-- **Open questions / blockers:**
-  - `vp run check:changed` fails only on apps/desktop typecheck (warning in
-    src/preview/Manager.ts, also on develop).
-  - Claude status during a running turn is untested (owner did not OK the paid check).
-
 ## Finished features
 
+- 2026-10-30 - MCP view: MCP tab, /mcp, Settings > Providers MCP section, folded provider cards (merged into develop)
 - 2026-10-30 - Side fixes: agents pill, phone Back and swipes, usage chip, keyboard guard, work-row colours (develop)
 - 2026-10-30 - No project chats only read their Brain and are not projects; Connected projects table; source search; terminal font zoom; rendered pages open on tap; Brain tab memory; graph Fit; provider removal; About order; dev bundling page fits phones (develop)
 - 2026-10-30 - Status pill, Steer/Queue long press, background work list, touch-sized buttons, full-width phone menus, context window colours, update dialog versions (develop)
@@ -46,6 +31,7 @@ Updated: 2026-10-30 23:10
 
 ## History
 
+- 2026-10-30 23:45 - feat/mcp-view merged into develop; later: Check servers for Codex and OpenCode
 - 2026-10-30 23:10 - Part 1 side fixes committed on develop; tests waiting for the owner
 - 2026-10-30 21:00 - FORK.md, CHANGELOG and worklog tidied; tap hints in the projects table
 - 2026-10-30 20:45 - No project chats only read their Brain, hidden from project lists (merged)
