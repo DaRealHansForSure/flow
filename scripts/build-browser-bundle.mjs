@@ -7,7 +7,7 @@ import * as NodeCrypto from "node:crypto";
 import * as NodeChildProcess from "node:child_process";
 import { bundledGit, bundledNode, run } from "./flow-release.mjs";
 import { recordLinks } from "./bundle-links.mjs";
-import { prepareCpuLockfile } from "./prepare-browser-lockfile.mjs";
+import { pinCurrentArchitectures, prepareCpuLockfile } from "./prepare-browser-lockfile.mjs";
 import { pruneBrowserBundle } from "./prune-browser-bundle.mjs";
 import { buildBrowserGit, gitVersion } from "./build-browser-git.mjs";
 
@@ -121,6 +121,11 @@ try {
     const pkg = JSON.parse(await NodeFSP.readFile(file, "utf8"));
     await NodeFSP.writeFile(file, JSON.stringify({ ...pkg, version }, null, 2) + "\n");
   }
+  const workspacePath = NodePath.join(source, "pnpm-workspace.yaml");
+  await NodeFSP.writeFile(
+    workspacePath,
+    pinCurrentArchitectures(await NodeFSP.readFile(workspacePath, "utf8")),
+  );
   if (platform === "linux") await prepareCpuLockfile(source, temporary);
   if (windows) {
     // install-flow.sh's build, without a POSIX shell.

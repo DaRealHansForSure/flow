@@ -1,16 +1,19 @@
 # Worklog
 
-Updated: 2026-10-30 02:40
+Updated: 2026-10-30 03:30
 
 ## Current focus
 
 - **Topic:** First own release 0.2.0 (AppImage plus service from DaRealHansForSure/flow)
 - **Goal:** The machine runs this fork's Flow, installed and updated only from the fork
-- **Branch:** chore/release-0.2.0, merged into develop and main, `release` created from main
-- **Last step done:** Owner switched this machine to the local 0.2.0 AppImage (backup taken,
-  stale statev2.sqlite moved aside, service stopped and disabled); chats and Brain carried over
-- **Next step:** Push develop, main and release; owner enables Actions and runs the
-  "Flow release" workflow on `release` with version 0.2.0
+- **Branch:** chore/release-0.2.0-rerun into develop, main and release; feat/windows-desktop
+  (one commit, not pushed) waits for the Windows desktop work
+- **Last step done:** 0.2.0 releases and tags deleted for a clean rerun; release fixes merged:
+  pnpm 12 lockfile, reflink licences, Windows install pinned to the build machine, one release
+  page per version with the CHANGELOG section as its text (desktop appends to flow-vX.Y.Z)
+- **Next step:** Owner runs "Flow release" on `release` with 0.2.0; then Windows desktop app
+  (build on windows-2025, better-sqlite3 for Electron 44, leave Brain payloads out) and the
+  plan permission mode
 - **Open questions / blockers:** Actions and workflow write permission must be on in the fork;
   the "Keep Flow running in the background" Settings row is untested in a real app; codex/opencode curator flags untested; four Brain web tests need a rewrite without
   react-test-renderer; DesktopPreReadyPlatform has 4 failing tests already on develop

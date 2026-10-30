@@ -1,7 +1,7 @@
 name: Flow release
 
-# Flow fork: one run publishes the service (flow-vX.Y.Z) and the desktop app
-# (flow-desktop-vX.Y.Z) of the same version, because every desktop app offers to
+# Flow fork: one run publishes the service and then the desktop app of the same
+# version on one release page (flow-vX.Y.Z), because every desktop app offers to
 # move the service to exactly its own version. Run it on the release branch, which
 # the service release requires; the two workflows keep their own triggers too.
 on:

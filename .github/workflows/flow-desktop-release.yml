@@ -50,7 +50,19 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=flow-desktop-v$version" >> "$GITHUB_OUTPUT"
+          # Flow fork: the desktop files join the service release of the same version.
+          echo "tag=flow-v$version" >> "$GITHUB_OUTPUT"
+      - name: Require the service release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          gh release view "$RELEASE_TAG" --json tagName >/dev/null || {
+            echo "Release $RELEASE_TAG does not exist: run Flow release, which publishes it first." >&2
+            exit 1
+          }
 
   build:
     name: Build ${{ matrix.label }}
@@ -227,7 +239,7 @@ jobs:
           find release -maxdepth 1 -type f \( \
             -name '*.dmg' -o -name '*.zip' -o -name '*.AppImage' -o \
             -name '*.blockmap' -o -name '*.yml' \
-          \) -exec cp {} release-publish/ \;
+          \) ! -name builder-debug.yml -exec cp {} release-publish/ \;
           if [[ "${{ matrix.platform }}" == "mac" && "${{ matrix.arch }}" == "x64" ]]; then
             for manifest in release-publish/*-mac.yml; do
               mv "$manifest" "${manifest%.yml}-x64.yml"
@@ -299,8 +311,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
-          node scripts/publish-release-assets.mjs "$RELEASE_TAG" release-assets \
-            --title "Flow $RELEASE_VERSION" --target "$GITHUB_SHA" --generate-notes
+          node scripts/publish-release-assets.mjs "$RELEASE_TAG" release-assets --append
           node scripts/publish-release-assets.mjs flow-desktop-latest release-assets --rolling \
             --title "Latest Flow desktop update" --target "$GITHUB_SHA" \
-            --notes "Rolling update feed for the latest signed Flow desktop release."
+            --notes "Update feed the desktop app reads. Download Flow from the newest flow-v* release."
