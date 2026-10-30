@@ -14,6 +14,7 @@ export function MarkdownMermaidCodeBlock({
   theme,
   isStreaming,
   onExpand,
+  downloadFolder,
   children,
 }: {
   code: string;
@@ -21,6 +22,7 @@ export function MarkdownMermaidCodeBlock({
   theme: "light" | "dark";
   isStreaming: boolean;
   onExpand: (imageUrl: string) => void;
+  downloadFolder?: string | undefined;
   children: ReactNode;
 }) {
   const [showCode, setShowCode] = useState(false);
@@ -36,6 +38,7 @@ export function MarkdownMermaidCodeBlock({
       fenceTitle={fenceTitle}
       theme={theme}
       isStreaming={isStreaming}
+      downloadFolder={downloadFolder}
       canWrap={!showDiagram}
       diagram={showDiagram}
       viewToggle={

@@ -70,7 +70,21 @@ const DOWNLOAD_EXTENSIONS_BY_LANGUAGE = new Map([
   ["mermaid", "mmd"],
 ]);
 
-export function codeBlockDownloadFileName(language: string, fenceTitle: string | null): string {
+/** `<project folder>-<YYYYMMDD>-<HHMMSS>` in local time, or `snippet-...` outside a project. */
+export function codeBlockDownloadStem(projectFolder: string | undefined, now: Date): string {
+  const folder = projectFolder?.split(/[\\/]/).findLast((segment) => segment.length > 0);
+  const safeFolder = folder?.replace(/[^\w.-]+/g, "-").replace(/^[.-]+/, "");
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `${safeFolder || DOWNLOAD_FILE_STEM}-${date}-${time}`;
+}
+
+export function codeBlockDownloadFileName(
+  language: string,
+  fenceTitle: string | null,
+  stem: string = DOWNLOAD_FILE_STEM,
+): string {
   const normalizedLanguage = language.toLowerCase();
   const fixedFileName = DOWNLOAD_FILE_NAMES_BY_LANGUAGE.get(normalizedLanguage);
   const extension =
@@ -84,7 +98,7 @@ export function codeBlockDownloadFileName(language: string, fenceTitle: string |
     }
     return `${titleFileName}.${extension}`;
   }
-  return fixedFileName ?? `${DOWNLOAD_FILE_STEM}.${extension}`;
+  return fixedFileName ?? `${stem}.${extension}`;
 }
 
 export function extractPreCodeMeta(node: unknown): string | undefined {
