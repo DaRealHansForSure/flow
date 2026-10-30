@@ -3329,7 +3329,7 @@ export default function ChatView(props: ChatViewProps) {
       plan={{ plan: openPlanVersion ?? planVersions.at(-1) ?? null, cwd: gitCwd ?? undefined }}
     />
   ) : null;
-  const panelToggleControlProps = {
+  const panelToggleBaseProps = {
     terminalAvailable: activeProject !== null,
     terminalOpen: terminalUiState.terminalOpen,
     terminalShortcutLabel: shortcutLabelForCommand(keybindings, "terminal.toggle"),
@@ -3343,6 +3343,9 @@ export default function ChatView(props: ChatViewProps) {
     onToggleTerminal: toggleTerminalVisibilityStable,
     onToggleThreadPanel: toggleThreadPanelStable,
     onToggleRightPanel: toggleRightPanelStable,
+  } satisfies PanelLayoutControlsProps;
+  const panelToggleControlProps = {
+    ...panelToggleBaseProps,
     // Flow: opens the chat's Brain tab; hidden for a chat without a Brain.
     ...(activeThreadRef ? { brainControl: <BrainHeaderButton threadRef={activeThreadRef} /> } : {}),
   } satisfies PanelLayoutControlsProps;
@@ -4014,7 +4017,15 @@ export default function ChatView(props: ChatViewProps) {
                   maximized={rightPanelMaximized}
                   onToggle={toggleRightPanelMaximizedStable}
                 />
-                {panelToggleControls}
+                {shouldUsePlanSidebarSheet ? (
+                  // Flow: the phone sheet already shows the Brain tab, so it leaves out the toggle.
+                  <PanelLayoutControls
+                    {...panelToggleBaseProps}
+                    showThreadPanelControl={!inlineRightPanelOwnsTitleBar}
+                  />
+                ) : (
+                  panelToggleControls
+                )}
               </div>
             ) : null
           }

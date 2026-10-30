@@ -60,6 +60,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   a notice links to the provider settings, and sending waits until you pick another model.
   It no longer switches to another instance silently, and Plan can be chosen in it again.
 
+- On a phone the side panel's tabs keep their names: its header no longer repeats the Brain
+  button next to the Brain tab, which squeezed a second tab such as Plan.md down to "P…".
+
+- In a narrow Brain panel the Default / On / Off switches move under their section title, so
+  "Conversation notes" no longer breaks over two lines.
+
 - Cite shows for text selected by long press on a phone. The selection helper treated the
   touch's pointercancel as a dismissal, so touchscreens never saw it.
 
