@@ -66,6 +66,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - In a narrow Brain panel the Default / On / Off switches move under their section title, so
   "Conversation notes" no longer breaks over two lines.
 
+- Plan titles no longer repeat "Plan": a heading such as "Plan: Add a README" shows as "Add a
+  README" in the plan card, the Plan tab, the Plan ready banner and the implementation chat's title.
+
+- On a phone the side panel (Brain, Plan, files) fills the screen instead of leaving a strip of
+  cut-off chat text beside it; the sidebar button stays reachable at its top left.
+
 - Cite shows for text selected by long press on a phone. The selection helper treated the
   touch's pointercancel as a dismissal, so touchscreens never saw it.
 
