@@ -733,12 +733,12 @@ export function EnvironmentProviderSettings({
     const explicitInstance = settings.providerInstances?.[defaultInstanceId];
     const isDirty = explicitInstance !== undefined;
     const hasDefaultSlot = providerSettings.hasDefaultInstance || explicitInstance !== undefined;
+    // Flow: a built-in provider that is turned off leaves the list once you look elsewhere;
+    // Add provider brings it back. Upstream always listed Codex and Claude, even turned off.
     if (
       hasDefaultSlot &&
-      (driver === "codex" ||
-        driver === "claudeAgent" ||
-        isDirty ||
-        resolveProviderInstanceEnabled(explicitInstance ?? { driver }) ||
+      (resolveProviderInstanceEnabled(explicitInstance ?? { driver }) ||
+        defaultInstanceId === selectedInstanceId ||
         defaultInstanceId === targetInstanceId)
     ) {
       rows.push({
@@ -1198,7 +1198,7 @@ interface ProviderInstanceRowActions {
   ) => void;
   readonly updateModelPreferences: ReturnType<typeof useUpdateEnvironmentModelPreferences>;
   readonly toggleModelFavorite: ReturnType<typeof useToggleEnvironmentModelFavorite>;
-  readonly selectInstance: (instanceId: ProviderInstanceId) => void;
+  readonly selectInstance: (instanceId: ProviderInstanceId | null) => void;
 }
 
 const NO_MODELS: ReadonlyArray<string> = [];
@@ -1369,9 +1369,14 @@ function ProviderInstanceRow({
       }
       onUpdate={(next) => actions.updateInstance(instanceId, instance, next)}
       onDelete={
-        mode === "editor" && !isDefault
-          ? () => actions.deleteInstance(instanceId, instance)
-          : undefined
+        mode !== "editor"
+          ? undefined
+          : !isDefault
+            ? () => actions.deleteInstance(instanceId, instance)
+            : !resolveProviderInstanceEnabled(instance)
+              ? // A built-in provider stays turned off; removing it only takes it off the list.
+                () => actions.selectInstance(null)
+              : undefined
       }
       headerAction={
         mode === "editor" && isDefault && isDirty ? (

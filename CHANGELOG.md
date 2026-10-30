@@ -117,6 +117,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A built-in provider such as Codex can be removed from Settings > Providers once it is turned off,
+  and a turned-off one no longer stays in the list; Add provider brings it back.
 - Sending the first message of a No project chat no longer asks to connect the scratch folder to a
   Brain; the Brain picker above the composer (or No Brain) already decides it.
 - An empty composer's send button looks disabled (grey) instead of a ready blue, also in the
