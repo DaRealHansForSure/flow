@@ -2672,6 +2672,16 @@ code {
   --font-size-code: var(--font-size-work-detail, var(--text-2xs));
 }
 
+/* Flow: on touch screens a tool call's details grow with their content instead of scrolling inside
+   themselves. A finger that reaches the end of an inner scroller does not hand the swipe on to the
+   chat, so the page seemed stuck. */
+@media (pointer: coarse) {
+  [data-work-log-details],
+  [data-work-log-details] [class*="max-h-"] {
+    max-height: none;
+  }
+}
+
 /* Flow: the terminal's split, new and close buttons are finger-sized on touch screens too. */
 @media (pointer: coarse) {
   [data-terminal-actions] button {

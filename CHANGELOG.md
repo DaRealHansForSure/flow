@@ -29,6 +29,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On touch screens an expanded tool call shows its whole content instead of a small box that
+  scrolls on its own, so swiping keeps scrolling the chat instead of getting stuck at the box's end.
 - Closing the background work list no longer puts the cursor in the message box, so the phone
   keyboard stays down.
 - On touch screens the terminal's split, new and close buttons are 40 px with 20 px icons, like the
