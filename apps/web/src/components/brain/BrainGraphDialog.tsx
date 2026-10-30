@@ -43,7 +43,7 @@ export function BrainGraphDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup className="h-[85dvh] sm:max-w-[90vw]">
+      <DialogPopup className="h-[92dvh] max-sm:h-[85dvh] sm:max-w-[96vw]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>

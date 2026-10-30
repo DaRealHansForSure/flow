@@ -20,6 +20,7 @@
 .flow-brain-graph-canvas.compact { height: 220px; }
 .flow-brain-graph.fill { display: flex; min-height: 0; flex: 1; flex-direction: column; }
 .flow-brain-graph.fill > .flow-brain-graph-canvas { height: auto; min-height: 0; flex: 1; }
+.flow-brain-graph.fill > .flow-brain-graph-legend { flex-shrink: 0; }
 .flow-brain-graph-host { position: absolute; inset: 0; background: var(--card); color: var(--foreground); }
 .flow-brain-canvas-element { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
 .flow-brain-alert { position: absolute; top: 16px; right: 16px; left: 16px; margin: 0; color: var(--destructive); font-size: 13px; }
