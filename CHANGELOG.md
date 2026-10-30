@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Deleting a No project chat also deletes its folder under `~/.t3/scratch`, unless another chat
+  still works in it.
 - Settings > Appearance > Highlight code in tool calls (on by default): off shows commands and tool
   input in expanded tool calls as plain text.
 - On a phone the chat is the main page: Back closes an open menu or sheet, then a full-screen page
