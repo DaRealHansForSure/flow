@@ -4,7 +4,7 @@ import { NotificationSettings } from "./NotificationSettings";
 import { PRIVACY_POLICY_URL } from "../../legalLinks";
 import { CheckIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import {
   type DesktopUpdateChannel,
   IDLE_COMPACTION_MODES,
@@ -153,7 +153,8 @@ function AboutVersionTitle() {
   );
 }
 
-function AboutVersionSection() {
+/** Flow: the update track comes first, then every version (`versions` below this app's). */
+function AboutVersionSection(props: { readonly versions: ReactNode }) {
   const updateState = useDesktopUpdateState();
   const [switchChannel, setSwitchChannel] = useState<DesktopUpdateChannel | null>(null);
   const [isUpdateActionPending, setIsUpdateActionPending] = useState(false);
@@ -296,28 +297,6 @@ function AboutVersionSection() {
 
   return (
     <>
-      <SettingsRow
-        id={searchableSetting("app-version").id}
-        title={<AboutVersionTitle />}
-        description={description}
-        control={
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={buttonDisabled || isUpdateActionPending}
-                  onClick={handleButtonClick}
-                >
-                  {buttonLabel}
-                </Button>
-              }
-            />
-            {buttonTooltip ? <TooltipPopup>{buttonTooltip}</TooltipPopup> : null}
-          </Tooltip>
-        }
-      />
       {hasDesktopBridge ? (
         <SettingsRow
           {...searchableSetting("update-track")}
@@ -399,6 +378,29 @@ function AboutVersionSection() {
           }
         />
       ) : null}
+      <SettingsRow
+        id={searchableSetting("app-version").id}
+        title={<AboutVersionTitle />}
+        description={description}
+        control={
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={buttonDisabled || isUpdateActionPending}
+                  onClick={handleButtonClick}
+                >
+                  {buttonLabel}
+                </Button>
+              }
+            />
+            {buttonTooltip ? <TooltipPopup>{buttonTooltip}</TooltipPopup> : null}
+          </Tooltip>
+        }
+      />
+      {props.versions}
       {hasDesktopBridge ? <CliCommandSettingsRow /> : null}
       {switchChannel === null ? null : (
         <UpdateTrackSwitchDialog channel={switchChannel} onClose={() => setSwitchChannel(null)} />
@@ -2039,7 +2041,7 @@ export function AboutSettingsPanel() {
     <SettingsPageContainer>
       <SettingsSection id="about" title="App">
         {isElectron || HOSTED_APP_CHANNEL ? (
-          <AboutVersionSection />
+          <AboutVersionSection versions={<AboutComponentVersions />} />
         ) : (
           <>
             <SettingsRow
@@ -2047,9 +2049,9 @@ export function AboutSettingsPanel() {
               title={<AboutVersionTitle />}
               description="Current version of the application."
             />
+            <AboutComponentVersions />
           </>
         )}
-        <AboutComponentVersions />
         <MobileAppSettingsRow />
       </SettingsSection>
 
