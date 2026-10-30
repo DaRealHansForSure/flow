@@ -3223,13 +3223,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
             )}
           >
             {showCollapsedMobilePromptRow ? (
-              <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <div className="flex items-center justify-between gap-2 px-2 py-2">
+                {/* Flow: drawn as a field, so an idle composer reads as a place to type. */}
                 <button
                   type="button"
                   data-chat-composer-transition-prompt="true"
                   className={cn(
-                    "min-w-0 flex-1 truncate bg-transparent p-0 text-left text-sm focus:outline-none",
-                    prompt.trim() ? "text-foreground" : "text-placeholder",
+                    "flex h-10 min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-3 text-left text-sm focus:outline-none",
+                    prompt.trim() ? "text-foreground" : "text-muted-foreground",
                   )}
                   onPointerDown={(event) => event.preventDefault()}
                   onClick={expandMobileComposerStable}
@@ -3543,7 +3544,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               <div className="h-8">
                 <div
                   ref={setInlineRestingControlsHost}
-                  className="absolute bottom-2 inset-x-1.5 min-w-0"
+                  className="absolute bottom-2 inset-x-3 min-w-0"
                 >
                   <div
                     ref={attachRestingComposerControls}
