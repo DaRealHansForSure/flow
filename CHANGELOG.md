@@ -56,6 +56,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The sidebar shows a thread's earlier provider only when it was a different kind, so a switch
+  between two setups of the same provider no longer shows its logo twice.
 - The composer's "Ask anything" hint is a clear grey, so in a dark theme it no longer looks like
   text you typed.
 - The background work list shows each item's full name in a smaller font, wrapping over lines

@@ -203,25 +203,33 @@ function SidebarProviderStack(props: {
       iconClassName="opacity-60"
     />
   );
-  if (stack.length === 1) {
+  // Flow: an earlier provider shows only when it was another kind; a switch between two setups
+  // of the same provider would repeat the same logo.
+  const earlier = stack.slice(0, -1).flatMap((instanceId) => {
+    const entry = props.providerEntryByInstanceId.get(instanceId);
+    return entry === undefined || entry.driverKind === currentEntry.driverKind
+      ? []
+      : [{ instanceId, entry }];
+  });
+  const earlierKinds = earlier.filter(
+    (item, index) =>
+      earlier.findIndex((other) => other.entry.driverKind === item.entry.driverKind) === index,
+  );
+  if (earlierKinds.length === 0) {
     return <span className="inline-flex shrink-0 items-center">{current}</span>;
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5">
-      {stack.slice(0, -1).map((instanceId) => {
-        const entry = props.providerEntryByInstanceId.get(instanceId);
-        if (entry === undefined) return null;
-        return (
-          <ProviderInstanceIcon
-            key={instanceId}
-            driverKind={entry.driverKind}
-            displayName={entry.displayName}
-            acpRegistryAgentId={entry.acpRegistryAgentId}
-            acpRegistryIconUrl={entry.acpRegistryIconUrl}
-            iconClassName="size-3 opacity-35 grayscale"
-          />
-        );
-      })}
+      {earlierKinds.map(({ instanceId, entry }) => (
+        <ProviderInstanceIcon
+          key={instanceId}
+          driverKind={entry.driverKind}
+          displayName={entry.displayName}
+          acpRegistryAgentId={entry.acpRegistryAgentId}
+          acpRegistryIconUrl={entry.acpRegistryIconUrl}
+          iconClassName="size-3 opacity-35 grayscale"
+        />
+      ))}
       <span className="relative z-10 inline-flex items-center">{current}</span>
     </span>
   );
