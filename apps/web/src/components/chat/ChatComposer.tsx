@@ -3227,6 +3227,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           >
             {showCollapsedMobilePromptRow ? (
               <div className="flex items-center justify-between gap-2 px-2 py-2">
+                {/* Flow: attaching stays one tap away while the phone composer rests. */}
+                {composerAttachButton}
                 {/* Flow: drawn as a field, so an idle composer reads as a place to type. */}
                 <button
                   type="button"
@@ -3561,8 +3563,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       !restingControlsVisible && "invisible",
                     )}
                   >
-                    {/* Flow: attaching stays one tap away while the phone composer rests. */}
-                    {composerAttachButton}
                     {composerControls}
                   </div>
                 </div>
