@@ -28,6 +28,7 @@ import type { ChatBrain } from "../brain/useChatBrain";
 import type { PlanVersion } from "@t3tools/client-runtime/state/plan-versions";
 import { PlanPanel } from "./PlanPanel";
 import { ThreadRelationshipsPanel } from "./ThreadRelationshipsControl";
+import { McpPanel } from "../mcp/McpServersView";
 
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
@@ -211,6 +212,9 @@ export function RightPanelSurfaceContent(props: {
           />
         </div>
       );
+    // Flow: the MCP tab.
+    case "mcp":
+      return <McpPanel environmentId={props.environmentId} threadId={threadRef.threadId} />;
     // Flow: the Plan tab.
     case "plan":
       return (

@@ -65,6 +65,7 @@ import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { SettingResetButton, SettingsRow, SettingsSection } from "./settingsLayout";
 import { AcpSessionManagementSection } from "./AcpSessionManagementSection";
 import { FoldedSettingsSection } from "./FoldedSettingsSection";
+import { McpSettingsSection } from "../mcp/McpServersView";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
 import {
   getProviderVersionAdvisoryPresentation,
@@ -1190,43 +1191,50 @@ export function ProviderInstanceCard({
         </SettingsSection>
       ) : null}
 
-      {instance.driver === "codex" && readCodexSetupMode(instance.config) === "managed" ? (
+      {/* Flow: the sections below fold under one header each, with a short summary. */}
+      {!driverOption ||
+      deriveProviderSettingsFields(driverOption).length > 0 ||
+      (instance.driver === "codex" && readCodexSetupMode(instance.config) === "managed") ? (
         <div
           inert={readOnly}
           aria-disabled={readOnly || undefined}
           className={readOnly ? "opacity-50 select-none" : undefined}
         >
           <FoldedSettingsSection
-            key={instanceId}
+            key={`${instanceId}-runtime`}
             id={`provider-instance-${instanceId}-runtime`}
             title="Runtime"
-            headerPlacement="outside"
           >
-            {runtime ?? runtimeFields}
+            {instance.driver === "codex" && readCodexSetupMode(instance.config) === "managed"
+              ? (runtime ?? runtimeFields)
+              : runtimeFields}
           </FoldedSettingsSection>
         </div>
-      ) : !driverOption || deriveProviderSettingsFields(driverOption).length > 0 ? (
-        <SettingsSection
-          title="Runtime"
-          inert={readOnly}
-          aria-disabled={readOnly || undefined}
-          className={readOnly ? "opacity-50 select-none" : undefined}
-        >
-          {runtimeFields}
-        </SettingsSection>
       ) : null}
 
-      <SettingsSection
-        title="Environment"
+      <div
         inert={readOnly}
         aria-disabled={readOnly || undefined}
         className={readOnly ? "opacity-50 select-none" : undefined}
       >
-        <ProviderEnvironmentSection
-          environment={genericEnvironment}
-          onChange={updateGenericEnvironment}
-        />
-      </SettingsSection>
+        <FoldedSettingsSection
+          key={`${instanceId}-environment`}
+          id={`provider-instance-${instanceId}-environment`}
+          title="Environment"
+          summary={
+            genericEnvironment.length === 0
+              ? "No variables"
+              : genericEnvironment.length === 1
+                ? "1 variable"
+                : `${genericEnvironment.length} variables`
+          }
+        >
+          <ProviderEnvironmentSection
+            environment={genericEnvironment}
+            onChange={updateGenericEnvironment}
+          />
+        </FoldedSettingsSection>
+      </div>
       {environmentId !== undefined && liveProvider?.driver === "acpRegistry" ? (
         <AcpSessionManagementSection
           environmentId={environmentId}
@@ -1238,7 +1246,12 @@ export function ProviderInstanceCard({
       ) : null}
 
       {driverOption !== undefined ? (
-        <SettingsSection title="Models">
+        <FoldedSettingsSection
+          key={`${instanceId}-models`}
+          id={`provider-instance-${instanceId}-models`}
+          title="Models"
+          summary={`${modelsForDisplay.length} models · ${favoriteModels.length} favorites · ${hiddenModels.length} hidden`}
+        >
           <div className="px-3 py-3 sm:px-4">
             <p className="mb-3 text-xs text-muted-foreground">
               Model preferences and custom models are saved on the selected environment and shared
@@ -1261,7 +1274,22 @@ export function ProviderInstanceCard({
               onModelOrderChange={onModelOrderChange}
             />
           </div>
-        </SettingsSection>
+        </FoldedSettingsSection>
+      ) : null}
+
+      {/* Flow: folded so the running agent is asked only when the section is opened. */}
+      {environmentId !== undefined && liveProvider !== undefined ? (
+        <FoldedSettingsSection
+          key={`${instanceId}-mcp`}
+          id={`provider-instance-${instanceId}-mcp`}
+          title="MCP servers"
+        >
+          <McpSettingsSection
+            environmentId={environmentId}
+            instanceId={instanceId}
+            providerName={displayName}
+          />
+        </FoldedSettingsSection>
       ) : null}
     </>
   );

@@ -278,6 +278,7 @@ it.effect(
             ),
           isLive: (providerSessionId) => Effect.succeed(providerSessionId === oldSessionId),
           close: () => Effect.void,
+          liveSessionsForInstance: () => Effect.succeed([]),
           closeInstance: () => Effect.void,
           release: () => Effect.void,
           detach: () => Effect.void,

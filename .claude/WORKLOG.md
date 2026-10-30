@@ -15,6 +15,22 @@ Updated: 2026-10-30 23:10
   - Tests written but not run: threadHistoryPaging, ThreadFind, usageLimitTone, phoneNavigation.
   - feat/windows-desktop stays unmerged; no shims for the Play Store T3 app.
 
+## Also open: MCP view
+
+- **Topic:** MCP view (feat/mcp-view, 7 commits on develop ed8a896ab, not merged, not pushed)
+- **Goal:** let the user see the MCP servers of the chat's running agent: MCP tab in the right
+  panel (`/mcp`, command palette, + menu) and an MCP servers section in Settings > Providers
+- **Last step done:** Check servers in Settings starts Claude once (providers:manage) when no
+  chat runs; provider cards fold Runtime, Environment, Models and MCP servers under headers.
+  Both checked live in `vp run dev` (port 7133)
+- **Next step:** owner review; merge feat/mcp-view into develop with --no-ff when the owner
+  says so. Later: Check servers for Codex and OpenCode, reconnect/enable/sign-in actions,
+  config-file listing for Cursor and Antigravity
+- **Open questions / blockers:**
+  - `vp run check:changed` fails only on apps/desktop typecheck (warning in
+    src/preview/Manager.ts, also on develop).
+  - Claude status during a running turn is untested (owner did not OK the paid check).
+
 ## Finished features
 
 - 2026-10-30 - Side fixes: agents pill, phone Back and swipes, usage chip, keyboard guard, work-row colours (develop)

@@ -1415,6 +1415,11 @@ export default function ChatView(props: ChatViewProps) {
       useRightPanelStore.getState().open(activeThreadRef, "plan");
     }
   });
+  const openMcpSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "mcp");
+    }
+  });
   const openAgentsSurfaceStable = useStableCallback(() => {
     if (activeThreadRef) {
       useRightPanelStore.getState().open(activeThreadRef, "agents");
@@ -2932,6 +2937,7 @@ export default function ChatView(props: ChatViewProps) {
     usageLimitsKey,
     usageLimitsOffered,
     openUsageLimits,
+    openMcp: isServerThread ? openMcpSurfaceStable : undefined,
     clearUsageLimitsFor,
     needsLoadBalancing,
     loadBalancing,
@@ -3771,6 +3777,7 @@ export default function ChatView(props: ChatViewProps) {
                                   ? openUsageLimits
                                   : undefined
                               }
+                              onMcpCommand={isServerThread ? openMcpSurfaceStable : undefined}
                               environmentUnavailable={activeEnvironmentUnavailableState}
                               activePendingApproval={activePendingApproval}
                               pendingApprovals={pendingApprovals}
@@ -4108,6 +4115,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
           onAddPlan={planVersions.length > 0 ? openPlanSurfaceStable : undefined}
           onAddAgents={isServerThread ? openAgentsSurfaceStable : undefined}
+          onAddMcp={isServerThread ? openMcpSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}

@@ -37,7 +37,12 @@ import {
   type ServerProviderDraft,
 } from "@t3tools/provider-core/server/snapshotProbe";
 import { resolveClaudeSdkExecutablePath } from "./Drivers/ClaudeExecutable.ts";
-import { hasClaudeManagedMcpConfig, makeClaudeEnvironment } from "./Drivers/ClaudeHome.ts";
+import {
+  hasClaudeManagedMcpConfig,
+  makeClaudeEnvironment,
+  resolveClaudeHomePath,
+} from "./Drivers/ClaudeHome.ts";
+import { mapClaudeMcpServers } from "../orchestration-v2/Adapters/claudeMcpServers.ts";
 import { discoverClaudeSkills } from "./Drivers/ClaudeSkills.ts";
 import type { ProviderWorkspaceSnapshot } from "@t3tools/provider-core/server/driver";
 import { makeUnavailableUsageLimits } from "@t3tools/provider-core/server/usageLimits";
@@ -423,6 +428,67 @@ const runClaudeCommand = Effect.fn("runClaudeCommand")(function* (
   });
   return yield* spawnAndCollect(claudeSettings.binaryPath, command);
 });
+
+const MCP_CHECK_TIMEOUT_MS = 60_000;
+const MCP_CHECK_PENDING_POLL_MS = 2_000;
+const MCP_CHECK_PENDING_ATTEMPTS = 15;
+
+/**
+ * Starts Claude with the user's MCP config switched on, reads mcpServerStatus() and stops it.
+ * Only for an explicit check: every configured MCP server starts for its lifetime.
+ */
+export const probeClaudeMcpServers = (
+  claudeSettings: ClaudeSettings,
+  environment: NodeJS.ProcessEnv,
+  cwd: string,
+) => {
+  const abort = new AbortController();
+  return Effect.gen(function* () {
+    const claudeEnvironment = yield* makeClaudeEnvironment(claudeSettings, environment);
+    const executablePath = yield* resolveClaudeSdkExecutablePath(
+      claudeSettings.binaryPath,
+      claudeEnvironment,
+    );
+    const profile = yield* resolveClaudeHomePath(claudeSettings, environment);
+    const baseOptions = buildClaudeCapabilitiesProbeQueryOptions({
+      executablePath,
+      abortController: abort,
+      environment: claudeEnvironment,
+      cwd,
+      managedMcpConfig: true,
+    });
+    // The capability probe switches MCP off; this check is the one place that wants it on.
+    const { mcpServers: _mcpServers, ...options } = baseOptions;
+    const { ENABLE_CLAUDEAI_MCP_SERVERS: _claudeAi, ...env } = baseOptions.env ?? {};
+    const q = claudeQuery({
+      // oxlint-disable-next-line require-yield -- never yields, so no prompt reaches the API
+      prompt: (async function* (): AsyncGenerator<SDKUserMessage> {
+        await waitForAbortSignal(abort.signal);
+      })(),
+      options: { ...options, env },
+    });
+    const readStatus = Effect.tryPromise(() => q.mcpServerStatus());
+    let statuses = yield* readStatus;
+    // Servers report pending right after launch; give them a little time to settle.
+    for (
+      let attempt = 0;
+      attempt < MCP_CHECK_PENDING_ATTEMPTS &&
+      statuses.some((server) => server.status === "pending");
+      attempt += 1
+    ) {
+      yield* Effect.sleep(MCP_CHECK_PENDING_POLL_MS);
+      statuses = yield* readStatus;
+    }
+    return { profile, servers: mapClaudeMcpServers(statuses) };
+  }).pipe(
+    Effect.timeout(MCP_CHECK_TIMEOUT_MS),
+    Effect.ensuring(
+      Effect.sync(() => {
+        if (!abort.signal.aborted) abort.abort();
+      }),
+    ),
+  );
+};
 
 export const probeClaudeWorkspaceSnapshot = Effect.fn("probeClaudeWorkspaceSnapshot")(function* (
   claudeSettings: ClaudeSettings,

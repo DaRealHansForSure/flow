@@ -18,6 +18,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   swiping back toward the edge closes it.
 - The model chip under the composer turns amber when the selected account has used more than 80 %
   of a usage limit and red above 90 %; its tooltip names the limit and when it resets.
+- An MCP tab in the right panel lists the MCP servers of the chat's running agent, grouped into
+  Flow, your servers, plugins and claude.ai connectors, with each server's status and tools.
+  Failed servers and servers that need a sign-in are shown at the top. Open it with `/mcp`,
+  **Show MCP servers** in the command palette or the panel's + menu. Claude, Codex and OpenCode
+  report their servers.
+- Settings > Providers has an MCP servers section on each provider that shows the same list for
+  that provider's most recently used running chat, with a link to it. Without a running chat,
+  **Check servers** starts Claude once to list its servers.
 
 ### Changed
 
@@ -29,6 +37,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Expanded details of every kind start under the row's label with the same spacing.
 - Code and output inside a tool call or thinking block use a smaller code size than the
   conversation (80 % of the code font size), since they are reference, not the answer.
+- A provider's settings fold Runtime, Environment, Models and MCP servers under one header each,
+  with a short summary such as the number of models, so a card no longer runs several screens
+  long on a phone.
 - The status pill above the composer shows the turn's agents as in the mobile app ("2/3" while
   they work, "3 done" after); tapping it opens the Agents tab. Background work has no Open button
   any more: a row in its list opens that agent's chat.
