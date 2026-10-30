@@ -229,7 +229,8 @@ function BrowserMiniPlayer({ threadRef, tabId, miniPlayer }: Props & { readonly 
 
   const openInPanel = () => {
     usePreviewMiniPlayerStore.getState().close(threadRef);
-    useRightPanelStore.getState().openBrowser(threadRef, tabId);
+    // Flow: the chat keeps later browsers in the panel too, instead of floating each one.
+    useRightPanelStore.getState().dockBrowser(threadRef, tabId);
   };
 
   const toggleNativePictureInPicture = async () => {

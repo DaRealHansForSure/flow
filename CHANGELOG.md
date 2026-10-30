@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Moving the floating browser into the right panel sticks for the chat: browsers the agent
+  opens later join the panel as tabs instead of floating over the chat, and closing the panel no
+  longer floats one. A tab that arrives while the panel is closed puts a blue dot on the panel
+  button until you open it.
 - A chat whose plan waits for Accept, Revise or Decline shows a violet "Plan ready" badge in
   the sidebar, in the desktop and web apps, where finished chats show "Done". It does not fade
   like finished chats, and a closed project folder shows its attention dot.

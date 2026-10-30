@@ -165,7 +165,15 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
   const openFileSurfaceStable = useStableCallback(openFileSurface);
   const closePreviewPanel = () => {
     if (activeThreadRef) {
-      if (activeRightPanelSurface?.kind === "preview" && activeRightPanelSurface.resourceId) {
+      const browserDocked =
+        useRightPanelStore.getState().byThreadKey[scopedThreadKey(activeThreadRef)]
+          ?.browserDocked === true;
+      // Flow: a chat that keeps its browsers in the panel does not float one when it closes.
+      if (
+        activeRightPanelSurface?.kind === "preview" &&
+        activeRightPanelSurface.resourceId &&
+        !browserDocked
+      ) {
         usePreviewMiniPlayerStore
           .getState()
           .open(activeThreadRef, browserMiniPlayerSource(activeRightPanelSurface.resourceId));

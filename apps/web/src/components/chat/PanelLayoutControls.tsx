@@ -35,6 +35,8 @@ export interface PanelLayoutControlsProps {
   onToggleRightPanel: () => void;
   /** Flow: the Brain toggle, first in the group so it shares its spacing. */
   brainControl?: ReactNode;
+  /** Flow: a tab arrived in the closed right panel, such as a browser the agent opened. */
+  rightPanelUnseen?: boolean;
 }
 
 export const PanelLayoutControls = memo(function PanelLayoutControls({
@@ -56,6 +58,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
   onToggleThreadPanel,
   onToggleRightPanel,
   brainControl,
+  rightPanelUnseen = false,
 }: PanelLayoutControlsProps) {
   const threadPanelToggle = (
     <Toggle
@@ -118,7 +121,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
         <Tooltip>
           <TooltipTrigger render={<span className="flex shrink-0" />}>
             <Toggle
-              className="shrink-0 [-webkit-app-region:no-drag]"
+              className="relative shrink-0 [-webkit-app-region:no-drag]"
               pressed={rightPanelOpen}
               onPressedChange={onToggleRightPanel}
               aria-label="Toggle right panel"
@@ -128,6 +131,13 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
               disabled={!rightPanelAvailable}
             >
               <PanelRightIcon className="size-4" />
+              {rightPanelUnseen ? (
+                <span
+                  aria-hidden
+                  data-right-panel-unseen-dot
+                  className="pointer-events-none absolute top-1 right-1 size-1.5 rounded-full bg-info"
+                />
+              ) : null}
             </Toggle>
           </TooltipTrigger>
           <TooltipPopup side="bottom">

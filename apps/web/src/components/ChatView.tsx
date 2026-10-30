@@ -3343,6 +3343,7 @@ export default function ChatView(props: ChatViewProps) {
     onToggleTerminal: toggleTerminalVisibilityStable,
     onToggleThreadPanel: toggleThreadPanelStable,
     onToggleRightPanel: toggleRightPanelStable,
+    rightPanelUnseen: !rightPanelOpen && rightPanelState.unseenActivity === true,
   } satisfies PanelLayoutControlsProps;
   const panelToggleControlProps = {
     ...panelToggleBaseProps,

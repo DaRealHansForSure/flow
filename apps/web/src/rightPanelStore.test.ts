@@ -295,6 +295,35 @@ describe("rightPanelStore", () => {
     expect(sheetChat.activeSurfaceId).toBe("plan");
   });
 
+  it("docks browsers the agent reveals once the user moved one into the panel, marking a closed panel", () => {
+    const store = useRightPanelStore.getState();
+    const panel = () =>
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA);
+    store.openBrowser(refA, "tab-0");
+    expect(panel().browserDocked).toBeUndefined();
+    store.dockBrowser(refA, "tab-1");
+    expect(panel().browserDocked).toBe(true);
+
+    store.close(refA);
+    store.dockRevealedBrowser(refA, "tab-2");
+    expect(panel().isOpen).toBe(false);
+    expect(panel().activeSurfaceId).toBe("browser:tab-2");
+    expect(panel().unseenActivity).toBe(true);
+
+    store.show(refA);
+    expect(panel().isOpen).toBe(true);
+    expect(panel().unseenActivity).toBeUndefined();
+
+    store.dockRevealedBrowser(refA, "tab-3");
+    expect(panel().activeSurfaceId).toBe("browser:tab-3");
+    expect(panel().unseenActivity).toBeUndefined();
+
+    store.openPlanByDefault(refB, "plan-1", false);
+    expect(
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB).unseenActivity,
+    ).toBe(true);
+  });
+
   const completedDiff = { kind: "diff", turnId: RunId.make("turn-1") } as const;
   const linkedPullRequest = pullRequestSurface({
     projectId: "project-a",
