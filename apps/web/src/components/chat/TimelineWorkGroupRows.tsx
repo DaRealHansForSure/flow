@@ -645,13 +645,12 @@ function WorkGroupHeader(props: {
       }
       label={<span className="block truncate">{props.label}</span>}
       trailing={
-        <>
-          {props.imagePreview}
+        props.imagePreview ?? (
           <TimelineRowTimestamp
             createdAt={props.createdAt}
             timestampFormat={props.timestampFormat}
           />
-        </>
+        )
       }
     />
   );

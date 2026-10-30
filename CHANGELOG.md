@@ -15,8 +15,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   like finished chats, and a closed project folder shows its attention dot.
 - Settings > About lists the version of each part: the web app, the Flow service it is connected
   to, and the desktop app when it runs in one.
-- A step that read an image shows a small thumbnail at the end of its row; tapping it opens the
-  picture. A folded group of such steps ("Read 3 files") previews up to three of them.
+- A step that read an image shows a small thumbnail at the end of its row, in place of its
+  time; tapping it opens the picture. A folded group of such steps ("Read 3 files") previews up
+  to three of them.
 - A Plan tab in the right panel shows the chat's latest plan like an opened `Plan.md`, as
   rendered Markdown or raw text, with Copy, Download and Save as file. It opens on its own
   for each new plan, and from the plan card's menu or the panel's + menu.

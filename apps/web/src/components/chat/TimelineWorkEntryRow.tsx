@@ -494,8 +494,12 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
               image={viewedImage}
               onImageExpand={onImageExpand}
             />
-          ) : null}
-          <TimelineRowTimestamp createdAt={workEntry.createdAt} timestampFormat={timestampFormat} />
+          ) : (
+            <TimelineRowTimestamp
+              createdAt={workEntry.createdAt}
+              timestampFormat={timestampFormat}
+            />
+          )}
           <span
             className={cn(
               "flex size-4 shrink-0 items-center justify-center",
