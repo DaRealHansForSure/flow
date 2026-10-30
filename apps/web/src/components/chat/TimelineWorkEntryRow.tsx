@@ -67,6 +67,7 @@ import {
   workEntryIconName,
   remarkThoughtPreview,
 } from "./TimelineWorkEntryRow.logic";
+import { resolveWorkRowAccent, WORK_ROW_ACCENT_ICON_CLASS } from "./workRowAccent";
 
 export function useThreadReadTarget(entry: TimelineWorkEntry, environmentId: EnvironmentId) {
   const rawThreadId = threadReadTargetId(entry);
@@ -348,6 +349,7 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
               workEntry.questionAnswer ||
               turnItemHasDetail(workEntry.projectedItem.item),
             );
+  const accent = resolveWorkRowAccent(workEntry.itemType);
   const iconWrapperClass = cn(
     "flex size-4 items-center justify-center",
     showWarningIndicator
@@ -356,9 +358,11 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
         ? "text-destructive"
         : showFailedIndicator
           ? failedToolIconClassName
-          : workEntry.tone === "tool"
-            ? "text-icon-muted"
-            : iconConfig.className,
+          : accent !== null
+            ? WORK_ROW_ACCENT_ICON_CLASS[accent]
+            : workEntry.tone === "tool"
+              ? "text-icon-muted"
+              : iconConfig.className,
   );
   const headingClass = showWarningIndicator
     ? "font-medium text-warning"
@@ -393,6 +397,7 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
   return (
     <WorkLogRow
       data-v2-item-type={workEntry.projectedItem?.item.type}
+      data-work-accent={accent ?? undefined}
       data-v2-item-visibility={workEntry.projectedItem?.visibility}
       {...rowToggleProps}
       icon={
