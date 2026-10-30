@@ -9,6 +9,7 @@ import { useThreadShells } from "../../state/entities";
 import { formatRelativeTimeLabel } from "../../timestampFormat";
 import { SearchableSelect } from "../SearchableSelect";
 import { DataTable, type DataTableColumn } from "../ui/data-table";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import type { DataTableSort } from "../ui/data-table.logic";
 import { BrainSelect } from "./BrainControls";
 import { BrainIcon } from "./BrainIcon";
@@ -52,6 +53,24 @@ function samePath(left: string | undefined, right: string): boolean {
   return left !== undefined && left.replace(/\/+$/u, "") === right.replace(/\/+$/u, "");
 }
 
+/** Cuts a long path in the middle, keeping its last folder; the full path shows on hover. */
+function MiddleTruncatedPath(props: { readonly path: string }) {
+  const cut = props.path.lastIndexOf("/");
+  const head = cut > 0 ? props.path.slice(0, cut) : "";
+  const tail = cut > 0 ? props.path.slice(cut) : props.path;
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={<span className="flex min-w-0 font-mono text-2xs text-muted-foreground" />}
+      >
+        <span className="truncate">{head}</span>
+        <span className="max-w-[75%] shrink-0 truncate">{tail}</span>
+      </TooltipTrigger>
+      <TooltipPopup variant="code">{props.path}</TooltipPopup>
+    </Tooltip>
+  );
+}
+
 export function ConnectedProjectsTable(props: {
   readonly workspace: BrainWorkspace;
   readonly state: BrainState | null;
@@ -89,13 +108,11 @@ export function ConnectedProjectsTable(props: {
       phone: "title",
       sortValue: (row) => row.project.title,
       renderCell: (row) => (
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex max-w-96 min-w-0 items-center gap-2.5">
           <Folder aria-hidden size={16} className="shrink-0 text-muted-foreground" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium">{row.project.title}</div>
-            <div className="truncate font-mono text-2xs text-muted-foreground">
-              {row.project.workspaceRoot}
-            </div>
+            <MiddleTruncatedPath path={row.project.workspaceRoot} />
           </div>
         </div>
       ),

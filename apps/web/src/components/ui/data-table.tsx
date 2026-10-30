@@ -39,6 +39,10 @@ function SortIcon(props: { readonly direction: "asc" | "desc" | null }) {
   return <ChevronsUpDownIcon aria-hidden className="size-3.5 shrink-0 opacity-50" />;
 }
 
+/**
+ * `contain: inline-size` keeps long cells from widening the page: the table takes its parent's
+ * width and scrolls inside instead.
+ */
 export function DataTable<Row>(props: {
   readonly rows: ReadonlyArray<Row>;
   readonly columns: ReadonlyArray<DataTableColumn<Row>>;
@@ -120,7 +124,7 @@ export function DataTable<Row>(props: {
       (column) => column !== title && (column.phone ?? "detail") === "detail",
     );
     return (
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card [contain:inline-size]">
         {toolbar}
         {rows.length === 0 ? (
           empty
@@ -152,7 +156,7 @@ export function DataTable<Row>(props: {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card [contain:inline-size]">
       {toolbar}
       {rows.length === 0 ? (
         empty
