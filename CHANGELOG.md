@@ -12,7 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Tapping the background work in the status pill lists every running command and subagent with what
   it is doing, and opens a subagent's thread, like the mobile app's Background work screen.
-- On web and desktop, holding the send button while the agent works (or right-clicking it) opens a\n menu to Steer now or Queue the message, as in the mobile app.
+- On web and desktop, holding the send button while the agent works (or right-clicking it) opens a
+  menu to Steer now or Queue the message, as in the mobile app.
 - The browser panel and the floating browser can be magnified on your screen without zooming the
   page: pinch with two fingers on a phone, or Ctrl + mouse wheel or a trackpad pinch on a computer.
   A badge shows the zoom and resets it.
@@ -67,9 +68,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - On a phone the idle composer shows "Ask anything..." in a rounded, outlined field in a muted
   colour, so it reads as a place to type rather than a line of text; the send button beside it
   matches the field's height.
-- On touch screens the chat header and right panel header buttons are 40 px with 20 px icons, the\n same size on both sides.
-- On a phone both side menus open across the full width; the right panel drops its maximize\n button and its edge, since it already fills the screen.
-- One status pill stays above the composer instead of scrolling with the chat, as in the mobile\n app: background work with its actions, how long the thread has been working, its browsers and\n queued messages, with a round button beside it to scroll back to the end.
+- On touch screens the chat header and right panel header buttons are 40 px with 20 px icons, the
+  same size on both sides.
+- On a phone both side menus open across the full width; the right panel drops its maximize
+  button and its edge, since it already fills the screen.
+- One status pill stays above the composer instead of scrolling with the chat, as in the mobile
+  app: background work with its actions, how long the thread has been working, its browsers and
+  queued messages, with a round button beside it to scroll back to the end.
 - The pills above the composer (Scroll to end, background work, browsers) share one taller, rounded
   look with dividers, like the mobile app's status pill.
 - On touch screens the sidebar's icon buttons (Settings, Pull requests, Usage, and the filter, add
@@ -126,7 +131,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The background work list closes on any press outside it, including in the composer.
 - An empty composer's send button looks disabled (grey) instead of a ready blue, also in the
   collapsed phone composer.
-- On a phone the composer no longer grows a few pixels when text arrives: the stop button is as\n big as the send button.
+- On a phone the composer no longer grows a few pixels when text arrives: the stop button is as
+  big as the send button.
 - The globe pill opens the newest browser tab instead of the first one, which could be an empty
   leftover; and an empty browser tab's list no longer sits under its control bar.
 - Finished subagents show Done (or how they ended) in Lineage and the Agents tab, matching the
