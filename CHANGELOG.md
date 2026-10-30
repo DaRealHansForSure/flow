@@ -10,9 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Each release page carries its CHANGELOG.md section as its text, the titles say "service" or
-  "desktop", and the duplicate `flow-cloud-cli-v*` release and the `builder-debug.yml` asset
-  are no longer published.
+- One release page per version: `flow-vX.Y.Z` holds the service and the desktop app, with the
+  version's CHANGELOG.md section as its text. The separate `flow-desktop-v*` page, the
+  duplicate `flow-cloud-cli-v*` release and the `builder-debug.yml` asset are gone.
 
 ## [0.2.0] - 2026-10-30
 

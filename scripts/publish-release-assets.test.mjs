@@ -165,6 +165,28 @@ test("republishing an already published version is refused", async () => {
   );
 });
 
+test("appending adds files to a published release and keeps what it holds", async () => {
+  const gh = fakeGitHub({
+    release: { isDraft: false, assets: [["flow-browser-linux-x64.tar.gz", "service"]] },
+  });
+  await publishReleaseAssets({ tag: "flow-v1.0.0", files, gh, append: true, log: () => {} });
+  assert.deepEqual(
+    [...gh.release.assets.keys()].sort(),
+    ["flow-browser-linux-x64.tar.gz", ...sizes.keys()].sort(),
+  );
+  assert.ok(!gh.calls.some((c) => /^release (create|edit|delete-asset)/.test(c)));
+  await assert.rejects(
+    publishReleaseAssets({
+      tag: "flow-v1.0.0",
+      files,
+      gh: fakeGitHub(),
+      append: true,
+      log: () => {},
+    }),
+    /does not exist/,
+  );
+});
+
 test("the rolling feed gains the new files before stale ones are removed", async () => {
   const gh = fakeGitHub({
     release: {
