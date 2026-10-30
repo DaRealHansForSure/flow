@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Release pages no longer list their files in a table; they link to the install guide
+  instead.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added
