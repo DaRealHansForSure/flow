@@ -1,24 +1,29 @@
 # Worklog
 
-Updated: 2026-10-30 00:50
+Updated: 2026-10-30 02:05
 
 ## Current focus
 
-- **Topic:** The app keeps the Flow service at its own version (all-in-one AppImage)
-- **Goal:** Every AppImage brings its matching service; one release run publishes both
-- **Branch:** feat/app-keeps-service-current (worktree .t3/worktrees/service-sync), not merged
-- **Last step done:** install-version in flow-release.mjs with repository in receipts;
-  desktop version check, native question with running chats, parked update screen with
-  retry; flow-release.yml runs the service and desktop release of one version
-- **Next step:** Owner review, merge --no-ff into develop; first real check is a release run
-  of flow-release.yml on `release`, then an AppImage start on the machine with the upstream
-  0.1.15 service (offers the switch to the fork)
-- **Open questions / blockers:** An older service that fails to attach as `incompatible`
-  gets no update offer yet; window.test.ts relay telemetry case fails on develop already;
-  four Brain web tests need a rewrite without react-test-renderer
+- **Topic:** First own release 0.2.0 (AppImage plus service from DaRealHansForSure/flow)
+- **Goal:** The machine runs this fork's Flow, installed and updated only from the fork
+- **Branch:** develop (everything merged; ~4600 commits ahead of origin, not pushed)
+- **Last step done:** App-only default merged (own server unless "Keep Flow running in the
+  background"); install guide starts with a backup; uninstall-flow.sh; inherited tags removed;
+  local AppImage rebuild started into .t3/appimage
+- **Next step:** Owner tests the AppImage isolated, then on OK: merge develop into main
+  (--no-ff), push develop and main, create `release`, run the "Flow release" workflow with
+  0.2.0; on this machine back up, move a stale ~/.t3/userdata/statev2.sqlite aside, start
+  the AppImage and answer the switch question
+- **Open questions / blockers:** Actions and workflow write permission must be on in the fork;
+  the startup switch box, real systemctl timing and the Settings row are untested in a real
+  app; codex/opencode curator flags untested; four Brain web tests need a rewrite without
+  react-test-renderer; DesktopPreReadyPlatform has 4 failing tests already on develop
 
 ## Finished features
 
+- 2026-10-30 - Flow runs only while the app is open; backup step in the install guide (develop)
+- 2026-10-30 - uninstall-flow.sh, code block download, graph dialog, Brain status colours (develop)
+- 2026-10-30 - App keeps the service at its version, release workflow, installs from fork (develop)
 - 2026-10-30 - Brain tab, close confirmation, Auto-Docs/Auto-Skills switches, lint cleanup (develop)
 - 2026-10-29 - T3 Code v0.1.5 sync, telemetry opt-in, mobile Brain screen (merged into develop)
 - 2026-10-29 - Brain backup script scripts/fork/backup-brain.sh (merged into develop)
@@ -30,6 +35,8 @@ Updated: 2026-10-30 00:50
 
 ## History
 
+- 2026-10-30 02:05 - app-only merged, 67 focused tests pass, AppImage rebuild started
+- 2026-10-30 01:50 - backup-brain.sh refuses --stop-service from inside Flow; install guide backup step
 - 2026-10-30 00:50 - Service version sync: decision, wording, update runner tested with fakes only
 - 2026-10-30 00:10 - Brain moved into the right panel as a tab; header button with update dot
 - 2026-10-29 23:15 - Sync merged into develop; built server boots, Brain API answers
