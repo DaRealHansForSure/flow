@@ -51,6 +51,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Running background commands and subagents show as a chip at the end of the chat instead of
   a plain line of text, so their Stop button reads as part of one control.
+- Release pages no longer list their files in a table; they link to the install guide
+  instead.
 
 ### Fixed
 
