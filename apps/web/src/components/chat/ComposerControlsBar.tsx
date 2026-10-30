@@ -264,6 +264,8 @@ export function ComposerControlsBar(props: {
         "pe-1",
         TEXT_CONTROL_STATES,
         composerControlsCollapsed ? "min-w-13 shrink text-xs!" : "min-w-13",
+        // Flow: the smaller model label of the mobile app on phones.
+        "max-sm:text-sm",
         missingProviderInstanceId !== null && "text-destructive-foreground",
       )}
       terminalOpen={terminalOpen}

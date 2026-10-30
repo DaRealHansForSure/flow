@@ -79,7 +79,8 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
           />
           <span
             data-composer-control-label
-            className={accessDisplay === "icon" ? "sr-only" : undefined}
+            // Flow: phones show the permission as its icon only, like the mobile app.
+            className={accessDisplay === "icon" ? "sr-only" : "max-sm:sr-only"}
           >
             {permissionModeOption.label}
           </span>
