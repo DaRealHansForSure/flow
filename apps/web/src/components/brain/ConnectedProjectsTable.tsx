@@ -161,7 +161,7 @@ export function ConnectedProjectsTable(props: {
       sortValue: (row) => timestamp(row.lastActivityAt),
       renderCell: (row) => (
         <span className="text-xs text-muted-foreground">
-          {row.lastActivityAt ? formatRelativeTimeLabel(row.lastActivityAt) : "No chats"}
+          {row.lastActivityAt ? formatRelativeTimeLabel(row.lastActivityAt) : "No activity"}
         </span>
       ),
     },
@@ -197,41 +197,51 @@ export function ConnectedProjectsTable(props: {
     },
   ];
 
-  return (
-    <DataTable
-      rows={rows}
-      columns={columns}
-      getRowId={(row) => row.project.id}
-      searchText={(row) =>
-        `${row.project.title} ${row.project.workspaceRoot} ${row.source?.repository ?? ""}`
-      }
+  const connectExisting = (
+    <SearchableSelect
+      label="Connect an existing project"
       searchLabel="Search projects"
-      sort={sort}
-      onSortChange={setSort}
-      countLabel={(count) => (count === 1 ? "1 project" : `${count} projects`)}
-      emptyLabel="Create a project from the sidebar or connect an existing one. Its repository will be added as a source automatically."
-      actions={
-        <SearchableSelect
-          label="Connect an existing project"
-          searchLabel="Search projects"
-          emptyLabel="No matching projects."
-          value=""
-          disabled={busy}
-          options={props.projects
-            .filter((project) => !workspace.projectIds?.includes(project.id))
-            .map((project) => ({ value: project.id, label: project.title }))}
-          onChange={(id) => {
-            const project = props.projects.find((entry) => entry.id === id);
-            if (project) {
-              void send({
-                action: "bindProject",
-                projectId: project.id,
-                workspaceId: workspace.id,
-              });
-            }
-          }}
-        />
-      }
+      emptyLabel="No matching projects."
+      value=""
+      disabled={busy}
+      options={props.projects
+        .filter((project) => !workspace.projectIds?.includes(project.id))
+        .map((project) => ({ value: project.id, label: project.title }))}
+      onChange={(id) => {
+        const project = props.projects.find((entry) => entry.id === id);
+        if (project) {
+          void send({ action: "bindProject", projectId: project.id, workspaceId: workspace.id });
+        }
+      }}
     />
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium">Connected projects</h2>
+          <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+            Projects that use this brain's knowledge. The brain follows their repositories: any
+            checkout of one, opened here or in a coding tool like Claude Code, Codex or Cursor on
+            this computer, reads this brain and adds its conversations as notes.
+          </p>
+        </div>
+        {connectExisting}
+      </div>
+      <DataTable
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.project.id}
+        searchText={(row) =>
+          `${row.project.title} ${row.project.workspaceRoot} ${row.source?.repository ?? ""}`
+        }
+        searchLabel="Search projects"
+        sort={sort}
+        onSortChange={setSort}
+        countLabel={(count) => (count === 1 ? "1 project" : `${count} projects`)}
+        emptyLabel="Create a project from the sidebar or connect an existing one above. Its repository will be added as a source automatically."
+      />
+    </>
   );
 }

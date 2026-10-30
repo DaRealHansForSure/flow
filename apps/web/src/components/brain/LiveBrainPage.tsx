@@ -383,14 +383,6 @@ function BrainController({
         )}
         {workspace && (
           <section className="space-y-4">
-            <div>
-              <h2 className="text-sm font-medium">Connected projects</h2>
-              <p className="mt-1 max-w-prose text-xs text-muted-foreground">
-                Projects that use this brain's knowledge. The brain follows their repositories: any
-                checkout of one, opened here or in a coding tool like Claude Code, Codex or Cursor
-                on this computer, reads this brain and adds its conversations as notes.
-              </p>
-            </div>
             <ConnectedProjectsTable
               workspace={workspace}
               state={state}
