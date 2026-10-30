@@ -15,6 +15,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Build/Plan toggle and the Legacy settings switch, and is available for every provider
   that plans.
 
+- While a chat is in Plan, every command asks first with every provider, even in a chat set
+  to Full access or Auto. The chat's own mode applies again once it leaves Plan.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added

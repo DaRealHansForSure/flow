@@ -1,6 +1,6 @@
 # Worklog
 
-Updated: 2026-10-30 08:50
+Updated: 2026-10-30 09:00
 
 ## Current focus
 
@@ -8,10 +8,10 @@ Updated: 2026-10-30 08:50
 - **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
   accepted, revised or declined with comments; commands always ask while in Plan
 - **Branch:** feat/plan-permission-mode (from develop), one commit per step
-- **Last step done:** Step 1: Plan is the picker's fifth entry (chip, Shift+Tab, /plan);
-  Build/Plan toggle, Legacy switch and the `planModeEnabled` setting removed
-- **Next step:** Step 2: while a chat is in Plan its turns run as Supervised
-  (`apps/server/src/orchestration-v2/RuntimePolicy.ts`), with a test
+- **Last step done:** Step 2: Plan turns run as Supervised for every provider
+  (`RuntimePolicy.ts`); step 1 put Plan in the picker and removed the Legacy switch
+- **Next step:** Step 3: Plan selectable in Settings "Default permissions", an "After the
+  plan" row, new chats always start with the Settings default
 - **Open questions / blockers:** Playwright Chromium missing, so web browser tests do not
   run here; mobile still has its own legacy plan switch (step 7)
 
@@ -30,6 +30,8 @@ Updated: 2026-10-30 08:50
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 09:00 - Plan permission mode step 2 committed (Supervised in Plan)
 
 - 2026-10-30 08:50 - Plan permission mode step 1 committed on feat/plan-permission-mode
 
