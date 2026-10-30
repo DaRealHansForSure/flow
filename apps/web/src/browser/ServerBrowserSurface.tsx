@@ -34,6 +34,7 @@ import {
 import { AgentCursorMark } from "~/components/preview/AgentBrowserCursor";
 import { CommandBlock } from "~/components/CommandBlock";
 import { Button } from "~/components/ui/button";
+import { VISUAL_ZOOM_IDENTITY, zoomVisualAround, type VisualZoom } from "./visualZoom";
 import { Input } from "~/components/ui/input";
 import { toastManager } from "~/components/ui/toast";
 import { cn } from "~/lib/utils";
@@ -162,6 +163,21 @@ export function ServerBrowserSurface(props: {
   } = props;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // Flow: on-screen magnification of the picture; see visualZoom.ts.
+  const [visualZoom, setVisualZoom] = useState<VisualZoom>(VISUAL_ZOOM_IDENTITY);
+  const [visualZoomTabId, setVisualZoomTabId] = useState(tabId);
+  if (visualZoomTabId !== tabId) {
+    setVisualZoomTabId(tabId);
+    setVisualZoom(VISUAL_ZOOM_IDENTITY);
+  }
+  const pinchPointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const pinchRef = useRef<{
+    from: VisualZoom;
+    distance: number;
+    anchor: { x: number; y: number };
+  } | null>(null);
+  // Set from a pinch's second finger until every finger lifts, so no finger reaches the page.
+  const pinchingRef = useRef(false);
   const keySentRef = useRef(false);
   const clientRef = useRef<PreviewStreamClient | null>(null);
   const viewportRef = useRef<PreviewStreamViewport | null>(null);
@@ -465,6 +481,23 @@ export function ServerBrowserSurface(props: {
     if (!canvas) return;
     // Registered natively: React's wheel listener is passive and cannot stop the panel scrolling.
     const onWheel = (event: WheelEvent) => {
+      // Ctrl+wheel and trackpad pinches magnify the picture here instead of zooming the page.
+      const surface = canvas.parentElement?.getBoundingClientRect();
+      if (event.ctrlKey && surface) {
+        event.preventDefault();
+        const at = { x: event.clientX - surface.left, y: event.clientY - surface.top };
+        setVisualZoom((current) =>
+          zoomVisualAround({
+            from: current,
+            scale: current.scale * Math.exp(-event.deltaY * 0.01),
+            anchor: at,
+            point: at,
+            width: surface.width,
+            height: surface.height,
+          }),
+        );
+        return;
+      }
       const point = pagePoint(event.clientX, event.clientY, false);
       if (!point) return;
       event.preventDefault();
@@ -488,7 +521,50 @@ export function ServerBrowserSurface(props: {
     [],
   );
 
+  /** Two fingers pinch and pan the magnified picture; returns whether the event was theirs. */
+  const handlePinch = (event: PointerEvent<HTMLCanvasElement>): boolean => {
+    if (event.pointerType !== "touch") return false;
+    const surface = event.currentTarget.parentElement?.getBoundingClientRect();
+    if (!surface) return false;
+    const pointers = pinchPointersRef.current;
+    const at = { x: event.clientX - surface.left, y: event.clientY - surface.top };
+    if (event.type === "pointerup" || event.type === "pointercancel") {
+      pointers.delete(event.pointerId);
+      if (pointers.size < 2) pinchRef.current = null;
+      const pinching = pinchingRef.current;
+      if (pointers.size === 0) pinchingRef.current = false;
+      return pinching;
+    }
+    if (event.type === "pointerdown" || pointers.has(event.pointerId)) {
+      pointers.set(event.pointerId, at);
+    }
+    const [first, second] = [...pointers.values()];
+    if (!first || !second) return pinchingRef.current;
+    const distance = Math.hypot(first.x - second.x, first.y - second.y);
+    const middle = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
+    const pinch = pinchRef.current;
+    if (event.type === "pointerdown" || !pinch) {
+      pinchRef.current = { from: visualZoom, distance: Math.max(distance, 1), anchor: middle };
+      pinchingRef.current = true;
+      // The first finger's tap or scroll ends here.
+      touchRef.current = probeRef.current = null;
+      return true;
+    }
+    setVisualZoom(
+      zoomVisualAround({
+        from: pinch.from,
+        scale: (pinch.from.scale * distance) / pinch.distance,
+        anchor: pinch.anchor,
+        point: middle,
+        width: surface.width,
+        height: surface.height,
+      }),
+    );
+    return true;
+  };
+
   const handlePointer = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (handlePinch(event)) return;
     if (controlRef.current?.controller !== "you") return;
     const { type, pointerId, clientX, clientY } = event;
     const cancelled = type === "pointercancel";
@@ -726,7 +802,7 @@ export function ServerBrowserSurface(props: {
           </Button>
         ) : null}
       </div>
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
         {pdfUrl ? (
           <embed
             src={pdfUrl}
@@ -737,7 +813,14 @@ export function ServerBrowserSurface(props: {
         ) : null}
         <canvas
           ref={canvasRef}
-          className="block size-full touch-none object-contain"
+          className="block size-full origin-top-left touch-none object-contain"
+          style={
+            visualZoom.scale === 1
+              ? undefined
+              : {
+                  transform: `translate(${visualZoom.x}px, ${visualZoom.y}px) scale(${visualZoom.scale})`,
+                }
+          }
           onPointerDown={handlePointer}
           onPointerMove={handlePointer}
           onPointerUp={handlePointer}
@@ -745,6 +828,18 @@ export function ServerBrowserSurface(props: {
           onMouseDown={(event) => event.preventDefault()}
           onContextMenu={(event) => event.preventDefault()}
         />
+        {visualZoom.scale > 1 ? (
+          <Button
+            type="button"
+            size="xs"
+            variant="overlay"
+            className="absolute top-2 right-2 z-20"
+            aria-label="Reset zoom"
+            onClick={() => setVisualZoom(VISUAL_ZOOM_IDENTITY)}
+          >
+            {Math.round(visualZoom.scale * 100)}% · Reset
+          </Button>
+        ) : null}
         {!pdfUrl && agentCursor && control?.controller !== "you" ? (
           <AgentCursorMark
             {...agentCursor}

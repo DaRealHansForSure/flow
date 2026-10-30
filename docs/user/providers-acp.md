@@ -83,7 +83,7 @@ your own model IDs under **Custom models** in the instance settings.
 
 Other settings the agent offers, such as reasoning effort or approval mode, appear in the
 composer's model options menu like they do for built-in providers. Agents with their own plan and
-build modes follow T3 Code's Plan and Build toggle. Models and options that change while an agent
+build modes follow T3 Code's Plan permission mode. Models and options that change while an agent
 is running update the picker without waiting for another provider probe.
 
 ## Commands and skills

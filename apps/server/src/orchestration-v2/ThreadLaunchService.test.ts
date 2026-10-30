@@ -205,6 +205,7 @@ function makeHarness(options: HarnessOptions = {}) {
       remoteExists: options.remoteExists ?? (() => Effect.succeed(true)),
       remoteBranchExists: () => Effect.succeed(true),
       removeWorktree,
+      currentBranch: () => Effect.succeed(null),
       ...options.git,
     }),
     Layer.succeed(ProjectSetupScriptRunner.ProjectSetupScriptRunner, {
@@ -466,6 +467,26 @@ it.effect("runs a thread-bound automation on the provider the thread uses now", 
     assert.deepStrictEqual(run?.modelSelection, claudeModelSelection);
     assert.deepStrictEqual(projection.thread.modelSelection, claudeModelSelection);
   }).pipe(Effect.provide(Layer.mergeAll(harness.layer, layerScheduledTasks)));
+});
+
+it.effect("records the checked-out branch on a thread launched at the project root", () => {
+  const harness = makeHarness({ git: { currentBranch: () => Effect.succeed("develop") } });
+  return Effect.gen(function* () {
+    const launches = yield* ThreadLaunch.ThreadLaunchService;
+    const threads = yield* ThreadManagement.ThreadManagementService;
+    const checkout = yield* launches.launch(
+      launchInput({ command: "command:root-checkout", thread: "thread:root-checkout" }),
+    );
+    const picked = yield* launches.launch(
+      launchInput({
+        command: "command:root-picked",
+        thread: "thread:root-picked",
+        workspace: { type: "root", branch: "feature" },
+      }),
+    );
+    assert.equal((yield* threads.getThreadProjection(checkout.threadId)).thread.branch, "develop");
+    assert.equal((yield* threads.getThreadProjection(picked.threadId)).thread.branch, "feature");
+  }).pipe(Effect.provide(harness.layer));
 });
 
 it.effect("retains automation and sender attribution while a message waits in the queue", () => {

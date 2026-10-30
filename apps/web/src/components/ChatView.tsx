@@ -4,7 +4,8 @@ import { workspaceAreaProps } from "../lib/workspaceFocus";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
 import { queuedRunEditBlockedReason } from "@t3tools/client-runtime/queued-run-edit";
-import { ScrollToEndButton, WorkspaceFileDropOverlay } from "./chat/TimelineOverlays";
+import { WorkspaceFileDropOverlay } from "./chat/TimelineOverlays";
+import { ComposerStatusControl } from "./chat/ComposerStatusControl";
 import { usePasteToFocusComposer } from "./chat/usePasteToFocusComposer";
 import { announcedRun, isDetailBehindShell } from "./chat/threadActivityAnnouncement";
 import {
@@ -73,6 +74,7 @@ import {
   type ThreadId,
   ProviderInteractionMode,
   resolveIdleCompaction,
+  type PlanId,
   RuntimeMode,
 } from "@t3tools/contracts";
 import {
@@ -179,7 +181,12 @@ import { GuestPendingMessages } from "./chat/GuestShareControls";
 import { useDeviceState } from "~/state/device";
 import { BranchToolbar, type BranchToolbarHandle } from "./BranchToolbar";
 import { ComposerContextPermissions } from "./ComposerContextPermissions";
-import { resolveCompatibleRuntimeMode } from "./chat/runtimeModeConfig";
+import { resolveCompatibleRuntimeMode, resolvePermissionMode } from "./chat/runtimeModeConfig";
+import { PlanReviewProvider } from "./chat/planReview";
+import { deriveProposedPlanVersions } from "@t3tools/client-runtime/state/plan-versions";
+import { buildPlanReviewComment } from "./chat/planComments";
+import { missingProviderBannerItem } from "./chat/missingProviderBanner";
+import { BrainHeaderButton } from "./brain/BrainHeaderButton";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import { isEditableFocused } from "../lib/editableFocus";
 import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
@@ -188,7 +195,7 @@ import { cn } from "~/lib/utils";
 import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
 import { toastManager } from "./ui/toast";
 import { projectScriptIdFromCommand } from "~/projectScripts";
-import { newMessageId } from "~/lib/utils";
+import { newMessageId, randomUUID } from "~/lib/utils";
 import {
   NO_PROVIDER_MODEL_SELECTION,
   providerInstanceEntriesFor,
@@ -920,8 +927,11 @@ export default function ChatView(props: ChatViewProps) {
   const [, setThreadErrorBannerDismissTick] = useState(0);
   const threadErrorIsServerRuntimeError =
     localServerError === null && visibleThreadError === serverRuntime?.lastError;
-  const defaultRuntimeMode = resolveProjectSettings(settings, activeThread?.projectId ?? null)
-    .settings.defaultRuntimeMode;
+  const projectDefaults = resolveProjectSettings(
+    settings,
+    activeThread?.projectId ?? null,
+  ).settings;
+  const defaultRuntimeMode = projectDefaults.defaultRuntimeMode;
   const runtimeMode =
     composerRuntimeMode ??
     (isServerThread ? activeThread?.runtimeMode : undefined) ??
@@ -1295,12 +1305,31 @@ export default function ChatView(props: ChatViewProps) {
   const selectedProvider = selectedProviderEntry?.driverKind ?? requestedDriverKind;
   const activeProviderInstanceId = selectedProviderEntry?.instanceId ?? null;
   const activeProviderStatus = selectedProviderEntry?.snapshot ?? null;
-  const { enabled: interactionModeEnabled, interactionMode } = resolveComposerInteractionMode({
-    planModeEnabled: settings.planModeEnabled,
-    provider: activeProviderStatus,
-    interactionMode:
-      composerInteractionMode ?? activeThread?.interactionMode ?? DEFAULT_INTERACTION_MODE,
-  });
+  const requestedThreadInteractionMode =
+    composerInteractionMode ?? activeThread?.interactionMode ?? DEFAULT_INTERACTION_MODE;
+  // Flow: without a provider here the composer falls back to another instance and decides
+  // whether it plans; vetoing Plan here as well made picking it do nothing.
+  const { enabled: interactionModeEnabled, interactionMode } =
+    activeProviderStatus === null
+      ? { enabled: true, interactionMode: requestedThreadInteractionMode }
+      : resolveComposerInteractionMode({
+          provider: activeProviderStatus,
+          interactionMode: requestedThreadInteractionMode,
+        });
+  // Flow: the chat's own provider instance, when it is not set up or turned off here.
+  const missingThreadProviderInstanceId = (() => {
+    const instanceId = isServerThread
+      ? (activeRuntime?.providerInstanceId ?? activeThreadModelInstanceId)
+      : undefined;
+    if (instanceId === undefined) {
+      return null;
+    }
+    return providerInstanceEntries.some(
+      (entry) => entry.instanceId === instanceId && entry.enabled && entry.isAvailable,
+    )
+      ? null
+      : instanceId;
+  })();
   const conversationProviderStatus =
     providerStatuses.find((status) => status.instanceId === activeRuntime?.providerInstanceId) ??
     activeProviderStatus;
@@ -1357,12 +1386,48 @@ export default function ChatView(props: ChatViewProps) {
   const onHeldRequestIdsChange = useStableCallback((requestIds: ReadonlySet<string>) => {
     setHeldApprovalRequestIds((current) => (shallow(current, requestIds) ? current : requestIds));
   });
+  // Flow: the open plan wins over a newer closed one, so a reopened older plan is the one answered.
+  const planVersions = deriveProposedPlanVersions(serverProjection);
+  const openPlanVersion = planVersions.findLast((version) => version.status === "active");
   const activeProposedPlan = (() => {
     if (!latestRunSettled) {
       return null;
     }
+    if (openPlanVersion !== undefined) {
+      return {
+        id: openPlanVersion.id,
+        runId: openPlanVersion.runId,
+        planMarkdown: openPlanVersion.planMarkdown,
+        status: openPlanVersion.status,
+        createdAt: openPlanVersion.updatedAt,
+        updatedAt: openPlanVersion.updatedAt,
+      };
+    }
     return findLatestProposedPlan(serverProjection, activeLatestRun?.runId ?? null);
   })();
+  // Flow: the Plan tab opens on its own for each new plan.
+  const openPlanSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "plan");
+    }
+  });
+  const openAgentsSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "agents");
+    }
+  });
+  const autoOpenPlanId = hasActionableProposedPlan(activeProposedPlan)
+    ? (activeProposedPlan?.id ?? null)
+    : null;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the Plan tab in the right panel store once per new proposed plan
+  useEffect(() => {
+    if (activeThreadRef === null || autoOpenPlanId === null) {
+      return;
+    }
+    useRightPanelStore
+      .getState()
+      .openPlanByDefault(activeThreadRef, autoOpenPlanId, !shouldUsePlanSidebarSheet);
+  }, [activeThreadRef, autoOpenPlanId, shouldUsePlanSidebarSheet]);
   const showPlanFollowUpPrompt = shouldShowPlanFollowUpPrompt({
     pendingUserInputCount: pendingUserInputs.length,
     interactionMode,
@@ -2579,6 +2644,15 @@ export default function ChatView(props: ChatViewProps) {
     const limitRecoveryItems = limitRecoveryBanner === null ? [] : [limitRecoveryBanner];
     const usageLimitsItems = usageLimitsBanner === null ? [] : [usageLimitsBanner];
     const projectCloneItems = projectCloneBannerItem === null ? [] : [projectCloneBannerItem];
+    const missingProviderItems =
+      missingThreadProviderInstanceId === null
+        ? []
+        : [
+            missingProviderBannerItem({
+              instanceId: missingThreadProviderInstanceId,
+              onOpenSettings: () => void navigate({ to: "/settings/providers" }),
+            }),
+          ];
     if (!localCheckoutBranchMismatch || !showBranchMismatchBanner || !activeBranchMismatchKey) {
       return [
         ...feedbackBannerItems,
@@ -2586,6 +2660,7 @@ export default function ChatView(props: ChatViewProps) {
         ...limitRecoveryItems,
         ...usageLimitsItems,
         ...projectCloneItems,
+        ...missingProviderItems,
         ...systemComposerBannerItems,
       ];
     }
@@ -2595,6 +2670,7 @@ export default function ChatView(props: ChatViewProps) {
       ...limitRecoveryItems,
       ...usageLimitsItems,
       ...projectCloneItems,
+      ...missingProviderItems,
       ...systemComposerBannerItems,
       branchMismatchBannerItem({
         mismatchKey: activeBranchMismatchKey,
@@ -2807,7 +2883,7 @@ export default function ChatView(props: ChatViewProps) {
     activeEnvironmentUnavailable,
     defaultRuntimeMode,
   });
-  const { onSend: sendComposerMessage } = useComposerSend({
+  const { onSend: sendComposerMessage, acceptPlan } = useComposerSend({
     environmentId,
     routeThreadKey,
     currentRouteThreadKeyRef,
@@ -2884,7 +2960,8 @@ export default function ChatView(props: ChatViewProps) {
   // Fork: the first message in a project asks which Brain the project belongs to.
   const { ensureBrainChoice, brainSetupDialog } = useProjectBrainSetup();
   const confirmProjectBrain = async (): Promise<boolean> => {
-    if (!activeProject) {
+    // No project chats pick their Brain per chat in the hero, so the project is never asked about.
+    if (!activeProject || activeProjectIsScratch) {
       return true;
     }
     const sendRouteThreadKey = routeThreadKey;
@@ -2910,6 +2987,75 @@ export default function ChatView(props: ChatViewProps) {
     await implementPlanInNewThread();
   };
   const onImplementPlanInNewThreadStable = useStableCallback(onImplementPlanInNewThread);
+  // Flow: Accept, Revise and Decline for the open plan, shared by the plan card and the Plan tab.
+  const declineProposedPlan = useAtomCommand(threadEnvironment.declineProposedPlan);
+  const acceptPlanStable = useStableCallback(async (nextRuntimeMode: RuntimeMode) => {
+    if (await confirmProjectBrain()) {
+      await acceptPlan(nextRuntimeMode);
+    }
+  });
+  const declinePlanStable = useStableCallback(() => {
+    if (activeThread && activeProposedPlan) {
+      void declineProposedPlan({
+        environmentId,
+        input: { threadId: activeThread.id, planId: activeProposedPlan.id },
+      });
+    }
+  });
+  const reopenProposedPlan = useAtomCommand(threadEnvironment.reopenProposedPlan);
+  const reopenPlanStable = useStableCallback(async (planId: PlanId) => {
+    if (!activeThread) {
+      return;
+    }
+    const result = await reopenProposedPlan({
+      environmentId,
+      input: { threadId: activeThread.id, planId },
+    });
+    if (result._tag === "Success") {
+      handleInteractionModeChange("plan");
+    }
+  });
+  const addComposerReviewComment = useComposerDraftStore((store) => store.addReviewComment);
+  const commentOnPlanStable = useStableCallback((passage: string, note: string) => {
+    if (activeProposedPlan) {
+      addComposerReviewComment(
+        composerDraftTarget,
+        buildPlanReviewComment({
+          id: `plan-comment:${randomUUID()}`,
+          passage,
+          note,
+        }),
+      );
+    }
+  });
+  const reviewablePlanId =
+    isServerThread && hasActionableProposedPlan(activeProposedPlan)
+      ? (activeProposedPlan?.id ?? null)
+      : null;
+  const { modes: reviewRuntimeModes, mode: reviewRuntimeMode } = resolveCompatibleRuntimeMode(
+    runtimeMode,
+    activeProviderStatus?.supportedRuntimeModes,
+  );
+  const reviewDisabled = isSendBusy || activeEnvironmentUnavailable;
+  const planReviewState = {
+    versions: planVersions,
+    reopen:
+      isServerThread && !reviewDisabled ? (planId: PlanId) => void reopenPlanStable(planId) : null,
+    review:
+      reviewablePlanId === null
+        ? null
+        : {
+            planId: reviewablePlanId,
+            runtimeMode: reviewRuntimeMode,
+            runtimeModes: reviewRuntimeModes,
+            disabled: reviewDisabled,
+            accept: (mode: RuntimeMode) => void acceptPlanStable(mode),
+            acceptInNewThread: () => void onImplementPlanInNewThreadStable(),
+            revise: focusComposerStable,
+            decline: declinePlanStable,
+            comment: commentOnPlanStable,
+          },
+  };
 
   const onWorktreeSetupWorkLocally = () => {
     if (!worktreeSetup || worktreeSetup.phase !== "running" || !draftId) {
@@ -3031,11 +3177,25 @@ export default function ChatView(props: ChatViewProps) {
   };
   const onExpandTimelineImageStable = useStableCallback(onExpandTimelineImage);
   const shownThreadSyncPhase = activeEnvironmentUnavailable ? null : delayedThreadSyncPhase;
-  const hasThreadNow =
-    childInputNow !== null ||
-    backgroundWorkNow !== null ||
-    goalNow !== null ||
-    shownThreadSyncPhase !== null;
+  const browserSurfaceIds = rightPanelState.surfaces.flatMap((surface) =>
+    surface.kind === "preview" && surface.resourceId ? [surface.id] : [],
+  );
+  const browserNow =
+    activeThreadRef &&
+    browserSurfaceIds.length > 0 &&
+    shownPreviewMiniPlayer === null &&
+    !(rightPanelOpen && activeRightPanelKind === "preview")
+      ? {
+          count: browserSurfaceIds.length,
+          unseen: rightPanelState.unseenActivity === true,
+          // The newest tab is the one the agent or the user opened last.
+          onOpen: () =>
+            useRightPanelStore
+              .getState()
+              .activateSurface(activeThreadRef, browserSurfaceIds.at(-1)!),
+        }
+      : null;
+  const hasThreadNow = childInputNow !== null || goalNow !== null || shownThreadSyncPhase !== null;
   const queuedRunCount = serverProjection ? getUserQueuedThreadRuns(serverProjection).length : 0;
   // The queue control is mounted for every server thread but joins the footer only while it shows
   // something, by its own rule: an optimistic message stops counting once the server has it.
@@ -3046,13 +3206,12 @@ export default function ChatView(props: ChatViewProps) {
         message.inputIntent === "queued_turn" &&
         !serverProjection?.messages.some((committed) => committed.id === message.id),
     );
-  const scrollToEndSummary =
-    [
-      childInputNow === null ? null : "Subagent waiting",
-      queuedRunCount === 0 ? null : `${queuedRunCount} queued`,
-    ]
-      .filter((part) => part !== null)
-      .join(" · ") || null;
+  // Flow: the status control above the composer stays put; leave room for it at the end.
+  const statusControlPinned =
+    backgroundWorkNow !== null ||
+    activeWorkStartedAt !== null ||
+    browserNow !== null ||
+    queuedRunCount > 0;
   // The end of the timeline holds the thread's present and next turns: what it is doing now,
   // its lifecycle status, guest messages awaiting you, then your queued messages.
   const timelineFooter =
@@ -3060,7 +3219,8 @@ export default function ChatView(props: ChatViewProps) {
     !hasThreadNow &&
     threadStatusLine === null &&
     pendingGuestMessageCount === 0 &&
-    !hasQueuedTurns ? null : (
+    !hasQueuedTurns &&
+    !statusControlPinned ? null : (
       <>
         {pendingHandoff === null ? null : (
           <div className="chat-content-lane">
@@ -3075,7 +3235,7 @@ export default function ChatView(props: ChatViewProps) {
         <ThreadNow
           key={routeThreadKey}
           attention={childInputNow}
-          work={backgroundWorkNow}
+          work={null}
           syncPhase={shownThreadSyncPhase}
           goal={goalNow}
         />
@@ -3088,6 +3248,7 @@ export default function ChatView(props: ChatViewProps) {
           />
         ) : null}
         {hasQueuedTurns ? queuedRunsControl : null}
+        {statusControlPinned ? <div aria-hidden className="h-12" /> : null}
       </>
     );
 
@@ -3186,10 +3347,11 @@ export default function ChatView(props: ChatViewProps) {
         onOpenFile: openFileSurfaceStable,
         onPendingChange: handleFilePendingChangeStable,
       }}
-      brain={{ threadId: brainThreadId, chatBrain }}
+      brain={{ threadId: brainThreadId, chatBrain, readOnly: activeProjectIsScratch }}
+      plan={{ plan: openPlanVersion ?? planVersions.at(-1) ?? null, cwd: gitCwd ?? undefined }}
     />
   ) : null;
-  const panelToggleControlProps = {
+  const panelToggleBaseProps = {
     terminalAvailable: activeProject !== null,
     terminalOpen: terminalUiState.terminalOpen,
     terminalShortcutLabel: shortcutLabelForCommand(keybindings, "terminal.toggle"),
@@ -3203,6 +3365,15 @@ export default function ChatView(props: ChatViewProps) {
     onToggleTerminal: toggleTerminalVisibilityStable,
     onToggleThreadPanel: toggleThreadPanelStable,
     onToggleRightPanel: toggleRightPanelStable,
+    rightPanelUnseen: !rightPanelOpen && rightPanelState.unseenActivity === true,
+  } satisfies PanelLayoutControlsProps;
+  const panelToggleControlProps = {
+    ...panelToggleBaseProps,
+    // Flow: opens the chat's Brain tab; hidden for a chat without a Brain, and while the panel
+    // is open, where the Brain tab and the + menu already reach it.
+    ...(activeThreadRef && !rightPanelOpen
+      ? { brainControl: <BrainHeaderButton threadRef={activeThreadRef} /> }
+      : {}),
   } satisfies PanelLayoutControlsProps;
   const panelToggleControls = (
     <PanelLayoutControls
@@ -3268,7 +3439,7 @@ export default function ChatView(props: ChatViewProps) {
           {isElectron && rightPanelControlsAtRoot ? (
             <span
               aria-hidden
-              className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] h-[var(--workspace-topbar-height)] w-28 [-webkit-app-region:no-drag]"
+              className="pointer-events-none fixed top-[var(--workspace-controls-top)] right-[var(--workspace-controls-right)] h-[var(--workspace-topbar-height)] w-[calc(var(--workspace-titlebar-controls-width,7rem)+0.25rem)] [-webkit-app-region:no-drag]"
             />
           ) : null}
           {!rightPanelControlsAtRoot && !rightPanelControlsInPanel ? panelLayoutControls : null}
@@ -3427,10 +3598,14 @@ export default function ChatView(props: ChatViewProps) {
                   : { historyControls: threadHistoryControls })}
               />
 
-              {showScrollToBottom && !isThreadFindActive && (
-                <ScrollToEndButton
+              {isThreadFindActive ? null : (
+                <ComposerStatusControl
                   bottom={scrollToEndClearance + 4}
-                  summary={scrollToEndSummary}
+                  work={backgroundWorkNow}
+                  workingSince={activeWorkStartedAt}
+                  browsers={browserNow}
+                  queuedCount={queuedRunCount}
+                  showScrollToEnd={showScrollToBottom}
                   onScrollToEnd={() => scrollToEnd(true)}
                 />
               )}
@@ -3444,10 +3619,13 @@ export default function ChatView(props: ChatViewProps) {
               }}
               inert={isRevertingCheckpoint}
               data-chat-composer-overlay="true"
+              data-composer-docked={isDraftHeroState ? undefined : "true"}
               className={
                 isDraftHeroState
                   ? "pointer-events-none absolute inset-0 z-20 flex items-center"
-                  : "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
+                  : // Flow: on a phone the composer sits on the bottom edge over an opaque base, so
+                    // the chat never shows below or beside it.
+                    "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 max-sm:bg-linear-to-t max-sm:from-background max-sm:from-60% max-sm:to-transparent sm:pt-2"
               }
             >
               <div ref={draftHeroTransitionGroupRef} className="chat-composer-lane w-full">
@@ -3590,7 +3768,11 @@ export default function ChatView(props: ChatViewProps) {
                                 activeEnvironmentUnavailable ? null : threadSyncPhase
                               }
                               runtimeMode={runtimeMode}
-                              defaultRuntimeMode={defaultRuntimeMode}
+                              missingProviderInstanceId={missingThreadProviderInstanceId}
+                              defaultPermissionMode={resolvePermissionMode(
+                                defaultRuntimeMode,
+                                projectDefaults.defaultInteractionMode,
+                              )}
                               interactionMode={interactionMode}
                               lockedProvider={modelPickerLockedProvider}
                               providerStatuses={providerStatuses as ServerProvider[]}
@@ -3713,12 +3895,13 @@ export default function ChatView(props: ChatViewProps) {
                                   : {
                                       trailing: (
                                         <ComposerContextPermissions
-                                          runtimeMode={
+                                          permissionMode={resolvePermissionMode(
                                             resolveCompatibleRuntimeMode(
                                               runtimeMode,
                                               activeProviderStatus?.supportedRuntimeModes,
-                                            ).mode
-                                          }
+                                            ).mode,
+                                            interactionMode,
+                                          )}
                                           onOpen={openComposerPermissionsStable}
                                         />
                                       ),
@@ -3731,7 +3914,7 @@ export default function ChatView(props: ChatViewProps) {
                     </ComposerSurface.Shell>
                     <div
                       aria-hidden
-                      className="h-[calc(env(safe-area-inset-bottom)+1rem)] sm:h-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+                      className="h-[env(safe-area-inset-bottom)] sm:h-[calc(env(safe-area-inset-bottom)+1.25rem)]"
                     />
                   </div>
                 </div>
@@ -3866,7 +4049,11 @@ export default function ChatView(props: ChatViewProps) {
                   maximized={rightPanelMaximized}
                   onToggle={toggleRightPanelMaximizedStable}
                 />
-                {panelToggleControls}
+                {/* Flow: the open panel has its Brain tab and + menu, so no Brain toggle here. */}
+                <PanelLayoutControls
+                  {...panelToggleBaseProps}
+                  showThreadPanelControl={!inlineRightPanelOwnsTitleBar}
+                />
               </div>
             ) : null
           }
@@ -3898,6 +4085,8 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
           onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
+          onAddPlan={planVersions.length > 0 ? openPlanSurfaceStable : undefined}
+          onAddAgents={isServerThread ? openAgentsSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}
@@ -3922,7 +4111,7 @@ export default function ChatView(props: ChatViewProps) {
       cwd={activeWorkspaceRoot}
       checkpoints={serverProjection?.checkpoints}
     >
-      {content}
+      <PlanReviewProvider value={planReviewState}>{content}</PlanReviewProvider>
     </FileMetadataThreadProvider>
   );
 }

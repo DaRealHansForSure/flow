@@ -20,6 +20,7 @@ import {
 } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import * as Metric from "effect/Metric";
 import * as Result from "effect/Result";
@@ -593,6 +594,133 @@ it.effect("implements a proposed plan that the command projection leaves out", (
     });
 
     assert.equal((yield* projections.getPlan(threadId, planId))?.status, "completed");
+  }).pipe(Effect.provide(layerTest)),
+);
+
+it.effect("declines an active proposed plan, which then cannot be implemented", () =>
+  Effect.gen(function* () {
+    const orchestrator = yield* Orchestrator.OrchestratorV2;
+    const projections = yield* ProjectionStore.ProjectionStoreV2;
+    const threadId = ThreadId.make("thread:decline-plan");
+    const planId = PlanId.make("plan:decline-plan");
+    const now = yield* DateTime.now;
+    yield* orchestrator.dispatch({
+      type: "thread.create",
+      commandId: CommandId.make("create-decline-plan"),
+      threadId,
+      projectId: ProjectId.make("project:decline-plan"),
+      title: "Plan",
+      modelSelection,
+      runtimeMode: "full-access",
+      interactionMode: "plan",
+      branch: null,
+      worktreePath: null,
+      createdBy: "user",
+      creationSource: "web",
+    });
+    yield* projections.apply({
+      id: EventId.make("plan:decline-plan"),
+      type: "plan.updated",
+      threadId,
+      occurredAt: now,
+      payload: {
+        id: planId,
+        threadId,
+        runId: null,
+        nodeId: NodeId.make("node:decline-plan"),
+        kind: "proposed_plan",
+        status: "active",
+        markdown: "# Plan\n\n1. Do the thing.",
+      },
+    });
+
+    yield* orchestrator.dispatch({
+      type: "thread.proposed-plan.decline",
+      commandId: CommandId.make("decline-plan"),
+      threadId,
+      planId,
+    });
+    assert.equal((yield* projections.getPlan(threadId, planId))?.status, "declined");
+
+    const declineAgain = yield* Effect.exit(
+      orchestrator.dispatch({
+        type: "thread.proposed-plan.decline",
+        commandId: CommandId.make("decline-plan-again"),
+        threadId,
+        planId,
+      }),
+    );
+    assert.isTrue(Exit.isFailure(declineAgain));
+    const implement = yield* Effect.exit(
+      orchestrator.dispatch({
+        type: "message.dispatch",
+        commandId: CommandId.make("implement-declined-plan"),
+        threadId,
+        messageId: MessageId.make("implement-declined-plan-input"),
+        text: "Implement the plan.",
+        attachments: [],
+        sourcePlanRef: { threadId, planId },
+        dispatchMode: { type: "defer_start" },
+        createdBy: "user",
+        creationSource: "web",
+      }),
+    );
+    assert.isTrue(Exit.isFailure(implement));
+  }).pipe(Effect.provide(layerTest)),
+);
+
+it.effect("reopens a closed proposed plan and replaces the open one", () =>
+  Effect.gen(function* () {
+    const orchestrator = yield* Orchestrator.OrchestratorV2;
+    const projections = yield* ProjectionStore.ProjectionStoreV2;
+    const threadId = ThreadId.make("thread:reopen-plan");
+    const now = yield* DateTime.now;
+    yield* orchestrator.dispatch({
+      type: "thread.create",
+      commandId: CommandId.make("create-reopen-plan"),
+      threadId,
+      projectId: ProjectId.make("project:reopen-plan"),
+      title: "Plan",
+      modelSelection,
+      runtimeMode: "full-access",
+      interactionMode: "plan",
+      branch: null,
+      worktreePath: null,
+      createdBy: "user",
+      creationSource: "web",
+    });
+    const declinedPlanId = PlanId.make("plan:reopen-declined");
+    const openPlanId = PlanId.make("plan:reopen-open");
+    for (const [planId, status] of [
+      [declinedPlanId, "declined"],
+      [openPlanId, "active"],
+    ] as const) {
+      yield* projections.apply({
+        id: EventId.make(`event:${planId}`),
+        type: "plan.updated",
+        threadId,
+        occurredAt: now,
+        payload: {
+          id: planId,
+          threadId,
+          runId: null,
+          nodeId: NodeId.make(`node:${planId}`),
+          kind: "proposed_plan",
+          status,
+          markdown: "# Plan",
+        },
+      });
+    }
+
+    yield* orchestrator.dispatch({
+      type: "thread.proposed-plan.reopen",
+      commandId: CommandId.make("reopen-plan"),
+      threadId,
+      planId: declinedPlanId,
+    });
+
+    assert.equal((yield* projections.getPlan(threadId, declinedPlanId))?.status, "active");
+    assert.equal((yield* projections.getPlan(threadId, openPlanId))?.status, "superseded");
   }).pipe(Effect.provide(layerTest)),
 );
 

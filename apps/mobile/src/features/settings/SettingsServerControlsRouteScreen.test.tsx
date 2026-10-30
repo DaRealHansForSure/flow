@@ -64,7 +64,10 @@ vi.mock("../../state/environments", () => ({ useEnvironments: () => ({ environme
 vi.mock("../../state/use-atom-command", () => ({
   useAtomCommand: () => mocks.updateSettings,
 }));
-vi.mock("../threads/thread-settings-options", () => ({ RUNTIME_MODE_CHOICES: [] }));
+vi.mock("../threads/thread-settings-options", () => ({
+  RUNTIME_MODE_CHOICES: [],
+  PLAN_PERMISSION_CHOICE: { label: "Plan", description: "Plan first." },
+}));
 vi.mock("../../components/ui/ScreenScrollView", () => ({ ScreenScrollView: Children }));
 vi.mock("../../components/ui/AppText", () => ({ AppText: Children }));
 vi.mock("../../components/ui/Button", () => ({

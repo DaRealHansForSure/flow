@@ -1,4 +1,9 @@
-import { memo, type MouseEventHandler, type PointerEventHandler } from "react";
+import {
+  memo,
+  type MouseEventHandler,
+  type PointerEvent as ReactPointerEvent,
+  type PointerEventHandler,
+} from "react";
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, Minimize2Icon, PlayIcon } from "lucide-react";
 import { CornerUpRight, ListPlus } from "lucide";
 import { MorphIcon } from "~/components/MorphIcon";
@@ -8,10 +13,21 @@ import { cn, isMacPlatform } from "~/lib/utils";
 import { useShortcutModifierState } from "../../shortcutModifierState";
 import { StageBackdropButtonArt, useSidebarStageBackdropVariant } from "../SidebarStageBackdrop";
 import { Button } from "../ui/button";
-import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
+import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "../ui/menu";
 import { Spinner } from "../ui/spinner";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { composerFloatingLayerProps } from "./composerEventScope";
+import { useSendFollowUpMenu } from "./useSendFollowUpMenu";
+import { usePlanReview } from "./planReview";
+import { runtimeModeConfig } from "./runtimeModeConfig";
 import {
   alternateComposerDispatchAction,
   resolveComposerDispatchMode,
@@ -45,6 +61,8 @@ interface ComposerPrimaryActionsProps {
   preserveComposerFocusOnPointerDown?: boolean;
   isEditingQueuedMessage?: boolean;
   onSubmitMessage?: MouseEventHandler<HTMLButtonElement>;
+  /** Flow: sends with an explicit follow-up choice from the long-press menu. */
+  onSendWithMode?: (mode: "steer" | "queue") => void;
   onResume?: () => void;
   onPreviousPendingQuestion: () => void;
   onInterrupt: () => void;
@@ -99,6 +117,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
   preserveComposerFocusOnPointerDown = false,
   isEditingQueuedMessage = false,
   onSubmitMessage,
+  onSendWithMode,
   onResume,
   onPreviousPendingQuestion,
   onInterrupt,
@@ -107,6 +126,17 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
   keepFullHistory = false,
   onToggleKeepFullHistory,
 }: ComposerPrimaryActionsProps) {
+  const { review: planReview } = usePlanReview();
+  const {
+    open: followUpMenuOpen,
+    setOpen: setFollowUpMenuOpen,
+    anchor: followUpMenuAnchor,
+    setAnchor: setFollowUpMenuAnchor,
+    onPointerDown: startFollowUpPress,
+    onContextMenu: openFollowUpFromContextMenu,
+    cancelPress: cancelFollowUpPress,
+    consumeLongPress: consumeFollowUpLongPress,
+  } = useSendFollowUpMenu();
   const pointerFocusProps = preserveComposerFocusOnPointerDown
     ? { onPointerDown: preventPointerFocus }
     : undefined;
@@ -132,7 +162,8 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
             type="button"
             className={cn(
               "flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-destructive/90 text-white shadow-xs shadow-destructive/24 inset-shadow-control-highlight transition-colors duration-150 hover:bg-destructive active:inset-shadow-control-pressed active:shadow-none [&_svg]:pointer-events-none",
-              insidePendingAction ? "size-8 sm:size-7" : "size-8 sm:h-8 sm:w-8",
+              // Flow: as big as the send button, so the row keeps its height when text arrives.
+              insidePendingAction ? "size-8 sm:size-7" : "size-9 sm:size-8",
             )}
             {...pointerFocusProps}
             disabled={!canOperateThread}
@@ -210,7 +241,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           {...pointerFocusProps}
           disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
         >
-          {isSendBusy ? "Sending..." : "Refine"}
+          {isSendBusy ? "Sending..." : "Revise"}
         </button>
       );
     }
@@ -223,7 +254,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           {...pointerFocusProps}
           disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
         >
-          {isSendBusy ? "Sending..." : "Implement"}
+          {isSendBusy ? "Sending..." : "Accept"}
         </button>
         <Menu>
           <MenuTrigger
@@ -234,7 +265,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
                   messageActionPillClassName,
                   "h-9 rounded-l-none border-l border-message-action-foreground/20 px-2 sm:h-8",
                 )}
-                aria-label="Implementation actions"
+                aria-label="Accept with other permissions"
                 onMouseDown={
                   preserveComposerFocusOnPointerDown ? (event) => event.preventDefault() : undefined
                 }
@@ -245,14 +276,51 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
             <ChevronDownIcon className="size-3.5" />
           </MenuTrigger>
           <MenuPopup align="end" side="top" {...composerFloatingLayerProps}>
+            {planReview !== null ? (
+              <>
+                <MenuGroup>
+                  <MenuGroupLabel>Accept and continue with</MenuGroupLabel>
+                  {planReview.runtimeModes.map((mode) => {
+                    const option = runtimeModeConfig[mode];
+                    const Icon = option.icon;
+                    return (
+                      <MenuItem
+                        key={mode}
+                        disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
+                        onClick={() => {
+                          if (canOperateThread) planReview.accept(mode);
+                        }}
+                      >
+                        <Icon aria-hidden="true" className="size-3.5" />
+                        {option.label}
+                        {mode === planReview.runtimeMode ? (
+                          <span className="ms-auto text-muted-foreground text-xs">Current</span>
+                        ) : null}
+                      </MenuItem>
+                    );
+                  })}
+                </MenuGroup>
+                <MenuSeparator />
+              </>
+            ) : null}
             <MenuItem
               disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
               onClick={() => {
                 if (canOperateThread) onImplementPlanInNewThread();
               }}
             >
-              Implement in a new thread
+              Accept in a new thread
             </MenuItem>
+            {planReview !== null ? (
+              <MenuItem
+                disabled={isSendBusy || isEnvironmentUnavailable}
+                onClick={() => {
+                  if (canOperateThread) planReview.decline();
+                }}
+              >
+                Decline
+              </MenuItem>
+            ) : null}
           </MenuPopup>
         </Menu>
       </div>
@@ -300,26 +368,57 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
         ? `Click to ${followUpBehavior}, ${isMacPlatform(navigator.platform) ? "⌘" : "Ctrl"}-click${alternateShortcutLabel ? ` or ${alternateShortcutLabel}` : ""} to ${alternateAction}`
         : submitLabel);
 
+  const offersFollowUpChoice =
+    onSendWithMode !== undefined &&
+    isRunning &&
+    canSteer &&
+    hasSendableContent &&
+    !isEditingQueuedMessage &&
+    !showResume &&
+    !isSendBusy &&
+    !isSendDisabled &&
+    !isEnvironmentUnavailable;
+
+  const sendButtonDisabled =
+    isSendBusy ||
+    isSendDisabled ||
+    isEnvironmentUnavailable ||
+    (!hasSendableContent && !showResume);
   const sendButton = (
     <button
+      ref={setFollowUpMenuAnchor}
       type={showResume ? "button" : "submit"}
       className={cn(
-        "relative isolate flex h-9 w-9 items-center justify-center overflow-hidden rounded-full shadow-xs transition-all duration-150 enabled:cursor-pointer enabled:inset-shadow-control-highlight hover:scale-105 active:inset-shadow-control-pressed active:shadow-none disabled:pointer-events-none disabled:shadow-none disabled:hover:scale-100 sm:h-8 sm:w-8 [&_svg]:pointer-events-none",
+        "relative isolate flex h-9 w-9 select-none items-center justify-center overflow-hidden rounded-full shadow-xs [-webkit-touch-callout:none] transition-all duration-150 enabled:cursor-pointer enabled:inset-shadow-control-highlight hover:scale-105 active:inset-shadow-control-pressed active:shadow-none disabled:pointer-events-none disabled:shadow-none disabled:hover:scale-100 sm:h-8 sm:w-8 [&_svg]:pointer-events-none",
         stageBackdropVariant
-          ? "bg-transparent text-white enabled:shadow-black/24 enabled:hover:brightness-110 disabled:opacity-64"
+          ? "bg-transparent text-white enabled:shadow-black/24 enabled:hover:brightness-110 disabled:bg-foreground/12 disabled:text-muted-foreground"
           : "bg-message-action text-message-action-foreground enabled:shadow-message-action/24 hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground",
       )}
       {...pointerFocusProps}
-      onClick={showResume ? onResume : onSubmitMessage}
-      disabled={
-        isSendBusy ||
-        isSendDisabled ||
-        isEnvironmentUnavailable ||
-        (!hasSendableContent && !showResume)
-      }
+      onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => {
+        pointerFocusProps?.onPointerDown(event);
+        if (offersFollowUpChoice) startFollowUpPress(event);
+      }}
+      onPointerUp={() => cancelFollowUpPress()}
+      onPointerLeave={() => cancelFollowUpPress()}
+      onPointerCancel={() => cancelFollowUpPress()}
+      onContextMenu={(event) => {
+        if (offersFollowUpChoice) openFollowUpFromContextMenu(event);
+      }}
+      onClick={(event) => {
+        // The press that opened the Steer / Queue menu must not send as well.
+        if (offersFollowUpChoice && consumeFollowUpLongPress()) {
+          event.preventDefault();
+          return;
+        }
+        if (showResume) onResume?.();
+        else onSubmitMessage?.(event);
+      }}
+      disabled={sendButtonDisabled}
       aria-label={submitStatus ?? submitLabel}
     >
-      {stageBackdropVariant ? (
+      {/* Flow: the art marks a ready button; a disabled one stays plain grey. */}
+      {stageBackdropVariant && !sendButtonDisabled ? (
         <span className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
           <StageBackdropButtonArt variant={stageBackdropVariant} />
         </span>
@@ -346,11 +445,46 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
     </button>
   );
 
+  const followUpChoices = [
+    { mode: "steer", title: "Steer now", subtitle: "Interrupt what the agent is doing" },
+    { mode: "queue", title: "Queue", subtitle: "Run after the current turn" },
+  ] as const;
   const submit = (
-    <Tooltip key="submit">
-      <TooltipTrigger render={<span className="inline-flex" />}>{sendButton}</TooltipTrigger>
-      <TooltipPopup>{submitTooltip}</TooltipPopup>
-    </Tooltip>
+    <>
+      <Tooltip key="submit">
+        <TooltipTrigger render={<span className="inline-flex" />}>{sendButton}</TooltipTrigger>
+        <TooltipPopup>{submitTooltip}</TooltipPopup>
+      </Tooltip>
+      {offersFollowUpChoice ? (
+        <Menu open={followUpMenuOpen} onOpenChange={setFollowUpMenuOpen}>
+          <MenuPopup
+            anchor={followUpMenuAnchor}
+            side="top"
+            align="end"
+            aria-label="Choose how to send this message"
+            {...composerFloatingLayerProps}
+          >
+            {followUpChoices.map((choice) => (
+              <MenuItem
+                key={choice.mode}
+                onClick={() => {
+                  setFollowUpMenuOpen(false);
+                  onSendWithMode?.(choice.mode);
+                }}
+              >
+                <span className="flex flex-col">
+                  <span>{choice.title}</span>
+                  <span className="text-muted-foreground text-xs">{choice.subtitle}</span>
+                </span>
+                {choice.mode === followUpBehavior ? (
+                  <CheckIcon className="ms-auto size-4" aria-hidden />
+                ) : null}
+              </MenuItem>
+            ))}
+          </MenuPopup>
+        </Menu>
+      ) : null}
+    </>
   );
   if (compactTokens === null) return submit;
 

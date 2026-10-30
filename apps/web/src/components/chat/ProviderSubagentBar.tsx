@@ -32,7 +32,7 @@ export function ProviderSubagentBar(props: {
   // and status, so the status drops to its own line instead.
   return (
     <div className="flex min-h-12 items-center gap-3 rounded-2xl py-2 ps-5 pe-2 text-sm">
-      <div className="flex min-w-0 flex-1 items-center gap-3 @max-[560px]/composer-surface:flex-col @max-[560px]/composer-surface:items-start @max-[560px]/composer-surface:gap-0.5">
+      <div className="flex min-w-0 flex-1 items-center gap-3 @max-[560px]/composer-surface:flex-col @max-[560px]/composer-surface:items-start @max-[560px]/composer-surface:gap-1.5">
         <span className="flex min-w-0 max-w-full items-center gap-2">
           {props.provider ? (
             <ProviderInstanceIcon
@@ -52,11 +52,23 @@ export function ProviderSubagentBar(props: {
             <span className="shrink-0 text-muted-foreground">{props.effortLabel}</span>
           )}
         </span>
+        {/* Flow: the status reads as a chip, like the composer's other controls. */}
         <span
-          ref={tickTextContent((nowMs) => formatProviderSubagentStatus(status, nowMs), live)}
           aria-hidden
-          className="min-w-0 max-w-full truncate text-muted-foreground tabular-nums @max-[560px]/composer-surface:text-xs"
-        />
+          className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-0.5 text-muted-foreground text-xs"
+        >
+          <span
+            className={
+              live
+                ? "size-1.5 shrink-0 rounded-full bg-info"
+                : "size-1.5 shrink-0 rounded-full bg-muted-foreground/50"
+            }
+          />
+          <span
+            ref={tickTextContent((nowMs) => formatProviderSubagentStatus(status, nowMs), live)}
+            className="min-w-0 truncate tabular-nums"
+          />
+        </span>
       </div>
       <span role="status" className="sr-only">
         {`${modelDescription} subagent: ${announcement}`}
@@ -65,7 +77,7 @@ export function ProviderSubagentBar(props: {
         Runs on its own
       </span>
       {props.onOpenParent ? (
-        <Button size="sm" variant="ghost" onClick={props.onOpenParent}>
+        <Button size="sm" variant="outline" onClick={props.onOpenParent}>
           <ArrowUpLeftIcon />
           <span className="@max-[320px]/composer-surface:sr-only">Open parent</span>
         </Button>

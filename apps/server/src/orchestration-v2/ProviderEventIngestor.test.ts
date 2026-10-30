@@ -9,6 +9,8 @@ import {
   type ModelSelection,
   NodeId,
   type OrchestrationV2AppThread,
+  type OrchestrationV2PlanArtifact,
+  PlanId,
   type OrchestrationV2DomainEvent,
   type OrchestrationV2ExecutionNode,
   type OrchestrationV2RuntimeRequest,
@@ -513,6 +515,46 @@ layer("ProviderEventIngestorV2", (it) => {
         ["provider-thread.updated"],
       );
       assert.equal(latestThreadSequence, 2);
+    }),
+  );
+
+  // Flow: a reopened plan is unknown to the provider, so its next plan must replace it here.
+  it.effect("keeps one open proposed plan when the provider writes a new one", () =>
+    Effect.gen(function* () {
+      const now = yield* DateTime.now;
+      const eventSink = yield* EventSink.EventSinkV2;
+      const projectionStore = yield* ProjectionStore.ProjectionStoreV2;
+      const ingestor = yield* ProviderEventIngestor.ProviderEventIngestorV2;
+      const idAllocator = yield* IdAllocator.IdAllocatorV2;
+      const threadEvent = yield* threadCreatedEvent(now);
+      const providerSessionId = yield* idAllocator.allocate.providerSession({
+        providerInstanceId: modelSelection.instanceId,
+        threadId: threadEvent.threadId,
+      });
+      yield* eventSink.write({ events: [threadEvent] });
+      const proposedPlan = (id: string): OrchestrationV2PlanArtifact => ({
+        id: PlanId.make(id),
+        threadId: threadEvent.threadId,
+        runId: null,
+        nodeId: NodeId.make(`node:${id}`),
+        kind: "proposed_plan",
+        status: "active",
+        markdown: `# ${id}`,
+      });
+      for (const plan of [proposedPlan("plan-reopened"), proposedPlan("plan-next")]) {
+        yield* ingestor.ingestNormalized({
+          providerSessionId,
+          providerInstanceId: modelSelection.instanceId,
+          threadId: threadEvent.threadId,
+          event: { type: "plan.updated", driver: CODEX_DRIVER, plan },
+        });
+      }
+
+      const projection = yield* projectionStore.getThreadProjection(threadEvent.threadId);
+      assert.deepEqual(projection.plans.map((plan) => [plan.id, plan.status]).toSorted(), [
+        ["plan-next", "active"],
+        ["plan-reopened", "superseded"],
+      ]);
     }),
   );
 

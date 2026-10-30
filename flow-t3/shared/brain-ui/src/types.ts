@@ -44,8 +44,11 @@ export interface BrainWorkspaceViewProps {
   readonly skills?: ReactNode;
   readonly onCreate?: () => void;
   /** Controls shown in the knowledge graph's top right corner (fork). */
-  readonly graphCorner?: ReactNode;
+  readonly graphCorner?: BrainGraphCorner;
 }
+
+/** Corner controls; a function receives `fit`, which centres and fits the graph again. */
+export type BrainGraphCorner = ReactNode | ((fit: () => void) => ReactNode);
 
 export interface BrainUiDocumentSummary {
   contributors?: readonly { id: string; email: string }[];

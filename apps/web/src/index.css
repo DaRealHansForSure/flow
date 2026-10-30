@@ -2603,3 +2603,72 @@ code {
     cursor: pointer;
   }
 }
+
+/* Flow: on a phone the chat's composer is a bar along the bottom edge: full width, square, and
+   with no outline at the sides or bottom. Unlayered, so it outranks utilities. */
+@media (max-width: 639px) {
+  [data-chat-composer-overlay][data-composer-docked] .chat-composer-lane {
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  }
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"]::before,
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-host"],
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-host"]::before,
+  [data-chat-composer-overlay][data-composer-docked] [data-chat-composer-main-surface] {
+    border-radius: 0;
+  }
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-host"]::after,
+  [data-chat-composer-overlay][data-composer-docked] [data-chat-composer-main-surface]::after {
+    border-inline-width: 0;
+    border-bottom-width: 0;
+  }
+  [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-host"] {
+    box-shadow: 0 -8px 24px -12px rgb(0 0 0 / 0.25);
+  }
+}
+
+/* Flow: the docked composer is a tinted, outlined surface, so it stands apart from the chat in
+   light and dark themes alike. Mixed from the theme's own colors, so custom themes still fit. */
+[data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"] {
+  --chat-composer-glass-surface: color-mix(in srgb, var(--foreground) 7%, var(--background));
+  --chat-composer-outline: color-mix(in srgb, var(--foreground) 20%, var(--background));
+}
+.dark [data-chat-composer-overlay][data-composer-docked] [data-slot="composer-shell"] {
+  --chat-composer-glass-surface: color-mix(in srgb, var(--foreground) 10%, var(--background));
+  --chat-composer-outline: color-mix(in srgb, var(--foreground) 22%, var(--background));
+}
+
+/* Flow: the Chat font setting scales message text in the timeline only; code keeps its own size. */
+.messages-timeline-scroll [data-chat-text] {
+  font-size: calc(var(--text-sm) * var(--chat-font-scale, 1));
+}
+
+/* Flow: the chat header's buttons are finger-sized on touch screens, whatever the font size. */
+@media (pointer: coarse) {
+  :root,
+  [class*="workspace-titlebar-control-size"] {
+    --workspace-titlebar-control-size: 2.5rem;
+  }
+  :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
+    :is([data-slot="toggle"], button),
+  [data-right-panel-tabbar] [aria-label="Add panel surface"] {
+    width: 2.5rem;
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+  :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
+    :is([data-slot="toggle"], button)
+    svg,
+  [data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
+  :is([data-slot="sidebar-trigger"], [data-sidebar="trigger"], [aria-label="Toggle main sidebar"])
+    svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* Flow: on a phone the right panel fills the screen, so its sheet drops the edge it keeps beside a chat. */
+@media (max-width: 639px) {
+  [data-slot="sheet-popup"]:has([data-right-panel-tabbar]) {
+    border-inline-start-width: 0;
+  }
+}

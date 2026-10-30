@@ -1786,6 +1786,10 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
     yield* attempt({ operation: "registerWebview.restoreZoomFactor", tabId, webContentsId }, () =>
       wc.setZoomFactor(currentTab.zoomFactor),
     );
+    // Flow: trackpad and touch pinches magnify the page on screen without changing its zoom.
+    yield* attempt({ operation: "registerWebview.visualZoomLimits", tabId, webContentsId }, () =>
+      wc.setVisualZoomLevelLimits(1, 4),
+    ).pipe(Effect.ignore);
     // Replacement guests start unmuted; restore mute before publishing them.
     yield* attempt({ operation: "registerWebview.restoreAudioMuted", tabId, webContentsId }, () =>
       wc.setAudioMuted(currentTab.audioMuted),

@@ -1,4 +1,5 @@
 // @effect-diagnostics nodeBuiltinImport:off - Read the external agents' routing table from its source file.
+import { ServerConfig } from "../config.ts";
 import * as NodeFS from "node:fs";
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
 import { expect, it } from "@effect/vitest";
@@ -177,15 +178,17 @@ it.effect(
       const threads = {
         getThreadShell: () => Effect.succeed({ projectId, branch: "feature" }),
       } as unknown as ProjectionStore.ProjectionStoreV2["Service"];
+      let projectRoot = "/project";
       const projects = {
         getShell: () =>
-          Effect.succeedSome({ workspaceRoot: "/project" } as OrchestrationProjectShell),
+          Effect.succeedSome({ workspaceRoot: projectRoot } as OrchestrationProjectShell),
       } as unknown as ProjectStore.ProjectStoreV2["Service"];
       const [load, capture] = yield* Effect.all([
         makeBrainChatContextLoader(),
         makeBrainChatCapture(),
       ]).pipe(
         Effect.provideService(BrainService, { ready: Effect.succeed(runtime) }),
+        Effect.provideService(ServerConfig, { baseDir: "/t3-home" } as ServerConfig["Service"]),
         Effect.provideService(ProjectionStore.ProjectionStoreV2, threads),
         Effect.provideService(ProjectStore.ProjectStoreV2, projects),
         Effect.provideService(ProjectEnrichmentService.ProjectEnrichmentService, noRepository),
@@ -248,5 +251,9 @@ it.effect(
       fail = false;
       race = true;
       expect(yield* load(threadId).pipe(Effect.flip)).toContain("brain changed");
+      // A No project chat reads its Brain but nothing from it is recorded.
+      projectRoot = "/t3-home/scratch";
+      yield* capture(threadId, { receipt: "scratch", kind: "user_prompt", data: { text: "x" } });
+      expect(captures).toBe(2);
     }),
 );

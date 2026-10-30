@@ -63,17 +63,22 @@ describe("chat canvas layout", () => {
     });
     expect(returned.frame).toEqual(start);
   });
-  it("stops leftward dragging before the player can push chat to the right", () => {
+  it("lets a dragged player cross the history of a wide canvas without pushing chat right", () => {
     const centered = resolve(1344, null).chat;
-    for (const x of [1100, 800, 700, 600, 400, 12, -100]) {
+    for (const x of [1000, 800, 700, 600, 400, 12]) {
       const result = resolve(1344, { ...preview, position: { x, y: 500 } });
-      expect(result.frame!.x).toBeGreaterThanOrEqual(700);
+      expect(result.frame!.x).toBe(x);
       expect(result.chat.left).toBeLessThanOrEqual(centered.left);
       expect(result.chat.insetStart).toBe(0);
       expect(result.chat.width).toBeGreaterThanOrEqual(640);
-      expectClear(result);
+      if (result.overlapsChat) {
+        expect(result.chat).toEqual(centered);
+        expect(result.frame!.y + result.frame!.height).toBeLessThanOrEqual(708);
+      } else {
+        expectClear(result);
+      }
     }
-    expect(resolve(1344, { ...preview, position: { x: 12, y: 500 } }).frame!.x).toBe(700);
+    expect(resolve(1344, { ...preview, position: { x: -100, y: 500 } }).frame!.x).toBe(12);
   });
   it("keeps a dragged player above the composer when no readable lane fits beside it", () => {
     const result = resolve(1000, { ...preview, position: { x: 12, y: 700 } });

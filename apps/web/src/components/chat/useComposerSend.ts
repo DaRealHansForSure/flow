@@ -56,7 +56,7 @@ import {
   collapseExpandedComposerCursor,
   parseStandaloneComposerSlashCommand,
 } from "../../composer-logic";
-import { resolvePlanFollowUpSubmission } from "../../proposedPlan";
+import { buildPlanImplementationPrompt, resolvePlanFollowUpSubmission } from "../../proposedPlan";
 import { type ChatMessage } from "../../types";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import { newMessageId, newThreadId } from "~/lib/utils";
@@ -84,7 +84,7 @@ import {
 import { environmentServerConfigsAtom } from "../../state/server";
 import { threadEnvironment } from "../../state/threads";
 import { runMobileComposerTransition } from "./draftHeroTransition";
-import { useClientSettingsHydrated, useEnvironmentSettings } from "../../hooks/useSettings";
+import { useClientSettingsHydrated } from "../../hooks/useSettings";
 import { environmentPresentations } from "../../state/presentation";
 import {
   approvalRedirectNotice,
@@ -123,7 +123,6 @@ import type {
   EnvironmentProject,
   EnvironmentThreadShell,
 } from "@t3tools/client-runtime/state/shell";
-import type { UnifiedSettings } from "@t3tools/contracts";
 import type { Dispatch } from "react";
 import type { ComposerThreadTarget } from "../../composerDraftStore";
 import type { ProviderInstanceEntry } from "../../providerInstances";
@@ -141,8 +140,6 @@ import type { useUsageLimitsPanel } from "./useUsageLimitsPanel";
 import type { useWorktreeSetup } from "./useWorktreeSetup";
 
 const ENVIRONMENT_UNAVAILABLE_SEND_TOAST_TRAIL_SIZE = 3;
-
-const selectPlanModeEnabled = (settings: UnifiedSettings) => settings.planModeEnabled;
 
 function readEnvironmentPresentation(environmentId: EnvironmentId) {
   return appAtomRegistry.get(environmentPresentations.presentationsAtom).get(environmentId);
@@ -328,7 +325,6 @@ export function useComposerSend(input: ComposerSendInput) {
   const handleNewThread = useNewThreadHandler();
   const navigate = useNavigate();
   const clientSettingsHydrated = useClientSettingsHydrated();
-  const planModeEnabled = useEnvironmentSettings(environmentId, selectPlanModeEnabled);
   const startThreadTurn = useOrchestrationCommand(threadEnvironment.startTurn, {
     reportFailure: false,
   });
@@ -870,7 +866,6 @@ export function useComposerSend(input: ComposerSendInput) {
       selections: multipleModelSelections ?? [],
       providerInstanceEntries,
       messageText: messageTextForSend,
-      planModeEnabled,
       interactionMode: sendInteractionMode,
     })) {
       if ("error" in resolved) {
@@ -1445,5 +1440,17 @@ export function useComposerSend(input: ComposerSendInput) {
     }
   };
 
-  return { onSend };
+  // Flow: Accept from the plan card or the Plan tab, continuing in the chosen permission mode.
+  const acceptPlan = async (nextRuntimeMode: RuntimeMode) => {
+    if (!activeProposedPlan) {
+      return false;
+    }
+    return submitPlanFollowUp({
+      text: buildPlanImplementationPrompt(activeProposedPlan.planMarkdown),
+      interactionMode: "default",
+      runtimeMode: nextRuntimeMode,
+    });
+  };
+
+  return { onSend, acceptPlan };
 }

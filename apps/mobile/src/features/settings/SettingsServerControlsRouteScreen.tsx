@@ -17,7 +17,7 @@ import { useRef, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { RUNTIME_MODE_CHOICES } from "../threads/thread-settings-options";
+import { PLAN_PERMISSION_CHOICE, RUNTIME_MODE_CHOICES } from "../threads/thread-settings-options";
 import { SettingsScreen } from "./components/SettingsScreen";
 import {
   AndroidSettingsEnvironmentFilter,
@@ -56,6 +56,7 @@ const PAGE_PROJECT_KEYS: Record<SettingsPage, readonly ProjectScopedServerSettin
   threads: [
     "defaultThreadEnvMode",
     "defaultRuntimeMode",
+    "defaultInteractionMode",
     "responseStreamingMode",
     "enableAgentBrowserAccess",
     "sidebarAutoSettleOnMerge",
@@ -330,7 +331,9 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
                   <SettingsSection
                     title="Default permissions"
                     trailing={
-                      pendingWrites === 0 && uniform("defaultRuntimeMode") === null ? (
+                      pendingWrites === 0 &&
+                      (uniform("defaultRuntimeMode") === null ||
+                        uniform("defaultInteractionMode") === null) ? (
                         <MixedValuesLabel projectSelected={projectSelected} />
                       ) : null
                     }
@@ -340,13 +343,44 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
                         key={choice.mode}
                         label={choice.label}
                         description={choice.description}
-                        selected={uniform("defaultRuntimeMode") === choice.mode}
+                        selected={
+                          uniform("defaultInteractionMode") === "default" &&
+                          uniform("defaultRuntimeMode") === choice.mode
+                        }
                         separated={index > 0}
                         disabled={disabledFor("defaultRuntimeMode")}
-                        onPress={() => write({ defaultRuntimeMode: choice.mode })}
+                        onPress={() =>
+                          write({
+                            defaultInteractionMode: "default",
+                            defaultRuntimeMode: choice.mode,
+                          })
+                        }
                       />
                     ))}
+                    <SettingsChoiceRow
+                      label={PLAN_PERMISSION_CHOICE.label}
+                      description={PLAN_PERMISSION_CHOICE.description}
+                      selected={uniform("defaultInteractionMode") === "plan"}
+                      separated
+                      disabled={disabledFor("defaultInteractionMode")}
+                      onPress={() => write({ defaultInteractionMode: "plan" })}
+                    />
                   </SettingsSection>
+                  {uniform("defaultInteractionMode") === "plan" ? (
+                    <SettingsSection title="After the plan">
+                      {RUNTIME_MODE_CHOICES.map((choice, index) => (
+                        <SettingsChoiceRow
+                          key={choice.mode}
+                          label={choice.label}
+                          description={choice.description}
+                          selected={uniform("defaultRuntimeMode") === choice.mode}
+                          separated={index > 0}
+                          disabled={disabledFor("defaultRuntimeMode")}
+                          onPress={() => write({ defaultRuntimeMode: choice.mode })}
+                        />
+                      ))}
+                    </SettingsSection>
+                  ) : null}
                   <SettingsSection
                     title="Response streaming"
                     trailing={

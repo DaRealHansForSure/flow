@@ -178,6 +178,9 @@ refused rather than running half-upgraded:
 
 Update the side the notice names, then reconnect.
 
+To see which versions you run, open **Settings > About**: it lists the web app, the Flow
+service it is connected to and, in the desktop app, the desktop app itself.
+
 ## Update a connected server
 
 The offered action depends on how the server runs:

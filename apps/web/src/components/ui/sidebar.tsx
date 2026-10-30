@@ -92,6 +92,12 @@ function useSidebar() {
   return context;
 }
 
+/** Flow: whether the phone sidebar sheet is on screen; false outside a SidebarProvider. */
+function useMobileSidebarSheetMounted(): boolean {
+  const context = React.use(SidebarContext);
+  return context !== null && context.isMobile && context.mobileSheetMounted;
+}
+
 function useSidebarVisibility() {
   const { isMobile, open, openMobile } = useSidebar();
   return isMobile ? openMobile : open;
@@ -304,7 +310,8 @@ function Sidebar({
           <SheetPopup
             ref={setMobileSheetElement}
             className={cn(
-              "w-(--sidebar-width) max-w-none bg-sidebar surface-grain p-0 text-sidebar-foreground",
+              // Flow: a small portrait screen gives the sidebar its full width.
+              "w-(--sidebar-width) max-w-none bg-sidebar surface-grain p-0 text-sidebar-foreground max-sm:w-full max-sm:border-e-0",
               className,
             )}
             data-mobile="true"
@@ -719,7 +726,8 @@ const sidebarMenuButtonVariants = cva(
       size: {
         default:
           "h-8 rounded-[var(--control-radius)] px-[var(--sidebar-row-content-inset)] py-1.5 text-sm",
-        icon: "size-8 justify-center rounded-[var(--control-radius)] p-0",
+        // Flow: a finger-sized target on touch screens, whatever the font size.
+        icon: "size-8 justify-center rounded-[var(--control-radius)] p-0 pointer-coarse:size-10 pointer-coarse:[&>svg:not([class*='size-'])]:size-5",
         lg: "h-12 rounded-[var(--control-radius)] px-[var(--sidebar-row-content-inset)] py-2 text-sm group-data-[collapsible=icon]:p-0!",
         sm: "h-7 rounded-[var(--control-radius)] px-[var(--sidebar-row-content-inset)] py-2 text-xs",
       },
@@ -859,6 +867,7 @@ export {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useMobileSidebarSheetMounted,
   useSidebar,
   useSidebarVisibility,
 };

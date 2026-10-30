@@ -17,6 +17,12 @@ then copy. Cmd+A on macOS and Ctrl+Shift+A elsewhere select the same output.
 Ctrl+A still moves to the beginning of shell input on Windows and Linux.
 Jump to latest in the context menu returns to the current output.
 
+## Font size
+
+Pinch with two fingers on a phone, or hold Ctrl (Cmd on macOS) and scroll the mouse wheel, to make
+one terminal's text larger or smaller. Other terminals keep their size. While it differs from
+**Settings → Appearance**, a badge in the terminal's corner shows the size; select it to reset.
+
 ## fish
 
 T3 Code starts fish with `no-query-term`, avoiding startup waits for terminal

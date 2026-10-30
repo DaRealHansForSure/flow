@@ -59,6 +59,7 @@ export function useChatBrain(input: {
   readonly revealPanelByDefault: boolean;
 }): ChatBrain {
   const { threadRef, environmentId, threadId, projectId, revealPanelByDefault } = input;
+  const threadKey = threadRef ? scopedThreadKey(threadRef) : null;
   const execute = useAtomCommand(brainCommand, { reportFailure: false });
   const sourceKey = `${environmentId}:${projectId}:${threadId ?? "draft"}`;
   const [loadedKey, setLoadedKey] = useState(sourceKey);
@@ -96,63 +97,68 @@ export function useChatBrain(input: {
         return;
       }
       pending = true;
-      try {
-        const result = await execute({
-          environmentId,
-          input: threadId
-            ? { action: "readChat", threadId, ...(revision ? { revision } : {}) }
-            : { action: "read", projectId, metadataOnly: true },
-        });
-        if (disposed) {
-          return;
-        }
-        if (result._tag === "Failure") {
-          setError(true);
-          setFailure(UNANSWERED_FAILURE);
-          delay = RETRY_DELAY_MS;
+      return await (async () => {
+        try {
+          const result = await execute({
+            environmentId,
+            input: threadId
+              ? { action: "readChat", threadId, ...(revision ? { revision } : {}) }
+              : { action: "read", projectId, metadataOnly: true },
+          });
+          if (disposed) {
+            return;
+          }
+          if (result._tag === "Failure") {
+            setError(true);
+            setFailure(UNANSWERED_FAILURE);
+            delay = RETRY_DELAY_MS;
+            revision = undefined;
+            return;
+          }
+          if (result.value.error) {
+            revision = undefined;
+            delay = RETRY_DELAY_MS;
+            setError(true);
+            setFailure(result.value.error);
+            setResponse((previous) => retainChatContextOnError(previous, result.value));
+            return;
+          }
+          revision = result.value.chatMemories?.revision;
+          delay = revision ? LONG_POLL_DELAY_MS : RETRY_DELAY_MS;
+          const currentNotes = noteFingerprints(result.value);
+          if (previousNotes && notesChanged(previousNotes, currentNotes)) {
+            setChangedIds(changedNoteIds(previousNotes, currentNotes));
+            setSavedNow(true);
+            if (threadKey !== null) {
+              useChatBrainStatusStore.getState().markNotesChanged(threadKey);
+            }
+            clearTimeout(highlightTimer);
+            highlightTimer = setTimeout(() => {
+              setChangedIds([]);
+              setSavedNow(false);
+            }, CHANGE_HIGHLIGHT_MS);
+          }
+          previousNotes = currentNotes;
+          setError(false);
+          setFailure(null);
+          setResponse((previous) =>
+            JSON.stringify(previous) === JSON.stringify(result.value) ? previous : result.value,
+          );
+        } catch {
           revision = undefined;
-          return;
-        }
-        if (result.value.error) {
-          revision = undefined;
           delay = RETRY_DELAY_MS;
-          setError(true);
-          setFailure(result.value.error);
-          setResponse((previous) => retainChatContextOnError(previous, result.value));
-          return;
+          if (!disposed) {
+            setError(true);
+            setFailure(UNANSWERED_FAILURE);
+          }
         }
-        revision = result.value.chatMemories?.revision;
-        delay = revision ? LONG_POLL_DELAY_MS : RETRY_DELAY_MS;
-        const currentNotes = noteFingerprints(result.value);
-        if (previousNotes && notesChanged(previousNotes, currentNotes)) {
-          setChangedIds(changedNoteIds(previousNotes, currentNotes));
-          setSavedNow(true);
-          clearTimeout(highlightTimer);
-          highlightTimer = setTimeout(() => {
-            setChangedIds([]);
-            setSavedNow(false);
-          }, CHANGE_HIGHLIGHT_MS);
-        }
-        previousNotes = currentNotes;
-        setError(false);
-        setFailure(null);
-        setResponse((previous) =>
-          JSON.stringify(previous) === JSON.stringify(result.value) ? previous : result.value,
-        );
-      } catch {
-        revision = undefined;
-        delay = RETRY_DELAY_MS;
-        if (!disposed) {
-          setError(true);
-          setFailure(UNANSWERED_FAILURE);
-        }
-      } finally {
+      })().finally(() => {
         pending = false;
         if (!disposed) {
           clearTimeout(timer);
           timer = setTimeout(() => void refresh(), delay);
         }
-      }
+      });
     };
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") {
@@ -167,15 +173,13 @@ export function useChatBrain(input: {
       clearTimeout(highlightTimer);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [environmentId, threadId, projectId, execute, sourceKey]);
+  }, [environmentId, threadId, projectId, execute, sourceKey, threadKey]);
 
   const brain = chatBrainWorkspace(response, threadId, projectId);
   const hasBrain = brain !== undefined;
   const updating = response?.chatMemories?.status === "extracting";
   const loading =
     response === null && failure === null && environmentId !== null && projectId !== null;
-  const threadKey = threadRef ? scopedThreadKey(threadRef) : null;
-
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- publishes the chat's Brain status to the header button and command palette
   useEffect(() => {
     if (threadKey === null) {

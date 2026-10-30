@@ -83,18 +83,20 @@ export function BackgroundModeSettingsRow({
     }
     onRunInBackgroundChange(target);
     setIsSwitching(true);
-    try {
-      // On success the app relaunches, so only a failure comes back here.
-      const result = await switchMode(target);
-      if (!result.ok) {
-        setSwitchError(result.detail ?? "The switch did not complete.");
+    return await (async () => {
+      try {
+        // On success the app relaunches, so only a failure comes back here.
+        const result = await switchMode(target);
+        if (!result.ok) {
+          setSwitchError(result.detail ?? "The switch did not complete.");
+        }
+      } catch (cause) {
+        setSwitchError(cause instanceof Error ? cause.message : String(cause));
       }
-    } catch (cause) {
-      setSwitchError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
+    })().finally(() => {
       setIsSwitching(false);
       setPendingTarget(null);
-    }
+    });
   };
 
   let status: string | null = null;

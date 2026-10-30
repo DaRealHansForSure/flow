@@ -306,7 +306,13 @@ describe("threadHistoryPaging", () => {
       };
       return [prompt, makeRow(turn * 2 + 1)];
     }).flat();
-    const policy = { ...THREAD_HISTORY_PAGE_POLICY, maxItems: 1_000, maxEncodedBytes: 10_000_000 };
+    const policy = {
+      ...THREAD_HISTORY_PAGE_POLICY,
+      maxUserTurns: 10,
+      maxItems: 1_000,
+      maxTurnItems: 1_000,
+      maxEncodedBytes: 10_000_000,
+    };
     const first = selectRecentTimelineWindow({ items, snapshotSequence: 1, policy });
     expect(first.items).toHaveLength(300);
     expect(first.items[0]?.sourceItemId).toBe("item-22");
@@ -359,6 +365,7 @@ describe("threadHistoryPaging", () => {
     ]).flat();
     const policy = {
       ...THREAD_HISTORY_PAGE_POLICY,
+      maxUserTurns: 10,
       maxItems: 1_000,
       maxTurnItems: 1_000,
       maxEncodedBytes: 10_000_000,

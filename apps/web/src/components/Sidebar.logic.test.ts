@@ -279,6 +279,17 @@ describe("resolveSidebarThreadStatus", () => {
     ).toBe("approval");
   });
 
+  it("shows an open plan as Plan ready once the run has finished, below the agent's requests", () => {
+    const planned = { ...idle, interactionMode: "plan" as const, hasActionableProposedPlan: true };
+    expect(resolveSidebarThreadStatus(planned)).toBe("plan");
+    expect(resolveSidebarThreadStatus({ ...planned, runtime })).toBe("working");
+    expect(resolveSidebarThreadStatus({ ...planned, hasPendingUserInput: true })).toBe("input");
+    expect(resolveSidebarThreadStatus({ ...planned, interactionMode: "default" })).toBe("ready");
+    expect(resolveSidebarThreadStatus({ ...planned, hasActionableProposedPlan: false })).toBe(
+      "ready",
+    );
+  });
+
   it("shows a waiting guest message as a Request, below the agent's own requests", () => {
     expect(resolveSidebarThreadStatus({ ...idle, pendingGuestMessageCount: 1, runtime })).toBe(
       "request",

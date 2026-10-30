@@ -65,7 +65,9 @@ const CONFIG = {
   observability: null,
   providers: [],
   settings: {},
-  environment: { capabilities: { environmentThemes: true } },
+  environment: {
+    capabilities: { environmentThemes: true, pullRequests: true, threadPullRequestLinking: true },
+  },
 } as unknown as ServerConfig;
 
 const snapshotEvent = (config: ServerConfig): ServerConfigStreamEvent => ({

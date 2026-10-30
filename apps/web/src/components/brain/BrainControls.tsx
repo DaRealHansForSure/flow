@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { BrainCli, BrainState, BrainCommand, BrainResponse } from "@t3tools/contracts";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "../ui/select";
+import { SearchableSelect, type SearchableSelectOption } from "../SearchableSelect";
 import {
   Dialog,
   DialogPopup,
@@ -21,50 +21,21 @@ export type SendBrainCommand = (
 export const cliName = (cli: BrainCli) =>
   cli === "claude" ? "Claude Code" : cli === "codex" ? "Codex" : "OpenCode";
 
-export function BrainSelect({
-  label,
-  value,
-  options,
-  onChange,
-  disabled = false,
-}: {
+/** Fork-only: picks a Brain, searchable, with each Brain's icon. */
+export function BrainSelect(props: {
   label: string;
   value: string;
-  options: readonly { value: string; label: string; icon?: ReactNode; disabled?: boolean }[];
+  options: readonly BrainSelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
-  const selected = options.find((option) => option.value === value);
   return (
-    <Select
-      value={value}
-      items={options}
-      onValueChange={(next) => next !== null && onChange(next)}
-      disabled={disabled}
-    >
-      <SelectTrigger aria-label={label} className="w-auto min-w-40 max-w-full">
-        <SelectValue placeholder={label}>
-          {selected?.icon ? (
-            <span className="flex min-w-0 items-center gap-2">
-              {selected.icon}
-              <span className="truncate">{selected.label}</span>
-            </span>
-          ) : undefined}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectPopup>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
-            <span className="flex min-w-0 items-center gap-2">
-              {option.icon}
-              <span className="truncate">{option.label}</span>
-            </span>
-          </SelectItem>
-        ))}
-      </SelectPopup>
-    </Select>
+    <SearchableSelect {...props} searchLabel="Search Brains" emptyLabel="No matching Brains." />
   );
 }
+
+export type BrainSelectOption = SearchableSelectOption;
 
 export function CreateBrainDialog({
   open,
@@ -100,27 +71,23 @@ export function CreateBrainDialog({
       return;
     setBusy(true);
     setError("");
-    try {
-      const result = await send(
-        location === "remote"
-          ? connectCloudCommand({ endpoint, email, password, cli: selected })
-          : { action: "create", name, cli: selected! },
-      );
-      const outcome = connectCloudOutcome(
-        result,
-        "Could not create the brain. Check the connection and retry.",
-      );
-      if (!outcome.ok) {
-        setError(outcome.error);
-        return;
-      }
-      setPassword("");
-      onCreated(outcome.workspaceId);
-      onOpenChange(false);
-      setName(initialName);
-    } finally {
-      setBusy(false);
+    const result = await send(
+      location === "remote"
+        ? connectCloudCommand({ endpoint, email, password, cli: selected })
+        : { action: "create", name, cli: selected! },
+    ).finally(() => setBusy(false));
+    const outcome = connectCloudOutcome(
+      result,
+      "Could not create the brain. Check the connection and retry.",
+    );
+    if (!outcome.ok) {
+      setError(outcome.error);
+      return;
     }
+    setPassword("");
+    onCreated(outcome.workspaceId);
+    onOpenChange(false);
+    setName(initialName);
   }
   return (
     <Dialog
@@ -314,19 +281,17 @@ export function ConnectCloudDialog({
     if (busy) return;
     setBusy(true);
     setError("");
-    try {
-      const result = await send(connectCloudCommand({ endpoint, email, password }, workspace?.id));
-      const outcome = connectCloudOutcome(result, "Could not connect to the cloud Brain.");
-      if (!outcome.ok) {
-        setError(outcome.error);
-        return;
-      }
-      setPassword("");
-      onConnected(outcome.workspaceId);
-      onOpenChange(false);
-    } finally {
-      setBusy(false);
+    const result = await send(
+      connectCloudCommand({ endpoint, email, password }, workspace?.id),
+    ).finally(() => setBusy(false));
+    const outcome = connectCloudOutcome(result, "Could not connect to the cloud Brain.");
+    if (!outcome.ok) {
+      setError(outcome.error);
+      return;
     }
+    setPassword("");
+    onConnected(outcome.workspaceId);
+    onOpenChange(false);
   }
   return (
     <Dialog

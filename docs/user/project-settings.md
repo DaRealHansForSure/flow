@@ -244,7 +244,10 @@ without a brain** is remembered for the project across chats and devices. Chats 
 without Flow orientation or memory capture; you can connect a brain later in project settings.
 
 A chat without a project starts with no brain. To give it one, pick a brain from the **No Brain**
-menu on the new-chat screen before you send the first message; the chat keeps that choice.
+menu on the new-chat screen before you send the first message; the chat keeps that choice. Such a
+chat only reads its brain: it writes no conversation notes, Auto-Docs or Auto-Skills, and the
+agent cannot save to the brain from it. Chats without a project are not a project themselves, so
+they do not appear in project settings or as a brain's connected project.
 
 In a chat with a brain, the **Brain** tab of the right panel shows the graph, the chat's
 Auto-Docs and Auto-Skills, and the conversation notes. A new chat opens it by itself. Close it
@@ -271,10 +274,9 @@ Open **Brain → Sources** to add the code and context Flow can learn from. Conn
 repository or choose a local folder. Public GitHub repositories work without signing in; private
 repositories use the selected machine's GitHub CLI authentication from **Settings → Source control**.
 
-Linear, Fireflies.ai, meeting notes, and the Slack bot are shown as upcoming source types and cannot
-be connected from this page yet.
-
-![Flow Brain sources, including GitHub repositories, local folders, and upcoming integrations](../images/flow-brain-sources.webp)
+**Connected projects** below the sources lists every project that uses the brain, with its source
+status and recent activity. Search it, sort it by any column, and tap a status to see what it means.
+Use **Connect an existing project** above the table to add another one.
 
 ### Conversation notes, Auto-Docs, and Auto-Skills
 
@@ -294,9 +296,9 @@ these two switches and can override them in the **Brain** section of its setting
 
 Each section of a chat's **Brain** tab has its own **Default / On / Off** switch for that chat
 only. **Default** follows Settings, or for Auto-Docs and Auto-Skills the project's override
-where it has one, and says whether that is currently on or off. Auto-Docs and Auto-Skills need
-the notes agent, so their switches are greyed out while it is off for the chat. A change applies
-from the next update.
+where it has one; the switch's tooltip says whether that is currently on or off. Auto-Docs and
+Auto-Skills need the notes agent, so their switches are greyed out while it is off for the chat.
+A change applies from the next update.
 
 With the notes agent off, the chat keeps its brain briefing and tools, and its messages are
 still recorded, so turning it back on catches up on what it missed. Existing documents stay

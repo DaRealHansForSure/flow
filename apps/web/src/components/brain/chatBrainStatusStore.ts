@@ -1,5 +1,5 @@
 // Fork-only: which open chats have a Brain, whether it is writing their notes right now,
-// and why it failed to answer. The chat view fills it from its Brain context, so the header
+// whose notes changed unseen, and why it failed to answer. The chat view fills it from its Brain context, so the header
 // button and the command palette can follow the chat without polling the Brain themselves.
 
 import { create } from "zustand";
@@ -21,6 +21,10 @@ interface ChatBrainStatusStoreState {
   readonly announcedFailureByEnvironment: Readonly<Record<string, string>>;
   /** True when this failure is new for the environment and should be announced. */
   readonly claimFailureAnnouncement: (environmentId: string, failure: string | null) => boolean;
+  /** Chats whose notes changed since their Brain tab was last shown. */
+  readonly unseenNotesByThreadKey: Readonly<Record<string, true>>;
+  readonly markNotesChanged: (threadKey: string) => void;
+  readonly markNotesSeen: (threadKey: string) => void;
 }
 
 export const useChatBrainStatusStore = create<ChatBrainStatusStoreState>()((set) => ({
@@ -43,6 +47,21 @@ export const useChatBrainStatusStore = create<ChatBrainStatusStoreState>()((set)
         return state;
       }
       return { byThreadKey: { ...state.byThreadKey, [threadKey]: status } };
+    }),
+  unseenNotesByThreadKey: {},
+  markNotesChanged: (threadKey) =>
+    set((state) =>
+      state.unseenNotesByThreadKey[threadKey]
+        ? state
+        : { unseenNotesByThreadKey: { ...state.unseenNotesByThreadKey, [threadKey]: true } },
+    ),
+  markNotesSeen: (threadKey) =>
+    set((state) => {
+      if (!state.unseenNotesByThreadKey[threadKey]) {
+        return state;
+      }
+      const { [threadKey]: _seen, ...rest } = state.unseenNotesByThreadKey;
+      return { unseenNotesByThreadKey: rest };
     }),
   announcedFailureByEnvironment: {},
   claimFailureAnnouncement: (environmentId, failure) => {

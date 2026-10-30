@@ -74,7 +74,7 @@ export function ProjectBrainSettings({
     pending.current = true;
     setBusy(true);
     setError("");
-    try {
+    return await (async () => {
       for (const target of targets) {
         const result = await execute({
           environmentId: target.environmentId,
@@ -90,10 +90,10 @@ export function ProjectBrainSettings({
         }
       }
       await refresh();
-    } finally {
+    })().finally(() => {
       pending.current = false;
       setBusy(false);
-    }
+    });
   }
   async function send(input: BrainCommand) {
     if (!first) return null;

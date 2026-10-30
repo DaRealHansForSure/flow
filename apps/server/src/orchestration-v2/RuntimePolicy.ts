@@ -53,7 +53,7 @@ export class RuntimePolicyV2 extends Context.Service<RuntimePolicyV2, RuntimePol
 export const layer: Layer.Layer<RuntimePolicyV2> = Layer.succeed(RuntimePolicyV2, {
   resolve: Effect.fn("RuntimePolicyV2.resolve")(function (input) {
     return Effect.succeed({
-      runtimeMode: input.thread.runtimeMode,
+      runtimeMode: providerRuntimeMode(input.thread, undefined),
       interactionMode: input.thread.interactionMode,
       cwd: input.thread.worktreePath,
     });
@@ -61,9 +61,14 @@ export const layer: Layer.Layer<RuntimePolicyV2> = Layer.succeed(RuntimePolicyV2
 });
 
 function providerRuntimeMode(
-  runtimeMode: RuntimeMode,
+  thread: OrchestrationV2AppThread,
   supportedRuntimeModes: ReadonlyArray<RuntimeMode> | undefined,
 ): RuntimeMode {
+  const runtimeMode = thread.runtimeMode;
+  // Plan turns ask before every command; the chat keeps its own mode for after the plan.
+  if (thread.interactionMode === "plan") {
+    return "approval-required";
+  }
   return supportedRuntimeModes === undefined ||
     supportedRuntimeModes.length === 0 ||
     supportedRuntimeModes.includes(runtimeMode)
@@ -113,7 +118,7 @@ export const layerFromProjectStore: Layer.Layer<
             ),
           ));
         return ProviderAdapter.ProviderAdapterV2RuntimePolicy.make({
-          runtimeMode: providerRuntimeMode(input.thread.runtimeMode, supportedRuntimeModes),
+          runtimeMode: providerRuntimeMode(input.thread, supportedRuntimeModes),
           interactionMode: input.thread.interactionMode,
           cwd,
         });

@@ -1,5 +1,7 @@
 import { BrainIcon } from "./BrainIcon";
 import { useState } from "react";
+import * as Schema from "effect/Schema";
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import type {
   BrainChatCurationOutput,
   ChatMemoryList,
@@ -15,7 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrainGraph } from "./BrainGraph";
-import { BrainGraphDialog, BrainGraphExpandButton } from "./BrainGraphDialog";
+import { BrainGraphDialog, brainGraphCorner } from "./BrainGraphDialog";
 import { BrainDocumentDialog, BrainDocumentLibrary } from "./BrainDocuments";
 import { ConversationNotesPreview } from "./ConversationNotesPreview";
 import { cliName } from "./BrainControls";
@@ -24,32 +26,45 @@ import { ChatCurationSwitch } from "./ChatCurationSwitch";
 import type { ChatBrain } from "./useChatBrain";
 
 const OUTPUT_NEEDS_NOTES_AGENT = "Needs the notes agent.";
+const READ_ONLY_STATUS = "No project chats only read this Brain; nothing from them is saved to it.";
 
 /** The Brain tab of a chat's right panel; the chat view keeps its context fresh. */
+const NOTES_EXPANDED_KEY = "flow:brain-tab:notes-expanded";
+const GRAPH_EXPANDED_KEY = "flow:brain-tab:graph-expanded";
+const GraphExpandedSchema = Schema.NullOr(Schema.Boolean);
+
 export function ChatBrainPanel({
   environmentId,
   threadId,
   chatBrain,
+  readOnly,
 }: {
   environmentId: EnvironmentId;
   threadId: ThreadId | null;
   chatBrain: ChatBrain;
+  /** Flow: No project chats read the Brain but never write to it. */
+  readOnly: boolean;
 }) {
   const { response, brain, error, changedIds, savedNow, setCurationOutput } = chatBrain;
-  const [notesExpanded, setNotesExpanded] = useState(true);
-  const [brainExpanded, setBrainExpanded] = useState(false);
+  // Flow: open sections are remembered across tabs, chats and reloads.
+  const [notesExpanded, setNotesExpanded] = useLocalStorage(
+    NOTES_EXPANDED_KEY,
+    true,
+    Schema.Boolean,
+  );
+  // null until the user opens or closes the graph; until then it opens by itself once used.
+  const [storedBrainExpanded, setBrainExpanded] = useLocalStorage<boolean | null, boolean | null>(
+    GRAPH_EXPANDED_KEY,
+    null,
+    GraphExpandedSchema,
+  );
   const [view, setView] = useState<string | null>(null);
-  const [graphAutoExpanded, setGraphAutoExpanded] = useState(false);
   const failedSources = brain?.sources.filter((source) => source.status === "error") ?? [];
   const notes = response?.chatMemories;
   const consultedNodeIds = [...new Set(notes?.consultedNodeIds ?? [])];
   const consultedNodeCount = consultedNodeIds.length;
-  // The graph opens by itself the first time this chat uses the Brain; the tab is keyed per chat.
-  if (consultedNodeCount > 0 && !graphAutoExpanded) {
-    setGraphAutoExpanded(true);
-    setBrainExpanded(true);
-  }
-  const curation = brain && threadId ? notes?.curation : undefined;
+  const brainExpanded = storedBrainExpanded ?? consultedNodeCount > 0;
+  const curation = brain && threadId && !readOnly ? notes?.curation : undefined;
   const notesAgentOff = notes?.curation?.notesAgent.enabled === false;
   const curationSwitch = (output: BrainChatCurationOutput, label: string) => {
     if (!curation) {
@@ -67,6 +82,7 @@ export function ChatBrainPanel({
   };
   const memoryStatus = chatNotesStatus({
     hasBrain: brain !== undefined,
+    readOnly,
     notes,
     notesAgentOff,
     savedNow,
@@ -91,10 +107,6 @@ export function ChatBrainPanel({
         aria-label="Flow brain and conversation notes"
         className="h-full min-h-0 overflow-y-auto p-4"
       >
-        <div className="mb-3 flex items-center gap-2">
-          <BrainCircuitIcon className="size-4 text-primary" />
-          <h2 className="text-sm font-semibold">Flow</h2>
-        </div>
         {error && (
           <p role="alert" className="mb-3 text-xs text-destructive">
             Could not refresh context. {response ? "Showing last loaded data." : "Reconnecting…"}
@@ -112,8 +124,8 @@ export function ChatBrainPanel({
                 <button
                   type="button"
                   aria-expanded={brainExpanded}
-                  onClick={() => setBrainExpanded((value) => !value)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-muted/60"
+                  onClick={() => setBrainExpanded(!brainExpanded)}
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-left hover:bg-muted/60"
                 >
                   {brain ? (
                     <BrainIcon id={brain.id} />
@@ -183,7 +195,7 @@ export function ChatBrainPanel({
                       knowledge={brain.knowledge}
                       highlightedNodeIds={consultedNodeIds}
                       compact
-                      corner={<BrainGraphExpandButton onClick={() => setView("brain")} />}
+                      corner={brainGraphCorner(() => setView("brain"))}
                     />
                   ) : (
                     <p className="p-3 text-xs text-muted-foreground">
@@ -220,36 +232,32 @@ export function ChatBrainPanel({
             icon={BookOpenIcon}
             label="Conversation notes"
             expanded={notesExpanded}
-            onToggle={() => setNotesExpanded((value) => !value)}
-            actions={
-              <>
-                {curationSwitch("notesAgent", "Notes agent")}
-                {notes?.notes && (
-                  <button
-                    type="button"
-                    aria-label="Read full conversation notes"
-                    onClick={() => setView("notes")}
-                    className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <Maximize2Icon className="size-3.5" />
-                  </button>
-                )}
-              </>
-            }
+            onToggle={() => setNotesExpanded(!notesExpanded)}
+            actions={curationSwitch("notesAgent", "Notes agent")}
           />
           {notesExpanded && (
             <>
               {notes?.notes ? (
-                <button
-                  type="button"
-                  aria-label="Read full notes"
-                  onClick={() => setView("notes")}
-                  className={`w-full rounded-xl px-2 py-2 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
-                >
-                  <ConversationNotesPreview text={notes.notes.text} />
-                  <span className="mt-2 block text-2xs text-primary">Read full notes →</span>
-                </button>
-              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label="Read full notes"
+                    onClick={() => setView("notes")}
+                    className={`w-full rounded-xl py-2 pr-9 pl-2.5 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
+                  >
+                    <ConversationNotesPreview text={notes.notes.text} />
+                    <span className="mt-2 block text-2xs text-primary">Read full notes →</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Read full conversation notes"
+                    onClick={() => setView("notes")}
+                    className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Maximize2Icon className="size-3.5" />
+                  </button>
+                </div>
+              ) : readOnly && brain ? null : (
                 <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">
                   {brain
                     ? "Your task, progress, and corrections will appear here from the first message."
@@ -259,7 +267,7 @@ export function ChatBrainPanel({
               <p
                 role="status"
                 className={
-                  notes?.extractionIssue && !notesAgentOff
+                  notes?.extractionIssue && !notesAgentOff && !readOnly
                     ? "px-2 py-2 text-2xs text-destructive"
                     : "px-2 py-2 text-2xs text-muted-foreground"
                 }
@@ -326,13 +334,17 @@ export function ChatBrainPanel({
 /** The one-line state of the chat's conversation notes under the notes preview. */
 function chatNotesStatus(input: {
   readonly hasBrain: boolean;
+  readonly readOnly: boolean;
   readonly notes: ChatMemoryList | undefined;
   readonly notesAgentOff: boolean;
   readonly savedNow: boolean;
 }): string {
-  const { hasBrain, notes, notesAgentOff, savedNow } = input;
+  const { hasBrain, readOnly, notes, notesAgentOff, savedNow } = input;
   if (!hasBrain) {
     return "This chat has no Brain.";
+  }
+  if (readOnly) {
+    return READ_ONLY_STATUS;
   }
   if (notesAgentOff) {
     return "The notes agent is off for this chat. Its messages are still recorded and are caught up when it is turned back on.";

@@ -1,4 +1,6 @@
 import {
+  MAX_CHAT_FONT_SCALE,
+  MIN_CHAT_FONT_SCALE,
   DEFAULT_CODE_FONT_SIZE,
   DEFAULT_INTERFACE_FONT_SIZE,
   DEFAULT_PROMPT_FONT_SIZE,
@@ -64,6 +66,7 @@ export interface AppearanceFontPreferences {
   readonly composer: string;
   readonly sizeInterface: number;
   readonly sizePrompt: number;
+  readonly scaleChat: number;
   readonly sizeCode: number;
   readonly smoothing: boolean;
 }
@@ -89,6 +92,12 @@ export function applyAppearanceFontVariables(
 
   root.style.fontSize = `${clampInterfaceFontSize(preferences.sizeInterface)}px`;
   root.style.setProperty("--font-size-prompt", `${clampPromptFontSize(preferences.sizePrompt)}px`);
+  root.style.setProperty(
+    "--chat-font-scale",
+    String(
+      clampFontSize(preferences.scaleChat, MIN_CHAT_FONT_SCALE, MAX_CHAT_FONT_SCALE, 100) / 100,
+    ),
+  );
   const code = clampCodeFontSize(preferences.sizeCode);
   root.style.setProperty("--font-size-code", `${code}px`);
   root.style.setProperty("--diffs-font-size", `${code}px`);

@@ -16,6 +16,7 @@ import type {
   ModelSelection,
   ProjectId,
   ProviderInstanceId,
+  ProviderInteractionMode,
   ProviderOptionDescriptor,
   ProviderOptionSelection,
   RuntimeMode,
@@ -109,6 +110,7 @@ import { useNativeMailSearchToolbar } from "../../native/use-native-mail-search-
 import { ModelRow, ChoiceRow } from "./ThreadSettingsRows";
 import {
   compatibleRuntimeModeForChoices,
+  PLAN_PERMISSION_CHOICE,
   runtimeModeChoicesForSupportedModes,
   selectableChoices,
 } from "./thread-settings-options";
@@ -277,6 +279,9 @@ type ThreadSettingsSessionProps = {
   readonly onUpdateOptionSelections: (selections: ReadonlyArray<ProviderOptionSelection>) => void;
   readonly runtimeMode: RuntimeMode;
   readonly onUpdateRuntimeMode: (mode: RuntimeMode) => void;
+  /** Flow: Plan as a permission mode; omitted for providers without one. */
+  readonly interactionMode?: ProviderInteractionMode;
+  readonly onUpdateInteractionMode?: (mode: ProviderInteractionMode) => void;
 };
 
 /** The composer draft the sheet edits: the thread's own, or a queued message being edited. */
@@ -300,6 +305,8 @@ type ThreadSettingsSessionValue = {
   readonly runtimeMode: RuntimeMode;
   readonly runtimeModeChoices: ReturnType<typeof runtimeModeChoicesForSupportedModes>;
   readonly onUpdateRuntimeMode: (mode: RuntimeMode) => void;
+  readonly planSelected: boolean;
+  readonly onUpdateInteractionMode: ((mode: ProviderInteractionMode) => void) | undefined;
   readonly displayedDescriptors: ReadonlyArray<ProviderOptionDescriptor>;
   readonly promptTraits: ReturnType<typeof getPromptControlledTraits>;
   readonly displayedModelSelection: ModelSelection | null;
@@ -610,6 +617,8 @@ function ThreadSettingsSessionProvider(
     runtimeMode: compatibleRuntimeMode,
     runtimeModeChoices,
     onUpdateRuntimeMode: props.onUpdateRuntimeMode,
+    planSelected: props.onUpdateInteractionMode !== undefined && props.interactionMode === "plan",
+    onUpdateInteractionMode: props.onUpdateInteractionMode,
     displayedDescriptors,
     promptTraits,
     displayedModelSelection: pendingModel?.selection ?? props.selectedModel,
@@ -891,8 +900,10 @@ function ThreadSettingsOptionsItem(props: {
             isLast
             label="Runtime"
             value={
-              session.runtimeModeChoices.find((choice) => choice.mode === session.runtimeMode)
-                ?.label
+              session.planSelected
+                ? PLAN_PERMISSION_CHOICE.label
+                : session.runtimeModeChoices.find((choice) => choice.mode === session.runtimeMode)
+                    ?.label
             }
             onPress={() => props.onOpenSubmenu({ kind: "runtime" })}
           />
@@ -1089,17 +1100,37 @@ function ThreadSettingsChoiceContent(props: {
   const submenuContent =
     props.submenu.kind === "runtime"
       ? {
-          rows: session.runtimeModeChoices.map((choice) => ({
-            id: choice.mode,
-            label: choice.label,
-            description: choice.description,
-            selected: choice.mode === session.runtimeMode,
-            onPress: () => {
-              void Haptics.selectionAsync();
-              session.onUpdateRuntimeMode(choice.mode);
-              props.onSelected();
-            },
-          })),
+          rows: [
+            ...session.runtimeModeChoices.map((choice) => ({
+              id: choice.mode,
+              label: choice.label,
+              description: choice.description,
+              selected: !session.planSelected && choice.mode === session.runtimeMode,
+              onPress: () => {
+                void Haptics.selectionAsync();
+                if (session.planSelected) {
+                  session.onUpdateInteractionMode?.("default");
+                }
+                session.onUpdateRuntimeMode(choice.mode);
+                props.onSelected();
+              },
+            })),
+            ...(session.onUpdateInteractionMode === undefined
+              ? []
+              : [
+                  {
+                    id: "plan",
+                    label: PLAN_PERMISSION_CHOICE.label,
+                    description: PLAN_PERMISSION_CHOICE.description,
+                    selected: session.planSelected,
+                    onPress: () => {
+                      void Haptics.selectionAsync();
+                      session.onUpdateInteractionMode?.("plan");
+                      props.onSelected();
+                    },
+                  },
+                ]),
+          ],
         }
       : activeDescriptor?.type === "select"
         ? {
@@ -1558,6 +1589,15 @@ export function ExistingThreadSettingsRouteScreen({
       }}
       runtimeMode={draftSettings.runtimeMode ?? selectedThread.runtimeMode}
       onUpdateRuntimeMode={(runtimeMode) => updateComposerDraftSettings(threadKey, { runtimeMode })}
+      interactionMode={draftSettings.interactionMode ?? selectedThread.interactionMode}
+      {...(serverConfig?.providers.find(
+        (provider) => provider.instanceId === modelSelection.instanceId,
+      )?.showInteractionModeToggle === false
+        ? {}
+        : {
+            onUpdateInteractionMode: (interactionMode: ProviderInteractionMode) =>
+              updateComposerDraftSettings(threadKey, { interactionMode }),
+          })}
       onClose={() => navigation.goBack()}
     />
   );
@@ -1587,6 +1627,8 @@ export function NewTaskThreadSettingsRouteScreen() {
       onUpdateOptionSelections={flow.setSelectedModelOptions}
       runtimeMode={flow.runtimeMode}
       onUpdateRuntimeMode={flow.setRuntimeMode}
+      interactionMode={flow.interactionMode}
+      {...(flow.planModeEnabled ? { onUpdateInteractionMode: flow.setInteractionMode } : {})}
       onClose={() => navigation.goBack()}
     />
   );

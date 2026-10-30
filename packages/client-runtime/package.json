@@ -287,6 +287,10 @@
       "types": "./src/state/sharedSettings.ts",
       "default": "./src/state/sharedSettings.ts"
     },
+    "./state/plan-versions": {
+      "types": "./src/state/planVersions.ts",
+      "default": "./src/state/planVersions.ts"
+    },
     "./state/shell": {
       "types": "./src/state/shell.ts",
       "default": "./src/state/shell.ts"

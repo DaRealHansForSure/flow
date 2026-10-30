@@ -4,7 +4,7 @@ import { NotificationSettings } from "./NotificationSettings";
 import { PRIVACY_POLICY_URL } from "../../legalLinks";
 import { CheckIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import {
   type DesktopUpdateChannel,
   IDLE_COMPACTION_MODES,
@@ -94,6 +94,7 @@ import {
   SettingsRow,
   SettingsSection,
 } from "./settingsLayout";
+import { AboutComponentVersions } from "./AboutComponentVersions";
 import { searchableSetting } from "./settingsSearch";
 import { BackgroundActivitySettingsRow } from "./BackgroundActivitySettings";
 import { BackgroundModeSettingsRow } from "./BackgroundModeSettings";
@@ -146,13 +147,14 @@ const DEFAULT_DRIVER_KIND = ProviderDriverKind.make("codex");
 function AboutVersionTitle() {
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span>Version</span>
+      <span>Web app</span>
       <code className="text-2xs font-medium text-muted-foreground">{APP_VERSION}</code>
     </span>
   );
 }
 
-function AboutVersionSection() {
+/** Flow: the update track comes first, then every version (`versions` below this app's). */
+function AboutVersionSection(props: { readonly versions: ReactNode }) {
   const updateState = useDesktopUpdateState();
   const [switchChannel, setSwitchChannel] = useState<DesktopUpdateChannel | null>(null);
   const [isUpdateActionPending, setIsUpdateActionPending] = useState(false);
@@ -295,28 +297,6 @@ function AboutVersionSection() {
 
   return (
     <>
-      <SettingsRow
-        id={searchableSetting("app-version").id}
-        title={<AboutVersionTitle />}
-        description={description}
-        control={
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={buttonDisabled || isUpdateActionPending}
-                  onClick={handleButtonClick}
-                >
-                  {buttonLabel}
-                </Button>
-              }
-            />
-            {buttonTooltip ? <TooltipPopup>{buttonTooltip}</TooltipPopup> : null}
-          </Tooltip>
-        }
-      />
       {hasDesktopBridge ? (
         <SettingsRow
           {...searchableSetting("update-track")}
@@ -398,6 +378,29 @@ function AboutVersionSection() {
           }
         />
       ) : null}
+      <SettingsRow
+        id={searchableSetting("app-version").id}
+        title={<AboutVersionTitle />}
+        description={description}
+        control={
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={buttonDisabled || isUpdateActionPending}
+                  onClick={handleButtonClick}
+                >
+                  {buttonLabel}
+                </Button>
+              }
+            />
+            {buttonTooltip ? <TooltipPopup>{buttonTooltip}</TooltipPopup> : null}
+          </Tooltip>
+        }
+      />
+      {props.versions}
       {hasDesktopBridge ? <CliCommandSettingsRow /> : null}
       {switchChannel === null ? null : (
         <UpdateTrackSwitchDialog channel={switchChannel} onClose={() => setSwitchChannel(null)} />
@@ -681,6 +684,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       fontFamilyTerminal: DEFAULT_UNIFIED_SETTINGS.fontFamilyTerminal,
       fontSizeInterface: DEFAULT_UNIFIED_SETTINGS.fontSizeInterface,
       fontSizePrompt: DEFAULT_UNIFIED_SETTINGS.fontSizePrompt,
+      fontScaleChat: DEFAULT_UNIFIED_SETTINGS.fontScaleChat,
       fontSizeCode: DEFAULT_UNIFIED_SETTINGS.fontSizeCode,
       fontSizeTerminal: DEFAULT_UNIFIED_SETTINGS.fontSizeTerminal,
       browserDefaultViewport: DEFAULT_UNIFIED_SETTINGS.browserDefaultViewport,
@@ -755,19 +759,6 @@ export function LegacyFeaturesSection() {
 
   return (
     <SettingsSection id="legacy-features" title="Legacy">
-      <SettingsRow
-        {...searchableSetting("legacy-plan-mode")}
-        description="Restore Build/Plan, /plan, /default, and Shift+Tab. Off uses build mode."
-        control={
-          <Switch
-            checked={settings.planModeEnabled}
-            onCheckedChange={(checked) => {
-              updateSettings({ planModeEnabled: Boolean(checked) });
-            }}
-            aria-label="Plan mode (legacy)"
-          />
-        }
-      />
       <SettingsRow
         {...searchableSetting("legacy-context-window-indicator")}
         description="Shows context window usage as a circular indicator in the composer."
@@ -847,7 +838,7 @@ export function GeneralSettingsPanel() {
         />
         <SettingsRow
           {...searchableSetting("project-order")}
-          description="Order of projects in the sidebar project picker and command palette."
+          description="Order of projects in the sidebar project picker and command palette. Without the Working section, Last user message also orders the chats in the sidebar."
           resetAction={
             settings.sidebarProjectSortOrder !==
             DEFAULT_UNIFIED_SETTINGS.sidebarProjectSortOrder ? (
@@ -1851,9 +1842,7 @@ export function ThreadsSettingsPanel() {
                     model={textGenModel}
                     modelOptions={textGenModelOptions}
                     allowPromptInjectedEffort={false}
-                    planModeEnabled={
-                      settings.planModeEnabled || selectsPlanAgent(textGenModelOptions)
-                    }
+                    planModeEnabled={selectsPlanAgent(textGenModelOptions)}
                     triggerClassName={SETTINGS_PICKER_TRIGGER_CLASSNAME}
                     onModelOptionsChange={(nextOptions) => {
                       updateSettings({
@@ -2052,7 +2041,7 @@ export function AboutSettingsPanel() {
     <SettingsPageContainer>
       <SettingsSection id="about" title="App">
         {isElectron || HOSTED_APP_CHANNEL ? (
-          <AboutVersionSection />
+          <AboutVersionSection versions={<AboutComponentVersions />} />
         ) : (
           <>
             <SettingsRow
@@ -2060,6 +2049,7 @@ export function AboutSettingsPanel() {
               title={<AboutVersionTitle />}
               description="Current version of the application."
             />
+            <AboutComponentVersions />
           </>
         )}
         <MobileAppSettingsRow />

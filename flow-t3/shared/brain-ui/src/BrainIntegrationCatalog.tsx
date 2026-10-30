@@ -16,5 +16,7 @@ export function BrainIntegrationCatalog({ brainName, title = "Sources", github, 
     { id: "fireflies", name: "Fireflies.ai", description: "Meeting transcripts", icon: <AudioLines size={20} /> },
     { id: "notes", name: "Meeting Notes", description: "Notes and decisions", icon: <FileText size={20} /> },
     { id: "slack", name: "Slack Bot", description: "Ask your brain in Slack", icon: <MessageSquare size={20} /> },
-  ].map((card) => extensions.find((extension) => extension.id === card.id) ?? card).concat(extensions.filter((extension) => !["github", "folder", "linear", "fireflies", "notes", "slack"].includes(extension.id)))} />;
+  ].map((card) => extensions.find((extension) => extension.id === card.id) ?? card).concat(extensions.filter((extension) => !["github", "folder", "linear", "fireflies", "notes", "slack"].includes(extension.id)))
+    // Fork: placeholders without an action ("Coming later") stay hidden until they are built.
+    .filter((card) => card.onAction !== undefined)} />;
 }

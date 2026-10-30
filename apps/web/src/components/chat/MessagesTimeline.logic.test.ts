@@ -2480,6 +2480,43 @@ describe("deriveMessagesTimelineRows", () => {
     ]);
   });
 
+  it("keeps the images a folded group of reads looked at", () => {
+    const reads = [
+      { path: "docs/a.png", image: true },
+      { path: "src/index.ts", image: false },
+      { path: "docs/b.webp", image: true },
+    ];
+    const timelineEntries = reads.map((read, index) => {
+      const createdAt = `2026-01-01T00:00:0${index}Z`;
+      return {
+        id: `read-entry-${index}`,
+        kind: "work" as const,
+        createdAt,
+        entry: {
+          id: `read-${index}`,
+          createdAt,
+          label: "Read",
+          detail: read.path,
+          tone: "tool" as const,
+          requestKind: "file-read" as const,
+          ...(read.image ? { viewedImagePath: read.path } : {}),
+        },
+      };
+    });
+
+    const rows = deriveMessagesTimelineRows({
+      timelineEntries,
+      isWorking: false,
+      activeTurnStartedAt: null,
+      turnDiffSummaries: [],
+      supportsConversationRollback: false,
+    });
+
+    expect(rows.find((row) => row.kind === "work-toggle")).toMatchObject({
+      imagePaths: ["docs/a.png", "docs/b.webp"],
+    });
+  });
+
   it.each([
     ["the later success is hidden", ["failed", "completed", "info"], false],
     ["the later success is visible", ["failed", "info", "completed"], false],

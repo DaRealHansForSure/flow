@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
+  CHAT_FONT_SCALE_STEP,
   DEFAULT_UNIFIED_SETTINGS,
+  MAX_CHAT_FONT_SCALE,
   MAX_CODE_FONT_SIZE,
   MAX_INTERFACE_FONT_SIZE,
   MAX_PROMPT_FONT_SIZE,
   MAX_TERMINAL_FONT_SIZE,
+  MIN_CHAT_FONT_SCALE,
   MIN_CODE_FONT_SIZE,
   MIN_INTERFACE_FONT_SIZE,
   MIN_PROMPT_FONT_SIZE,
@@ -114,6 +117,55 @@ function PromptFontRow() {
         onChange: (fontSizePrompt) => updateSettings({ fontSizePrompt }),
       }}
       preview={<PromptFontPreview />}
+    />
+  );
+}
+
+/** Flow: sizes only the chat's message text, so it can shrink without the buttons around it. */
+function ChatFontRow() {
+  const settings = useScopedSettings();
+  const updateSettings = useUpdateScopedSettings();
+  const scales = Array.from(
+    { length: (MAX_CHAT_FONT_SCALE - MIN_CHAT_FONT_SCALE) / CHAT_FONT_SCALE_STEP + 1 },
+    (_, index) => MIN_CHAT_FONT_SCALE + index * CHAT_FONT_SCALE_STEP,
+  );
+  return (
+    <SettingsRow
+      {...searchableSetting("chat-font")}
+      description="Text of the messages in a chat, as a share of the interface font size."
+      resetAction={
+        settings.fontScaleChat !== DEFAULT_UNIFIED_SETTINGS.fontScaleChat ? (
+          <SettingResetButton
+            label="chat font"
+            onClick={() =>
+              updateSettings({ fontScaleChat: DEFAULT_UNIFIED_SETTINGS.fontScaleChat })
+            }
+          />
+        ) : null
+      }
+      control={
+        <Select
+          value={String(settings.fontScaleChat)}
+          onValueChange={(next) => {
+            if (typeof next !== "string") return;
+            const parsed = Number(next);
+            if (scales.includes(parsed)) {
+              updateSettings({ fontScaleChat: parsed });
+            }
+          }}
+        >
+          <SelectTrigger size="sm" className="w-22 shrink-0" aria-label="Chat font size">
+            <SelectValue>{settings.fontScaleChat} %</SelectValue>
+          </SelectTrigger>
+          <SelectPopup align="end" alignItemWithTrigger={false}>
+            {scales.map((scale) => (
+              <SelectItem hideIndicator key={scale} value={String(scale)}>
+                {scale} %
+              </SelectItem>
+            ))}
+          </SelectPopup>
+        </Select>
+      }
     />
   );
 }
@@ -259,6 +311,7 @@ function FontSettingsGroup() {
   return (
     <>
       <InterfaceFontRow />
+      <ChatFontRow />
       <PromptFontRow />
       <CodeFontRow />
       <TerminalFontRow />
@@ -293,6 +346,7 @@ function SimpleFontRows() {
   return (
     <>
       <InterfaceFontRow preview={<PromptFontPreview />} />
+      <ChatFontRow />
       <CodeFontRow
         title="Monospace font"
         description="Code blocks, diffs, file previews, and the terminal."

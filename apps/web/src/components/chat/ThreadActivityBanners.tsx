@@ -1,3 +1,4 @@
+import { cn } from "~/lib/utils";
 import type {
   OrchestrationV2PendingBackgroundTask,
   OrchestrationV2ProviderGoal,
@@ -21,7 +22,6 @@ import {
 } from "lucide-react";
 import { Fragment } from "react";
 import { tickTextContent } from "~/lib/tickTextContent";
-import { cn } from "~/lib/utils";
 import { Button, InlineButton } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import type { ComposerBannerStackItem } from "./ComposerBannerStack";
@@ -145,7 +145,7 @@ export function backgroundWorkNowItem(input: {
     icon: rows.every(isCommand) ? <TerminalIcon /> : <CircleDashedIcon />,
     title: only ? (
       <>
-        {verb} <span className={cn(isCommand(only) && "font-mono")}>{only.task.label}</span>
+        {verb}: <span>{only.task.label}</span>
       </>
     ) : (
       presentation.title
@@ -158,6 +158,42 @@ export function backgroundWorkNowItem(input: {
       <span className="font-mono">{rows.map((row) => row.task.label).join(", ")}</span>
     ) : (
       rows.map((row) => row.task.label).join(", ")
+    ),
+    details: (
+      <ul className="flex flex-col divide-y divide-border">
+        {rows.map((row) => {
+          const childThreadId = row.childThreadId;
+          return (
+            <li key={row.task.taskId} className="flex items-start gap-3 py-2.5">
+              <span
+                aria-hidden
+                className="mt-0.5 flex shrink-0 text-muted-foreground [&_svg]:size-4"
+              >
+                {isCommand(row) ? <TerminalIcon /> : <CircleDashedIcon />}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                {/* The full name wraps, as in the mobile app; the pill above stays one line. */}
+                <span
+                  className={cn(
+                    "wrap-anywhere text-foreground text-xs leading-snug",
+                    isCommand(row) && "font-mono",
+                  )}
+                >
+                  {row.task.label}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {row.activity ?? (isCommand(row) ? "Command" : "Subagent")}
+                </span>
+              </span>
+              {childThreadId === undefined ? null : (
+                <InlineButton tone="muted" onClick={() => onOpenThread(childThreadId)}>
+                  Open
+                </InlineButton>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     ),
     actions: (
       <>

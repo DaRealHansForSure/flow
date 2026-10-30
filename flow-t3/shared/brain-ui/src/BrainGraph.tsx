@@ -1,8 +1,7 @@
-import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { FalkorDBCanvas, GraphNode } from "@falkordb/canvas";
 import { XIcon } from "lucide-react";
-import type { BrainUiKnowledge } from "./types.ts";
+import type { BrainGraphCorner, BrainUiKnowledge } from "./types.ts";
 
 const colors = ["#d39c38", "#64a58a", "#8296d9", "#b28bc5", "#62a5bb", "#c48180"];
 const noHighlightedNodeIds: readonly string[] = [];
@@ -20,7 +19,7 @@ export function BrainGraph({
   readonly fill?: boolean;
   readonly highlightedNodeIds?: readonly string[];
   /** Controls shown in the graph's top right corner, e.g. the host's "open larger" button. */
-  readonly corner?: ReactNode;
+  readonly corner?: BrainGraphCorner;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<FalkorDBCanvas | null>(null);
@@ -28,6 +27,7 @@ export function BrainGraph({
   const topology = useRef("");
   const signature = useRef("");
   const highlightedIds = useRef(new Set<string>());
+  const connectedIds = useRef(new Set<number>());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const types = [...new Set(knowledge.entities.map((entry) => entry.kind))].sort();
@@ -111,15 +111,12 @@ export function BrainGraph({
         else if (signature.current !== nextSignature) canvas.setGraphData(data);
         topology.current = nextTopology;
         signature.current = nextSignature;
-        if (firstPaint) {
-          const connected = new Set(data.links.flatMap((edge) => [edge.source, edge.target]));
-          if (connected.size > 0)
-            // @effect-diagnostics-next-line globalTimers:off -- canvas layout settles asynchronously before zoom-to-fit.
-            fitTimer = setTimeout(() => {
-              if (canvasRef.current === canvas)
-                canvas.zoomToFit(1, (node: GraphNode) => connected.has(node.id as number));
-            }, 900);
-        }
+        connectedIds.current = new Set(data.links.flatMap((edge) => [edge.source, edge.target]));
+        if (firstPaint && connectedIds.current.size > 0)
+          // @effect-diagnostics-next-line globalTimers:off -- canvas layout settles asynchronously before zoom-to-fit.
+          fitTimer = setTimeout(() => {
+            if (canvasRef.current === canvas) fit();
+          }, 900);
       })
       .catch(() => {
         if (!cancelled) setError("The graph could not be displayed. Reload this page to retry.");
@@ -129,6 +126,14 @@ export function BrainGraph({
       clearTimeout(fitTimer);
     };
   }, [knowledge, highlightSignature]);
+
+  // Unconnected nodes would stretch the view to the edges, so the fit covers connected ones.
+  function fit() {
+    const connected = connectedIds.current;
+    canvasRef.current?.zoomToFit(1, (node: GraphNode) =>
+      connected.size === 0 || connected.has(node.id as number),
+    );
+  }
 
   useEffect(
     () => () => {
@@ -142,7 +147,11 @@ export function BrainGraph({
     <div className={fill ? "flow-brain-graph fill" : "flow-brain-graph"}>
       <div className={compact ? "flow-brain-graph-canvas compact" : "flow-brain-graph-canvas"}>
         <div ref={host} className="flow-brain-graph-host" />
-        {corner ? <div className="flow-brain-graph-corner">{corner}</div> : null}
+        {corner ? (
+          <div className="flow-brain-graph-corner">
+            {typeof corner === "function" ? corner(fit) : corner}
+          </div>
+        ) : null}
         {error && <p role="alert" className="flow-brain-alert">{error}</p>}
         {selected && (
           <article className="flow-brain-node-details">
