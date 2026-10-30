@@ -226,4 +226,4 @@ jobs:
           notes=$(node release-scripts/scripts/fork/changelog-section.mjs "$version" release-scripts/CHANGELOG.md) ||
             notes="See CHANGELOG.md for the changes in $version."
           node release-scripts/scripts/publish-release-assets.mjs "$FLOW_TAG" release-browser \
-            --title "Flow $version (service)" --target "$FLOW_COMMIT" --notes "$notes" --latest
+            --title "Flow $version" --target "$FLOW_COMMIT" --notes "$notes" --latest

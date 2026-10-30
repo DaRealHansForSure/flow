@@ -62,6 +62,9 @@ export async function publishReleaseAssets(input) {
     // A rolling feed is updated in place: installed apps read it, so new files
     // land before stale ones are removed and it is never empty mid-publish.
     rolling = false,
+    // Flow fork: add files to a release another part of the same version created,
+    // so the desktop app joins its service release on one page.
+    append = false,
     gh = runGh,
     attempts = 5,
     sleep = delay,
@@ -69,7 +72,10 @@ export async function publishReleaseAssets(input) {
   } = input;
 
   const stored = await storedRelease(tag, gh);
-  if (stored && !rolling && !stored.isDraft) throw Error(`Release ${tag} is already published.`);
+  if (append && !stored) throw Error(`Release ${tag} does not exist to add files to.`);
+  if (stored && !rolling && !append && !stored.isDraft) {
+    throw Error(`Release ${tag} is already published.`);
+  }
   if (!stored) {
     await gh([
       "release",
@@ -111,6 +117,10 @@ export async function publishReleaseAssets(input) {
   const expected = files.map((file) => NodePath.basename(file.path));
   const missing = expected.filter((name) => !after?.assets.has(name));
   if (missing.length) throw Error(`${tag} is missing ${missing.join(", ")} after uploading.`);
+  if (append) {
+    log(`Added ${expected.length} files to ${tag}`);
+    return;
+  }
 
   if (rolling) {
     for (const name of after.assets.keys())
@@ -161,5 +171,6 @@ if (process.argv[1] && NodeURL.pathToFileURL(process.argv[1]).href === import.me
     target: flag("target"),
     latest: process.argv.includes("--latest"),
     rolling: process.argv.includes("--rolling"),
+    append: process.argv.includes("--append"),
   });
 }
