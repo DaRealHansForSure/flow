@@ -7,7 +7,7 @@ type CurationChoice = "default" | "on" | "off";
 
 /**
  * One chat's own choice for something the notes agent maintains: Default follows the project
- * or global setting, On and Off apply to this chat only. The hint under it says which.
+ * or global setting, On and Off apply to this chat only. Its tooltip says which applies.
  */
 export function ChatCurationSwitch({
   label,
@@ -38,26 +38,23 @@ export function ChatCurationSwitch({
     });
   };
   return (
-    <div className="flex shrink-0 flex-col items-end gap-0.5">
-      <ToggleGroup
-        aria-label={`${label} for this chat`}
-        disabled={disabledHint !== undefined}
-        value={[shownChoice]}
-        onValueChange={(next) => {
-          const picked = next[0];
-          if (picked === "default" || picked === "on" || picked === "off") {
-            select(picked);
-          }
-        }}
-      >
-        <Toggle value="default">Default</Toggle>
-        <Toggle value="on">On</Toggle>
-        <Toggle value="off">Off</Toggle>
-      </ToggleGroup>
-      <span className="text-2xs text-muted-foreground">
-        {curationHint(shownChoice, choice.inherited, disabledHint)}
-      </span>
-    </div>
+    <ToggleGroup
+      aria-label={`${label} for this chat`}
+      title={curationHint(shownChoice, choice.inherited, disabledHint)}
+      className="shrink-0"
+      disabled={disabledHint !== undefined}
+      value={[shownChoice]}
+      onValueChange={(next) => {
+        const picked = next[0];
+        if (picked === "default" || picked === "on" || picked === "off") {
+          select(picked);
+        }
+      }}
+    >
+      <Toggle value="default">Default</Toggle>
+      <Toggle value="on">On</Toggle>
+      <Toggle value="off">Off</Toggle>
+    </ToggleGroup>
   );
 }
 

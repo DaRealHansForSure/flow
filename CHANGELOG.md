@@ -32,6 +32,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Brain panel is tidier: the Default / On / Off switches drop the "Follows Settings" line
+  under them (it moved into their tooltip), and the conversation notes' enlarge button sits in
+  the top right of the notes instead of the section header.
 - Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
   "Plan" chip, with Shift+Tab and `/plan` still switching to it. It replaces the separate
   Build/Plan toggle and the Legacy settings switch, and is available for every provider
