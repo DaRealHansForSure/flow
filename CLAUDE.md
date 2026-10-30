@@ -173,6 +173,8 @@ app's update feed is the repository its release workflow runs in.
   version, so that service release must exist.
 - Before releasing, rename `[Unreleased]` in `CHANGELOG.md` to `[X.Y.Z] - <date>`: that section
   becomes the release text. Without one the page only points at the CHANGELOG.
+- Below that text every release page shows `scripts/fork/release-files.md`, the table of its
+  files. Update the table whenever a release gains, loses or renames a file.
 - Every push to `release` starts a service release of the next patch version on its own. When
   the push is only the base for a "Flow release" run, put `[skip ci]` in its merge commit.
 - A machine that still has an upstream install switches once, by accepting the update the
