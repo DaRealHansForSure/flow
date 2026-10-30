@@ -10,202 +10,152 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Tapping the background work in the status pill lists every running command and subagent with what
-  it is doing, and opens a subagent's thread, like the mobile app's Background work screen. On a
-  phone the list opens as a bottom sheet, and the icon is part of the tap target.
+- One status pill stays above the composer instead of scrolling with the chat, as in the mobile
+  app: background work with its Stop button, how long the thread has been working, its browsers
+  and its queued messages, with a round button beside it to scroll back to the end. Tapping the
+  background work lists every running command and subagent by its full name with what it is doing,
+  and opens a subagent's thread; on a phone the list opens as a bottom sheet.
 - On web and desktop, holding the send button while the agent works (or right-clicking it) opens a
   menu to Steer now or Queue the message, as in the mobile app.
+- A globe in the status pill shows how many browsers the chat has open while none is on screen; it
+  opens the newest in the side panel and carries a dot for new ones.
 - The browser panel and the floating browser can be magnified on your screen without zooming the
   page: pinch with two fingers on a phone, or Ctrl + mouse wheel or a trackpad pinch on a computer.
   A badge shows the zoom and resets it.
+- Moving the floating browser into the right panel sticks for the chat: browsers the agent opens
+  later join the panel as tabs instead of floating over the chat. A tab that arrives while the
+  panel is closed puts a blue dot on the panel button until you open it. Popping a browser out of
+  the panel again floats the chat's later browsers too.
 - An Agents tab in the right panel (+ > Agents, or G) lists the chat's active and previous agents,
   the overview T3 Code dropped when it replaced its Agents panel.
-- A globe pill above the composer shows how many browsers the chat has open while none is on
-  screen, like the mobile app; it opens them in the side panel and carries a dot for new ones.
 - Settings > Appearance > Chat font sizes only the text of chat messages (70 to 130 % of the
   interface size), so the chat can be smaller without shrinking buttons the way browser zoom does.
 - The file panel has a Download button for the open file. On phones its actions (rendered view,
   word wrap, preview browser, download, file tree) sit in one menu instead of a row of icons.
-- Moving the floating browser into the right panel sticks for the chat: browsers the agent
-  opens later join the panel as tabs instead of floating over the chat, and closing the panel no
-  longer floats one. A tab that arrives while the panel is closed puts a blue dot on the panel
-  button until you open it.
-- A chat whose plan waits for Accept, Revise or Decline shows a violet "Plan ready" badge in
-  the sidebar, in the desktop and web apps, where finished chats show "Done". It does not fade
-  like finished chats, and a closed project folder shows its attention dot.
+- A chat whose plan waits for Accept, Revise or Decline shows a violet "Plan ready" badge in the
+  sidebar, in the desktop and web apps, where finished chats show "Done". It does not fade like
+  finished chats, and a closed project folder shows its attention dot.
 - Settings > About lists the version of each part: the web app, the Flow service it is connected
   to, and the desktop app when it runs in one.
-- A step that read an image shows a small thumbnail at the end of its row, in place of its
-  time; tapping it opens the picture. A folded group of such steps ("Read 3 files") previews up
-  to three of them.
-- A Plan tab in the right panel shows the chat's latest plan like an opened `Plan.md`, as
-  rendered Markdown or raw text, with Copy, Download and Save as file. It opens on its own
-  for each new plan, and from the plan card's menu or the panel's + menu.
-
-- Plans are answered with Accept, Revise or Decline in the composer, the plan card and the
-  Plan tab. Accept continues in the chat's permission mode or one picked from its menu, or
-  in a new thread; Revise asks for feedback and makes a new version; Decline keeps the chat
-  in Plan. Each plan shows its version and whether it was accepted, revised or declined,
-  and the Plan tab can show earlier versions.
-
-- Passages of an open plan can be commented on: select text in the plan card or the Plan
-  tab, choose Comment and write a note. Each comment becomes a chip in the composer and is
-  sent, with the quoted passage, when you Revise.
-
-- An accepted, declined or revised plan can be reopened from its card's menu or the Plan
-  tab. The chat goes back to Plan with that version as the open plan, ready to Accept,
-  Revise or Decline again; changes already made from it are kept.
+- A step that read an image shows a small thumbnail at the end of its row, in place of its time;
+  tapping it opens the picture. A folded group of such steps ("Read 3 files") previews up to three
+  of them.
+- A Plan tab in the right panel shows the chat's latest plan like an opened `Plan.md`, as rendered
+  Markdown or raw text, with Copy, Download and Save as file. It opens on its own for each new
+  plan, and from the plan card's menu or the panel's + menu.
+- Plans are answered with Accept, Revise or Decline in the composer, the plan card and the Plan
+  tab. Accept continues in the chat's permission mode or one picked from its menu, or in a new
+  thread; Revise asks for feedback and makes a new version without carrying out the plan's steps;
+  Decline keeps the chat in Plan. Each plan shows its version and whether it was accepted, revised
+  or declined, and the Plan tab can show earlier versions.
+- Passages of an open plan can be commented on: select text in the plan card or the Plan tab,
+  choose Comment and write a note. Each comment becomes a chip in the composer and is sent, with
+  the quoted passage, when you Revise.
+- An accepted, declined or revised plan can be reopened from its card's menu or the Plan tab. The
+  chat goes back to Plan with that version as the open plan, ready to Accept, Revise or Decline
+  again; changes already made from it are kept.
 
 ### Changed
 
-- The sidebar shows a thread's earlier provider only when it was a different kind, so a switch
-  between two setups of the same provider no longer shows its logo twice.
+- Long chats open with their last five turns (at most 300 entries) and load older turns in chunks
+  of five as you scroll up, instead of the last ten at once behind a "Load earlier turns" button.
+- On a phone both side menus open across the full width. The side panel (Brain, Plan, files) fills
+  the screen without its maximize button and its edge, and the sidebar button stays reachable at
+  its top left.
+- On touch screens the chat header, right panel header and sidebar icon buttons (Settings, Pull
+  requests, Usage, filter, add project, new thread) are 40 px with 20 px icons, whatever the font
+  size.
+- The composer stands out more from the chat history in light and dark themes: a tinted surface and
+  a visible outline, mixed from the theme's own colours. On a phone it is a full-width, square bar
+  on the bottom edge over an opaque base, so chat text no longer scrolls into view below or beside
+  it.
+- On a phone the idle composer shows "Ask anything..." in a rounded, outlined field, so it reads as
+  a place to type; the send button and model chip line up with it.
 - The composer's "Ask anything" hint is a clear grey, so in a dark theme it no longer looks like
   text you typed.
-- The background work list shows each item's full name in a smaller font, wrapping over lines
-  instead of cutting it off.
-- In the command palette's project list, No project has a second line like the projects, so every
-  row is as tall and easy to tap.
-- On a phone the idle composer shows "Ask anything..." in a rounded, outlined field in a muted
-  colour, so it reads as a place to type rather than a line of text; the send button beside it
-  matches the field's height.
-- On touch screens the chat header and right panel header buttons are 40 px with 20 px icons, the
-  same size on both sides.
-- On a phone both side menus open across the full width; the right panel drops its maximize
-  button and its edge, since it already fills the screen.
-- One status pill stays above the composer instead of scrolling with the chat, as in the mobile
-  app: background work with its actions, how long the thread has been working, its browsers and
-  queued messages, with a round button beside it to scroll back to the end.
-- The pills above the composer (Scroll to end, background work, browsers) share one taller, rounded
-  look with dividers, like the mobile app's status pill.
-- On touch screens the sidebar's icon buttons (Settings, Pull requests, Usage, and the filter, add
-  project and new thread buttons) are 40 px, whatever the font size.
 - The context window indicator turns amber from 80 % and red from 90 %, so a filling context shows
   before it compacts.
 - The update dialog names the app Flow instead of T3 Code, and lists each provider with the version
   it moves from and to (for example Claude 2.1.300 → 2.1.308).
 - In the folder sidebar every thread uses two lines, with its provider icon always at the end of
   the second line, also when the thread has no branch.
+- The sidebar shows a thread's earlier provider only when it was a different kind, so a switch
+  between two setups of the same provider no longer shows its logo twice.
+- In the command palette's project list, No project has a second line like the projects, so every
+  row is as tall and easy to tap.
+- With the Working section turned off, the sidebar's chat list follows Project order: on "Last user
+  message" the chat you last wrote in comes first. Created at and Manual keep the fixed, draggable
+  order.
 - The floating browser has a grip in its top-left corner that is always visible, so it is easy to
   grab and move.
 - In a subagent's chat, the bar in place of the composer matches the composer: the status is a chip
   with a dot that shows whether it still runs, and Open parent is a real button.
-- The composer stands out more from the chat history in light and dark themes, on phones and on
-  wider screens: a tinted surface and a visible outline, mixed from the theme's own colors.
-- With the Working section turned off, the sidebar's chat list follows Project order: on "Last
-  user message" the chat you last wrote in comes first. Created at and Manual keep the fixed,
-  draggable order.
-- A file opened from a link in the chat (or from search) opens on its own, without the file
-  tree beside it, and Markdown files always open rendered; switching to the source applies to that
-  file only. The tree and the source view are still one click away.
-- Long chats open with their last five turns (at most 300 entries) and load older turns in chunks
-  of five as you scroll up, instead of the last ten at once behind a "Load earlier turns" button.
-- The Brain panel is tidier: the Default / On / Off switches drop the "Follows Settings" line
-  under them (it moved into their tooltip), and the conversation notes' enlarge button sits in
-  the top right of the notes instead of the section header.
-- Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
-  "Plan" chip, with Shift+Tab and `/plan` still switching to it. It replaces the separate
-  Build/Plan toggle and the Legacy settings switch, and is available for every provider
-  that plans.
-
-- While a chat is in Plan, every command asks first with every provider, even in a chat set
-  to Full access or Auto. The chat's own mode applies again once it leaves Plan.
-
-- Plan can be the default permission mode (Settings, Threads, Permissions), with an
-  "After the plan" row for the mode a thread switches to once its plan is accepted. New
-  threads always start with these defaults instead of copying the previous thread's mode.
-
-- The mobile app offers Plan in the thread's Runtime list and as a default in the server
-  settings, with an "After the plan" choice; new tasks start with that default. The Legacy
-  "Plan Mode" switch is gone.
-
-- The mobile app's plan cards show their version and status and offer Accept (with a menu
-  for the permissions to continue in, and Decline), Revise (asks for feedback) and Reopen.
-
-- Running background commands and subagents show as a chip at the end of the chat instead of
-  a plain line of text, so their Stop button reads as part of one control.
-- Release pages no longer list their files in a table; they link to the install guide
-  instead.
+- A file opened from a link in the chat (or from search) opens on its own, without the file tree
+  beside it, and Markdown files always open rendered; switching to the source applies to that file
+  only. The tree and the source view are still one click away.
+- The Brain panel is tidier: the Default / On / Off switches drop the "Follows Settings" line under
+  them (it moved into their tooltip), and the conversation notes' enlarge button sits in the top
+  right of the notes instead of the section header.
+- Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a "Plan"
+  chip, with Shift+Tab and `/plan` still switching to it. It replaces the separate Build/Plan
+  toggle and the Legacy settings switch, and is available for every provider that plans.
+- While a chat is in Plan, every command asks first with every provider, even in a chat set to Full
+  access or Auto. The chat's own mode applies again once it leaves Plan.
+- Plan can be the default permission mode (Settings, Threads, Permissions), with an "After the
+  plan" row for the mode a thread switches to once its plan is accepted. New threads always start
+  with these defaults instead of copying the previous thread's mode.
+- The mobile app offers Plan in the thread's Runtime list and as a default in the server settings,
+  with an "After the plan" choice; new tasks start with that default. The Legacy "Plan Mode" switch
+  is gone.
+- The mobile app's plan cards show their version and status and offer Accept (with a menu for the
+  permissions to continue in, and Decline), Revise (asks for feedback) and Reopen.
+- Release pages no longer list their files in a table; they link to the install guide instead.
 
 ### Fixed
 
-- The background work list closes on any press outside it, including in the composer.
 - An empty composer's send button looks disabled (grey) instead of a ready blue, also in the
   collapsed phone composer.
-- On a phone the composer no longer grows a few pixels when text arrives: the stop button is as
-  big as the send button.
-- The globe pill opens the newest browser tab instead of the first one, which could be an empty
-  leftover; and an empty browser tab's list no longer sits under its control bar.
+- On a phone the composer no longer grows a few pixels when text arrives: the stop button is as big
+  as the send button.
 - Finished subagents show Done (or how they ended) in Lineage and the Agents tab, matching the
   subagent bar, instead of Idle.
 - Coming back to the web app after its tab was in the background for a while (for example a
   minimised browser on a phone) reconnects within a few seconds instead of waiting up to 15 seconds
   on a connection the browser had already dropped.
-- On the phone, the idle composer's model chip lines up with the "Ask anything..." text above it.
-- Feedback typed while a plan waits (Revise) asks the agent to rework the plan and not to carry out
-  its steps yet, so a remark like "only do steps 0 and 1" no longer starts the work.
-- A new chat on a project's own checkout records the branch it starts on, so the sidebar shows it
-  like it does for other chats.
-- A new chat on the project's own checkout shows its branch in the sidebar again: the server
-  records the branch the checkout is on when the chat starts, unless a branch was picked.
-- The floating browser can be dragged over the chat history on a wide window instead of stopping
-  at an invisible column beside the chat.
+- A new chat on a project's own checkout shows its branch in the sidebar again: the server records
+  the branch the checkout is on when the chat starts, unless a branch was picked.
+- The floating browser can be dragged over the chat history on a wide window instead of stopping at
+  an invisible column beside the chat.
 - Settings > Threads > Snooze options fit a phone screen instead of pushing the page sideways.
-- Selecting answer text with a long press on an Android phone shows the Cite button again.
-- A dropped connection to the Brain's FalkorDB no longer takes the whole Flow server down, and
-  every running chat with it.
-- Popping a browser out of the side panel again floats this chat's later browsers over the chat,
-  instead of keeping them in the panel; closing the floating browser leaves a dot on the panel
-  button, where the browser waits.
-- On a phone the composer is a full-width, square bar on the bottom edge of the window, over an
-  opaque base, so chat text no longer scrolls into view below or beside it. A
-  tinted surface, a firm top edge and a soft shadow set it apart from the chat history.
-
-- In the desktop app every button at the top right can be clicked again. A fixed strip kept
-  them out of the window's drag area and was too narrow for four buttons, so the leftmost one
-  (such as the panel's enlarge button) neither reacted nor changed the pointer. The strip now
-  follows the buttons' width. Panel tab close buttons and the notes' enlarge button have
-  larger targets.
-
-- With the side panel open, its header no longer repeats the Brain button; the Brain tab and
-  the panel's + menu already open it.
-
-- The chat title no longer runs under the buttons at the top right while a chat loads: the
-  header measures the room the buttons take instead of guessing it from whether the chat has a
-  Brain.
-
+- Selecting text with a long press on an Android phone shows the Cite button again. The selection
+  helper treated the touch's pointercancel as a dismissal.
+- A dropped connection to the Brain's FalkorDB no longer takes the whole Flow server down, and every
+  running chat with it.
+- In the desktop app every button at the top right can be clicked again. A fixed strip kept them
+  out of the window's drag area and was too narrow for four buttons, so the leftmost one (such as
+  the panel's enlarge button) neither reacted nor changed the pointer. The strip now follows the
+  buttons' width. Panel tab close buttons and the notes' enlarge button have larger targets.
+- With the side panel open, its header no longer repeats the Brain button; the Brain tab and the
+  panel's + menu already open it. On a phone this also keeps a second tab such as Plan.md from
+  being squeezed down to "P…".
+- The chat title no longer runs under the buttons at the top right while a chat loads: the header
+  measures the room the buttons take instead of guessing it from whether the chat has a Brain.
 - On a phone the sidebar covers the chat and the side panel cleanly: what is behind it is dimmed,
   and the header and panel buttons no longer show through on top of it.
-
 - The computer picker in Brain settings and "Connect an existing project" search computers and
   projects; they had taken over the Brain picker's "Search Brains" box.
-
-- A chat whose provider instance is missing or turned off says so: its model shows in red,
-  a notice links to the provider settings, and sending waits until you pick another model.
-  It no longer switches to another instance silently, and Plan can be chosen in it again.
-
-- On a phone the side panel's tabs keep their names: its header no longer repeats the Brain
-  button next to the Brain tab, which squeezed a second tab such as Plan.md down to "P…".
-
+- A chat whose provider instance is missing or turned off says so: its model shows in red, a notice
+  links to the provider settings, and sending waits until you pick another model. It no longer
+  switches to another instance silently, and Plan can be chosen in it again.
 - In a narrow Brain panel the Default / On / Off switches move under their section title, so
   "Conversation notes" no longer breaks over two lines.
-
 - Plan titles no longer repeat "Plan": a heading such as "Plan: Add a README" shows as "Add a
   README" in the plan card, the Plan tab, the Plan ready banner and the implementation chat's title.
-
-- On a phone the side panel (Brain, Plan, files) fills the screen instead of leaving a strip of
-  cut-off chat text beside it; the sidebar button stays reachable at its top left.
-
-- Cite shows for text selected by long press on a phone. The selection helper treated the
-  touch's pointercancel as a dismissal, so touchscreens never saw it.
-
-- The Brain button's blue dot appears only when the chat's notes really changed, and goes away
-  once you open the Brain tab. It used to show whenever the Brain counted as busy, even with the
-  notes agent off, and in the theme colour, which is amber in some themes.
-
-- The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
-  `=` after a `#`, so a pairing link lost its token, and older builds left such addresses
-  as plain text.
+- The Brain button's blue dot appears only when the chat's notes really changed, and goes away once
+  you open the Brain tab. It used to show whenever the Brain counted as busy, even with the notes
+  agent off, and in the theme colour, which is amber in some themes.
+- The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at `=` after
+  a `#`, so a pairing link lost its token, and older builds left such addresses as plain text.
 
 ## [0.2.0] - 2026-10-30
 
