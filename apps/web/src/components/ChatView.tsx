@@ -386,6 +386,7 @@ const EMPTY_PROVIDERS: ServerProvider[] = [];
 const EMPTY_PROVIDER_MODELS: ServerProvider["models"] = [];
 const EMPTY_USAGE_LIMIT_SOURCES: UsageLimitSourceSnapshots = [];
 import type { CodexArtifactTemplate } from "@t3tools/shared/codexArtifactTemplates";
+import { allowComposerFocus } from "../touchComposerFocus";
 
 const EMPTY_FEEDBACK_SUBMISSIONS: ReadonlyArray<CodexFeedbackSubmission> = [];
 const EMPTY_PROVIDER_SKILLS: ServerProvider["skills"] = [];
@@ -3042,6 +3043,7 @@ export default function ChatView(props: ChatViewProps) {
   const revisePlanStable = useStableCallback(() => {
     setRevisingPlanId(reviewablePlanId);
     composerOverlayElement?.scrollIntoView({ block: "nearest" });
+    allowComposerFocus();
     focusComposer();
   });
   const { modes: reviewRuntimeModes, mode: reviewRuntimeMode } = resolveCompatibleRuntimeMode(

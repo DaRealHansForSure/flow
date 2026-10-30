@@ -29,6 +29,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone the message box takes the cursor, and raises the keyboard, only when you tap it (or
+  press Revise on a plan). Closing a dialog, sheet or menu no longer brings the keyboard up.
 - On touch screens an expanded tool call shows its whole content instead of a small box that
   scrolls on its own, so swiping keeps scrolling the chat instead of getting stuck at the box's end.
 - Closing the background work list no longer puts the cursor in the message box, so the phone
