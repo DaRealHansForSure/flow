@@ -3,7 +3,8 @@ import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
-import type { EnvironmentId } from "@t3tools/contracts";
+import { planVersionLabel } from "@t3tools/client-runtime/state/plan-versions";
+import type { EnvironmentId, PlanId } from "@t3tools/contracts";
 import { proposedPlanTitle, stripDisplayedPlanMarkdown } from "@t3tools/shared/proposedPlanText";
 import { useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
@@ -14,8 +15,10 @@ import * as Dialog from "../../components/ui/Dialog";
 import { projectEnvironment } from "../../state/projects";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { CopyTextButton } from "./CopyTextButton";
+import { MobilePlanReviewActions, useMobilePlanReview } from "./plan-review";
 
 export function ProposedPlanCard(props: {
+  readonly planId: PlanId;
   readonly environmentId: EnvironmentId;
   readonly workspaceRoot: string | null | undefined;
   readonly markdown: string;
@@ -27,6 +30,9 @@ export function ProposedPlanCard(props: {
   const [saving, setSaving] = useState(false);
   const [lastPath, setLastPath] = useState("plan.md");
   const contents = `${props.markdown.trimEnd()}\n`;
+  const { versions, review, reopen } = useMobilePlanReview();
+  const version = versions.find((candidate) => candidate.id === props.planId);
+  const statusLabel = version ? planVersionLabel(version, versions.length) : null;
 
   const save = async (path: string) => {
     const relativePath = path.trim();
@@ -61,7 +67,15 @@ export function ProposedPlanCard(props: {
         </Text>
         <CopyTextButton accessibilityLabel="Copy plan" text={contents} />
       </View>
+      {statusLabel ? <Text className="text-sm text-foreground-muted">{statusLabel}</Text> : null}
       {props.renderMarkdown(stripDisplayedPlanMarkdown(props.markdown))}
+      {review !== null && review.planId === props.planId ? (
+        <MobilePlanReviewActions review={review} />
+      ) : reopen !== null && version !== undefined && version.status !== "active" ? (
+        <View className="flex-row">
+          <Button label="Reopen this plan" onPress={() => reopen(props.planId)} />
+        </View>
+      ) : null}
       <View className="flex-row">
         <Button
           label={saving ? "Saving..." : "Save to workspace"}

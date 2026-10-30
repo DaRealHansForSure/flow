@@ -46,6 +46,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   settings, with an "After the plan" choice; new tasks start with that default. The Legacy
   "Plan Mode" switch is gone.
 
+- The mobile app's plan cards show their version and status and offer Accept (with a menu
+  for the permissions to continue in, and Decline), Revise (asks for feedback) and Reopen.
+
 - Running background commands and subagents show as a chip at the end of the chat instead of
   a plain line of text, so their Stop button reads as part of one control.
 
