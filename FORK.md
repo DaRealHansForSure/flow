@@ -61,9 +61,16 @@ every change.
 
 ### Desktop
 
-- **One download is enough.** The desktop app (an AppImage) is all you need to install. On its
-  first start, on a computer without Flow, it sets up the Flow service that runs your chats in
-  the background and the `flow` command for the terminal. The app and the service both update
+- **Flow runs only while the app is open.** The desktop app starts its own server and stops it
+  when you quit, so nothing of Flow keeps running. Quitting ends running chats, phones and other
+  devices reach Flow only while the app is open, and the notes agent catches up on missed chat
+  messages at the next start. Settings > General > Keep Flow running in the background switches
+  to the background service instead; the app restarts to apply either change. On a machine that
+  already runs the service, the app asks once at startup: "Switch" stops the service and turns
+  off its autostart (it stays installed), "Keep background service" keeps it.
+- **One download is enough.** The desktop app (an AppImage) is all you need to install. With
+  Keep Flow running in the background on, a first start on a computer without Flow sets up the
+  Flow service and the `flow` command for the terminal. The app and the service both update
   from this fork's releases.
 - **The app keeps the service at its own version.** Each app release brings its matching
   service. When the app starts and finds an older service, or one installed from upstream Flow,
