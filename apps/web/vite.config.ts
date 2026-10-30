@@ -270,8 +270,15 @@ export default defineConfig(() => {
     plugins: [
       {
         name: "deployment-branding",
-        transformIndexHtml: (html) =>
-          html.replaceAll("__BRAND_NAME__", escapeBrandHtml(BRAND.name)),
+        // Flow: the splash logo is inlined, so it paints with the HTML instead of waiting behind
+        // the app's module requests.
+        transformIndexHtml: async (html) =>
+          html
+            .replaceAll("__BRAND_NAME__", escapeBrandHtml(BRAND.name))
+            .replace(
+              'src="/boot-logo.webp"',
+              `src="data:image/webp;base64,${(await NodeFSP.readFile(new URL("./public/boot-logo.webp", import.meta.url))).toString("base64")}"`,
+            ),
       },
       devCompressionPlugin(),
       chunkCycleGuardPlugin(),

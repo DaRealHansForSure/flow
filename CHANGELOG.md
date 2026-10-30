@@ -64,6 +64,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Flow logo on the start screen is part of the page itself, so it shows at once on a slow
+  connection instead of after the app's first downloads.
 - The Brain page's Connected projects is a searchable table: each project's path, source status,
   last index, number of chats and last activity, sortable by clicking a column (the sort is
   remembered). On a phone the rows stack and the sort sits in a menu.
