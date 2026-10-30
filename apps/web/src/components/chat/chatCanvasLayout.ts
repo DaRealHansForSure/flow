@@ -72,12 +72,6 @@ export function resolveChatCanvasLayout({
   let overlapsChat = false;
   if (preview && container.width > 0 && container.height > 0) {
     frame = resolvePreviewMiniPlayerFrame({ ...preview, container });
-    // Reserve a chat lane only if the preview still has room to drag.
-    const minimumPreviewX =
-      preview.lastInteraction === "resize" ||
-      container.width <= padding + minChatWidth + frame.width + GAP * 2
-        ? GAP
-        : padding + minChatWidth + GAP;
     if (preview.position === null) frame = { ...frame, y: container.height - frame.height - GAP };
     if (preview.lastInteraction === "resize" && composerHeight > 0) {
       const laneWidth = Math.min(normalWidth, minChatWidth);
@@ -101,7 +95,7 @@ export function resolveChatCanvasLayout({
     const findBarObstacles = findBar ? { detailsCard: findBar, composer: null } : undefined;
     const preferredFrame = {
       ...frame,
-      ...clampPreviewMiniPlayerPosition(frame, container, frame, findBarObstacles, minimumPreviewX),
+      ...clampPreviewMiniPlayerPosition(frame, container, frame, findBarObstacles),
     };
     const dragObstacle =
       detailsCard && findBar
@@ -114,13 +108,10 @@ export function resolveChatCanvasLayout({
     const cardObstacle = preview.lastInteraction === "resize" ? findBar : dragObstacle;
     frame = {
       ...frame,
-      ...clampPreviewMiniPlayerPosition(
-        frame,
-        container,
-        frame,
-        { detailsCard: cardObstacle, composer: null },
-        minimumPreviewX,
-      ),
+      ...clampPreviewMiniPlayerPosition(frame, container, frame, {
+        detailsCard: cardObstacle,
+        composer: null,
+      }),
     };
     const chatBeside = (player: PreviewMiniPlayerFrame) => {
       const normalRight = normalLeft + normalWidth;
@@ -163,7 +154,6 @@ export function resolveChatCanvasLayout({
           container,
           frame,
           obstacles,
-          minimumPreviewX,
         ),
       };
       if (
@@ -173,13 +163,10 @@ export function resolveChatCanvasLayout({
       ) {
         frame = {
           ...frame,
-          ...clampPreviewMiniPlayerPosition(
-            frame,
-            container,
-            frame,
-            { composer: obstacles.composer, detailsCard: findBar },
-            minimumPreviewX,
-          ),
+          ...clampPreviewMiniPlayerPosition(frame, container, frame, {
+            composer: obstacles.composer,
+            detailsCard: findBar,
+          }),
         };
       }
     }
