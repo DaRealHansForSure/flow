@@ -75,7 +75,7 @@ export function makeWindowCloseHandler(
     }
     const { response, checkboxChecked } = await Electron.dialog.showMessageBox(window, {
       type: "question",
-      title: `Quit ${options.appName}?`,
+      title: options.appName,
       message: `Quit ${options.appName}?`,
       detail: `Closing this window quits ${options.appName}.`,
       buttons: ["Quit", "Cancel"],
