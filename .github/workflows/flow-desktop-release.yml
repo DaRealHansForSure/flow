@@ -227,7 +227,7 @@ jobs:
           find release -maxdepth 1 -type f \( \
             -name '*.dmg' -o -name '*.zip' -o -name '*.AppImage' -o \
             -name '*.blockmap' -o -name '*.yml' \
-          \) -exec cp {} release-publish/ \;
+          \) ! -name builder-debug.yml -exec cp {} release-publish/ \;
           if [[ "${{ matrix.platform }}" == "mac" && "${{ matrix.arch }}" == "x64" ]]; then
             for manifest in release-publish/*-mac.yml; do
               mv "$manifest" "${manifest%.yml}-x64.yml"
@@ -299,8 +299,10 @@ jobs:
           RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
         run: |
           set -euo pipefail
+          notes=$(node scripts/fork/changelog-section.mjs "$RELEASE_VERSION") ||
+            notes="See CHANGELOG.md for the changes in $RELEASE_VERSION."
           node scripts/publish-release-assets.mjs "$RELEASE_TAG" release-assets \
-            --title "Flow $RELEASE_VERSION" --target "$GITHUB_SHA" --generate-notes
+            --title "Flow $RELEASE_VERSION (desktop)" --target "$GITHUB_SHA" --notes "$notes"
           node scripts/publish-release-assets.mjs flow-desktop-latest release-assets --rolling \
             --title "Latest Flow desktop update" --target "$GITHUB_SHA" \
-            --notes "Rolling update feed for the latest signed Flow desktop release."
+            --notes "Update feed the desktop app reads. Download Flow from the newest flow-desktop-v* release."

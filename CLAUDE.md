@@ -169,6 +169,10 @@ app's update feed is the repository its release workflow runs in.
   `flow-vX.Y.Z` and then `flow-desktop-vX.Y.Z` from the same commit. Release this way: every
   desktop app offers to move the service to exactly its own version, so that service release
   must exist.
+- Before releasing, rename `[Unreleased]` in `CHANGELOG.md` to `[X.Y.Z] - <date>`: that section
+  becomes the text of both release pages. Without one they only point at the CHANGELOG.
+- Every push to `release` starts a service release of the next patch version on its own. When
+  the push is only the base for a "Flow release" run, put `[skip ci]` in its merge commit.
 - A machine that still has an upstream install switches once, by accepting the update the
   fork's desktop app offers at start or by running this fork's `install.sh`; after that
   `flow update` and the desktop updater follow this fork.
