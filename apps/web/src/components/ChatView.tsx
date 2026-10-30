@@ -3186,8 +3186,11 @@ export default function ChatView(props: ChatViewProps) {
       ? {
           count: browserSurfaceIds.length,
           unseen: rightPanelState.unseenActivity === true,
+          // The newest tab is the one the agent or the user opened last.
           onOpen: () =>
-            useRightPanelStore.getState().activateSurface(activeThreadRef, browserSurfaceIds[0]!),
+            useRightPanelStore
+              .getState()
+              .activateSurface(activeThreadRef, browserSurfaceIds.at(-1)!),
         }
       : null;
   const hasThreadNow =

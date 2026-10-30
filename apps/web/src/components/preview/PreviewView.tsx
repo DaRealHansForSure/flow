@@ -980,14 +980,17 @@ export function PreviewView({
           )
         ) : null}
         {showEmptyState ? (
-          <PreviewEmptyState
-            threadRef={threadRef}
-            environmentId={threadRef.environmentId}
-            configuredUrls={configuredUrls}
-            recentEntries={recentHistoryEntries}
-            onRemoveRecent={(url) => removeUrlForThread(threadRef, url)}
-            onOpenUrl={(next) => void handleOpenServerUrl(next)}
-          />
+          // Flow: a server tab keeps its control bar over the empty state; start below it.
+          <div className={cn("h-full", isServerTab && "pt-10")}>
+            <PreviewEmptyState
+              threadRef={threadRef}
+              environmentId={threadRef.environmentId}
+              configuredUrls={configuredUrls}
+              recentEntries={recentHistoryEntries}
+              onRemoveRecent={(url) => removeUrlForThread(threadRef, url)}
+              onOpenUrl={(next) => void handleOpenServerUrl(next)}
+            />
+          </div>
         ) : null}
         {snapshot && desktopOverlay ? (
           <ZoomIndicator zoomFactor={desktopOverlay.zoomFactor} />
