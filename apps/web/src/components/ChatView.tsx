@@ -185,6 +185,7 @@ import { PlanReviewProvider } from "./chat/planReview";
 import { deriveProposedPlanVersions } from "@t3tools/client-runtime/state/plan-versions";
 import { buildPlanReviewComment } from "./chat/planComments";
 import { missingProviderBannerItem } from "./chat/missingProviderBanner";
+import { BrainHeaderButton } from "./brain/BrainHeaderButton";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import { isEditableFocused } from "../lib/editableFocus";
 import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
@@ -3342,6 +3343,8 @@ export default function ChatView(props: ChatViewProps) {
     onToggleTerminal: toggleTerminalVisibilityStable,
     onToggleThreadPanel: toggleThreadPanelStable,
     onToggleRightPanel: toggleRightPanelStable,
+    // Flow: opens the chat's Brain tab; hidden for a chat without a Brain.
+    ...(activeThreadRef ? { brainControl: <BrainHeaderButton threadRef={activeThreadRef} /> } : {}),
   } satisfies PanelLayoutControlsProps;
   const panelToggleControls = (
     <PanelLayoutControls

@@ -41,7 +41,6 @@ import { cn } from "~/lib/utils";
 import { textDirection } from "~/textDirection";
 import { useClientSettings } from "../../hooks/useSettings";
 import { GuestShareIndicator } from "./GuestShareControls";
-import { BrainHeaderButton } from "../brain/BrainHeaderButton";
 
 interface ChatHeaderProps {
   activeThreadEnvironmentId: EnvironmentId;
@@ -425,8 +424,6 @@ export const ChatHeader = memo(function ChatHeader({
         </WorkspaceBreadcrumbItem>
       </WorkspaceBreadcrumb>
       {isServerThread ? <GuestShareIndicator threadRef={activeThreadRef} /> : null}
-      {/* Flow: opens the chat's Brain tab; hidden for a chat without a Brain. */}
-      <BrainHeaderButton threadRef={activeThreadRef} />
     </div>
   );
 });
