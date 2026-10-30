@@ -11,7 +11,10 @@ import {
   projectedSubagentsToRuntime,
   type RuntimeSubagent,
 } from "@t3tools/client-runtime/state/subagentRuntime";
-import { formatSubagentDisplayTitle } from "@t3tools/client-runtime/state/subagent-display";
+import {
+  formatSubagentDisplayTitle,
+  resolveSubagentMetadata,
+} from "@t3tools/client-runtime/state/subagent-display";
 import { deriveProviderSubagentStatus } from "@t3tools/client-runtime/state/thread-execution";
 import {
   deriveThreadRelationshipGraph,
@@ -722,6 +725,18 @@ export function ThreadRelationshipsPanel(props: {
               ) : (
                 relationshipHint
               );
+              // Flow: in the Agents tab a subagent shows its status, model and latest activity on the
+              // row itself, as in the mobile app; the hover card is out of reach on phones.
+              const agentDetail =
+                inPanel && agent && !workflowGroup
+                  ? {
+                      summary: [
+                        threadRelationshipStatusLabel(rowStatus),
+                        resolveSubagentMetadata({ model: agent.model, provider }).modelLabel,
+                      ].join(" · "),
+                      activity: agent.progress?.replace(/\s+/gu, " ").trim() || null,
+                    }
+                  : null;
               const relationshipContent = (
                 <>
                   <ThreadRelationshipIcon
@@ -734,6 +749,18 @@ export function ThreadRelationshipsPanel(props: {
                     <span className="block truncate text-left text-sm font-medium leading-4 text-foreground/85">
                       {threadTitle}
                     </span>
+                    {agentDetail === null ? null : (
+                      <>
+                        <span className="block truncate text-left text-2xs leading-4 text-muted-foreground">
+                          {agentDetail.summary}
+                        </span>
+                        {agentDetail.activity === null ? null : (
+                          <span className="line-clamp-2 whitespace-normal text-left text-2xs leading-4 text-muted-foreground">
+                            {agentDetail.activity}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </span>
                   {agent ? null : (
                     <ArrowRightIcon className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
@@ -768,6 +795,7 @@ export function ThreadRelationshipsPanel(props: {
                         size="sm"
                         variant="ghost"
                         part={workflowGroup ? "primary" : "row"}
+                        multiline={agentDetail !== null}
                         disabled={node?.missing === true}
                         onClick={() => openThread(threadId)}
                       />
@@ -799,7 +827,13 @@ export function ThreadRelationshipsPanel(props: {
                 );
               }
               return (
-                <li key={threadId} className="group relative flex h-8 items-center rounded-lg">
+                <li
+                  key={threadId}
+                  className={cn(
+                    "group relative flex items-center rounded-lg",
+                    agentDetail === null ? "h-8" : "min-h-8",
+                  )}
+                >
                   {isMergeTarget ? (
                     <div className={THREAD_DETAILS_PANEL_SPLIT_GROUP_CLASS}>
                       <Tooltip>

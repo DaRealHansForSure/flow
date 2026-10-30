@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The status pill above the composer shows the turn's agents as in the mobile app ("2/3" while
+  they work, "3 done" after); tapping it opens the Agents tab. Background work has no Open button
+  any more: a row in its list opens that agent's chat.
+- The Agents tab shows each subagent's status, model and latest activity on its row, as the
+  mobile app's Agents sheet does; before, these were only in a hover card.
+
 ### Fixed
 
 - Settings > About no longer offers T3 Code's update tracks (Stable or Nightly, which pointed at
