@@ -203,6 +203,7 @@ jobs:
           sparse-checkout: |
             scripts/publish-release-assets.mjs
             scripts/fork/changelog-section.mjs
+            scripts/fork/release-files.md
             CHANGELOG.md
           sparse-checkout-cone-mode: false
           path: release-scripts
@@ -222,5 +223,6 @@ jobs:
           # flow-cloud-cli-v* mirror: this fork's CLIs only read flow-v* tags.
           notes=$(node release-scripts/scripts/fork/changelog-section.mjs "$version" release-scripts/CHANGELOG.md) ||
             notes="See CHANGELOG.md for the changes in $version."
+          notes+=$'\n\n'$(sed "s/X\.Y\.Z/$version/g" release-scripts/scripts/fork/release-files.md)
           node release-scripts/scripts/publish-release-assets.mjs "$FLOW_TAG" release-browser \
             --title "Flow $version" --target "$FLOW_COMMIT" --notes "$notes" --latest

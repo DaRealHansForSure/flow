@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Every release page ends with a table of its files: what each one is and how to use it,
+  with the install commands pinned to that version.
+
 ### Fixed
 
 - The Windows service release builds with the vite-plus version the workspace pins instead of
