@@ -318,6 +318,7 @@ function CleanupSection() {
     return (
       settings.storageCleanup.browserArtifactsAfterDays !== null ||
       settings.storageCleanup.logsAfterDays !== null ||
+      settings.storageCleanup.scratchFolders ||
       enabled(resolveWorktreeCleanup(settings, null)) ||
       Object.values(settings.projectSettingsOverrides).some(
         (override) =>
@@ -758,6 +759,25 @@ export function StorageCleanupSections() {
               label="Delete old rotated logs"
               value={settings.logsAfterDays}
               onChange={(logsAfterDays) => update({ logsAfterDays })}
+            />
+          }
+        />
+        <SettingsRow
+          title="Delete unused No project folders"
+          status={
+            targets.some(
+              (target) => target.settings.storageCleanup.scratchFolders !== settings.scratchFolders,
+            )
+              ? "Mixed across selected machines"
+              : undefined
+          }
+          description="Delete folders under scratch that no chat uses any more, such as those of deleted No project chats. Folders younger than an hour are kept."
+          serverScoped
+          control={
+            <Switch
+              checked={settings.scratchFolders}
+              onCheckedChange={(checked) => update({ scratchFolders: Boolean(checked) })}
+              aria-label="Delete unused No project folders"
             />
           }
         />
