@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrainGraph } from "./BrainGraph";
-import { BrainGraphDialog, BrainGraphExpandButton } from "./BrainGraphDialog";
+import { BrainGraphDialog, brainGraphCorner } from "./BrainGraphDialog";
 import { BrainDocumentDialog, BrainDocumentLibrary } from "./BrainDocuments";
 import { ConversationNotesPreview } from "./ConversationNotesPreview";
 import { cliName } from "./BrainControls";
@@ -179,7 +179,7 @@ export function ChatBrainPanel({
                       knowledge={brain.knowledge}
                       highlightedNodeIds={consultedNodeIds}
                       compact
-                      corner={<BrainGraphExpandButton onClick={() => setView("brain")} />}
+                      corner={brainGraphCorner(() => setView("brain"))}
                     />
                   ) : (
                     <p className="p-3 text-xs text-muted-foreground">

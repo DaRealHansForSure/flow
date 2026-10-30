@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The knowledge graph has a Fit button beside Open larger, in the Brain tab, on the Brain page and
+  in the large view, that centres and fits the graph again after you moved or zoomed it.
 - One status pill stays above the composer instead of scrolling with the chat, as in the mobile
   app: background work with its Stop button, how long the thread has been working, its browsers
   and its queued messages, with a round button beside it to scroll back to the end. Tapping the
