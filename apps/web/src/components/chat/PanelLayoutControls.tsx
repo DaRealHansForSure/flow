@@ -1,5 +1,12 @@
-import { PanelBottomIcon, PanelRightIcon, SquareMenuIcon } from "lucide-react";
-import { Maximize2, Minimize2 } from "lucide";
+import { SquareMenuIcon } from "lucide-react";
+import {
+  Maximize2,
+  Minimize2,
+  PanelBottom,
+  PanelBottomClose,
+  PanelRight,
+  PanelRightClose,
+} from "lucide";
 import { MorphIcon } from "~/components/MorphIcon";
 import { memo, type ReactNode } from "react";
 
@@ -107,7 +114,8 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
               size="sm"
               disabled={!terminalAvailable}
             >
-              <PanelBottomIcon className="size-4" />
+              {/* Flow: an open drawer shows the close arrow, like the sidebar toggle. */}
+              <MorphIcon className="size-4" icon={terminalOpen ? PanelBottomClose : PanelBottom} />
             </Toggle>
           </TooltipTrigger>
           <TooltipPopup side="bottom">
@@ -130,7 +138,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
               size="sm"
               disabled={!rightPanelAvailable}
             >
-              <PanelRightIcon className="size-4" />
+              <MorphIcon className="size-4" icon={rightPanelOpen ? PanelRightClose : PanelRight} />
               {rightPanelUnseen ? (
                 <span
                   aria-hidden
