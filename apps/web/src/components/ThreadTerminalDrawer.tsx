@@ -41,6 +41,12 @@ import {
   useState,
 } from "react";
 import { Popover, PopoverPopup, PopoverTrigger } from "~/components/ui/popover";
+import {
+  attachTerminalFontZoomGestures,
+  clampTerminalFontSize,
+  readTerminalFontSizeOffset,
+  writeTerminalFontSizeOffset,
+} from "~/components/terminal/terminalFontZoom";
 import { Button } from "~/components/ui/button";
 import { PanelTabCloseButton } from "~/components/ui/panel-tab-close-button";
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
@@ -558,7 +564,19 @@ function TerminalSessionViewport({
       terminal: settings.fontSizeTerminal,
     }),
   );
-  const terminalFontRef = useRef({ family: terminalFontFamily, size: terminalFontSize });
+  // Flow: pinch or Ctrl + wheel resizes this terminal's font only, on top of the setting.
+  const fontZoomKey = `${environmentId}:${threadId}:${terminalId}`;
+  const [fontSizeOffset, setFontSizeOffset] = useState(() =>
+    readTerminalFontSizeOffset(fontZoomKey),
+  );
+  const effectiveFontSize = clampTerminalFontSize(terminalFontSize + fontSizeOffset);
+  const readEffectiveFontSize = useEffectEvent(() => effectiveFontSize);
+  const writeEffectiveFontSize = useEffectEvent((size: number) => {
+    const offset = clampTerminalFontSize(size) - terminalFontSize;
+    writeTerminalFontSizeOffset(fontZoomKey, offset);
+    setFontSizeOffset(offset);
+  });
+  const terminalFontRef = useRef({ family: terminalFontFamily, size: effectiveFontSize });
   // Keyed by the launch (see TerminalViewport), so the atom is fixed for this surface.
   const terminalSessionAtom = attachedTerminalSessionAtom(environmentId, {
     threadId,
@@ -644,10 +662,10 @@ function TerminalSessionViewport({
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- applies font family and size changes to the live Ghostty terminal surface
   useEffect(() => {
     const current = terminalFontRef.current;
-    if (current.family === terminalFontFamily && current.size === terminalFontSize) return;
-    terminalFontRef.current = { family: terminalFontFamily, size: terminalFontSize };
-    void terminalRef.current?.setFont(terminalFontOptions(terminalFontFamily, terminalFontSize));
-  }, [terminalFontFamily, terminalFontSize]);
+    if (current.family === terminalFontFamily && current.size === effectiveFontSize) return;
+    terminalFontRef.current = { family: terminalFontFamily, size: effectiveFontSize };
+    void terminalRef.current?.setFont(terminalFontOptions(terminalFontFamily, effectiveFontSize));
+  }, [terminalFontFamily, effectiveFontSize]);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- creates the Ghostty terminal in the mount node and subscribes it to the terminal session
   useEffect(() => {
@@ -1141,17 +1159,35 @@ function TerminalSessionViewport({
       terminalId,
       focus,
     });
+    const detachFontZoom = attachTerminalFontZoomGestures(mount, {
+      read: readEffectiveFontSize,
+      write: writeEffectiveFontSize,
+    });
     return () => {
       unregister();
+      detachFontZoom();
       containerRef.current = null;
     };
   };
   return (
-    <div
-      ref={attachContainer}
-      tabIndex={-1}
-      className="relative h-full w-full overflow-hidden bg-(--terminal-background)"
-    />
+    <div className="relative h-full w-full">
+      <div
+        ref={attachContainer}
+        tabIndex={-1}
+        className="relative h-full w-full overflow-hidden bg-(--terminal-background)"
+      />
+      {fontSizeOffset === 0 ? null : (
+        <Button
+          size="xs"
+          variant="outline"
+          className="absolute end-2 bottom-2 z-20"
+          aria-label={`Font size ${effectiveFontSize} px, reset to ${terminalFontSize} px`}
+          onClick={() => writeEffectiveFontSize(terminalFontSize)}
+        >
+          {effectiveFontSize} px
+        </Button>
+      )}
+    </div>
   );
 }
 

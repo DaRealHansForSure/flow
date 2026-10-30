@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Pinch on a phone or Ctrl + mouse wheel on a computer changes one terminal's font size, in the
+  bottom drawer and in the right panel; other terminals keep theirs. A badge shows the size and
+  resets it.
 - The knowledge graph has a Fit button beside Open larger, in the Brain tab, on the Brain page and
   in the large view, that centres and fits the graph again after you moved or zoomed it.
 - One status pill stays above the composer instead of scrolling with the chat, as in the mobile
