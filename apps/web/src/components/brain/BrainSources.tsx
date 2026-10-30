@@ -56,7 +56,7 @@ export function BrainSources({
   async function browseFolder(path: string) {
     setBrowsing(true);
     setError("");
-    try {
+    return await (async () => {
       const result = await browse({
         environmentId,
         input: { partialPath: path.endsWith("/") ? path : path + "/" },
@@ -67,9 +67,9 @@ export function BrainSources({
       }
       setListing(result.value);
       setFolder(result.value.parentPath);
-    } finally {
+    })().finally(() => {
       setBrowsing(false);
-    }
+    });
   }
   return (
     <section className="space-y-4" aria-label="Brain sources">

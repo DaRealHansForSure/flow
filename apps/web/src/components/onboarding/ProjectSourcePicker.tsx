@@ -40,7 +40,7 @@ export function ProjectSourcePicker({
   const openFolder = async (folder: string) => {
     setBusy(true);
     setError("");
-    try {
+    return await (async () => {
       const result = await browse({
         environmentId,
         input: { partialPath: folder.endsWith("/") ? folder : folder + "/" },
@@ -51,9 +51,9 @@ export function ProjectSourcePicker({
       }
       setListing(result.value);
       setPath(result.value.parentPath);
-    } finally {
+    })().finally(() => {
       setBusy(false);
-    }
+    });
   };
   return (
     <>
@@ -191,16 +191,18 @@ export function ProjectSourcePicker({
               onClick={async () => {
                 setBusy(true);
                 setError("");
-                try {
-                  if (mode === "folder" && listing) await onFolder(listing.parentPath);
-                  else if (onGithub) await onGithub(repository.trim());
-                  setRepository("");
-                  setOpen(false);
-                } catch (cause) {
-                  setError(cause instanceof Error ? cause.message : "Could not add repository.");
-                } finally {
+                return await (async () => {
+                  try {
+                    if (mode === "folder" && listing) await onFolder(listing.parentPath);
+                    else if (onGithub) await onGithub(repository.trim());
+                    setRepository("");
+                    setOpen(false);
+                  } catch (cause) {
+                    setError(cause instanceof Error ? cause.message : "Could not add repository.");
+                  }
+                })().finally(() => {
                   setBusy(false);
-                }
+                });
               }}
             >
               {busy ? "Working…" : mode === "folder" ? "Choose this folder" : "Add repository"}

@@ -158,7 +158,7 @@ function BrainController({
     if (!background) setBusy(true);
     const request = execute({ environmentId, input });
     pending.current = request;
-    try {
+    return await (async () => {
       const result = await request;
       if (!mounted.current) return null;
       if (result._tag === "Failure") {
@@ -175,10 +175,10 @@ function BrainController({
       if (!background || result.value.error || transportError.current) setError(result.value.error);
       transportError.current = false;
       return result.value;
-    } finally {
+    })().finally(() => {
       if (pending.current === request) pending.current = null;
       if (mounted.current && !background) setBusy(false);
-    }
+    });
   };
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the Brain service and refreshes when the window becomes visible.
