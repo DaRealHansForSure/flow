@@ -144,7 +144,9 @@ function BrainController({
   const pending = useRef<Promise<unknown> | null>(null);
   const transportError = useRef(false);
   const allProjects = useProjects();
-  const projects = allProjects.filter((project) => project.environmentId === environmentId);
+  const projects = allProjects.filter(
+    (project) => project.environmentId === environmentId && !project.isScratch,
+  );
   const workspace = selectedWorkspaceId
     ? state?.workspaces.find((item) => item.id === selectedWorkspaceId)
     : state?.workspaces[0];

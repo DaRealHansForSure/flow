@@ -3347,7 +3347,7 @@ export default function ChatView(props: ChatViewProps) {
         onOpenFile: openFileSurfaceStable,
         onPendingChange: handleFilePendingChangeStable,
       }}
-      brain={{ threadId: brainThreadId, chatBrain }}
+      brain={{ threadId: brainThreadId, chatBrain, readOnly: activeProjectIsScratch }}
       plan={{ plan: openPlanVersion ?? planVersions.at(-1) ?? null, cwd: gitCwd ?? undefined }}
     />
   ) : null;

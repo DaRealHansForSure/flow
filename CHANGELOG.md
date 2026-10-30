@@ -64,6 +64,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- In a No project chat the Brain tab says the chat only reads the Brain, in place of the notes,
+  Auto-Docs and Auto-Skills switches.
 - The Brain page's sources no longer list cards that are not built yet (Linear, Fireflies.ai,
   Meeting Notes, Slack Bot); only GitHub repositories and local folders remain.
 - The Flow logo on the start screen is part of the page itself, so it shows at once on a slow
@@ -134,6 +136,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The No project folder no longer shows up as a project in Settings, the settings scope picker,
+  the Brain page's Connected projects and its Connect an existing project picker, or the scheduled
+  task editor.
+- A chat started with No project only reads its Brain: nothing from it is recorded as notes,
+  Auto-Docs or Auto-Skills, the agent's save tools refuse it, and its folder can no longer be
+  connected to a Brain.
 - Two security fixes from T3 Code, taken ahead of the next sync: a failed clone no longer shows a
   token from the repository URL, and signed asset and upload URLs stay out of HTTP traces.
 - The Brain tab remembers which sections are open (graph, conversation notes, Auto-Docs,

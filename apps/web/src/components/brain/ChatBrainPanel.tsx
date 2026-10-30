@@ -26,6 +26,7 @@ import { ChatCurationSwitch } from "./ChatCurationSwitch";
 import type { ChatBrain } from "./useChatBrain";
 
 const OUTPUT_NEEDS_NOTES_AGENT = "Needs the notes agent.";
+const READ_ONLY_STATUS = "No project chats only read this Brain; nothing from them is saved to it.";
 
 /** The Brain tab of a chat's right panel; the chat view keeps its context fresh. */
 const NOTES_EXPANDED_KEY = "flow:brain-tab:notes-expanded";
@@ -36,10 +37,13 @@ export function ChatBrainPanel({
   environmentId,
   threadId,
   chatBrain,
+  readOnly,
 }: {
   environmentId: EnvironmentId;
   threadId: ThreadId | null;
   chatBrain: ChatBrain;
+  /** Flow: No project chats read the Brain but never write to it. */
+  readOnly: boolean;
 }) {
   const { response, brain, error, changedIds, savedNow, setCurationOutput } = chatBrain;
   // Flow: open sections are remembered across tabs, chats and reloads.
@@ -60,7 +64,7 @@ export function ChatBrainPanel({
   const consultedNodeIds = [...new Set(notes?.consultedNodeIds ?? [])];
   const consultedNodeCount = consultedNodeIds.length;
   const brainExpanded = storedBrainExpanded ?? consultedNodeCount > 0;
-  const curation = brain && threadId ? notes?.curation : undefined;
+  const curation = brain && threadId && !readOnly ? notes?.curation : undefined;
   const notesAgentOff = notes?.curation?.notesAgent.enabled === false;
   const curationSwitch = (output: BrainChatCurationOutput, label: string) => {
     if (!curation) {
@@ -78,6 +82,7 @@ export function ChatBrainPanel({
   };
   const memoryStatus = chatNotesStatus({
     hasBrain: brain !== undefined,
+    readOnly,
     notes,
     notesAgentOff,
     savedNow,
@@ -252,7 +257,7 @@ export function ChatBrainPanel({
                     <Maximize2Icon className="size-3.5" />
                   </button>
                 </div>
-              ) : (
+              ) : readOnly && brain ? null : (
                 <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">
                   {brain
                     ? "Your task, progress, and corrections will appear here from the first message."
@@ -262,7 +267,7 @@ export function ChatBrainPanel({
               <p
                 role="status"
                 className={
-                  notes?.extractionIssue && !notesAgentOff
+                  notes?.extractionIssue && !notesAgentOff && !readOnly
                     ? "px-2 py-2 text-2xs text-destructive"
                     : "px-2 py-2 text-2xs text-muted-foreground"
                 }
@@ -329,13 +334,17 @@ export function ChatBrainPanel({
 /** The one-line state of the chat's conversation notes under the notes preview. */
 function chatNotesStatus(input: {
   readonly hasBrain: boolean;
+  readonly readOnly: boolean;
   readonly notes: ChatMemoryList | undefined;
   readonly notesAgentOff: boolean;
   readonly savedNow: boolean;
 }): string {
-  const { hasBrain, notes, notesAgentOff, savedNow } = input;
+  const { hasBrain, readOnly, notes, notesAgentOff, savedNow } = input;
   if (!hasBrain) {
     return "This chat has no Brain.";
+  }
+  if (readOnly) {
+    return READ_ONLY_STATUS;
   }
   if (notesAgentOff) {
     return "The notes agent is off for this chat. Its messages are still recorded and are caught up when it is turned back on.";

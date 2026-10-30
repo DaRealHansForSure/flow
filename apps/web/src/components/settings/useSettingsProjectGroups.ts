@@ -4,7 +4,8 @@ import { useEnvironments, usePrimaryEnvironmentId } from "../../state/environmen
 import { useProjects } from "../../state/entities";
 
 export function useSettingsProjectGroups() {
-  const projects = useProjects();
+  // Flow: No project chats live in a hidden scratch project that is not managed as a project.
+  const projects = useProjects().filter((project) => !project.isScratch);
   // Avoid object selector identities that rebuild groups and every settings row on each write.
   const sidebarProjectGroupingMode = useClientSettings(
     (settings) => settings.sidebarProjectGroupingMode,
