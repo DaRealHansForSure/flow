@@ -60,7 +60,14 @@ function ThreadNowLine({
         ) : null}
       </NoticeText>
       {item.actions ? (
-        <span className="ms-1.5 flex shrink-0 items-center gap-2.5">{item.actions}</span>
+        <span
+          className={cn(
+            "ms-1.5 flex shrink-0 items-center gap-2.5",
+            chip && "ms-1 self-stretch border-l border-border ps-3",
+          )}
+        >
+          {item.actions}
+        </span>
       ) : null}
     </>
   );
@@ -71,7 +78,8 @@ function ThreadNowLine({
       data-thread-now-line="true"
     >
       {chip ? (
-        <span className="flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-foreground">
+        // Matches the mobile app's running-work pill: centered, a divider before its actions.
+        <span className="mx-auto flex min-w-0 max-w-full items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-foreground text-sm shadow-xs [&_svg]:size-4">
           {content}
         </span>
       ) : (
