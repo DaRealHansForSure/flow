@@ -1,22 +1,23 @@
 # Worklog
 
-Updated: 2026-10-30 23:45
+Updated: 2026-10-31 01:00
 
 ## Current focus
 
-- **Topic:** side fixes from the Brain settings chat (Part 1 of the plan)
-- **Goal:** phone and chat polish first, then Brain settings in one place (Part 2)
-- **Branch:** develop (Part 1 merged, nothing pushed)
-- **Last step done:** agents pill and Agents tab rows, subagent window, usage chip, Revise, plan
-  header, phone Back and swipes, terminal buttons, keyboard guard, work-row colours and sizes
-- **Next step:** owner checks Part 1 on the phone and says when to run tests; then Part 2
-  (Brain settings, plan in the Claude profile plans folder)
+- **Topic:** phone and chat polish, No project cleanup, fork CI (after the Brain settings plan)
+- **Goal:** test 0.2.2-dev builds on the phone, then Brain settings in one place (Part 2)
+- **Branch:** develop (all merged, not pushed; 0.2.2-dev.1 AppImage built)
+- **Last step done:** Flow CI on GitHub runners, T3 workflows removed, No project folder cleanup,
+  Cite fixes, taller resting composer
+- **Next step:** owner's word on push and tests; build 0.2.2-dev.2 for the server changes
 - **Open questions / blockers:**
-  - Tests written but not run: threadHistoryPaging, ThreadFind, usageLimitTone, phoneNavigation.
-  - feat/windows-desktop stays unmerged; no shims for the Play Store T3 app.
+  - Tests written, not run: paging, ThreadFind, usage tone, phone nav, MCP panel, selection.
+  - Usage refresh on tab return proposed, waiting for the owner.
+  - Windows service bundle switched off until fixed.
 
 ## Finished features
 
+- 2026-10-31 - Flow CI, T3 workflows removed, No project cleanup, Cite and composer fixes (develop)
 - 2026-10-30 - MCP view: MCP tab, /mcp, Settings > Providers MCP section, folded provider cards (merged into develop)
 - 2026-10-30 - Side fixes: agents pill, phone Back and swipes, usage chip, keyboard guard, work-row colours (develop)
 - 2026-10-30 - No project chats only read their Brain and are not projects; Connected projects table; source search; terminal font zoom; rendered pages open on tap; Brain tab memory; graph Fit; provider removal; About order; dev bundling page fits phones (develop)
@@ -31,6 +32,7 @@ Updated: 2026-10-30 23:45
 
 ## History
 
+- 2026-10-31 01:00 - CI fixed, scratch cleanup merged; push and tests waiting
 - 2026-10-30 23:45 - feat/mcp-view merged into develop; later: Check servers for Codex and OpenCode
 - 2026-10-30 23:10 - Part 1 side fixes committed on develop; tests waiting for the owner
 - 2026-10-30 21:00 - FORK.md, CHANGELOG and worklog tidied; tap hints in the projects table
