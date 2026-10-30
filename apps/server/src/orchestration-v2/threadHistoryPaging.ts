@@ -13,7 +13,7 @@ import type {
  * thread or the inside of one very long turn, stops at `maxItems` rows.
  */
 export const THREAD_HISTORY_PAGE_POLICY = {
-  maxUserTurns: 10,
+  maxUserTurns: 3,
   maxItems: 75,
   maxTurnItems: 500,
   maxEncodedBytes: 1_048_576,
@@ -21,7 +21,10 @@ export const THREAD_HISTORY_PAGE_POLICY = {
 
 export const THREAD_HISTORY_INLINE_WORK_ITEM_LIMIT = 150;
 
-export const OLDER_THREAD_USER_TURN_LIMIT = 20;
+export const OLDER_THREAD_USER_TURN_LIMIT = 5;
+
+/** How far one targeted page (find, citations) may widen to reach its entry. */
+const TARGETED_THREAD_USER_TURN_LIMIT = 40;
 
 export function isConversationHistoryItem(item: Pick<OrchestrationV2TurnItem, "type">): boolean {
   return !["command_execution", "reasoning", "file_change", "dynamic_tool"].includes(item.type);
@@ -412,7 +415,7 @@ function findCursorEndIndex(
 }
 
 /**
- * Older pages allow twice the turns, and a targeted page widens further so it
+ * Older pages hold a few turns each, and a targeted page widens further so it
  * reaches `throughEntryId`. Callers that re-bound a page must reuse this policy
  * or they drop the target again.
  */
@@ -438,7 +441,7 @@ export function olderHistoryPagePolicy<Row extends HistoryRow>(input: {
   return {
     ...policy,
     maxUserTurns: Math.min(
-      OLDER_THREAD_USER_TURN_LIMIT * 2,
+      TARGETED_THREAD_USER_TURN_LIMIT,
       Math.max(
         OLDER_THREAD_USER_TURN_LIMIT,
         turns + (isThreadHistoryUserTurn(input.items[targetIndex]!.item) ? 0 : 1),

@@ -685,7 +685,7 @@ describe("V2 history materialization", () => {
           position: items.length,
         });
         const ordinary = yield* projection.getThreadHistoryPage(threadId, cursor);
-        assert.equal(ordinary.items[0]?.sourceItemId, "user:25");
+        assert.equal(ordinary.items[0]?.sourceItemId, "user:40");
         const targeted = yield* projection.getThreadHistoryPage(threadId, cursor, "message:10");
         assert.equal(targeted.items[0]?.sourceItemId, "user:10");
         assert.deepEqual(
@@ -712,9 +712,9 @@ describe("V2 history materialization", () => {
         const earlier = yield* projection.getThreadHistoryPage(threadId, targeted.nextCursor!);
         assert.deepEqual(
           earlier.items.map((row) => row.sourceItemId),
-          items.slice(0, 30).map((entry) => entry.id),
+          items.slice(15, 30).map((entry) => entry.id),
         );
-        assert.isFalse(earlier.hasMoreHistory);
+        assert.isTrue(earlier.hasMoreHistory);
         const capped = yield* projection.getThreadHistoryPage(threadId, cursor, "message:0");
         assert.equal(capped.items[0]?.sourceItemId, "user:5");
         const absent = yield* projection.getThreadHistoryPage(
