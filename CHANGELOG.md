@@ -31,6 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The "Loading…" shown while a page or dialog such as Usage or Settings opens sits in a solid pill
+  instead of floating as bare text over the page below.
 - On a phone the message box takes the cursor, and raises the keyboard, only when you tap it (or
   press Revise on a plan). Closing a dialog, sheet or menu no longer brings the keyboard up.
 - On touch screens an expanded tool call shows its whole content instead of a small box that
