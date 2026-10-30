@@ -2712,6 +2712,14 @@ code {
   --work-accent-rail: color-mix(in oklab, var(--color-cyan-600) 45%, transparent);
 }
 
+/* Flow: on a phone the side panel covers the chat, sheet or maximized. Its tab bar starts at the
+   chat header's controls inset, so the first tab's icon sits where the left menu icon sits. */
+@media (max-width: 639px) {
+  [data-right-panel-tabbar] {
+    padding-inline-start: var(--workspace-controls-left);
+  }
+}
+
 /* Flow: the side panel's tabs match its 40 px header buttons on touch screens. */
 @media (pointer: coarse) {
   [data-right-panel-tab-list] [data-active-tab] {
