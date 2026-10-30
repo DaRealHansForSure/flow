@@ -3539,7 +3539,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               <div className="h-8">
                 <div
                   ref={setInlineRestingControlsHost}
-                  className="absolute bottom-2 inset-x-4 min-w-0"
+                  className="absolute bottom-2 inset-x-1.5 min-w-0"
                 >
                   <div
                     ref={attachRestingComposerControls}
