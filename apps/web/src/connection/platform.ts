@@ -123,15 +123,33 @@ const networkPathChanges = Stream.callback<"network-changed">((queue) =>
   ).pipe(Effect.asVoid),
 );
 
+// Flow: as in the mobile app, a page hidden this long comes back to a socket the browser
+// may have suspended or dropped (phones do this to background tabs).
+const LONG_HIDDEN_AFTER_MS = 10_000;
+
+/** A long absence probes quickly and replaces a silent socket instead of waiting 15 seconds. */
+export function webApplicationActiveWakeup(
+  hiddenAtMs: number | null,
+  visibleAtMs: number,
+): "application-active" | "application-active-long" {
+  return hiddenAtMs !== null && visibleAtMs - hiddenAtMs >= LONG_HIDDEN_AFTER_MS
+    ? "application-active-long"
+    : "application-active";
+}
+
 const layerWakeups = Wakeups.layer({
   changes: Stream.mergeAll(
     [
-      Stream.callback<"application-active">((queue) =>
+      Stream.callback<"application-active" | "application-active-long">((queue) =>
         Effect.acquireRelease(
           Effect.sync(() => {
+            let hiddenAtMs: number | null = null;
             const listener = () => {
-              if (document.visibilityState === "visible") {
-                Queue.offerUnsafe(queue, "application-active");
+              if (document.visibilityState === "hidden") {
+                hiddenAtMs = Date.now();
+              } else if (document.visibilityState === "visible") {
+                Queue.offerUnsafe(queue, webApplicationActiveWakeup(hiddenAtMs, Date.now()));
+                hiddenAtMs = null;
               }
             };
             document.addEventListener("visibilitychange", listener);

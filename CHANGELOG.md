@@ -95,6 +95,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Coming back to the web app after its tab was in the background for a while (for example a
+  minimised browser on a phone) reconnects within a few seconds instead of waiting up to 15 seconds
+  on a connection the browser had already dropped.
 - On the phone, the idle composer's model chip lines up with the "Ask anything..." text above it.
 - Feedback typed while a plan waits (Revise) asks the agent to rework the plan and not to carry out
   its steps yet, so a remark like "only do steps 0 and 1" no longer starts the work.
