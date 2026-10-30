@@ -1,6 +1,7 @@
 import { ChevronDownIcon, PaperclipIcon } from "lucide-react";
 
-import { Button } from "../ui/button";
+import { cn } from "~/lib/utils";
+import { STATUS_PILL_CLASS, STATUS_PILL_PART_CLASS } from "./statusPill";
 
 export function WorkspaceFileDropOverlay() {
   return (
@@ -33,23 +34,24 @@ export function ScrollToEndButton(props: {
       className="chat-scroll-to-bottom pointer-events-none absolute z-30 flex justify-center py-1.5"
       style={{ bottom: props.bottom }}
     >
-      <Button
+      <button
+        type="button"
         data-scroll-to-end="true"
         onPointerDown={(event) => event.preventDefault()}
         onClick={props.onScrollToEnd}
-        className="pointer-events-auto"
-        size="xs"
-        variant="glass"
+        className={cn(
+          STATUS_PILL_CLASS,
+          "pointer-events-auto cursor-pointer hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring",
+        )}
       >
-        <ChevronDownIcon className="size-3.5" />
+        <ChevronDownIcon aria-hidden />
         Scroll to end
         {props.summary === null ? null : (
-          <span className="text-muted-foreground">
-            <span aria-hidden>· </span>
+          <span className={cn(STATUS_PILL_PART_CLASS, "text-muted-foreground")}>
             {props.summary}
           </span>
         )}
-      </Button>
+      </button>
     </div>
   );
 }

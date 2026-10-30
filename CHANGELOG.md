@@ -53,6 +53,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The pills above the composer (Scroll to end, background work, browsers) share one taller, rounded
+  look with dividers, like the mobile app's status pill.
 - On touch screens the sidebar's icon buttons (Settings, Pull requests, Usage, and the filter, add
   project and new thread buttons) are 40 px, whatever the font size.
 - The context window indicator turns amber from 80 % and red from 90 %, so a filling context shows

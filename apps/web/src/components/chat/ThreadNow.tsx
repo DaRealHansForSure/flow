@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { threadSyncLabel, type ThreadSyncPhase } from "../../threadSync";
 import { cn } from "~/lib/utils";
 import { NoticeText } from "./ComposerBannerStack";
+import { STATUS_PILL_CLASS, STATUS_PILL_PART_CLASS } from "./statusPill";
 
 /** A line of thread state for the end of the timeline. */
 export interface ThreadNowItem {
@@ -63,7 +64,7 @@ function ThreadNowLine({
         <span
           className={cn(
             "ms-1.5 flex shrink-0 items-center gap-2.5",
-            chip && "ms-1 self-stretch border-l border-border ps-3",
+            chip && STATUS_PILL_PART_CLASS,
           )}
         >
           {item.actions}
@@ -79,9 +80,7 @@ function ThreadNowLine({
     >
       {chip ? (
         // Matches the mobile app's running-work pill: centered, a divider before its actions.
-        <span className="mx-auto flex min-w-0 max-w-full items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-foreground text-sm shadow-xs [&_svg]:size-4">
-          {content}
-        </span>
+        <span className={STATUS_PILL_CLASS}>{content}</span>
       ) : (
         content
       )}
@@ -98,7 +97,10 @@ function ThreadBrowserChip({ browser }: { readonly browser: ThreadNowBrowser }) 
         type="button"
         onClick={browser.onOpen}
         aria-label={`Show ${label}`}
-        className="relative mx-auto flex cursor-pointer items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-foreground text-sm shadow-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-4"
+        className={cn(
+          STATUS_PILL_CLASS,
+          "relative cursor-pointer hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring",
+        )}
       >
         <GlobeIcon aria-hidden />
         {label}
