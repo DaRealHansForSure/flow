@@ -53,6 +53,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- In a subagent's chat, the bar in place of the composer matches the composer: the status is a chip
+  with a dot that shows whether it still runs, and Open parent is a real button.
 - The composer stands out more from the chat history in light and dark themes, on phones and on
   wider screens: a tinted surface and a visible outline, mixed from the theme's own colors.
 - With the Working section turned off, the sidebar's chat list follows Project order: on "Last
