@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The browser panel and the floating browser can be magnified on your screen without zooming the
+  page: pinch with two fingers on a phone, or Ctrl + mouse wheel or a trackpad pinch on a computer.
+  A badge shows the zoom and resets it.
 - An Agents tab in the right panel (+ > Agents, or G) lists the chat's active and previous agents,
   the overview T3 Code dropped when it replaced its Agents panel.
 - A globe pill above the composer shows how many browsers the chat has open while none is on
