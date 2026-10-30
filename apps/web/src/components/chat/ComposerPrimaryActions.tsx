@@ -8,7 +8,15 @@ import { cn, isMacPlatform } from "~/lib/utils";
 import { useShortcutModifierState } from "../../shortcutModifierState";
 import { StageBackdropButtonArt, useSidebarStageBackdropVariant } from "../SidebarStageBackdrop";
 import { Button } from "../ui/button";
-import { Menu, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
+import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "../ui/menu";
 import { Spinner } from "../ui/spinner";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { composerFloatingLayerProps } from "./composerEventScope";
@@ -250,26 +258,28 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           <MenuPopup align="end" side="top" {...composerFloatingLayerProps}>
             {planReview !== null ? (
               <>
-                <MenuGroupLabel>Accept and continue with</MenuGroupLabel>
-                {planReview.runtimeModes.map((mode) => {
-                  const option = runtimeModeConfig[mode];
-                  const Icon = option.icon;
-                  return (
-                    <MenuItem
-                      key={mode}
-                      disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
-                      onClick={() => {
-                        if (canOperateThread) planReview.accept(mode);
-                      }}
-                    >
-                      <Icon aria-hidden="true" className="size-3.5" />
-                      {option.label}
-                      {mode === planReview.runtimeMode ? (
-                        <span className="ms-auto text-muted-foreground text-xs">Current</span>
-                      ) : null}
-                    </MenuItem>
-                  );
-                })}
+                <MenuGroup>
+                  <MenuGroupLabel>Accept and continue with</MenuGroupLabel>
+                  {planReview.runtimeModes.map((mode) => {
+                    const option = runtimeModeConfig[mode];
+                    const Icon = option.icon;
+                    return (
+                      <MenuItem
+                        key={mode}
+                        disabled={isSendBusy || isSendDisabled || isEnvironmentUnavailable}
+                        onClick={() => {
+                          if (canOperateThread) planReview.accept(mode);
+                        }}
+                      >
+                        <Icon aria-hidden="true" className="size-3.5" />
+                        {option.label}
+                        {mode === planReview.runtimeMode ? (
+                          <span className="ms-auto text-muted-foreground text-xs">Current</span>
+                        ) : null}
+                      </MenuItem>
+                    );
+                  })}
+                </MenuGroup>
                 <MenuSeparator />
               </>
             ) : null}

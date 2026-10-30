@@ -4,7 +4,15 @@ import { createContext, useContext } from "react";
 
 import { Button } from "../ui/button";
 import { Group, GroupSeparator } from "../ui/group";
-import { Menu, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
+import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "../ui/menu";
 import type { PlanVersion } from "./planVersions";
 import { runtimeModeConfig } from "./runtimeModeConfig";
 
@@ -61,20 +69,22 @@ export function PlanReviewActions(props: { readonly review: PlanReview }) {
             <ChevronDownIcon className="size-3.5" />
           </MenuTrigger>
           <MenuPopup align="start">
-            <MenuGroupLabel>Accept and continue with</MenuGroupLabel>
-            {review.runtimeModes.map((mode) => {
-              const option = runtimeModeConfig[mode];
-              const Icon = option.icon;
-              return (
-                <MenuItem key={mode} onClick={() => review.accept(mode)}>
-                  <Icon aria-hidden="true" className="size-3.5" />
-                  {option.label}
-                  {mode === review.runtimeMode ? (
-                    <span className="ms-auto text-muted-foreground text-xs">Current</span>
-                  ) : null}
-                </MenuItem>
-              );
-            })}
+            <MenuGroup>
+              <MenuGroupLabel>Accept and continue with</MenuGroupLabel>
+              {review.runtimeModes.map((mode) => {
+                const option = runtimeModeConfig[mode];
+                const Icon = option.icon;
+                return (
+                  <MenuItem key={mode} onClick={() => review.accept(mode)}>
+                    <Icon aria-hidden="true" className="size-3.5" />
+                    {option.label}
+                    {mode === review.runtimeMode ? (
+                      <span className="ms-auto text-muted-foreground text-xs">Current</span>
+                    ) : null}
+                  </MenuItem>
+                );
+              })}
+            </MenuGroup>
             <MenuSeparator />
             <MenuItem onClick={review.acceptInNewThread}>Accept in a new thread</MenuItem>
           </MenuPopup>
