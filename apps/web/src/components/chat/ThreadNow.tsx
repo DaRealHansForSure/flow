@@ -28,17 +28,16 @@ const lineClassName = cn(
 function ThreadNowLine({
   item,
   announce = false,
+  chip = false,
 }: {
   readonly item: ThreadNowItem;
   /** Announces the line when it appears; only for something that needs the user. */
   readonly announce?: boolean;
+  /** Flow: draws the line as a pill, so running background work reads as one control. */
+  readonly chip?: boolean;
 }) {
-  return (
-    <div
-      role={announce ? "alert" : undefined}
-      className={lineClassName}
-      data-thread-now-line="true"
-    >
+  const content = (
+    <>
       <span aria-hidden className="flex size-3.5 shrink-0 items-center justify-center">
         {item.icon}
       </span>
@@ -63,6 +62,21 @@ function ThreadNowLine({
       {item.actions ? (
         <span className="ms-1.5 flex shrink-0 items-center gap-2.5">{item.actions}</span>
       ) : null}
+    </>
+  );
+  return (
+    <div
+      role={announce ? "alert" : undefined}
+      className={lineClassName}
+      data-thread-now-line="true"
+    >
+      {chip ? (
+        <span className="flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-foreground">
+          {content}
+        </span>
+      ) : (
+        content
+      )}
     </div>
   );
 }
@@ -95,7 +109,7 @@ export function ThreadNow({
   return (
     <>
       {attention ? <ThreadNowLine item={attention} announce /> : null}
-      {work ? <ThreadNowLine item={work} /> : null}
+      {work ? <ThreadNowLine item={work} chip /> : null}
       {syncPhase ? <ThreadSyncLine phase={syncPhase} /> : null}
       {goal ? <ThreadNowLine item={goal} /> : null}
     </>
