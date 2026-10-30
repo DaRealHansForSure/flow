@@ -134,6 +134,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The No project folder no longer shows up as a project in Settings, the settings scope picker,
+  the Brain page's Connected projects and its Connect an existing project picker, or the scheduled
+  task editor.
 - A chat started with No project only reads its Brain: nothing from it is recorded as notes,
   Auto-Docs or Auto-Skills, the agent's save tools refuse it, and its folder can no longer be
   connected to a Brain.
