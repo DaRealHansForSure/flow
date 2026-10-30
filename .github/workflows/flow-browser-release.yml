@@ -39,7 +39,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.13.1
       - name: Validate version and pin source
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.13.1
       - name: Install Linux native build prerequisites
@@ -117,7 +117,7 @@ jobs:
         env:
           FLOW_VERSION: ${{ needs.version.outputs.version }}
         run: sed "s/__FLOW_CLI_VERSION__/$FLOW_VERSION/g" install.sh > release-browser/install-cli.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: flow-browser-release-${{ matrix.os }}
           path: release-browser/*
@@ -139,7 +139,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.13.1
       - name: Test installer and launcher
@@ -177,7 +177,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Get-Content "$env:FLOW_RELEASE_HOME\instance-home\instances\primary\runtime.log" -Tail 80; throw 'flow did not start' }
           & $flow status
           & $flow stop
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: flow-browser-release-windows
           path: release-browser/*
@@ -192,7 +192,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: flow-browser-release-*
           merge-multiple: true
@@ -206,7 +206,7 @@ jobs:
             CHANGELOG.md
           sparse-checkout-cone-mode: false
           path: release-scripts
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.13.1
       - name: Publish stable browser release

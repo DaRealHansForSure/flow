@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The Windows service release builds with the vite-plus version the workspace pins instead of
+  an old 0.3.0, whose pnpm misread the lockfile and installed every platform's packages.
+
 ### Changed
 
 - Releases no longer carry `install-cloud.sh`, a copy of `install-cli.sh` for upstream's Cloud
