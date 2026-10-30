@@ -69,6 +69,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Dragging the knowledge graph shows the move cursor.
+
 - The project name in the new-chat headline is shown in the accent colour, so it reads as the
   link that changes the project.
 
