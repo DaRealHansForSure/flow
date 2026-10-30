@@ -215,6 +215,13 @@ describe("ClientSettings quit confirmation", () => {
     expect(decodeClientSettings({ confirmWindowClose: false }).confirmWindowClose).toBe(false);
     expect(decodeClientSettingsPatch({})).not.toHaveProperty("confirmWindowClose");
   });
+
+  // Flow: the app runs its own server unless the user keeps Flow running in the background.
+  it("runs Flow only while the app is open when existing settings omit it", () => {
+    expect(decodeClientSettings({}).runInBackground).toBe(false);
+    expect(decodeClientSettings({ runInBackground: true }).runInBackground).toBe(true);
+    expect(decodeClientSettingsPatch({})).not.toHaveProperty("runInBackground");
+  });
 });
 
 describe("provider enabled defaults", () => {
