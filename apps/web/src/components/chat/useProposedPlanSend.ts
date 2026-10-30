@@ -101,16 +101,20 @@ export function usePlanFollowUpSend(input: PlanFollowUpSendInput) {
   const setComposerDraftInteractionMode = useComposerDraftStore(
     (store) => store.setInteractionMode,
   );
+  const setComposerDraftRuntimeMode = useComposerDraftStore((store) => store.setRuntimeMode);
   const { sendInFlight: sendInFlightRef } = draftSendState(routeThreadKey);
 
   return async function submitPlanFollowUp({
     text,
     context,
     interactionMode: nextInteractionMode,
+    runtimeMode: nextRuntimeMode = runtimeMode,
   }: {
     text: string;
     context?: ReturnType<typeof buildMessageContext>;
     interactionMode: "default" | "plan";
+    /** Flow: Accept can continue in another permission mode than the chat's own. */
+    runtimeMode?: RuntimeMode;
   }) {
     if (
       !readEnvironmentScope(environmentId, AuthOrchestrationOperateScope) ||
@@ -170,7 +174,7 @@ export function usePlanFollowUpSend(input: PlanFollowUpSendInput) {
       threadId: threadIdForSend,
       createdAt: messageCreatedAt,
       ...(localCheckoutBranchMismatch ? { branch: localCheckoutBranchMismatch.currentBranch } : {}),
-      runtimeMode,
+      runtimeMode: nextRuntimeMode,
       interactionMode: nextInteractionMode,
     });
     let failure: AtomCommandResult<unknown, unknown> | null =
@@ -180,6 +184,10 @@ export function usePlanFollowUpSend(input: PlanFollowUpSendInput) {
       setComposerDraftInteractionMode(
         scopeThreadRef(activeThread.environmentId, threadIdForSend),
         nextInteractionMode,
+      );
+      setComposerDraftRuntimeMode(
+        scopeThreadRef(activeThread.environmentId, threadIdForSend),
+        nextRuntimeMode,
       );
 
       const startResult = await startThreadTurn({
@@ -195,7 +203,7 @@ export function usePlanFollowUpSend(input: PlanFollowUpSendInput) {
           },
           modelSelection: sendCtx.selectedModelSelection,
           titleSeed: activeThread.title,
-          runtimeMode,
+          runtimeMode: nextRuntimeMode,
           interactionMode: nextInteractionMode,
           ...(nextInteractionMode === "default" && activeProposedPlan
             ? {

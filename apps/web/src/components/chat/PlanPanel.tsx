@@ -7,12 +7,20 @@ import { lazy, Suspense, useState } from "react";
 import ChatMarkdown from "~/components/ChatMarkdown";
 import { MorphIcon } from "~/components/MorphIcon";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import type { LatestProposedPlanState } from "../../session-logic";
+import {
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   FILE_SURFACE_SUBHEADER_CLASS,
   FileSurfaceAction,
   FileSurfaceLoading,
 } from "../files/fileSurfaceChrome";
+import { PlanReviewActions, usePlanReview } from "./planReview";
+import { type PlanVersion, planVersionLabel } from "./planVersions";
 import { usePlanFileActions } from "./usePlanFileActions";
 
 const ReadOnlySourcePreview = lazy(() => import("../files/ReadOnlySourcePreview"));
@@ -21,7 +29,7 @@ const ReadOnlySourcePreview = lazy(() => import("../files/ReadOnlySourcePreview"
 export function PlanPanel(props: {
   readonly environmentId: EnvironmentId;
   readonly threadRef: ScopedThreadRef;
-  readonly plan: LatestProposedPlanState | null;
+  readonly plan: PlanVersion | null;
   readonly cwd: string | undefined;
   readonly workspaceRoot: string | undefined;
 }) {
@@ -32,17 +40,22 @@ export function PlanPanel(props: {
       </div>
     );
   }
-  return <PlanDocument {...props} plan={props.plan} />;
+  return <PlanDocument key={props.plan.id} {...props} plan={props.plan} />;
 }
 
 function PlanDocument(props: {
   readonly environmentId: EnvironmentId;
   readonly threadRef: ScopedThreadRef;
-  readonly plan: LatestProposedPlanState;
+  readonly plan: PlanVersion;
   readonly cwd: string | undefined;
   readonly workspaceRoot: string | undefined;
 }) {
-  const { planMarkdown } = props.plan;
+  const { versions, review } = usePlanReview();
+  // Another version stays shown until a new plan arrives, which remounts this document.
+  const [selectedPlanId, setSelectedPlanId] = useState(props.plan.id);
+  const plan = versions.find((version) => version.id === selectedPlanId) ?? props.plan;
+  const { planMarkdown } = plan;
+  const statusLabel = planVersionLabel(plan, versions.length);
   const [rendered, setRendered] = useState(true);
   const fileActions = usePlanFileActions({
     planMarkdown,
@@ -59,6 +72,29 @@ function PlanDocument(props: {
             {proposedPlanTitle(planMarkdown) ?? "Proposed plan"}
           </span>
         </div>
+        {versions.length > 1 ? (
+          <Select
+            value={plan.id}
+            onValueChange={(value) => {
+              if (value) {
+                setSelectedPlanId(value);
+              }
+            }}
+          >
+            <SelectTrigger size="xs" aria-label="Plan version">
+              <SelectValue>{statusLabel ?? `Version ${plan.version}`}</SelectValue>
+            </SelectTrigger>
+            <SelectPopup align="end" alignItemWithTrigger={false}>
+              {versions.toReversed().map((version) => (
+                <SelectItem key={version.id} value={version.id}>
+                  {planVersionLabel(version, versions.length)}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+        ) : statusLabel ? (
+          <span className="shrink-0 text-muted-foreground text-xs">{statusLabel}</span>
+        ) : null}
         <FileSurfaceAction
           label={rendered ? "Show markdown source" : "Show rendered markdown"}
           pressed={rendered}
@@ -83,6 +119,11 @@ function PlanDocument(props: {
           <SaveIcon className="size-3.5" />
         </FileSurfaceAction>
       </div>
+      {review !== null && review.planId === plan.id ? (
+        <div className="flex shrink-0 justify-end border-b border-border/60 px-3 py-2">
+          <PlanReviewActions review={review} />
+        </div>
+      ) : null}
       {rendered ? (
         <ScrollArea className="min-h-0 flex-1">
           <ChatMarkdown

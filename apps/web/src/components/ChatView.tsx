@@ -180,6 +180,8 @@ import { useDeviceState } from "~/state/device";
 import { BranchToolbar, type BranchToolbarHandle } from "./BranchToolbar";
 import { ComposerContextPermissions } from "./ComposerContextPermissions";
 import { resolveCompatibleRuntimeMode, resolvePermissionMode } from "./chat/runtimeModeConfig";
+import { PlanReviewProvider } from "./chat/planReview";
+import { deriveProposedPlanVersions } from "./chat/planVersions";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import { isEditableFocused } from "../lib/editableFocus";
 import { DEFAULT_RESOLVED_KEYBINDINGS } from "@t3tools/shared/keybindings";
@@ -1365,8 +1367,7 @@ export default function ChatView(props: ChatViewProps) {
     }
     return findLatestProposedPlan(serverProjection, activeLatestRun?.runId ?? null);
   })();
-  // Flow: the Plan tab shows the newest plan of any turn and opens on its own for each new one.
-  const latestPlan = findLatestProposedPlan(serverProjection, null);
+  // Flow: the Plan tab opens on its own for each new plan.
   const openPlanSurfaceStable = useStableCallback(() => {
     if (activeThreadRef) {
       useRightPanelStore.getState().open(activeThreadRef, "plan");
@@ -2828,7 +2829,7 @@ export default function ChatView(props: ChatViewProps) {
     activeEnvironmentUnavailable,
     defaultRuntimeMode,
   });
-  const { onSend: sendComposerMessage } = useComposerSend({
+  const { onSend: sendComposerMessage, acceptPlan } = useComposerSend({
     environmentId,
     routeThreadKey,
     currentRouteThreadKeyRef,
@@ -2931,6 +2932,47 @@ export default function ChatView(props: ChatViewProps) {
     await implementPlanInNewThread();
   };
   const onImplementPlanInNewThreadStable = useStableCallback(onImplementPlanInNewThread);
+  // Flow: Accept, Revise and Decline for the open plan, shared by the plan card and the Plan tab.
+  const declineProposedPlan = useAtomCommand(threadEnvironment.declineProposedPlan);
+  const acceptPlanStable = useStableCallback(async (nextRuntimeMode: RuntimeMode) => {
+    if (await confirmProjectBrain()) {
+      await acceptPlan(nextRuntimeMode);
+    }
+  });
+  const declinePlanStable = useStableCallback(() => {
+    if (activeThread && activeProposedPlan) {
+      void declineProposedPlan({
+        environmentId,
+        input: { threadId: activeThread.id, planId: activeProposedPlan.id },
+      });
+    }
+  });
+  const reviewablePlanId =
+    isServerThread && hasActionableProposedPlan(activeProposedPlan)
+      ? (activeProposedPlan?.id ?? null)
+      : null;
+  const { modes: reviewRuntimeModes, mode: reviewRuntimeMode } = resolveCompatibleRuntimeMode(
+    runtimeMode,
+    activeProviderStatus?.supportedRuntimeModes,
+  );
+  const planVersions = deriveProposedPlanVersions(serverProjection);
+  const reviewDisabled = isSendBusy || activeEnvironmentUnavailable;
+  const planReviewState = {
+    versions: planVersions,
+    review:
+      reviewablePlanId === null
+        ? null
+        : {
+            planId: reviewablePlanId,
+            runtimeMode: reviewRuntimeMode,
+            runtimeModes: reviewRuntimeModes,
+            disabled: reviewDisabled,
+            accept: (mode: RuntimeMode) => void acceptPlanStable(mode),
+            acceptInNewThread: () => void onImplementPlanInNewThreadStable(),
+            revise: focusComposerStable,
+            decline: declinePlanStable,
+          },
+  };
 
   const onWorktreeSetupWorkLocally = () => {
     if (!worktreeSetup || worktreeSetup.phase !== "running" || !draftId) {
@@ -3208,7 +3250,7 @@ export default function ChatView(props: ChatViewProps) {
         onPendingChange: handleFilePendingChangeStable,
       }}
       brain={{ threadId: brainThreadId, chatBrain }}
-      plan={{ plan: latestPlan, cwd: gitCwd ?? undefined }}
+      plan={{ plan: planVersions.at(-1) ?? null, cwd: gitCwd ?? undefined }}
     />
   ) : null;
   const panelToggleControlProps = {
@@ -3924,7 +3966,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
           onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
-          onAddPlan={latestPlan ? openPlanSurfaceStable : undefined}
+          onAddPlan={planVersions.length > 0 ? openPlanSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}
@@ -3949,7 +3991,7 @@ export default function ChatView(props: ChatViewProps) {
       cwd={activeWorkspaceRoot}
       checkpoints={serverProjection?.checkpoints}
     >
-      {content}
+      <PlanReviewProvider value={planReviewState}>{content}</PlanReviewProvider>
     </FileMetadataThreadProvider>
   );
 }

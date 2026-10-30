@@ -56,7 +56,7 @@ import {
   collapseExpandedComposerCursor,
   parseStandaloneComposerSlashCommand,
 } from "../../composer-logic";
-import { resolvePlanFollowUpSubmission } from "../../proposedPlan";
+import { buildPlanImplementationPrompt, resolvePlanFollowUpSubmission } from "../../proposedPlan";
 import { type ChatMessage } from "../../types";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import { newMessageId, newThreadId } from "~/lib/utils";
@@ -1440,5 +1440,17 @@ export function useComposerSend(input: ComposerSendInput) {
     }
   };
 
-  return { onSend };
+  // Flow: Accept from the plan card or the Plan tab, continuing in the chosen permission mode.
+  const acceptPlan = async (nextRuntimeMode: RuntimeMode) => {
+    if (!activeProposedPlan) {
+      return false;
+    }
+    return submitPlanFollowUp({
+      text: buildPlanImplementationPrompt(activeProposedPlan.planMarkdown),
+      interactionMode: "default",
+      runtimeMode: nextRuntimeMode,
+    });
+  };
+
+  return { onSend, acceptPlan };
 }

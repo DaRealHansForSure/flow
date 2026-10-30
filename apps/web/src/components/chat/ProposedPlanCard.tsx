@@ -1,7 +1,7 @@
 import { proposedPlanTitle, stripDisplayedPlanMarkdown } from "@t3tools/shared/proposedPlanText";
 import { memo, useState } from "react";
 import { findRevealRef } from "./markdownFindContext";
-import type { EnvironmentId, ScopedThreadRef } from "@t3tools/contracts";
+import type { EnvironmentId, PlanId, ScopedThreadRef } from "@t3tools/contracts";
 import { buildCollapsedProposedPlanPreviewMarkdown } from "../../proposedPlan";
 import ChatMarkdown from "../ChatMarkdown";
 import { EllipsisIcon } from "lucide-react";
@@ -10,9 +10,12 @@ import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { cn } from "~/lib/utils";
 import { Badge } from "../ui/badge";
 import { useRightPanelStore } from "../../rightPanelStore";
+import { PlanReviewActions, usePlanReview } from "./planReview";
+import { planVersionLabel } from "./planVersions";
 import { usePlanFileActions } from "./usePlanFileActions";
 
 export const ProposedPlanCard = memo(function ProposedPlanCard({
+  planId,
   planMarkdown,
   environmentId,
   threadRef,
@@ -20,6 +23,7 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
   workspaceRoot,
   findActive = false,
 }: {
+  planId: PlanId;
   planMarkdown: string;
   environmentId: EnvironmentId;
   threadRef?: ScopedThreadRef | undefined;
@@ -29,6 +33,9 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const fileActions = usePlanFileActions({ planMarkdown, environmentId, workspaceRoot });
+  const { versions, review } = usePlanReview();
+  const version = versions.find((candidate) => candidate.id === planId);
+  const statusLabel = version ? planVersionLabel(version, versions.length) : null;
   const title = proposedPlanTitle(planMarkdown) ?? "Proposed plan";
   const lineCount = planMarkdown.split("\n").length;
   const canCollapse = planMarkdown.length > 900 || lineCount > 20;
@@ -49,6 +56,9 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
           <h3 data-thread-find-text="true" className="truncate text-sm font-medium text-foreground">
             {title}
           </h3>
+          {statusLabel ? (
+            <span className="shrink-0 text-muted-foreground text-xs">{statusLabel}</span>
+          ) : null}
         </div>
         <Menu>
           <MenuTrigger
@@ -116,6 +126,11 @@ export const ProposedPlanCard = memo(function ProposedPlanCard({
         ) : null}
       </div>
 
+      {review !== null && review.planId === planId ? (
+        <div className="mt-4 flex justify-end">
+          <PlanReviewActions review={review} />
+        </div>
+      ) : null}
       {fileActions.saveDialog}
     </div>
   );

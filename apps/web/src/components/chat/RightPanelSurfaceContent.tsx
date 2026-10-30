@@ -25,7 +25,7 @@ import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavail
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
 import { ChatBrainPanel } from "../brain/ChatBrainPanel";
 import type { ChatBrain } from "../brain/useChatBrain";
-import type { LatestProposedPlanState } from "../../session-logic";
+import type { PlanVersion } from "./planVersions";
 import { PlanPanel } from "./PlanPanel";
 
 const PreviewPanel = lazy(() =>
@@ -60,7 +60,7 @@ interface RightPanelBrainProps {
 
 /** Flow: the chat's latest proposed plan, shown in the Plan tab. */
 interface RightPanelPlanProps {
-  readonly plan: LatestProposedPlanState | null;
+  readonly plan: PlanVersion | null;
   readonly cwd: string | undefined;
 }
 

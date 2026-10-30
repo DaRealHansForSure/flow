@@ -14,6 +14,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   rendered Markdown or raw text, with Copy, Download and Save as file. It opens on its own
   for each new plan, and from the plan card's menu or the panel's + menu.
 
+- Plans are answered with Accept, Revise or Decline in the composer, the plan card and the
+  Plan tab. Accept continues in the chat's permission mode or one picked from its menu, or
+  in a new thread; Revise asks for feedback and makes a new version; Decline keeps the chat
+  in Plan. Each plan shows its version and whether it was accepted, revised or declined,
+  and the Plan tab can show earlier versions.
+
 ### Changed
 
 - Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
