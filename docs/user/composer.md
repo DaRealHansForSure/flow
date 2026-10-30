@@ -254,6 +254,8 @@ the running agent, so it is empty until the chat's first message. Claude, Codex
 and OpenCode report their servers; other providers say they do not. **Settings → Providers**
 shows the same list under **MCP servers** for each provider's running chat; without one,
 **Check servers** starts Claude for a moment to list them, which also starts its MCP servers.
+So far the MCP view has been tested and used with Claude only; the Codex and OpenCode
+lists are built from their own reports but not yet checked against a real session.
 
 Provider commands must start the message to run. T3 Code commands such as
 `/model` and `/plan`, and skill mentions, work on any line.
