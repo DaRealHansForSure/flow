@@ -61,6 +61,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- A page the agent rendered in chat (a chart, diagram or mockup) opens full screen when you tap or
+  click it, like an image, instead of through a small button in its corner; it is interactive in
+  the full-screen view. On a phone that view's close button stays on the screen.
 - The terminal's split, new and close buttons are larger, with 16 px icons, in the bottom drawer
   and in the right panel.
 - The terminal and right panel buttons at the top right show an arrow while their panel is open, like

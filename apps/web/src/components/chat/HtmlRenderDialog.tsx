@@ -24,18 +24,19 @@ export function HtmlRenderDialog(props: {
         initialFocus={closeButtonRef}
       >
         <DialogTitle className="sr-only">Expanded {props.title} preview</DialogTitle>
-        <div className="relative w-[92vw]">
+        {/* Flow: the close button sits inside the screen, top right, as in the image viewer. */}
+        <div className="relative w-[92vw] pt-11">
           <Button
             ref={closeButtonRef}
             aria-label="Close"
-            size="icon-xs"
+            size="icon-sm"
             variant="media-close"
-            className="absolute right-0 -top-10 z-20"
+            className="absolute right-0 top-0 z-20"
             onClick={props.onClose}
           >
             <XIcon />
           </Button>
-          <div className="h-[min(86vh,calc(100vh-160px))] overflow-auto overscroll-contain rounded-lg bg-background p-4 shadow-2xl ring-1 ring-border/70 [container-type:size]">
+          <div className="h-[min(80vh,calc(100dvh-160px))] overflow-auto overscroll-contain rounded-lg bg-background p-4 shadow-2xl ring-1 ring-border/70 [container-type:size]">
             <div className="h-[100cqh] w-[100cqw]" style={{ zoom }}>
               <HtmlRenderDocument
                 src={props.src}
