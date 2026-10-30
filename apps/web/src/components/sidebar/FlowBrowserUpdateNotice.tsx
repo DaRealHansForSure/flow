@@ -22,6 +22,7 @@ function BrowserUpdateNotice() {
   const [confirming, setConfirming] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the server's update route and rechecks when the tab becomes visible.
   useEffect(() => {
     let disposed = false;
     let pending = false;

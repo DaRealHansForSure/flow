@@ -45,8 +45,8 @@ import {
   type ServiceDiscoveryResult,
 } from "./serviceDiscovery.ts";
 
-export const ADOPTION_JOURNAL_VERSION = 1;
-export const ADOPTION_JOURNAL_FILE = "service-adoption.json";
+const ADOPTION_JOURNAL_VERSION = 1;
+const ADOPTION_JOURNAL_FILE = "service-adoption.json";
 
 // The supervisor's own readiness deadline is 120s; anything shorter would
 // report a slow first boot (brain runtime, embedding model) as a broken
@@ -358,27 +358,26 @@ export const adoptService = Effect.fn("desktop.serviceAdoption.adopt")(function*
 
   /** Runs one step, appends its record, and persists the journal before the
       next step starts. `undefined` from the body means the step succeeded. */
-  const step = (
+  const step = Effect.fn("desktop.serviceAdoption.step")(function* (
     name: AdoptionStepName,
     body: Effect.Effect<{ readonly detail?: string; readonly failure?: StepFailure }>,
-  ): Effect.Effect<Option.Option<StepFailure>> =>
-    Effect.gen(function* () {
-      const stepStartedAt = new Date(seams.now()).toISOString();
-      const result = yield* body;
-      steps.push({
-        name,
-        startedAt: stepStartedAt,
-        finishedAt: new Date(seams.now()).toISOString(),
-        ok: result.failure === undefined,
-        ...(result.failure
-          ? { detail: result.failure.message }
-          : result.detail
-            ? { detail: result.detail }
-            : {}),
-      });
-      yield* writeJournal(result.failure ? "failed" : "in-progress", result.failure);
-      return result.failure ? Option.some(result.failure) : Option.none<StepFailure>();
+  ): Effect.fn.Return<Option.Option<StepFailure>> {
+    const stepStartedAt = new Date(seams.now()).toISOString();
+    const result = yield* body;
+    steps.push({
+      name,
+      startedAt: stepStartedAt,
+      finishedAt: new Date(seams.now()).toISOString(),
+      ok: result.failure === undefined,
+      ...(result.failure
+        ? { detail: result.failure.message }
+        : result.detail
+          ? { detail: result.detail }
+          : {}),
     });
+    yield* writeJournal(result.failure ? "failed" : "in-progress", result.failure);
+    return result.failure ? Option.some(result.failure) : Option.none<StepFailure>();
+  });
 
   const fail = Effect.fn("desktop.serviceAdoption.fail")(function* (failure: StepFailure) {
     // Only uninstall a service adoption itself created. A failure before

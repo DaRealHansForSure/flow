@@ -70,3 +70,26 @@ NodeTest.test("docs share versioned storage with skills and memories cannot be w
     NodeAssert.throws(() => tools.execute("read_document_revision", { id: "notes:another-chat", revision: 1 }), /not found/);
   } finally { db.close(); }
 });
+
+NodeTest.test("turned-off Auto-Docs and Auto-Skills are refused while notes and reads keep working", () => {
+  const { db, store, cp } = fixture();
+  try {
+    const doc = store.save(cp, { kind: "doc", name: "Mission", text: "Help customers retain context.", evidence: [1] });
+    const notesOnly = new CuratorTools(store, cp, new TranscriptBudget(), undefined, { docs: false, skills: false });
+    NodeAssert.throws(() => notesOnly.execute("write_document", { kind: "doc", name: "Vision", text: "New", evidence: [2] }), /Auto-Docs are turned off/);
+    NodeAssert.throws(
+      () => notesOnly.execute("write_document", { kind: "doc", id: doc.id, expectedRevision: doc.revision, text: "Changed", evidence: [2] }),
+      /Auto-Docs are turned off/,
+    );
+    NodeAssert.throws(
+      () => notesOnly.execute("write_document", { kind: "skill", name: "Deploy", description: "When deploying", text: "Steps", evidence: [2] }),
+      /Auto-Skills are turned off/,
+    );
+    NodeAssert.equal((notesOnly.execute("write_document", { kind: "notes", text: notes(1, "blue"), evidence: [1] }) as { saved: boolean }).saved, true);
+    NodeAssert.match((notesOnly.execute("read_document", { id: doc.id }) as { text: string }).text, /retain context/);
+    NodeAssert.equal((notesOnly.execute("search_documents", { query: "customers context", kind: "doc" }) as unknown[]).length, 1);
+    NodeAssert.equal(store.get(doc.id)!.text, "Help customers retain context.");
+    const docsBackOn = new CuratorTools(store, cp, new TranscriptBudget(), undefined, { docs: true, skills: false });
+    NodeAssert.equal((docsBackOn.execute("write_document", { kind: "doc", id: doc.id, expectedRevision: doc.revision, text: "Changed", evidence: [2] }) as { revision: number }).revision, 2);
+  } finally { db.close(); }
+});

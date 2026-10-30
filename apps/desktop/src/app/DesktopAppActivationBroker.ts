@@ -1,5 +1,5 @@
-import { BRAND } from "@t3tools/shared/branding";
 // @effect-diagnostics globalTimers:off -- This protocol broker owns cancellable request deadlines outside the Effect runtime.
+import { BRAND } from "@t3tools/shared/branding";
 import {
   DESKTOP_APP_ACTIVATION_PROTOCOL_VERSION,
   type DesktopAppActivationFailure,
@@ -30,7 +30,6 @@ function failure(
   };
 }
 
-/** Holds CLI requests until the real desktop renderer is ready to handle them. */
 export class DesktopAppActivationBroker {
   readonly #pending = new Map<string, PendingActivation>();
   readonly #requestTimeoutMs: number;

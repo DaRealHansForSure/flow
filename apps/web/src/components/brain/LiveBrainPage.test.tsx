@@ -1,10 +1,11 @@
+/* oxlint-disable t3code/require-disposable-render -- Still on react-test-renderer, which T3 v0.1.5 removed; it needs a rewrite as a browser test. */
 import { act, type ReactNode } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import type { BrainResponse, BrainState } from "@t3tools/contracts";
 import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
 import * as Option from "effect/Option";
 import * as Cause from "effect/Cause";
-import { AsyncResult } from "effect/unstable/reactivity";
+import { AsyncResult } from "effect/reactivity";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const runtime = vi.hoisted(() => ({

@@ -54,7 +54,11 @@ it from startup and leaves your projects, threads, brain and settings untouched.
 
 The Flow desktop app connects to this same service, so quitting the app leaves
 your background work, indexing and captured agent sessions running. To stop or
-restart the service from the app, use **Settings → Connections → Flow service**.
+restart the service from the app, use **Settings → Connections → Service**.
+On a computer without the service, the desktop app installs it, together with
+the `flow` command, on its first start. Each app release also offers to bring
+the service to its own version and asks before it does; see
+[Updating Flow](./updating.md#desktop-updater).
 
 ## Development
 

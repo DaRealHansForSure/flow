@@ -89,7 +89,14 @@ function BrainDocumentDialog({
     if (!loadDocument) return;
     void loadDocument(document.id)
       .then((value) => {
-        if (!disposed) value ? setLoaded(value) : setError("This document is no longer available.");
+        if (disposed) {
+          return;
+        }
+        if (value) {
+          setLoaded(value);
+        } else {
+          setError("This document is no longer available.");
+        }
       })
       .catch(() => {
         if (!disposed) setError("Could not load this document. Reopen it to retry.");

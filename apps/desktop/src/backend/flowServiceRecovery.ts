@@ -32,7 +32,7 @@ import { desktopServiceRegistryRoot, discoverService } from "./serviceDiscovery.
     Consumed (and deleted) by the backend pool before it decides which primary
     to build, so "continue with the built-in server" survives exactly one
     relaunch and never becomes a sticky mode the user cannot leave. */
-export const LEGACY_BACKEND_MARKER_FILE = "legacy-backend-once";
+const LEGACY_BACKEND_MARKER_FILE = "legacy-backend-once";
 
 const MINT_TIMEOUT_MS = 20_000;
 
@@ -151,9 +151,8 @@ const runPair = (environment: RecoveryEnvironment, dataHome: string): Promise<Mi
 
 /**
  * A standard-scope pairing URL for the running service, minted the way
- * `t3 pair` mints one: run the service's own entry against its data home, so
- * the auth database and the pairing base URL are the service's, not this
- * app's. Administrative scopes are deliberately not used — a browser session
+ * `t3 pair` does: the service's own entry against its data home, so the auth
+ * database and base URL are the service's. No admin scopes: a browser session
  * is a client, not the app's own attach.
  */
 export const mintServicePairingUrl = async (

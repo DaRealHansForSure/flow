@@ -7,8 +7,12 @@ import * as NodePath from "node:path";
 import { afterEach, describe, expect, it } from "@effect/vitest";
 
 import {
+  disableFlowService,
+  enableFlowService,
+  readFlowServicePresence,
   readFlowServiceStatus,
   restartFlowService,
+  setFlowServiceNetworkAccess,
   startFlowService,
   stopFlowService,
   unitLocation,
@@ -231,6 +235,65 @@ describe("flow service panel actions", () => {
     expect(requests).toEqual([{ url: "/stop", authorization: "Bearer private-control-token" }]);
   });
 
+  it("records network access with the supervisor, then restarts through systemd", async () => {
+    const f = await fixture();
+    const bodies: string[] = [];
+    const requests = await control(f, (request, response) => {
+      let body = "";
+      request.on("data", (part: Buffer) => (body += part.toString()));
+      request.on("end", () => {
+        bodies.push(body);
+        response.setHeader("content-type", "application/json");
+        response.end(JSON.stringify({ networkAccess: true, active: false }));
+      });
+    });
+    const runner = recordingRunner(true);
+
+    const result = await setFlowServiceNetworkAccess(
+      {
+        registryRoot: f.registryRoot,
+        homeDirectory: f.home,
+        host: "linux",
+        uid: 501,
+        run: runner.run,
+      },
+      true,
+    );
+
+    expect(result).toEqual({ ok: true, reason: null, detail: null });
+    expect(requests).toEqual([
+      { url: "/network-access", authorization: "Bearer private-control-token" },
+    ]);
+    expect(bodies).toEqual([JSON.stringify({ enabled: true })]);
+    expect(runner.calls).toEqual([
+      { command: "systemctl", args: ["--user", "is-active", "flow.service"] },
+      { command: "systemctl", args: ["--user", "restart", "flow.service"] },
+    ]);
+  });
+
+  it("names a service too old for network access and restarts nothing", async () => {
+    const f = await fixture();
+    await control(f, (_request, response) => {
+      response.writeHead(404).end();
+    });
+    const runner = recordingRunner(true);
+
+    const result = await setFlowServiceNetworkAccess(
+      {
+        registryRoot: f.registryRoot,
+        homeDirectory: f.home,
+        host: "linux",
+        uid: 501,
+        run: runner.run,
+      },
+      true,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/too old/);
+    expect(runner.calls).toEqual([]);
+  });
+
   it("reports a service that was not running rather than failing", async () => {
     const f = await fixture();
 
@@ -421,5 +484,194 @@ describe("flow service panel actions", () => {
     expect(runner.calls).toEqual([
       { command: "launchctl", args: ["print", "gui/501/com.flow.service"] },
     ]);
+  });
+});
+
+const readyStatus = (response: NodeHttp.ServerResponse) => {
+  response.setHeader("content-type", "application/json");
+  response.end(JSON.stringify({ id: "environment", generation: "generation", phase: "ready" }));
+};
+
+const installSystemdUnit = async (f: Awaited<ReturnType<typeof fixture>>): Promise<void> => {
+  const path = unitLocation({ homeDirectory: f.home, host: "linux" }).path;
+  await NodeFSP.mkdir(NodePath.dirname(path), { recursive: true });
+  await NodeFSP.writeFile(path, "[Service]\nExecStart=/usr/bin/node flow.mjs\n");
+};
+
+describe("flow service start at login (app-only mode)", () => {
+  it("stops the service and turns off its start at login through systemd", async () => {
+    const f = await fixture();
+    await installSystemdUnit(f);
+    const requests = await control(f, (_request, response) => readyStatus(response));
+    const runner = recordingRunner(true);
+    // The stand-in manager stops the supervisor, which takes its control file with it.
+    const run: ServiceProcessRunner = async (command, args) => {
+      const result = await runner.run(command, args);
+      if (args.includes("--now")) {
+        await NodeFSP.rm(NodePath.join(f.directory, "runtime.json"));
+      }
+      return result;
+    };
+
+    const result = await disableFlowService({
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "linux",
+      uid: 501,
+      run,
+    });
+
+    expect(result).toEqual({ ok: true, reason: null, detail: null });
+    expect(runner.calls).toEqual([
+      { command: "systemctl", args: ["--user", "disable", "--now", "flow.service"] },
+    ]);
+    expect(requests).toEqual([]);
+  });
+
+  it("stops a supervisor running outside the service manager through its control API", async () => {
+    const f = await fixture();
+    const requests = await control(f, (request, response) => {
+      if (request.url === "/stop") {
+        void NodeFSP.rm(NodePath.join(f.directory, "runtime.json")).then(() => response.end());
+        return;
+      }
+      readyStatus(response);
+    });
+    const runner = recordingRunner(true);
+
+    const result = await disableFlowService({
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "linux",
+      uid: 501,
+      run: runner.run,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(runner.calls).toEqual([]);
+    expect(requests.map((request) => request.url)).toEqual(["/status", "/stop"]);
+  });
+
+  it("turns off the launchd agent and unloads it on macOS", async () => {
+    const f = await fixture();
+    await installUnit(f, plist("/usr/bin/node", ["flow.mjs"]));
+    const runner = recordingRunner(true);
+
+    const result = await disableFlowService({
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "darwin",
+      uid: 501,
+      run: runner.run,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(runner.calls).toEqual([
+      { command: "launchctl", args: ["disable", "gui/501/com.flow.service"] },
+      { command: "launchctl", args: ["bootout", "gui/501/com.flow.service"] },
+    ]);
+  });
+
+  it("reports a refused disable and sends no stop request", async () => {
+    const f = await fixture();
+    await installSystemdUnit(f);
+    const requests = await control(f, (_request, response) => readyStatus(response));
+    const runner = recordingRunner(false, "Access denied\n");
+
+    const result = await disableFlowService({
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "linux",
+      uid: 501,
+      run: runner.run,
+    });
+
+    expect(result).toEqual({ ok: false, reason: "failed", detail: "Access denied" });
+    expect(requests).toEqual([]);
+  });
+
+  it("turns the start at login back on and starts the service through systemd", async () => {
+    const f = await fixture();
+    await installSystemdUnit(f);
+    const runner = recordingRunner(true);
+
+    const result = await enableFlowService({
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "linux",
+      uid: 501,
+      run: runner.run,
+    });
+
+    expect(result).toEqual({ ok: true, reason: null, detail: null });
+    expect(runner.calls).toEqual([
+      { command: "systemctl", args: ["--user", "enable", "--now", "flow.service"] },
+    ]);
+  });
+
+  it("leaves a machine without a unit to first-launch adoption", async () => {
+    const f = await fixture();
+    const runner = recordingRunner(true);
+
+    const result = await enableFlowService({
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "linux",
+      uid: 501,
+      run: runner.run,
+    });
+
+    expect(result).toEqual({ ok: false, reason: "not-managed", detail: null });
+    expect(runner.calls).toEqual([]);
+  });
+
+  it("says whether the service holds the app's data home now or at the next login", async () => {
+    const f = await fixture();
+    const otherHome = NodePath.join(f.home, "other");
+    await NodeFSP.mkdir(otherHome);
+    const input = {
+      registryRoot: f.registryRoot,
+      homeDirectory: f.home,
+      host: "linux" as const,
+      uid: 501,
+    };
+
+    expect(
+      await readFlowServicePresence({
+        ...input,
+        dataHome: f.dataHome,
+        run: recordingRunner(true).run,
+      }),
+    ).toBe("none");
+    await installSystemdUnit(f);
+    expect(
+      await readFlowServicePresence({
+        ...input,
+        dataHome: f.dataHome,
+        run: recordingRunner(true).run,
+      }),
+    ).toBe("autostart");
+    expect(
+      await readFlowServicePresence({
+        ...input,
+        dataHome: f.dataHome,
+        run: recordingRunner(false).run,
+      }),
+    ).toBe("none");
+    await control(f, (_request, response) => readyStatus(response));
+    expect(
+      await readFlowServicePresence({
+        ...input,
+        dataHome: f.dataHome,
+        run: recordingRunner(true).run,
+      }),
+    ).toBe("running");
+    expect(
+      await readFlowServicePresence({
+        ...input,
+        dataHome: otherHome,
+        run: recordingRunner(true).run,
+      }),
+    ).toBe("none");
   });
 });

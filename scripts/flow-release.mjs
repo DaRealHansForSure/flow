@@ -16,7 +16,8 @@ const { spawn } = NodeChildProcess;
 import * as NodeSqlite from "node:sqlite";
 const { DatabaseSync } = NodeSqlite;
 
-const repository = "samyakkkk/flow";
+// Flow fork: releases and updates come from this fork.
+const repository = "DaRealHansForSure/flow";
 const tagPattern = /^flow-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const assetName = "flow-source.tar.gz";
 const macAssetName = "flow-browser-darwin-arm64.tar.gz";
@@ -39,6 +40,21 @@ const tar = windows ? join(process.env.SystemRoot || "C:\\Windows", "System32/ta
 const checkInterval = 6 * 60 * 60 * 1000;
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
 const self = fileURLToPath(import.meta.url);
+// Flow fork: receipts record where a release came from, so a desktop app can
+// tell a service installed from another repository apart from its own.
+const receiptOf = (tag, sha256) => ({ tag, sha256, repository });
+const repositoryConstant = /^const repository = "([^"]+)";$/m;
+
+/** The repository a release directory came from: its receipt, or for releases
+    installed before receipts recorded it, the constant in its own copy of this
+    file, which is also the feed that release updates from. Null when neither says. */
+export async function releaseRepository(directory, receipt) {
+  if (typeof receipt?.repository === "string") return receipt.repository;
+  const source = await fs
+    .readFile(join(directory, "scripts/flow-release.mjs"), "utf8")
+    .catch(() => "");
+  return repositoryConstant.exec(source)?.[1] ?? null;
+}
 
 async function json(path) {
   try {
@@ -207,11 +223,10 @@ export async function pointCurrent(home, target, win = windows) {
   await fs.rename(link, current);
 }
 
-/** Recreate the directory links a Windows bundle records instead of shipping
-    (see bundle-links.mjs for why). Safe to repeat: a release is verified where
-    it is staged and linked again once renamed into place, because a junction
-    does not follow its directory. Lives here, not beside recordLinks, because
-    this file is also shipped alone as the desktop apps' bootstrap. */
+/** Recreate the directory links a Windows bundle records (see bundle-links.mjs).
+    Safe to repeat: a junction does not follow a renamed directory, so links are
+    restored again once the release is in place. Lives here because this file
+    also ships alone as the desktop apps' bootstrap. */
 export const linkManifest = "flow-links.json";
 export async function restoreLinks(root, type = "junction") {
   const links = await json(join(root, linkManifest));
@@ -249,7 +264,7 @@ export async function adoptBundle(home, directory, checksum) {
     const releases = join(home, "releases");
     await fs.mkdir(releases, { recursive: true });
     const target = join(releases, `${bundle.tag}-${bundle.platform}-${bundle.arch}`);
-    const receipt = { tag: bundle.tag, sha256: checksum };
+    const receipt = receiptOf(bundle.tag, checksum);
     const existing = await json(join(target, "flow-release.json"));
     if (existing && existing.sha256 !== checksum)
       throw Error("Release already exists with a different checksum.");
@@ -266,18 +281,33 @@ export async function adoptBundle(home, directory, checksum) {
   }
 }
 
-export async function stageRelease(home, release, { fetcher = fetch, build = buildRelease } = {}) {
+export async function stageRelease(
+  home,
+  release,
+  { fetcher = fetch, build = buildRelease, replaceForeignSameVersion = false } = {},
+) {
   const current = await json(join(home, "current", "flow-release.json"));
-  if (!newerTag(release.tag, current?.tag)) return current;
+  // Flow fork: a desktop app may replace the same version built by another repository.
+  const replacesForeignCurrent =
+    replaceForeignSameVersion &&
+    current?.tag === release.tag &&
+    (await releaseRepository(join(home, "current"), current)) !== repository;
+  if (!newerTag(release.tag, current?.tag) && !replacesForeignCurrent) return current;
   const releases = join(home, "releases");
   await fs.mkdir(releases, { recursive: true });
-  const directory = join(
+  let directory = join(
     releases,
     Object.values(bundledAssets).includes(release.assetName)
       ? `${release.tag}-${platform()}-${arch()}`
       : release.tag,
   );
   let receipt = await json(join(directory, "flow-release.json"));
+  // Flow fork: the same tag from another repository is a different build, so it
+  // gets its own directory instead of being reused.
+  if (receipt && (await releaseRepository(directory, receipt)) !== repository) {
+    directory = `${directory}-${repository.replace("/", "-")}`;
+    receipt = await json(join(directory, "flow-release.json"));
+  }
   if (!receipt) {
     const temporary = await fs.mkdtemp(join(releases, ".prepare-"));
     try {
@@ -306,7 +336,7 @@ export async function stageRelease(home, release, { fetcher = fetch, build = bui
       await restoreLinks(source);
       await build(source);
       await fs.access(join(source, "apps/web/dist/index.html"));
-      receipt = { tag: release.tag, sha256: createHash("sha256").update(bytes).digest("hex") };
+      receipt = receiptOf(release.tag, createHash("sha256").update(bytes).digest("hex"));
       await atomic(join(source, "flow-release.json"), receipt);
       await moveDirectory(source, directory);
       await restoreLinks(directory);
@@ -348,11 +378,61 @@ export async function update(home, checkOnly = false) {
   }
 }
 
+/** Flow fork: the stable release with this exact tag from this repository. */
+export async function releaseByTag(tag, fetcher = fetch) {
+  if (!tagPattern.test(tag)) throw Error("Invalid Flow release version.");
+  const release = await (
+    await download(`https://api.github.com/repos/${repository}/releases/tags/${tag}`, fetcher)
+  ).json();
+  if (release?.tag_name !== tag) throw Error(`GitHub returned another release than ${tag}.`);
+  return validateRelease(release);
+}
+
+/** Flow fork: point `current` at exactly flow-vVERSION from this repository, for
+    a desktop app bringing its matching service; instances switch on restart.
+    Never moves backwards: a newer release from here is kept, one from another
+    repository is refused. */
+export async function installVersion(home, version, options = {}) {
+  const tag = `flow-v${version}`;
+  if (!tagPattern.test(tag)) throw Error("Usage: install-version X.Y.Z");
+  await fs.mkdir(home, { recursive: true });
+  const lock = new DatabaseSync(join(home, "update-lock.sqlite"));
+  try {
+    try {
+      lock.exec("BEGIN EXCLUSIVE");
+    } catch (error) {
+      if (error.errcode === 5) throw Error("Another Flow update is in progress.", { cause: error });
+      throw error;
+    }
+    const current = await json(join(home, "current", "flow-release.json"));
+    const currentRepository = current
+      ? await releaseRepository(join(home, "current"), current)
+      : null;
+    if (current && newerTag(current.tag, tag)) {
+      if (currentRepository === repository) {
+        return current;
+      }
+      throw Error(
+        `Flow ${current.tag.slice(6)} from ${currentRepository ?? "an unknown source"} is already installed, and Flow never replaces a release with an older version.`,
+      );
+    }
+    if (current?.tag === tag && currentRepository === repository) {
+      return current;
+    }
+    const release = await releaseByTag(tag, options.fetcher);
+    if ((await json(join(home, "current/flow-bundle.json"))) && release.assetName === assetName) {
+      throw Error("This release does not contain a ready-built package for this platform.");
+    }
+    return await stageRelease(home, release, { ...options, replaceForeignSameVersion: true });
+  } finally {
+    lock.close();
+  }
+}
+
 // One Flow install per machine, in the folder install.sh and the desktop apps
-// have always used. The retired Cloud CLI installed elsewhere; its hooks and
-// service unit record absolute paths, so such an install is adopted where it
-// is rather than moved. Desktop apps resolve the same way
-// (apps/desktop/src/backend/serviceDiscovery.ts), as does install.sh.
+// use (apps/desktop/src/backend/serviceDiscovery.ts resolves the same way). A
+// retired Cloud CLI install is adopted where it is, since its hooks and service
+// unit record absolute paths.
 export const releaseHomeNames = ["flow-browser", "flow-cloud-cli"];
 export async function resolveReleaseHome(env = process.env, homeDirectory = homedir()) {
   if (env.FLOW_RELEASE_HOME) return resolve(env.FLOW_RELEASE_HOME);
@@ -478,11 +558,10 @@ export const brainStore = (dataHome) =>
     createHash("sha256").update(join(dataHome, "userdata/brain")).digest("hex").slice(0, 12),
   );
 
-/** Delete this installation from disk. Without `purge` the program goes and
-    every data home stays, including one that lives inside the installation.
-    With `purge` the conversations, Brains and agent registrations go too —
-    nothing restores them. Retired backups are always kept: they are the only
-    copy of files Flow changed outside itself. */
+/** Delete this installation from disk. Without `purge` every data home stays,
+    even one inside the installation; with it, conversations, Brains and agent
+    registrations go for good. Retired backups are always kept: they are the
+    only copy of files Flow changed outside itself. */
 export async function removeInstallation(
   home,
   {
@@ -785,6 +864,13 @@ export async function main(args) {
       throw Error("Usage: install [--prefix DIRECTORY]");
     await update(home);
     return installLaunchers(home, args[2]);
+  }
+  if (args[0] === "install-version") {
+    if (args.length !== 2) {
+      throw Error("Usage: install-version X.Y.Z");
+    }
+    const receipt = await installVersion(home, args[1]);
+    return console.log(`Flow ${receipt.tag.slice(6)} is ready.`);
   }
   if (args[0] === "update") {
     if (args.length > 2 || (args[1] && args[1] !== "--check"))

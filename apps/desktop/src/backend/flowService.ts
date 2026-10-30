@@ -10,9 +10,10 @@
 // service manager loaded it, what is the instance doing — from the unit file,
 // one service-manager query, and the instance registry.
 //
-// It never installs, writes or repairs anything. Stopping is a request to the
-// supervisor's control API; restarting is delegated to the service manager, and
-// is simply refused when no service manager owns the unit.
+// It never installs, uninstalls, writes or repairs anything. Stopping is a request
+// to the supervisor's control API; restarting, and turning the start at login off
+// or on (Flow's app-only mode), is delegated to the service manager, and is simply
+// refused when no service manager owns the unit.
 
 import * as NodeChildProcess from "node:child_process";
 import * as NodeTimersPromises from "node:timers/promises";
@@ -30,11 +31,14 @@ import {
 
 // Kept in sync with `scripts/instances/service.mjs`; the label is part of the
 // on-disk contract, so both sides must name it identically.
-export const LAUNCHD_LABEL = "com.flow.service";
-export const SYSTEMD_UNIT = "flow.service";
+const LAUNCHD_LABEL = "com.flow.service";
+const SYSTEMD_UNIT = "flow.service";
 
 const CONTROL_TIMEOUT_MS = 5_000;
 const RUNNER_TIMEOUT_MS = 10_000;
+// `systemctl disable --now` returns only once the service has stopped, and systemd
+// allows a unit 90 s to stop by default.
+const SERVICE_MANAGER_STOP_TIMEOUT_MS = 120_000;
 
 export interface ServiceProcessResult {
   readonly ok: boolean;
@@ -47,14 +51,15 @@ export interface ServiceProcessResult {
 export type ServiceProcessRunner = (
   command: string,
   args: readonly string[],
+  options?: { readonly timeoutMs?: number },
 ) => Promise<ServiceProcessResult>;
 
-const defaultRunner: ServiceProcessRunner = (command, args) =>
+const defaultRunner: ServiceProcessRunner = (command, args, options) =>
   new Promise((resolvePromise) => {
     NodeChildProcess.execFile(
       command,
       [...args],
-      { timeout: RUNNER_TIMEOUT_MS },
+      { timeout: options?.timeoutMs ?? RUNNER_TIMEOUT_MS },
       (error, stdout, stderr) =>
         resolvePromise({
           ok: !error,
@@ -126,7 +131,8 @@ const resolveInput = (input: FlowServiceInput): ResolvedInput => {
   };
 };
 
-const launchdTarget = (resolved: ResolvedInput) => `gui/${String(resolved.uid)}/${resolved.label}`;
+const launchdDomain = (resolved: ResolvedInput) => `gui/${String(resolved.uid)}`;
+const launchdTarget = (resolved: ResolvedInput) => `${launchdDomain(resolved)}/${resolved.label}`;
 
 // Unreadable is reported as absent rather than thrown: the panel's job is to
 // describe the service, and a status read must never fail the renderer.
@@ -140,7 +146,7 @@ const readUnit = async (path: string): Promise<string | null> => {
 
 /** launchd plist `ProgramArguments`, or a systemd `ExecStart=` line. Only the
     launch argv is parsed; nothing else in the unit is interpreted here. */
-export const parseUnitArguments = (unit: string, host: NodeJS.Platform): readonly string[] => {
+const parseUnitArguments = (unit: string, host: NodeJS.Platform): readonly string[] => {
   if (host === "darwin") {
     const block = /<key>ProgramArguments<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(unit);
     if (!block) return [];
@@ -168,14 +174,9 @@ const exists = async (path: string): Promise<boolean> => {
 
 /**
  * Whether the installed unit still launches *this* installation's supervisor.
- *
- * `scripts/instances/service.mjs` decides the same question by re-rendering the
- * unit it would write today and comparing the text. That needs the release
- * layout and the private node path, neither of which a packaged desktop knows,
- * so this checks the two facts the unit itself carries: that it supervises this
- * registry's instance directory, and that the entry point it names still exists.
- * A unit left behind by a removed checkout, or pointed at another registry,
- * fails the check exactly as it does in the CLI.
+ * `scripts/instances/service.mjs` re-renders the unit instead, which needs a
+ * release layout the desktop lacks, so this checks what the unit carries: this
+ * registry's instance directory and an entry point that still exists.
  */
 const isUnitCurrent = async (unit: string, resolved: ResolvedInput): Promise<boolean> => {
   const argv = parseUnitArguments(unit, resolved.host);
@@ -260,6 +261,50 @@ export const stopFlowService = async (
   }
 };
 
+/**
+ * Turn the service's network access on or off. The supervisor records it (the
+ * desktop never writes the registry) and the service manager restarts the
+ * service to bind the new address; unmanaged, it applies from the next start,
+ * which the `not-managed` result tells the caller.
+ */
+export const setFlowServiceNetworkAccess = async (
+  input: FlowServiceInput,
+  enabled: boolean,
+): Promise<DesktopFlowServiceActionResult> => {
+  const resolved = resolveInput(input);
+  const control = await readServiceControl({
+    registryRoot: resolved.registryRoot,
+    name: resolved.name,
+  });
+  if (control === null) {
+    return failed("not-running", null);
+  }
+  try {
+    const response = await resolved.fetchImpl(new URL("/network-access", control.url), {
+      method: "POST",
+      redirect: "error",
+      signal: AbortSignal.timeout(CONTROL_TIMEOUT_MS),
+      headers: {
+        authorization: `Bearer ${control.token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ enabled }),
+    });
+    if (response.status === 404) {
+      return failed(
+        "failed",
+        "This Flow service is too old to change network access. Update it first.",
+      );
+    }
+    if (!response.ok) {
+      return failed("failed", "The service refused the network access request.");
+    }
+  } catch (cause) {
+    return failed("failed", cause instanceof Error ? cause.message : String(cause));
+  }
+  return restartFlowService(input);
+};
+
 /** Spawns a detached process and resolves once it has started. Injected so
     tests assert the argv rather than launching a service. */
 export type ServiceProcessLauncher = (
@@ -297,12 +342,10 @@ export interface StartFlowServiceInput extends FlowServiceInput {
 }
 
 /**
- * Start a stopped service. A managed service is started by its service manager
- * (`launchctl kickstart` / `systemctl start`). An unmanaged one is started by
- * running the service's own launcher — the same `flow` the user would type —
- * which takes the launcher and supervisor locks itself, so two clients starting
- * at once cannot produce two servers. The desktop still never spawns a
- * supervisor directly. Resolves once discovery no longer reports `stopped`.
+ * Start a stopped service through its service manager, or else through its own
+ * `flow` launcher, whose locks stop two clients from starting two servers. The
+ * desktop never spawns a supervisor itself. Resolves once discovery no longer
+ * reports `stopped`.
  */
 export const startFlowService = async (
   input: StartFlowServiceInput,
@@ -359,5 +402,168 @@ export const restartFlowService = async (
       ? await resolved.run("launchctl", ["kickstart", "-k", launchdTarget(resolved)])
       : await resolved.run("systemctl", ["--user", "restart", SYSTEMD_UNIT]);
   if (!result.ok) return failed("failed", result.stderr.trim() || null);
+  return { ok: true, reason: null, detail: null };
+};
+
+// A supervisor in any of these phases holds the data home, so the app's own
+// server could not open it.
+const LIVE_SERVICE_STATUSES: ReadonlySet<string> = new Set(["starting", "ready", "stopping"]);
+const STOP_POLL_INTERVAL_MS = 250;
+// 60 s: a supervisor drains its running chats before it exits.
+const STOP_SETTLE_POLLS = 240;
+
+const discover = (resolved: ResolvedInput) =>
+  discoverService({
+    registryRoot: resolved.registryRoot,
+    name: resolved.name,
+    fetch: resolved.fetchImpl,
+  });
+
+const realpathOrNull = async (path: string): Promise<string | null> => {
+  try {
+    return await NodeFSP.realpath(path);
+  } catch {
+    return null;
+  }
+};
+
+/** launchd lists an override as `"label" => disabled` (newer macOS) or `=> true`. */
+const isLaunchdLabelDisabled = (overrides: string, label: string): boolean =>
+  overrides.includes(`"${label}" => disabled`) || overrides.includes(`"${label}" => true`);
+
+/** Whether the installed unit starts the service at login. No unit means no. */
+const isFlowServiceAutostartEnabled = async (input: FlowServiceInput): Promise<boolean> => {
+  const resolved = resolveInput(input);
+  if (!(await exists(resolved.unitPath))) {
+    return false;
+  }
+  if (resolved.host === "darwin") {
+    const overrides = await resolved.run("launchctl", ["print-disabled", launchdDomain(resolved)]);
+    // Without the override list, launchd's default applies: an installed agent loads at login.
+    if (!overrides.ok) {
+      return true;
+    }
+    return !isLaunchdLabelDisabled(overrides.stdout, resolved.label);
+  }
+  return (await resolved.run("systemctl", ["--user", "is-enabled", SYSTEMD_UNIT])).ok;
+};
+
+/** How an installed service stands in the way of an app that runs its own
+    server on `dataHome`: it holds the home now, or it will at the next login. */
+export type FlowServicePresence = "none" | "autostart" | "running";
+
+export const readFlowServicePresence = async (
+  input: FlowServiceInput & { readonly dataHome: string },
+): Promise<FlowServicePresence> => {
+  const resolved = resolveInput(input);
+  const discovery = await discover(resolved);
+  if (discovery.dataHome === undefined) {
+    return "none";
+  }
+  const [serviceHome, appHome] = await Promise.all([
+    realpathOrNull(discovery.dataHome),
+    realpathOrNull(input.dataHome),
+  ]);
+  if (serviceHome === null || serviceHome !== appHome) {
+    return "none";
+  }
+  if (LIVE_SERVICE_STATUSES.has(discovery.status)) {
+    return "running";
+  }
+  if (await isFlowServiceAutostartEnabled(input)) {
+    return "autostart";
+  }
+  return "none";
+};
+
+const deactivateUnit = async (resolved: ResolvedInput): Promise<ServiceProcessResult> => {
+  if (resolved.host === "darwin") {
+    const disabled = await resolved.run("launchctl", ["disable", launchdTarget(resolved)]);
+    if (!disabled.ok) {
+      return disabled;
+    }
+    // Fails when the agent is not loaded, which leaves nothing to stop.
+    await resolved.run("launchctl", ["bootout", launchdTarget(resolved)], {
+      timeoutMs: SERVICE_MANAGER_STOP_TIMEOUT_MS,
+    });
+    return disabled;
+  }
+  return resolved.run("systemctl", ["--user", "disable", "--now", SYSTEMD_UNIT], {
+    timeoutMs: SERVICE_MANAGER_STOP_TIMEOUT_MS,
+  });
+};
+
+const waitUntilStopped = async (
+  resolved: ResolvedInput,
+): Promise<DesktopFlowServiceActionResult> => {
+  for (let poll = 0; poll < STOP_SETTLE_POLLS; poll += 1) {
+    const current = await discover(resolved);
+    if (!LIVE_SERVICE_STATUSES.has(current.status)) {
+      return { ok: true, reason: null, detail: null };
+    }
+    await NodeTimersPromises.setTimeout(STOP_POLL_INTERVAL_MS);
+  }
+  return failed("failed", "The service did not stop in time.");
+};
+
+/**
+ * Stop the service and turn off its start at login, keeping unit, release and data.
+ * A supervisor the `flow` launcher started is stopped through its control API.
+ * Resolves once no supervisor holds the data home.
+ */
+export const disableFlowService = async (
+  input: FlowServiceInput,
+): Promise<DesktopFlowServiceActionResult> => {
+  const resolved = resolveInput(input);
+  if (await exists(resolved.unitPath)) {
+    const deactivated = await deactivateUnit(resolved);
+    if (!deactivated.ok) {
+      return failed("failed", deactivated.stderr.trim() || null);
+    }
+  }
+  const discovery = await discover(resolved);
+  if (LIVE_SERVICE_STATUSES.has(discovery.status)) {
+    const stopped = await stopFlowService(input);
+    if (!stopped.ok && stopped.reason !== "not-running") {
+      return stopped;
+    }
+  }
+  return waitUntilStopped(resolved);
+};
+
+/**
+ * Turn the service's start at login back on and start it. `not-managed` means
+ * no unit is installed: the next attach then sets one up through first-launch
+ * adoption. Returns without waiting for readiness; attaching waits for that.
+ */
+export const enableFlowService = async (
+  input: FlowServiceInput,
+): Promise<DesktopFlowServiceActionResult> => {
+  const resolved = resolveInput(input);
+  if (!(await exists(resolved.unitPath))) {
+    return failed("not-managed", null);
+  }
+  if (resolved.host === "darwin") {
+    const enabled = await resolved.run("launchctl", ["enable", launchdTarget(resolved)]);
+    if (!enabled.ok) {
+      return failed("failed", enabled.stderr.trim() || null);
+    }
+    const loaded = await resolved.run("launchctl", [
+      "bootstrap",
+      launchdDomain(resolved),
+      resolved.unitPath,
+    ]);
+    // bootstrap refuses an agent that is already loaded, which is the goal anyway.
+    if (!loaded.ok && !(await isUnitLoaded(resolved))) {
+      return failed("failed", loaded.stderr.trim() || null);
+    }
+    return { ok: true, reason: null, detail: null };
+  }
+  const result = await resolved.run("systemctl", ["--user", "enable", "--now", SYSTEMD_UNIT], {
+    timeoutMs: SERVICE_MANAGER_STOP_TIMEOUT_MS,
+  });
+  if (!result.ok) {
+    return failed("failed", result.stderr.trim() || null);
+  }
   return { ok: true, reason: null, detail: null };
 };

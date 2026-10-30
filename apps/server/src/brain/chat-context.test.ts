@@ -3,71 +3,134 @@ import * as NodeFS from "node:fs";
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
 import { expect, it } from "@effect/vitest";
 import {
+  DEFAULT_SERVER_SETTINGS,
   ProjectId,
-  EventId,
   ProviderDriverKind,
+  ProviderThreadId,
+  ProviderTurnId,
   ThreadId,
-  type OrchestrationThreadShell,
   type OrchestrationProjectShell,
+  type OrchestrationV2ConversationMessage,
+  type OrchestrationV2TurnItem,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
-import * as Option from "effect/Option";
+import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
 import type { BrainRuntime } from "./BrainRuntime.ts";
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
+import type { BrainCapture } from "./session-worker.ts";
+import { makeRunCapture } from "./chatTurns.ts";
+import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
+import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
+import * as ProjectEnrichmentService from "../project/ProjectEnrichmentService.ts";
 import {
   makeBrainChatContextLoader,
   makeBrainChatCapture,
-  captureRuntimeEvent,
+  resolveChatCuration,
 } from "./chat-context.ts";
+import type { ChatCurationChoices } from "./project-bindings.ts";
 
-it("retains the provider event's original timestamp for delayed Brain capture", () => {
-  const createdAt = "2026-01-02T03:04:05.000Z";
-  const captured = captureRuntimeEvent({
-    eventId: EventId.make("historical-delta"),
-    provider: ProviderDriverKind.make("codex"),
-    threadId: ThreadId.make("chat"),
-    createdAt,
-    type: "content.delta",
-    payload: { streamKind: "assistant_text", delta: "The focused check passed." },
+const noRepository = {
+  readRepositoryIdentity: () => Effect.succeed(null),
+} as unknown as ProjectEnrichmentService.ProjectEnrichmentService["Service"];
+
+const driver = ProviderDriverKind.make("codex");
+const chat = ThreadId.make("chat");
+const providerThreadId = ProviderThreadId.make("provider-thread");
+
+it("captures a streamed reply once, as the text each update added", () => {
+  const capture = makeRunCapture(chat, providerThreadId);
+  const message = (text: string) => ({
+    type: "message.updated" as const,
+    driver,
+    message: {
+      id: "reply",
+      threadId: chat,
+      role: "assistant",
+      text,
+    } as OrchestrationV2ConversationMessage,
   });
-  expect(captured?.occurredAt).toBe(Date.parse(createdAt));
-  expect(captured?.data).toMatchObject({ content: { text: "The focused check passed." } });
+  const texts = [
+    message("The focused"),
+    message("The focused"),
+    message("The focused check passed."),
+  ]
+    .flatMap((event) => capture(event, 1000))
+    .map((entry) => (entry.data as { content: { text: string } }).content.text);
+  expect(texts).toEqual(["The focused", " check passed."]);
+  const subagent = {
+    ...message("Child output"),
+    message: {
+      id: "child",
+      threadId: ThreadId.make("child"),
+      role: "assistant",
+      text: "Child output",
+    },
+  } as ReturnType<typeof message>;
+  expect(capture(subagent, 1000)).toEqual([]);
 });
 
-it("retains provider failures and interruption reasons for passive recovery", () => {
-  const base = {
-    eventId: EventId.make("provider-failure"),
-    provider: ProviderDriverKind.make("codex"),
-    threadId: ThreadId.make("chat"),
-    createdAt: "2026-01-02T03:04:05.000Z",
+it("captures a tool call when it starts and once more when it finishes", () => {
+  const capture = makeRunCapture(chat, providerThreadId);
+  const command = (status: OrchestrationV2TurnItem["status"]) => ({
+    type: "turn_item.updated" as const,
+    driver,
+    turnItem: {
+      id: "command",
+      threadId: chat,
+      type: "command_execution",
+      status,
+      title: "Run tests",
+      input: "vp test run",
+      output: status === "completed" ? "1 passed" : undefined,
+      exitCode: status === "completed" ? 0 : undefined,
+    } as OrchestrationV2TurnItem,
+  });
+  const captured = [
+    command("running"),
+    command("running"),
+    command("completed"),
+    command("completed"),
+  ]
+    .flatMap((event) => capture(event, 1000))
+    .map((entry) => entry.data as { sessionUpdate: string; rawInput: { item: unknown } });
+  expect(captured.map((entry) => entry.sessionUpdate)).toEqual(["tool_call", "tool_call_update"]);
+  expect(captured[1]?.rawInput.item).toMatchObject({
+    type: "commandExecution",
+    command: "vp test run",
+    aggregatedOutput: "1 passed",
+    exitCode: 0,
+  });
+});
+
+it("closes the capture when the run's own provider turn ends", () => {
+  const capture = makeRunCapture(chat, providerThreadId);
+  const terminal = (thread: string) => ({
+    type: "turn.terminal" as const,
+    driver,
+    providerThreadId: ProviderThreadId.make(thread),
+    providerTurnId: ProviderTurnId.make("turn"),
+    runOrdinal: 1,
+    status: "interrupted" as const,
+    failure: null,
+    threadDisposition: "reusable" as const,
+  });
+  expect(capture(terminal("child-provider-thread"), 1000)).toEqual([]);
+  const [closed] = capture(terminal("provider-thread"), 1000);
+  expect(closed?.closed).toBe(true);
+  expect(closed?.data).toMatchObject({ sessionUpdate: "turn_completed", state: "interrupted" });
+});
+
+it("reports what Default gives beside a chat's own curation choices", () => {
+  const projectId = ProjectId.make("project");
+  const settings = {
+    ...DEFAULT_SERVER_SETTINGS,
+    brainNotesAgent: false,
+    projectSettingsOverrides: { [projectId]: { brainAutoSkills: false } },
   };
-  const failure = captureRuntimeEvent({
-    ...base,
-    type: "runtime.error",
-    payload: { message: "Subscription limit reached.", class: "provider_error" },
-  });
-  expect(failure?.kind).toBe("error");
-  expect(failure?.data).toMatchObject({ message: "Subscription limit reached." });
-  const aborted = captureRuntimeEvent({
-    ...base,
-    type: "turn.aborted",
-    payload: { reason: "User stopped the interrupted verification." },
-  });
-  expect(aborted?.closed).toBe(true);
-  expect(aborted?.data).toMatchObject({
-    state: "interrupted",
-    reason: "User stopped the interrupted verification.",
-  });
-  const exited = captureRuntimeEvent({
-    ...base,
-    type: "session.exited",
-    payload: { reason: "Provider process disconnected.", recoverable: true },
-  });
-  expect(exited?.closed).toBe(true);
-  expect(exited?.data).toMatchObject({
-    state: "session exited",
-    reason: "Provider process disconnected.",
+  expect(resolveChatCuration(settings, projectId, { notesAgent: true, autoSkills: true })).toEqual({
+    notesAgent: { enabled: true, inherited: false, choice: true },
+    autoDocs: { enabled: true, inherited: true },
+    autoSkills: { enabled: true, inherited: false, choice: true },
   });
 });
 
@@ -82,9 +145,13 @@ it.effect(
       let race = false;
       let fail = false;
       let captures = 0;
+      let lastCapture: BrainCapture | undefined;
+      let chatChoices: ChatCurationChoices = {};
       const orientText = "Original curated orientation\n" + "x".repeat(30000);
       const runtime = {
+        projectBindings: { register: () => {}, threadCurationChoices: () => chatChoices },
         projectBrainId: () => binding,
+        threadBrainId: () => binding,
         callProjectTool: async (
           project: ProjectId,
           name: string,
@@ -102,22 +169,35 @@ it.effect(
           if (race) binding = "other";
           return { isError: fail, content: [{ type: "text", text: orientText }] };
         },
-        captureProjectEvent: async () => {
+        captureProjectEvent: async (_project: ProjectId, input: BrainCapture) => {
           captures++;
+          lastCapture = input;
         },
       } as unknown as BrainRuntime;
-      const projections = {
-        getThreadShellById: () =>
-          Effect.succeed(Option.some({ projectId, branch: "feature" } as OrchestrationThreadShell)),
-        getProjectShellById: () =>
-          Effect.succeed(Option.some({ workspaceRoot: "/project" } as OrchestrationProjectShell)),
-      } as unknown as ProjectionSnapshotQuery["Service"];
+      const threads = {
+        getThreadShell: () => Effect.succeed({ projectId, branch: "feature" }),
+      } as unknown as ProjectionStore.ProjectionStoreV2["Service"];
+      const projects = {
+        getShell: () =>
+          Effect.succeedSome({ workspaceRoot: "/project" } as OrchestrationProjectShell),
+      } as unknown as ProjectStore.ProjectStoreV2["Service"];
       const [load, capture] = yield* Effect.all([
         makeBrainChatContextLoader(),
         makeBrainChatCapture(),
       ]).pipe(
         Effect.provideService(BrainService, { ready: Effect.succeed(runtime) }),
-        Effect.provideService(ProjectionSnapshotQuery, projections),
+        Effect.provideService(ProjectionStore.ProjectionStoreV2, threads),
+        Effect.provideService(ProjectStore.ProjectStoreV2, projects),
+        Effect.provideService(ProjectEnrichmentService.ProjectEnrichmentService, noRepository),
+        Effect.provide(
+          ServerSettingsService.layerTest({
+            brainNotesAgent: false,
+            brainAutoDocs: false,
+            projectSettingsOverrides: {
+              [projectId]: { brainAutoDocs: true, brainAutoSkills: false },
+            },
+          }),
+        ),
       );
       expect(yield* load(threadId)).toEqual({ bindingKey: "" });
       yield* capture(threadId, {
@@ -148,10 +228,20 @@ it.effect(
         "team",
       );
       expect(captures).toBe(1);
+      expect(lastCapture?.outputs).toEqual({ docs: true, skills: false, notesAgent: false });
+      // The chat's own choices beat the project's, which beat the global ones.
+      chatChoices = { notesAgent: true, autoDocs: false, autoSkills: true };
+      yield* capture(
+        threadId,
+        { receipt: "event-1b", kind: "update", data: { sessionUpdate: "turn_complete" } },
+        "team",
+      );
+      expect(lastCapture?.outputs).toEqual({ docs: false, skills: true, notesAgent: true });
+      chatChoices = {};
       binding = undefined;
       expect((yield* load(threadId, "team")).context).toContain("disconnected");
       yield* capture(threadId, { receipt: "event-2", kind: "user_prompt", data: {} }, "team");
-      expect(captures).toBe(1);
+      expect(captures).toBe(2);
       binding = "team";
       fail = true;
       expect(yield* load(threadId).pipe(Effect.flip)).toContain("orient failed");

@@ -2,11 +2,9 @@ import { BRAND } from "@t3tools/shared/branding";
 import type { DesktopFlowServiceActionResult, DesktopFlowServiceStatus } from "@t3tools/contracts";
 
 /**
- * Status -> what the Flow service panel says and offers. Kept out of the
- * component because the interesting part is the mapping: a service the app does
- * not own can be running without a login unit, installed without being loaded,
- * or loaded while its instance is unreachable, and each combination allows a
- * different pair of actions.
+ * Status -> what the Flow service panel says and offers. A service the app does
+ * not own can run without a login unit, be installed but not loaded, or be
+ * loaded with an unreachable instance; each allows a different pair of actions.
  */
 
 export interface FlowServicePresentation {

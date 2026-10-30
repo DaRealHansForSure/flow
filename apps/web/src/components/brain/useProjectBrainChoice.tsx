@@ -1,5 +1,5 @@
 import { BrainIcon } from "./BrainIcon";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BrainCommand, BrainState, EnvironmentId, ProjectId } from "@t3tools/contracts";
 import { brainCommand } from "../../state/brain";
 import { useAtomCommand } from "../../state/use-atom-command";
@@ -29,6 +29,7 @@ export function useProjectBrainChoice({ required = false }: { required?: boolean
   const [createOpen, setCreateOpen] = useState(false);
   const resolver = useRef<((choice: Choice) => void) | null>(null);
   const generation = useRef(0);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Settles the pending chooseBrain promise when the dialog's owner unmounts.
   useEffect(
     () => () => {
       generation.current++;
@@ -37,49 +38,50 @@ export function useProjectBrainChoice({ required = false }: { required?: boolean
     },
     [],
   );
-  const chooseBrain = useCallback(
-    (environmentId: EnvironmentId, title: string, projectId?: ProjectId): Promise<Choice> => {
-      resolver.current?.(null);
-      const request = ++generation.current;
-      setTarget({ environmentId, title });
-      setSelected(required ? "" : "none");
-      setState(null);
-      setError("");
-      setCreateOpen(false);
-      setLoading(true);
-      void execute({
-        environmentId,
-        input: { action: "read", metadataOnly: true, projectId },
-      }).then((result) => {
-        if (generation.current !== request) return;
-        setLoading(false);
-        if (result._tag === "Success" && !result.value.error) {
-          setState(result.value.state);
-          const boundBrain = projectId
-            ? result.value.state.workspaces.find((brain) => brain.projectIds?.includes(projectId))
-            : undefined;
-          setSelected(
-            boundBrain?.id ?? result.value.state.workspaces[0]?.id ?? (required ? "" : "none"),
-          );
-          if (
-            required &&
-            result.value.state.workspaces.length === 0 &&
-            result.value.state.localBrains !== false
-          )
-            setCreateOpen(true);
-        } else
-          setError(
-            required
-              ? "Could not load brains from this computer. Retry to continue setting up this project."
-              : "Could not load brains from this computer. You can retry, or continue without a brain.",
-          );
-      });
-      return new Promise((resolve) => {
-        resolver.current = resolve;
-      });
-    },
-    [execute, required],
-  );
+  const chooseBrain = (
+    environmentId: EnvironmentId,
+    title: string,
+    projectId?: ProjectId,
+  ): Promise<Choice> => {
+    resolver.current?.(null);
+    const request = ++generation.current;
+    setTarget({ environmentId, title });
+    setSelected(required ? "" : "none");
+    setState(null);
+    setError("");
+    setCreateOpen(false);
+    setLoading(true);
+    void execute({
+      environmentId,
+      input: { action: "read", metadataOnly: true, projectId },
+    }).then((result) => {
+      if (generation.current !== request) return;
+      setLoading(false);
+      if (result._tag === "Success" && !result.value.error) {
+        setState(result.value.state);
+        const boundBrain = projectId
+          ? result.value.state.workspaces.find((brain) => brain.projectIds?.includes(projectId))
+          : undefined;
+        setSelected(
+          boundBrain?.id ?? result.value.state.workspaces[0]?.id ?? (required ? "" : "none"),
+        );
+        if (
+          required &&
+          result.value.state.workspaces.length === 0 &&
+          result.value.state.localBrains !== false
+        )
+          setCreateOpen(true);
+      } else
+        setError(
+          required
+            ? "Could not load brains from this computer. Retry to continue setting up this project."
+            : "Could not load brains from this computer. You can retry, or continue without a brain.",
+        );
+    });
+    return new Promise((resolve) => {
+      resolver.current = resolve;
+    });
+  };
   const finish = (choice: Choice) => {
     generation.current++;
     resolver.current?.(choice);
@@ -111,7 +113,7 @@ export function useProjectBrainChoice({ required = false }: { required?: boolean
               {!required ? " You can also continue without a brain and connect one later." : null}
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-4">
+          <DialogPanel>
             <div className="flex items-center justify-between gap-3">
               <BrainSelect
                 label="Project brain"

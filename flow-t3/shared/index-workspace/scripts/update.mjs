@@ -1,10 +1,8 @@
-// Bring the knowledge graph up to date with all connected repositories:
-//   node scripts/update.mjs [repo-name]
-// Pulls each registered repo's branch; repos never indexed get a full index
-// run, repos with new commits get an incremental run over the diff. Safe to
-// run on a schedule.
+// Bring the knowledge graph up to date: `node scripts/update.mjs [repo-name]`.
+// Repos never indexed get a full index run, repos with new commits an
+// incremental run over the diff. Safe to run on a schedule.
 
-import { join } from "node:path";
+import * as NodePath from "node:path";
 import {
   REPOS_DIR, assertGatewayUp, fullIndexPrompt, git, incrementalPrompt, loadRegistry, runBuilder, saveRegistry,
 } from "./lib.mjs";
@@ -38,7 +36,7 @@ for (const repo of targets) {
     console.log("No url and no local checkout — nothing to update.");
     continue;
   }
-  const dir = join(REPOS_DIR, repo.name);
+  const dir = NodePath.join(REPOS_DIR, repo.name);
   git(dir, "fetch", "origin", repo.branch);
   git(dir, "checkout", "-q", repo.branch);
   git(dir, "reset", "--hard", `origin/${repo.branch}`);

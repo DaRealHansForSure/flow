@@ -92,6 +92,41 @@ describe("flow service recovery presentation", () => {
     expect(view.actions).toEqual(["retry"]);
   });
 
+  it("shows the service update with no actions while it runs", () => {
+    const view = describe_({
+      failure: failure("updating"),
+      update: {
+        outcome: "in-progress",
+        targetVersion: "0.2.0",
+        steps: [{ name: "install-release", ok: true, detail: null }],
+        failure: null,
+      },
+    });
+
+    expect(view.title).toContain("Updating the Flow service to 0.2.0");
+    expect(view.actions).toEqual([]);
+    expect(view.steps).toEqual([{ name: "install-release", ok: true }]);
+  });
+
+  it("offers a retry and Later once the service update failed", () => {
+    const view = describe_({
+      failure: failure("updating"),
+      update: {
+        outcome: "failed",
+        targetVersion: "0.2.0",
+        steps: [
+          { name: "install-release", ok: true, detail: null },
+          { name: "restart-service", ok: false, detail: "systemctl failed" },
+        ],
+        failure: { step: "restart-service", message: "systemctl failed" },
+      },
+    });
+
+    expect(view.body).toContain('"Restarting the service" did not work.');
+    expect(view.actions).toEqual(["retry-update", "skip-update"]);
+    expect(view.detail).toBe("systemctl failed");
+  });
+
   it("hides an empty detail instead of showing a blank disclosure", () => {
     const view = describe_({
       failure: { kind: "unreachable", reason: "No answer.", detail: "" },

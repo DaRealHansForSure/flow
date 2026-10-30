@@ -1,37 +1,43 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import type { EnvironmentId } from "@t3tools/contracts";
-import * as Option from "effect/Option";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
-import { useContext, useMemo } from "react";
+import { AsyncResult, Atom } from "effect/reactivity";
+import { useContext } from "react";
 
 import { agentSessionScan } from "../state/agentSessions";
 import { formatEnvironmentQueryError } from "../state/query";
 
-/** Subscribe to each selected computer without coupling their failures or refreshes. */
+type ScanTarget = readonly [environmentId: EnvironmentId, roots: readonly string[]];
+
+const scanAtom = (environmentId: EnvironmentId, roots: readonly string[]) =>
+  agentSessionScan({ environmentId, input: { roots } });
+
+// Fork: keyed by each computer's chosen folders as well, so changing them starts a new scan.
+const projectScansAtom = Atom.family((key: string) => {
+  const targets = JSON.parse(key) as ReadonlyArray<ScanTarget>;
+  return Atom.make((get) =>
+    targets.map(([environmentId, roots]) => get(scanAtom(environmentId, roots))),
+  ).pipe(Atom.withLabel(`web-project-scans:${key}`));
+});
+
+/** Subscribe to each selected computer, scanning the folders chosen for it. */
 export function useProjectScans(
   environmentIds: readonly EnvironmentId[],
   roots: ReadonlyMap<EnvironmentId, readonly string[]>,
 ) {
   const registry = useContext(RegistryContext);
-  const scansAtom = useMemo(
-    () =>
-      Atom.make((get) =>
-        environmentIds.map((environmentId) => {
-          const atom = agentSessionScan({
-            environmentId,
-            input: { roots: roots.get(environmentId) ?? [] },
-          });
-          const result = get(atom);
-          return {
-            environmentId,
-            data: Option.getOrNull(AsyncResult.value(result)),
-            error: result._tag === "Failure" ? formatEnvironmentQueryError(result.cause) : null,
-            isPending: result.waiting || result._tag === "Initial",
-            refresh: () => registry.refresh(atom),
-          };
-        }),
-      ),
-    [environmentIds, registry, roots],
-  );
-  return useAtomValue(scansAtom);
+  const targets = environmentIds.map((environmentId): ScanTarget => [
+    environmentId,
+    roots.get(environmentId) ?? [],
+  ]);
+  const results = useAtomValue(projectScansAtom(JSON.stringify(targets)));
+  return targets.map(([environmentId, environmentRoots], index) => {
+    const result = results[index]!;
+    return {
+      environmentId,
+      data: AsyncResult.getOrElse(result, () => null),
+      error: result._tag === "Failure" ? formatEnvironmentQueryError(result.cause) : null,
+      isPending: result.waiting || result._tag === "Initial",
+      refresh: () => registry.refresh(scanAtom(environmentId, environmentRoots)),
+    };
+  });
 }

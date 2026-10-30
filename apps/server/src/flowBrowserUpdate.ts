@@ -3,9 +3,9 @@ import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
-import { HttpClient, HttpClientResponse } from "effect/unstable/http";
+import { HttpClient, HttpClientResponse } from "effect/http";
 
-export class FlowBrowserUpdateError extends Schema.TaggedErrorClass<FlowBrowserUpdateError>()(
+export class FlowBrowserUpdateError extends Schema.TaggedError<FlowBrowserUpdateError>()(
   "FlowBrowserUpdateError",
   { cause: Schema.Defect() },
 ) {}
@@ -14,8 +14,8 @@ export const requestFlowBrowserUpdate = Effect.fn("requestFlowBrowserUpdate")(fu
   apply: boolean,
 ) {
   const config = yield* Config.all({
-    url: Config.string("FLOW_RELEASE_CONTROL_URL").pipe(Config.option),
-    token: Config.string("FLOW_RELEASE_CONTROL_TOKEN").pipe(Config.option),
+    url: Config.String("FLOW_RELEASE_CONTROL_URL").pipe(Config.option),
+    token: Config.String("FLOW_RELEASE_CONTROL_TOKEN").pipe(Config.option),
   });
   if (Option.isNone(config.url) || Option.isNone(config.token)) {
     if (apply)

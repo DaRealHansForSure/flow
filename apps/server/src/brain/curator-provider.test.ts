@@ -1,12 +1,18 @@
 import { expect, it } from "vite-plus/test";
-import { ProviderInstanceId, ServerSettings } from "@t3tools/contracts";
+import { ProviderDriverKind, ProviderInstanceId, ServerSettings } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
-import { selectCuratorProvider, selectLocalCuratorCli, curatorSessionKey } from "./curator.ts";
+import {
+  selectCuratorModel,
+  selectCuratorProvider,
+  selectLocalCuratorCli,
+  curatorSessionKey,
+} from "./curator.ts";
 import { CuratorSessions } from "./curator-sessions.ts";
 
-const settings = Schema.decodeUnknownSync(ServerSettings)({
-  providers: { opencode: { enabled: true } },
+const decodeSettings = Schema.decodeUnknownSync(ServerSettings);
+const settings = decodeSettings({
   providerInstances: {
+    opencode: { driver: "opencode", enabled: true },
     "claude-work": { driver: "claudeAgent", enabled: true, config: {} },
   },
   defaultModelSelection: { instanceId: "codex", model: "gpt-5.6-sol" },
@@ -45,19 +51,30 @@ it("prefers the default instance only within the Brain's selected CLI", () => {
   );
   expect(selected.instanceId).toBe("claude-work");
 });
-it("fails explicitly when the selected CLI is disabled or missing, without falling back to Codex", () => {
-  expect(() =>
-    selectCuratorProvider(
-      {
-        ...settings,
-        providers: {
-          ...settings.providers,
-          opencode: { ...settings.providers.opencode, enabled: false },
-        },
+it("runs the agent chosen in Brain settings even while its chat provider is switched off", () => {
+  // OpenCode, Cursor and Grok are off by default; that switch is about chat, not notes.
+  const off = {
+    ...settings,
+    providerInstances: {
+      ...settings.providerInstances,
+      [ProviderInstanceId.make("opencode")]: {
+        driver: ProviderDriverKind.make("opencode"),
+        enabled: false,
       },
-      "opencode",
-    ),
-  ).toThrow(/Enable a opencode provider/);
+    },
+  };
+  expect(selectCuratorProvider(off, "opencode").instance.driver).toBe("opencode");
+});
+it("prefers an enabled instance of the chosen agent over a disabled one", () => {
+  const two = decodeSettings({
+    providerInstances: {
+      opencode: { driver: "opencode", enabled: false },
+      "opencode-work": { driver: "opencode", enabled: true, config: {} },
+    },
+  });
+  expect(selectCuratorProvider(two, "opencode").instanceId).toBe("opencode-work");
+});
+it("fails explicitly for an unsupported agent, without falling back to Codex", () => {
   expect(() => selectCuratorProvider(settings, undefined)).toThrow(/no supported extraction CLI/);
 });
 it("requests a fresh source window when the Brain switches CLI", async () => {
@@ -75,4 +92,12 @@ it("requests a fresh source window when the Brain switches CLI", async () => {
   } finally {
     await sessions.dispose();
   }
+});
+it("writes notes with the inexpensive model, not the chat default", () => {
+  expect(selectCuratorModel("claudeAgent")).toBe("claude-haiku-5-5");
+  expect(selectCuratorModel("codex")).toBe("gpt-6-luna");
+});
+it("never guesses an OpenCode model the user may not have", () => {
+  expect(selectCuratorModel("opencode", "opencode-go/glm-5.2")).toBe("opencode-go/glm-5.2");
+  expect(() => selectCuratorModel("opencode")).toThrow(/which OpenCode model/);
 });

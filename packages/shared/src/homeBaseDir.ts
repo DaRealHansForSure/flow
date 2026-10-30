@@ -1,25 +1,14 @@
 /**
- * Which directory under `$HOME` a T3 base dir defaults to.
- *
- * Existing installs are adopted where they already are: their data lives in
- * `~/.t3` and is never moved. Moving it would orphan the FalkorDB store (its
- * directory is a hash of the absolute brain path), break every managed git
- * worktree's absolute `gitdir:` pointer, and re-key the hook project ids that
- * are derived from the state directory. Fresh installs get `~/.flow`, the Flow
- * agent registry's home, whose entries do not collide with a T3 base dir.
- *
- * "Existing" is decided by `~/.t3/userdata`, the state directory a real install
- * always has. Callers pass the answer in rather than the rule doing the I/O:
- * each site has a different filesystem story (Effect `FileSystem`, Electron's
- * pre-ready sync reads, plain Node scripts) and tests need it deterministic.
- *
- * Unrelated to the repo-local worktree `.t3` convention in `./devHome.ts`.
+ * Which directory under `$HOME` a T3 base dir defaults to. An install with
+ * `~/.t3/userdata` stays in `~/.t3`: moving it would orphan FalkorDB stores and
+ * worktree `gitdir:` pointers. Fresh installs get `~/.flow`. Callers pass the
+ * existence check in. Unrelated to the worktree `.t3` in `./devHome.ts`.
  */
 
 export type JoinPath = (first: string, ...segments: string[]) => string;
 
-export const LEGACY_BASE_DIR_NAME = ".t3";
-export const DEFAULT_BASE_DIR_NAME = ".flow";
+const LEGACY_BASE_DIR_NAME = ".t3";
+const DEFAULT_BASE_DIR_NAME = ".flow";
 
 /** The path whose existence means "an install already lives at `~/.t3`". */
 export const legacyBaseDirProbePath = (homeDirectory: string, joinPath: JoinPath): string =>

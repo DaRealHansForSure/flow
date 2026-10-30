@@ -12,7 +12,7 @@ import {
   EnvironmentHttpApi,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 import * as Option from "effect/Option";
 import {
   annotateEnvironmentRequest,
@@ -21,13 +21,15 @@ import {
 } from "../auth/http.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
+import { makeBrainProjections } from "./brainProjections.ts";
+import { resolveChatCuration, resolveChatCurationOutputs } from "./chat-context.ts";
 import { AnalyticsService } from "../telemetry/AnalyticsService.ts";
 
 const ANALYTICS_COMMANDS = new Set([
   "start",
   "refreshGithub",
   "bindProject",
+  "bindThread",
   "create",
   "configure",
   "import",
@@ -43,7 +45,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
   Effect.fnUntraced(function* (handlers) {
     const config = yield* ServerConfig;
     const service = yield* BrainService;
-    const projections = yield* ProjectionSnapshotQuery;
+    const projections = yield* makeBrainProjections;
     const settings = yield* ServerSettingsService;
     const analytics = yield* AnalyticsService;
     return handlers.handle(
@@ -155,7 +157,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
           if (Option.isSome(selectedProject))
             runtime.projectBindings.register(selectedProject.value);
         }
-        if (command.action === "readChat") {
+        if (command.action === "readChat" || command.action === "setChatCurationOutput") {
           const thread = yield* projections
             .getThreadShellById(command.threadId)
             .pipe(Effect.catch((error) => failEnvironmentInternal("internal_error", error)));
@@ -165,21 +167,45 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
             .getProjectShellById(thread.value.projectId)
             .pipe(Effect.catch((error) => failEnvironmentInternal("internal_error", error)));
           if (Option.isSome(chatProject)) runtime.projectBindings.register(chatProject.value);
+          const currentSettings = yield* settings.getSettings.pipe(
+            Effect.catch((error) => failEnvironmentInternal("internal_error", error)),
+          );
           return yield* Effect.tryPromise(async () => {
             try {
-              return {
-                state: await runtime.state(thread.value.projectId),
-                chatMemories: await runtime.chatMemories(
-                  thread.value.projectId,
+              if (command.action === "setChatCurationOutput") {
+                await runtime.setThreadCurationChoice(
                   command.threadId,
-                  command.revision,
-                ),
+                  command.output,
+                  command.enabled,
+                );
+              }
+              // Sent on every read too, so a changed global setting reaches chats with no new capture.
+              const outputs = resolveChatCurationOutputs(
+                currentSettings,
+                thread.value.projectId,
+                runtime.projectBindings.threadCurationChoices(command.threadId),
+              );
+              const memories = await runtime.chatMemories(
+                thread.value.projectId,
+                command.threadId,
+                command.action === "readChat" ? command.revision : undefined,
+                outputs,
+              );
+              // Read again: a long poll may have waited while the chat's choices changed.
+              const curation = resolveChatCuration(
+                currentSettings,
+                thread.value.projectId,
+                runtime.projectBindings.threadCurationChoices(command.threadId),
+              );
+              return {
+                state: await runtime.state(thread.value.projectId, false, command.threadId),
+                chatMemories: { ...memories, curation },
                 error: null,
                 createdWorkspaceId: null,
               };
             } catch (cause) {
               return {
-                state: await runtime.state(thread.value.projectId, true),
+                state: await runtime.state(thread.value.projectId, true, command.threadId),
                 error: cause instanceof Error ? cause.message : "Could not load brain context.",
                 createdWorkspaceId: null,
               };
@@ -219,6 +245,8 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
                 workspaceId: command.workspaceId,
                 bind: () => runtime.bindProject(project.value, command.workspaceId),
               });
+            } else if (command.action === "bindThread") {
+              await runtime.bindThread(command.threadId, command.workspaceId);
             } else if (command.action === "listGithubRepositories") {
               repositories = await runtime.listGithubRepositories(command.workspaceId);
             } else if (command.action === "listGithubBranches") {
@@ -231,6 +259,7 @@ export const brainHttpApiLayer = HttpApiBuilder.group(
             state: await runtime.state(
               undefined,
               command.action === "bindProject" ||
+                command.action === "bindThread" ||
                 (command.action === "read" && command.metadataOnly === true),
             ),
             error,

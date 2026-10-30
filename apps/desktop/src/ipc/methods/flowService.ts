@@ -4,7 +4,7 @@ import {
   type DesktopFlowServiceActionResult,
   type DesktopFlowServiceStatus,
 } from "@t3tools/contracts";
-import { HostProcessPlatform, HostProcessUserId } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
@@ -13,20 +13,19 @@ import * as FlowService from "../../backend/flowService.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 
-// The Flow service outlives the app, so Settings needs to describe it and act
-// on it. All three methods fail soft: a status read reports whatever it could
-// learn, and an action reports why it did not happen. Nothing here rejects at
-// the renderer — a settings panel that vanishes on a bad read is a worse answer
-// than one that says the service is unreachable.
+// The Flow service outlives the app, so Settings describes it and acts on it.
+// All methods fail soft and never reject at the renderer: a status read reports
+// what it learned and an action reports why it did not happen.
 
 /** Host facts the plain service module takes as input, plus whatever a test
     overrode. Reading them here keeps that module free of `process`. */
-const resolveInput = (overrides: Partial<FlowService.FlowServiceInput>) =>
-  Effect.gen(function* () {
-    const host = yield* HostProcessPlatform;
-    const uid = yield* HostProcessUserId;
-    return { host, uid: uid ?? 0, ...overrides } satisfies FlowService.FlowServiceInput;
-  });
+const resolveInput = Effect.fn("desktop.flowService.resolveInput")(function* (
+  overrides: Partial<FlowService.FlowServiceInput>,
+) {
+  const host = yield* HostProcess.Platform;
+  const uid = yield* HostProcess.UserId;
+  return { host, uid: uid ?? 0, ...overrides } satisfies FlowService.FlowServiceInput;
+});
 
 const unreadableStatus = (
   input: FlowService.FlowServiceInput,

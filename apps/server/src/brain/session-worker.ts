@@ -10,6 +10,7 @@ import { brainResourceEnvironment } from "@flow/brain-runtime";
 import type {
   BrainSessionContext,
   BrainCapture,
+  BrainCurationOutputs,
   BrainCuratorRun,
   BrainCuratorRunner,
 } from "@flow/brain-runtime";
@@ -24,7 +25,7 @@ import * as NodePath from "node:path";
 import * as NodeURL from "node:url";
 import * as Schema from "effect/Schema";
 import { tsxLoader } from "./builder-assets.ts";
-import { McpSchema } from "effect/unstable/ai";
+import { McpSchema } from "effect/ai";
 
 const here = NodePath.dirname(NodeURL.fileURLToPath(import.meta.url));
 const decodeChatMemories = Schema.decodeUnknownSync(ChatMemoryList);
@@ -67,6 +68,9 @@ export async function startSessionWorker(
     ),
   );
   const child = NodeChildProcess.fork(filename, catalog ? ["--catalog"] : [], {
+    // Under Electron the worker would run on Electron's Node, whose ABI differs from the
+    // one the Brain's native modules were built for in a checkout; the Dev Flow sets this.
+    ...(process.env.FLOW_BRAIN_NODE ? { execPath: process.env.FLOW_BRAIN_NODE } : {}),
     execArgv: filename.endsWith(".ts") ? ["--import", tsxLoader()] : [],
     env: {
       ...inherited,
@@ -202,8 +206,8 @@ export async function startSessionWorker(
     async call(name: string, args: Record<string, unknown>, context: BrainSessionContext) {
       return decodeResult(await request("call", { name, arguments: args, context }));
     },
-    memories: async (session: string, revision?: string) =>
-      decodeChatMemories(await request("chatMemories", { session, revision })),
+    memories: async (session: string, revision?: string, outputs?: BrainCurationOutputs) =>
+      decodeChatMemories(await request("chatMemories", { session, revision, outputs })),
     document: async (id: string) => decodeDocument(await request("documents", { id })),
     knowledge: async () => decodeKnowledge(await request("knowledge", {})),
     exportBrain: (path: string) => request("exportBrain", { path }),

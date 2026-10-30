@@ -43,6 +43,8 @@ export interface BrainWorkspaceViewProps {
   readonly docs?: ReactNode;
   readonly skills?: ReactNode;
   readonly onCreate?: () => void;
+  /** Controls shown in the knowledge graph's top right corner (fork). */
+  readonly graphCorner?: ReactNode;
 }
 
 export interface BrainUiDocumentSummary {

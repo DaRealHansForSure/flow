@@ -151,7 +151,7 @@ export function BrainSources({
                 : "Choose a Git repository on this computer. Flow reads committed files without changing your working folder."}
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-4">
+          <DialogPanel>
             {modal === "github" ? (
               <BrainRepositoryPicker
                 connectedRepositories={workspace.sources
@@ -282,7 +282,7 @@ export function BrainSources({
   );
 }
 
-export function BrainSourceList({
+function BrainSourceList({
   sources,
   workspaceId,
   send,

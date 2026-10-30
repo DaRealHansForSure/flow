@@ -1,6 +1,6 @@
 import { builderTestClient } from "./builder-test-client.ts";
 import type { BuilderContext } from "./indexer.ts";
-import { HostProcessPlatform, HostProcessArchitecture } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Effect from "effect/Effect";
 // @effect-diagnostics nodeBuiltinImport:off - Real native FalkorDB lifecycle test with stubbed external providers.
 import { afterEach, describe, expect, vi } from "vite-plus/test";
@@ -112,8 +112,8 @@ describe("native brain persistence", () => {
     "shares one database, isolates workspaces, preserves the last good index on failure, and survives restart",
     () =>
       Effect.gen(function* () {
-        const platform = yield* HostProcessPlatform;
-        const architecture = yield* HostProcessArchitecture;
+        const platform = yield* HostProcess.Platform;
+        const architecture = yield* HostProcess.Architecture;
         if (
           !(
             (platform === "darwin" && architecture === "arm64") ||
@@ -601,6 +601,5 @@ describe("native brain persistence", () => {
           expect((await recovered.state()).workspaces[0]!.sources[0]!.status).toBe("ready");
         });
       }),
-    120_000,
   );
 });

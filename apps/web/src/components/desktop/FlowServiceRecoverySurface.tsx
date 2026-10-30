@@ -1,5 +1,9 @@
-import type { DesktopAttachFailure, DesktopFlowServiceAdoption } from "@t3tools/contracts";
-import { useCallback, useEffect, useState } from "react";
+import type {
+  DesktopAttachFailure,
+  DesktopFlowServiceAdoption,
+  DesktopFlowServiceUpdate,
+} from "@t3tools/contracts";
+import { useEffect, useState } from "react";
 
 import { APP_DISPLAY_NAME } from "../../branding";
 import { Button } from "../ui/button";
@@ -12,16 +16,10 @@ import {
 } from "./flowServiceRecovery.logic";
 
 /**
- * The whole window, when the desktop could not attach to the Flow service.
- *
- * It is deliberately the only entry point for this: there is no workspace to
- * put a banner in, and Settings (which owns the service's steady state) is not
- * reachable without a connected server. The screen is dumb — the failure kind
- * arrives on the desktop bridge and `flowServiceRecovery.logic.ts` decides what
- * to say; everything here is calls back across the bridge and plain layout.
- *
- * No spinners: the adoption steps are a static list that grows as the journal
- * does, which says more than an animation and costs no frames.
+ * The whole window when the desktop could not attach to the Flow service: there
+ * is no workspace for a banner and Settings needs a connected server. What to
+ * say comes from `flowServiceRecovery.logic.ts`. No spinners: the adoption
+ * steps are a static list that grows with the journal.
  */
 
 // Polling only while adoption is running: a journal that says "in progress"
@@ -31,6 +29,7 @@ const ADOPTION_POLL_INTERVAL_MS = 2_000;
 function useAdoptionJournal(active: boolean): DesktopFlowServiceAdoption | null {
   const [adoption, setAdoption] = useState<DesktopFlowServiceAdoption | null>(null);
 
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the adoption journal over the desktop bridge while adoption runs.
   useEffect(() => {
     const read = window.desktopBridge?.getFlowServiceAdoption;
     if (!read) return;
@@ -55,6 +54,40 @@ function useAdoptionJournal(active: boolean): DesktopFlowServiceAdoption | null 
   return adoption;
 }
 
+// Flow: the service update the app is running. Polled while the window is parked
+// for it; once the update is done the window reloads onto the new service.
+function useServiceUpdate(active: boolean): DesktopFlowServiceUpdate | null {
+  const [update, setUpdate] = useState<DesktopFlowServiceUpdate | null>(null);
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the service update over the desktop bridge while the window is parked for it.
+  useEffect(() => {
+    const read = window.desktopBridge?.getFlowServiceUpdate;
+    if (!active || !read) return;
+    let cancelled = false;
+    const load = () => {
+      void read().then(
+        (next) => {
+          if (cancelled) return;
+          if (next?.outcome === "updated") {
+            window.location.reload();
+            return;
+          }
+          setUpdate(next);
+        },
+        () => undefined,
+      );
+    };
+    load();
+    const timer = window.setInterval(load, ADOPTION_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [active]);
+
+  return update;
+}
+
 export function FlowServiceRecoverySurface({
   failure,
 }: {
@@ -64,100 +97,124 @@ export function FlowServiceRecoverySurface({
   // Adoption is the only thing that progresses without the user, so it is the
   // only thing worth re-reading.
   const adoption = useAdoptionJournal(failure.kind === "not-installed");
+  const update = useServiceUpdate(failure.kind === "updating");
   const [pending, setPending] = useState<FlowServiceRecoveryAction | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const view = describeFlowServiceRecovery({
     failure,
     adoption,
+    update,
     canCheckForUpdates: typeof bridge?.checkForUpdate === "function",
   });
 
-  const runAction = useCallback(
-    (action: FlowServiceRecoveryAction) => {
-      setPending(action);
-      setActionError(null);
-      const finish = (message: string | null) => {
-        setPending(null);
-        setActionError(message);
-        // A successful retry re-attaches in the main process; the renderer only
-        // learns about it by booting again against a live server.
-        if (message === null && (action === "retry" || action === "start-service")) {
-          window.location.reload();
-        }
-      };
-      const fail = (message: string) => {
-        finish(message);
-      };
-
-      switch (action) {
-        case "retry": {
-          const retry = bridge?.retryFlowServiceAttach;
-          if (!retry) return fail("This app cannot retry the connection.");
-          void retry().then(
-            (result) => finish(result.ok ? null : (result.detail ?? "The retry did not start.")),
-            () => fail("The retry did not start."),
-          );
-          return;
-        }
-        case "start-service": {
-          const start = bridge?.startFlowService ?? bridge?.restartFlowService;
-          if (!start) return fail("This app cannot start the service.");
-          void start().then(
-            (result) =>
-              finish(
-                result.ok
-                  ? null
-                  : result.reason === "not-managed"
-                    ? "Nothing on this machine is set to run the service. Run `flow start` in a terminal."
-                    : (result.detail ?? "The service did not start."),
-              ),
-            () => fail("The service did not start."),
-          );
-          return;
-        }
-        case "check-for-updates": {
-          const check = bridge?.checkForUpdate;
-          if (!check) return fail("This app cannot check for updates.");
-          void check().then(
-            () => finish(null),
-            () => fail("The update check failed."),
-          );
-          return;
-        }
-        case "open-in-browser": {
-          const open = bridge?.openFlowServiceInBrowser;
-          if (!open) return fail("This app cannot open the service in a browser.");
-          void open().then(
-            (result) =>
-              finish(result.ok ? null : (result.detail ?? "The browser could not be opened.")),
-            () => fail("The browser could not be opened."),
-          );
-          return;
-        }
-        case "use-legacy-backend": {
-          const relaunch = bridge?.relaunchWithLegacyBackend;
-          if (!relaunch) return fail("This app cannot switch to the built-in server.");
-          void relaunch().then(
-            (result) => finish(result.ok ? null : (result.detail ?? "The relaunch failed.")),
-            () => fail("The relaunch failed."),
-          );
-          return;
-        }
+  const runAction = (action: FlowServiceRecoveryAction) => {
+    setPending(action);
+    setActionError(null);
+    const finish = (message: string | null) => {
+      setPending(null);
+      setActionError(message);
+      // A successful retry re-attaches in the main process; the renderer only
+      // learns about it by booting again against a live server.
+      if (
+        message === null &&
+        (action === "retry" || action === "start-service" || action === "skip-update")
+      ) {
+        window.location.reload();
       }
-    },
-    [bridge],
-  );
+    };
+    const fail = (message: string) => {
+      finish(message);
+    };
+
+    switch (action) {
+      case "retry": {
+        const retry = bridge?.retryFlowServiceAttach;
+        if (!retry) return fail("This app cannot retry the connection.");
+        void retry().then(
+          (result) => finish(result.ok ? null : (result.detail ?? "The retry did not start.")),
+          () => fail("The retry did not start."),
+        );
+        return;
+      }
+      case "start-service": {
+        const start = bridge?.startFlowService ?? bridge?.restartFlowService;
+        if (!start) return fail("This app cannot start the service.");
+        void start().then(
+          (result) =>
+            finish(
+              result.ok
+                ? null
+                : result.reason === "not-managed"
+                  ? "Nothing on this machine is set to run the service. Run `flow start` in a terminal."
+                  : (result.detail ?? "The service did not start."),
+            ),
+          () => fail("The service did not start."),
+        );
+        return;
+      }
+      case "check-for-updates": {
+        const check = bridge?.checkForUpdate;
+        if (!check) return fail("This app cannot check for updates.");
+        void check().then(
+          () => finish(null),
+          () => fail("The update check failed."),
+        );
+        return;
+      }
+      case "open-in-browser": {
+        const open = bridge?.openFlowServiceInBrowser;
+        if (!open) return fail("This app cannot open the service in a browser.");
+        void open().then(
+          (result) =>
+            finish(result.ok ? null : (result.detail ?? "The browser could not be opened.")),
+          () => fail("The browser could not be opened."),
+        );
+        return;
+      }
+      case "retry-update": {
+        const retryUpdate = bridge?.retryFlowServiceUpdate;
+        if (!retryUpdate) return fail("This app cannot update the service.");
+        void retryUpdate().then(
+          (result) => finish(result.ok ? null : (result.detail ?? "The update did not start.")),
+          () => fail("The update did not start."),
+        );
+        return;
+      }
+      case "skip-update": {
+        const skipUpdate = bridge?.skipFlowServiceUpdate;
+        if (!skipUpdate) return fail("This app cannot go back to the current service.");
+        void skipUpdate().then(
+          (result) =>
+            finish(result.ok ? null : (result.detail ?? "The current service did not answer.")),
+          () => fail("The current service did not answer."),
+        );
+        return;
+      }
+      case "use-legacy-backend": {
+        const relaunch = bridge?.relaunchWithLegacyBackend;
+        if (!relaunch) return fail("This app cannot switch to the built-in server.");
+        void relaunch().then(
+          (result) => finish(result.ok ? null : (result.detail ?? "The relaunch failed.")),
+          () => fail("The relaunch failed."),
+        );
+        return;
+      }
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10 text-foreground sm:px-6">
       <div className="pointer-events-none absolute inset-0 opacity-80">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Decorative backdrop gradient; the theme has no gradient tokens. */}
         <div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(44rem_16rem_at_top,color-mix(in_srgb,var(--color-amber-500)_12%,transparent),transparent)]" />
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Decorative backdrop gradient; the theme has no gradient tokens. */}
         <div className="absolute inset-0 bg-[linear-gradient(145deg,color-mix(in_srgb,var(--background)_90%,var(--color-black))_0%,var(--background)_55%)]" />
       </div>
 
       <section className="relative w-full max-w-xl rounded-2xl border border-border/80 bg-card/90 p-6 shadow-2xl shadow-black/20 backdrop-blur-md sm:p-8">
-        <p className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- The eyebrow label's letter spacing is wider than tracking-widest. */}
+        <p className="text-2xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           {APP_DISPLAY_NAME}
         </p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{view.title}</h1>

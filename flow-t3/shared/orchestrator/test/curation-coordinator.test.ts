@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import { CurationStore } from "../src/curation/store.js";
 import { CurationCoordinator } from "../src/curation/coordinator.js";
 import type {
+  BrainCurationOutputs,
   BrainCuratorRun,
   BrainCuratorResult,
   BrainCuratorReply,
@@ -35,13 +36,13 @@ function fixture(run: (request: BrainCuratorRun) => Promise<BrainCuratorReply>) 
     db,
     store,
     coordinator,
-    add(text: string, closed = false) {
+    add(text: string, closed = false, outputs?: BrainCurationOutputs) {
       db.prepare("INSERT INTO t3_capture VALUES (?, 'chat-a', 'user_prompt', ?, ?)").run(
         ++seq,
         JSON.stringify({ text }),
         seq * 1000,
       );
-      coordinator.capture("chat-a", "flow", seq, closed);
+      coordinator.capture("chat-a", "flow", seq, closed, outputs);
       return seq;
     },
     close() {
@@ -252,5 +253,141 @@ NodeTest.test(
     NodeAssert.match(calls[1]!.input, /Meaningful progress/);
     await f.coordinator.flush();
     f.close();
+  },
+);
+
+NodeTest.test(
+  "a switched-off output leaves the instructions, and switching it back renews the context",
+  async () => {
+    const calls: BrainCuratorRun[] = [];
+    const f = fixture(async (request) => {
+      calls.push(request);
+      return result;
+    });
+    f.add("Document the deploy procedure.", true, { docs: false, skills: true });
+    await f.coordinator.flush();
+    f.add("Another step, settings unchanged.", true);
+    await f.coordinator.flush();
+    f.add("Docs are wanted again.", true, { docs: true, skills: true });
+    await f.coordinator.flush();
+    NodeAssert.equal(calls.length, 3);
+    NodeAssert.doesNotMatch(calls[0]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.match(calls[0]!.instructions, /^AUTO-SKILLS$/m);
+    NodeAssert.match(calls[0]!.instructions, /Auto-Docs \(doc\) are turned off/);
+    NodeAssert.equal(calls[1]!.renew, false);
+    NodeAssert.match(calls[1]!.input, /Continue the same conversation's notes and Auto-Skills/);
+    NodeAssert.doesNotMatch(calls[1]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.equal(calls[2]!.renew, true);
+    NodeAssert.match(calls[2]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.deepEqual(f.store.curationOutputs("chat-a"), {
+      docs: true,
+      skills: true,
+      notesAgent: true,
+    });
+    f.close();
+  },
+);
+
+NodeTest.test(
+  "a chat with the notes agent off never runs, also after a restart, and catches up when turned on",
+  async () => {
+    const calls: BrainCuratorRun[] = [];
+    const run = async (request: BrainCuratorRun) => {
+      calls.push(request);
+      return result;
+    };
+    const f = fixture(run);
+    f.add("Original task with the agent on.", true);
+    await f.coordinator.flush();
+    NodeAssert.equal(calls.length, 1);
+    f.coordinator.configure("chat-a", { docs: true, skills: true, notesAgent: false });
+    f.add("Captured while the agent is off.", true);
+    f.add("Still off, no settings sent.", true);
+    f.coordinator.open("chat-a");
+    await f.coordinator.flush();
+    NodeAssert.equal(calls.length, 1);
+    NodeAssert.equal(f.store.session("chat-a").lastSeq, 1);
+    f.coordinator.close();
+
+    const restarted = new CurationCoordinator(f.store, {
+      run,
+      endpoint: "http://localhost:1",
+      token: "private",
+      cwd: "/tmp",
+      intervalMs: 60000,
+    });
+    restarted.recover();
+    await restarted.flush();
+    NodeAssert.equal(calls.length, 1);
+    restarted.configure("chat-a", { docs: true, skills: true, notesAgent: true });
+    await restarted.flush();
+    NodeAssert.equal(calls.length, 2);
+    NodeAssert.match(calls[1]!.input, /Previously processed through E1; new source ends at E3/);
+    NodeAssert.match(calls[1]!.input, /Captured while the agent is off/);
+    NodeAssert.match(calls[1]!.input, /Still off, no settings sent/);
+    NodeAssert.equal(f.store.session("chat-a").lastSeq, 3);
+    restarted.close();
+    f.db.close();
+  },
+);
+
+NodeTest.test("a chat that starts with the notes agent off gets no notes until it is turned on", async () => {
+  const calls: BrainCuratorRun[] = [];
+  const f = fixture(async (request) => {
+    calls.push(request);
+    return result;
+  });
+  f.add("A private chat.", true, { docs: true, skills: true, notesAgent: false });
+  await f.coordinator.flush();
+  NodeAssert.equal(calls.length, 0);
+  NodeAssert.equal(f.store.get("notes:chat-a"), undefined);
+  f.add("Notes are wanted now.", true, { docs: true, skills: true, notesAgent: true });
+  await f.coordinator.flush();
+  NodeAssert.equal(calls.length, 1);
+  NodeAssert.match(calls[0]!.input, /A private chat/);
+  NodeAssert.match(calls[0]!.input, /Notes are wanted now/);
+  f.close();
+});
+
+NodeTest.test(
+  "Auto-Docs and Auto-Skills turned off for one chat by a read reach its next run, also after a restart",
+  async () => {
+    const calls: BrainCuratorRun[] = [];
+    const run = async (request: BrainCuratorRun) => {
+      calls.push(request);
+      return result;
+    };
+    const f = fixture(run);
+    f.add("Original task.", true);
+    await f.coordinator.flush();
+    // A chat read carries the chat's own choices without a new capture.
+    f.coordinator.configure("chat-a", { docs: false, skills: false, notesAgent: true });
+    f.coordinator.close();
+
+    const restarted = new CurationCoordinator(f.store, {
+      run,
+      endpoint: "http://localhost:1",
+      token: "private",
+      cwd: "/tmp",
+      intervalMs: 60000,
+    });
+    const insert = f.db.prepare("INSERT INTO t3_capture VALUES (?, ?, 'user_prompt', ?, ?)");
+    insert.run(2, "chat-a", JSON.stringify({ text: "Next step in the first chat." }), 2000);
+    insert.run(3, "chat-b", JSON.stringify({ text: "A second chat." }), 3000);
+    restarted.capture("chat-a", "flow", 2, true);
+    restarted.capture("chat-b", "flow", 3, true, { docs: true, skills: true, notesAgent: true });
+    await restarted.flush();
+    const firstChat = calls.filter((call) => call.sessionId === "chat-a");
+    const secondChat = calls.filter((call) => call.sessionId === "chat-b");
+    NodeAssert.equal(firstChat.length, 2);
+    NodeAssert.match(firstChat[0]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.match(firstChat[1]!.input, /Next step in the first chat/);
+    NodeAssert.doesNotMatch(firstChat[1]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.doesNotMatch(firstChat[1]!.instructions, /^AUTO-SKILLS$/m);
+    NodeAssert.equal(secondChat.length, 1);
+    NodeAssert.match(secondChat[0]!.instructions, /^AUTO-DOCS$/m);
+    NodeAssert.match(secondChat[0]!.instructions, /^AUTO-SKILLS$/m);
+    restarted.close();
+    f.db.close();
   },
 );

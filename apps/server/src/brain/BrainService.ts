@@ -1,5 +1,5 @@
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
-import { HostProcessPlatform, HostProcessArchitecture } from "@t3tools/shared/hostProcess";
+import { makeBrainProjections } from "./brainProjections.ts";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -12,9 +12,8 @@ import { BrainRuntime } from "./BrainRuntime.ts";
 import { makeBrainCurator, selectLocalCuratorCli } from "./curator.ts";
 import { installAgentTools } from "./agent-setup.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
-import { OpenCodeRuntimeLive } from "../provider/opencodeRuntime.ts";
 
-class BrainServiceError extends Schema.TaggedErrorClass<BrainServiceError>()("BrainServiceError", {
+class BrainServiceError extends Schema.TaggedError<BrainServiceError>()("BrainServiceError", {
   message: Schema.String,
 }) {}
 export class BrainService extends Context.Service<
@@ -28,23 +27,26 @@ export class BrainService extends Context.Service<
     Effect.gen(function* () {
       const config = yield* ServerConfig;
       const path = yield* Path.Path;
-      const platform = yield* HostProcessPlatform;
-      const architecture = yield* HostProcessArchitecture;
-      const projections = yield* ProjectionSnapshotQuery;
+      const platform = yield* HostProcess.Platform;
+      const architecture = yield* HostProcess.Architecture;
+      const projections = yield* makeBrainProjections;
       const analytics = yield* AnalyticsService;
       const context = yield* Effect.context<Effect.Services<ReturnType<typeof analytics.record>>>();
       const run = Effect.runPromiseWith(context);
-      const registerProjects = (runtime: BrainClient) =>
-        Effect.gen(function* () {
-          const snapshot = yield* projections
-            .getShellSnapshot()
-            .pipe(Effect.mapError((error) => new BrainServiceError({ message: String(error) })));
-          for (const project of snapshot.projects) runtime.projectBindings.register(project);
-          yield* Effect.tryPromise({
-            try: () => runtime.projectBindings.adoptLegacy((id) => runtime.projectBrainId(id)),
-            catch: (error) => new BrainServiceError({ message: String(error) }),
-          });
+      const registerProjects = Effect.fn("BrainService.registerProjects")(function* (
+        runtime: BrainClient,
+      ) {
+        const projectShells = yield* projections.listProjectShells.pipe(
+          Effect.mapError((error) => new BrainServiceError({ message: String(error) })),
+        );
+        for (const project of projectShells) {
+          runtime.projectBindings.register(project);
+        }
+        yield* Effect.tryPromise({
+          try: () => runtime.projectBindings.adoptLegacy((id) => runtime.projectBrainId(id)),
+          catch: (error) => new BrainServiceError({ message: String(error) }),
         });
+      });
       if (process.env.FLOW_SHARED_BRAIN_HOME) {
         const shared = new SharedBrainRuntime(
           process.env.FLOW_SHARED_BRAIN_HOME,
@@ -62,7 +64,7 @@ export class BrainService extends Context.Service<
         yield* registerProjects(shared);
         return BrainService.of({ ready: Effect.succeed(shared) });
       }
-      const runCurator = yield* makeBrainCurator.pipe(Effect.provide(OpenCodeRuntimeLive));
+      const runCurator = yield* makeBrainCurator;
       const providerSettings = yield* ServerSettingsService;
       const runtime = new BrainRuntime(path.join(config.stateDir, "brain"), {
         platform,
@@ -84,7 +86,15 @@ export class BrainService extends Context.Service<
       });
       {
         const close = yield* Effect.tryPromise({
-          try: () => serveSharedBrain(runtime, config.stateDir),
+          try: () =>
+            serveSharedBrain(runtime, config.stateDir, async () => {
+              const settings = await run(providerSettings.getSettings);
+              return {
+                docs: settings.brainAutoDocs,
+                skills: settings.brainAutoSkills,
+                notesAgent: settings.brainNotesAgent,
+              };
+            }),
           catch: (cause) =>
             new BrainServiceError({
               message: cause instanceof Error ? cause.message : "Brain transport unavailable",

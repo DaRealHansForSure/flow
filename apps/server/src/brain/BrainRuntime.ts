@@ -2,7 +2,11 @@ import { projectRepositories, hasProjectRepositorySource } from "./project-repos
 import type { GithubAccess } from "../../../../flow-t3/shared/runtime/src/github.ts";
 import { cloudSignInTarget, signInToCloud, CloudClient } from "./cloud-client.ts";
 import { ProjectBrainBindings } from "./project-bindings.ts";
-import { brainResourceEnvironment, type BrainCuratorRunner } from "@flow/brain-runtime";
+import {
+  brainResourceEnvironment,
+  type BrainCurationOutputs,
+  type BrainCuratorRunner,
+} from "@flow/brain-runtime";
 // @effect-diagnostics globalTimers:off - Native capture retry lifecycle is owned and stopped by this runtime.
 import {
   originalBrainTools,
@@ -23,6 +27,7 @@ import {
   type BrainSource,
   type BrainWorkspace,
   type BrainKnowledge,
+  type BrainChatCurationOutput,
   type ProjectId,
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
@@ -676,9 +681,11 @@ export class BrainRuntime {
       this.checkingClis = undefined;
     }
   }
-  async state(projectId?: ProjectId, metadataOnly = false): Promise<BrainState> {
+  /** With threadId, a project's workspaces narrow to that chat's own Brain choice (fork). */
+  async state(projectId?: ProjectId, metadataOnly = false, threadId?: string): Promise<BrainState> {
     // Provider installation can finish after the shared Brain runtime starts.
     await this.refreshClis();
+    const selectedBrainId = this.selectedBrainId(projectId, threadId);
     if (this.db && !this.db.isRunning)
       this.database = {
         status: "error",
@@ -694,10 +701,7 @@ export class BrainRuntime {
       clis: this.clis,
       workspaces: await Promise.all(
         this.workspaces
-          .filter(
-            (workspace) =>
-              projectId === undefined || this.projectBrainId(projectId) === workspace.id,
-          )
+          .filter((workspace) => projectId === undefined || workspace.id === selectedBrainId)
           .map(async (workspace) => {
             let result: BrainWorkspace = { ...workspace, knowledge: emptyKnowledge() };
             if (workspace.remote) {
@@ -967,13 +971,14 @@ export class BrainRuntime {
     )
       throw new Error("This Brain is moving to Cloud. Reconnect to retry if the transfer failed.");
     if (command.action === "read") return null;
-    if (command.action === "readChat") throw new Error("Chat must be resolved by the server.");
+    if (command.action === "readChat" || command.action === "setChatCurationOutput")
+      throw new Error("Chat must be resolved by the server.");
     if (command.action === "readDocument")
       throw new Error("Document reads must be resolved by the server.");
     if (command.action === "listGithubRepositories" || command.action === "listGithubBranches")
       return null;
-    if (command.action === "bindProject")
-      throw new Error("Project connections must be resolved by the server.");
+    if (command.action === "bindProject" || command.action === "bindThread")
+      throw new Error("Project and chat connections must be resolved by the server.");
     if (command.action === "start") {
       await this.start();
       return null;
@@ -1316,6 +1321,51 @@ export class BrainRuntime {
   projectBrainId(projectId: ProjectId) {
     return this.projectBindings.resolve(projectId, (id) => this.legacyProjectBrainId(id));
   }
+  /** The chat's own Brain choice when it has one, otherwise its project's (fork). */
+  threadBrainId(projectId: ProjectId, threadId: string) {
+    const choice = this.projectBindings.threadChoice(threadId);
+    if (choice !== undefined) {
+      return choice ?? undefined;
+    }
+    return this.projectBrainId(projectId);
+  }
+  private selectedBrainId(projectId: ProjectId | undefined, threadId: string | undefined) {
+    if (projectId === undefined) {
+      return undefined;
+    }
+    if (threadId === undefined) {
+      return this.projectBrainId(projectId);
+    }
+    return this.threadBrainId(projectId, threadId);
+  }
+  /** Gives one chat its own Brain, or none with null, regardless of its project (fork). */
+  bindThread(threadId: string, workspaceId: string | null | undefined) {
+    const result = this.commands.then(async () => {
+      if (this.closed) throw new Error("Brain runtime is shutting down.");
+      if (workspaceId) {
+        this.workspace(workspaceId);
+      }
+      await this.projectBindings.bindThread(threadId, workspaceId);
+    });
+    this.commands = result.catch(() => {});
+    return result;
+  }
+  /**
+   * Turns the notes agent, Auto-Docs or Auto-Skills on or off for one chat; undefined follows
+   * the project or global setting again (fork).
+   */
+  setThreadCurationChoice(
+    threadId: string,
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ) {
+    const result = this.commands.then(async () => {
+      if (this.closed) throw new Error("Brain runtime is shutting down.");
+      await this.projectBindings.setThreadCurationChoice(threadId, output, enabled);
+    });
+    this.commands = result.catch(() => {});
+    return result;
+  }
   private async sessionWorker(workspace: Workspace) {
     let pending = this.sessionWorkers.get(workspace.id);
     if (pending && !(await pending).alive) {
@@ -1420,22 +1470,36 @@ export class BrainRuntime {
     await NodeFSP.writeFile(temp, JSON.stringify(registry));
     await NodeFSP.rename(temp, file);
   }
-  async chatMemories(projectId: ProjectId, session: string, revision?: string) {
-    const workspace = this.workspaces.find((entry) => entry.id === this.projectBrainId(projectId));
+  /** `outputs` are the chat's resolved notes agent settings, applied before reading. */
+  async chatMemories(
+    projectId: ProjectId,
+    session: string,
+    revision?: string,
+    outputs?: BrainCurationOutputs,
+  ) {
+    const workspaceId = this.threadBrainId(projectId, session);
+    const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) return { memories: [], status: "disabled" as const };
-    const result = await this.brainMemories(workspace.id, session, revision);
-    if (this.projectBrainId(projectId) !== workspace.id)
+    const result = await this.brainMemories(workspace.id, session, revision, outputs);
+    if (this.threadBrainId(projectId, session) !== workspace.id)
       throw new Error("The project's brain changed. Retry the request.");
     return result;
   }
-  async brainMemories(workspaceId: string, session: string, revision?: string) {
+  async brainMemories(
+    workspaceId: string,
+    session: string,
+    revision?: string,
+    outputs?: BrainCurationOutputs,
+  ) {
     const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) throw new Error("Brain is not available");
     if (workspace.migration) throw new Error("Brain is moving to Cloud.");
     if (workspace.remote) {
       // This chat's extraction state lives here. A remote fetch must not delay
       // note retrieval; the shared library and graph use the cloud connection.
-      const local = await (await this.sessionWorker(workspace)).memories(session, revision);
+      const local = await (
+        await this.sessionWorker(workspace)
+      ).memories(session, revision, outputs);
       const syncError = this.documentSyncErrors.get(workspace.id);
       return {
         ...(await this.withNotesAgent(workspace, local)),
@@ -1448,7 +1512,7 @@ export class BrainRuntime {
       };
     }
     const worker = await this.sessionWorker(workspace);
-    return this.withNotesAgent(workspace, await worker.memories(session, revision));
+    return this.withNotesAgent(workspace, await worker.memories(session, revision, outputs));
   }
   private async withNotesAgent(
     workspace: Workspace,
@@ -1498,10 +1562,11 @@ export class BrainRuntime {
     args: Record<string, unknown>,
     context: BrainSessionContext,
   ) {
-    const workspace = this.workspaces.find((entry) => entry.id === this.projectBrainId(projectId));
+    const workspaceId = this.threadBrainId(projectId, context.session);
+    const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) throw new Error("This project has no connected brain");
     const result = await this.callBrainTool(workspace.id, name, args, context);
-    if (this.projectBrainId(projectId) !== workspace.id)
+    if (this.threadBrainId(projectId, context.session) !== workspace.id)
       throw new Error("The project's brain changed.");
     return result;
   }
@@ -1564,7 +1629,8 @@ export class BrainRuntime {
     return result;
   }
   async captureProjectEvent(projectId: ProjectId, input: BrainCapture) {
-    const workspace = this.workspaces.find((entry) => entry.id === this.projectBrainId(projectId));
+    const workspaceId = this.threadBrainId(projectId, input.context.session);
+    const workspace = this.workspaces.find((entry) => entry.id === workspaceId);
     if (!workspace) return;
     return this.captureBrainEvent(workspace.id, input);
   }

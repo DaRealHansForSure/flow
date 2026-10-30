@@ -4,17 +4,17 @@ import { FLOW_ROUTING } from './routing.mjs';
 import { readJson, request, flush } from "./capture-replay.mjs";
 import { atomic, gitIdentity, resolveBinding, persistBinding, forgetBinding, eventFolder, repoLabel } from './resolve.mjs';
 // Local-only bridge: credentials stay in the app's private endpoint descriptor.
-import * as fs from 'node:fs/promises';
-import { realpathSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { createHash, randomUUID } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { createInterface } from 'node:readline';
+import * as NodeFSP from 'node:fs/promises';
+import * as NodeFS from 'node:fs';
+import * as NodePath from 'node:path';
+import * as NodeURL from 'node:url';
+import * as NodeCrypto from 'node:crypto';
+import * as NodeChildProcess from 'node:child_process';
+import * as NodeReadline from 'node:readline';
 
 export { atomic, gitIdentity };
 const home = agentHome;
-const hash = value => createHash('sha256').update(value).digest('hex');
+const hash = value => NodeCrypto.createHash('sha256').update(value).digest('hex');
 
 export function redact(value) {
   if (Array.isArray(value)) return value.map(redact);
@@ -33,7 +33,7 @@ async function bindingFor(project, cwd = process.cwd()) {
     if (resolved.status !== 'bound') return null;
     return { ...resolved.entry, project: resolved.project, folder: resolved.folder, cwd: resolved.cwd, name: resolved.name };
   }
-  const entry = (await readJson(join(home(), 'config.json'))).projects?.[project];
+  const entry = (await readJson(NodePath.join(home(), 'config.json'))).projects?.[project];
   if (!entry?.connector || !entry.instance || !entry.workspace) throw Error('This folder has no Flow agent binding. Run setup.');
   const identity = gitIdentity(cwd);
   const folder = entry.folders.find(item => item.common === identity.common);
@@ -42,16 +42,16 @@ async function bindingFor(project, cwd = process.cwd()) {
 }
 function context(binding, session) {
   let branch = '';
-  try { branch = execFileSync('git', ['-C', binding.cwd, 'branch', '--show-current'], { encoding: 'utf8' }).trim(); } catch {}
+  try { branch = NodeChildProcess.execFileSync('git', ['-C', binding.cwd, 'branch', '--show-current'], { encoding: 'utf8' }).trim(); } catch {}
   return { session, workspaceRoot: binding.cwd, repo: binding.folder.repo, branch };
 }
-const spoolPath = project => join(home(), 'agent-capture', project);
+const spoolPath = project => NodePath.join(home(), 'agent-capture', project);
 /** Record a harness event. Returns `{ session, brain }`, or undefined when the folder is not bound. */
 export async function capture(project, harness, event, cwd = eventFolder(event)) {
   if (process.env.FLOW_SESSION_ID) return;
   if (!project) {
     // A checkout still carrying per-repo hook files is captured by those; never twice.
-    const manifest = await readJson(join(home(), 'integrations.json'), {});
+    const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
     let root;
     try { root = gitIdentity(cwd).root; } catch { return; }
     if (manifest.repos?.[root]) return;
@@ -63,11 +63,11 @@ export async function capture(project, harness, event, cwd = eventFolder(event))
   if (typeof id !== 'string' || !id || id.length > 500) throw Error('Hook has no native conversation ID');
   const clean = redact(event);
   const session = `${harness}:${id}`;
-  await atomic(join(home(), 'agent-sessions', project, hash(session) + '.json'), { session, common: binding.folder.common });
+  await atomic(NodePath.join(home(), 'agent-sessions', project, hash(session) + '.json'), { session, common: binding.folder.common });
   const occurredAt = Date.now();
   // Native event IDs survive retries. Without one, each invocation is a distinct receipt.
-  const receipt = String(event.event_id ?? event.eventId ?? randomUUID());
-  await atomic(join(spoolPath(project), `${occurredAt}-${randomUUID()}.json`), {
+  const receipt = String(event.event_id ?? event.eventId ?? NodeCrypto.randomUUID());
+  await atomic(NodePath.join(spoolPath(project), `${occurredAt}-${NodeCrypto.randomUUID()}.json`), {
     context: context(binding, session), hook: { harness, event: clean, receipt, occurredAt },
   });
   await flush(project, binding, 700).catch(() => {});
@@ -87,7 +87,7 @@ export async function mcp(project) {
   const binding = hosted ? undefined : await bindingFor(project, cwd);
   const tools = binding ? await (async () => { await flush(binding.project, binding).catch(() => {}); return request(binding, 'tools'); })() : [];
   let session;
-  const unbound = `mcp:${randomUUID()}`;
+  const unbound = `mcp:${NodeCrypto.randomUUID()}`;
   // bind_session ties this stdio connection to the conversation the capture hook
   // announced; remember and the conversation’s notes attach to that session.
   const extra = binding ? [
@@ -98,7 +98,7 @@ export async function mcp(project) {
     : binding
     ? `Flow Brain ${JSON.stringify(binding.name ?? binding.workspace)} is connected to this folder.\n${FLOW_ROUTING}\nBind the exact Flow conversation handle from the startup hook using bind_session before remember. Never infer the latest conversation in a folder.`
     : 'No Flow Brain is bound to this folder, so no Flow tools are available here. Continue without Flow memory; bind the folder to a Brain in Flow to enable them.';
-  const lines = createInterface({ input: process.stdin });
+  const lines = NodeReadline.createInterface({ input: process.stdin });
   for await (const line of lines) {
     let input;
     try {
@@ -117,7 +117,7 @@ export async function mcp(project) {
         if (name === 'bind_session') {
           if (typeof args.session !== 'string') throw Error('Missing session handle');
           if (session && session !== args.session) throw Error('This MCP connection is already bound to another conversation');
-          const saved = await readJson(join(home(), 'agent-sessions', binding.project, hash(args.session) + '.json'), null);
+          const saved = await readJson(NodePath.join(home(), 'agent-sessions', binding.project, hash(args.session) + '.json'), null);
           if (!saved || saved.common !== binding.folder.common) throw Error('No captured session matches this handle and repository');
           session = saved.session;
           result = { content: [{ type: 'text', text: `Bound Flow conversation ${session}. Its notes: get_entity notes:t3-${session}` }] };
@@ -141,9 +141,9 @@ export async function mcp(project) {
   }
 }
 
-const connectorPath = () => fileURLToPath(import.meta.url);
-const flowRoot = () => resolve(dirname(connectorPath()), '../../..');
-const shimSource = () => join(dirname(connectorPath()), 'flow-hook.mjs');
+const connectorPath = () => NodeURL.fileURLToPath(import.meta.url);
+const flowRoot = () => NodePath.resolve(NodePath.dirname(connectorPath()), '../../..');
+const shimSource = () => NodePath.join(NodePath.dirname(connectorPath()), 'flow-hook.mjs');
 
 async function brainOn(stateDir, workspace) {
   const state = await request({ stateDir, instance: 'agent-setup' }, 'state', { metadataOnly: true });
@@ -155,7 +155,7 @@ async function brainOn(stateDir, workspace) {
 /** Machine-level tools for every detected (or requested) coding agent; idempotent. */
 export async function install({ stateDir, harness, materializer }) {
   materializer ??= await import('../lib/materialize.mjs');
-  const config = await readJson(join(home(), 'config.json'), {});
+  const config = await readJson(NodePath.join(home(), 'config.json'), {});
   const requested = !harness || harness === 'detected' ? materializer.detectHarnesses() : harness === 'all' ? materializer.ALL_HARNESSES : harness.split(',');
   if (requested.some(h => !materializer.ALL_HARNESSES.includes(h))) throw Error(`Supported harnesses: ${materializer.ALL_HARNESSES.join(', ')}`);
   const harnesses = [...new Set([...(config.machine?.harnesses ?? []), ...requested])];
@@ -163,37 +163,37 @@ export async function install({ stateDir, harness, materializer }) {
   const rendered = materializer.materializeGlobal({ harnesses });
   // Per-repo files from earlier setups now duplicate the machine-level tools:
   // keep their bindings, restore the repositories.
-  const manifest = await readJson(join(home(), 'integrations.json'), {});
+  const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
   const migrated = [];
   for (const [repoDir, item] of Object.entries(manifest.repos ?? {})) {
     if (item.share) continue;
     let identity;
     try { identity = gitIdentity(repoDir); } catch { continue; }
-    const current = await readJson(join(home(), 'config.json'), {});
+    const current = await readJson(NodePath.join(home(), 'config.json'), {});
     const entry = current.projects?.[item.project];
     if (entry?.connector && entry.stateDir && entry.workspace && !(entry.folders ?? []).some(f => f.common === identity.common))
       await persistBinding({ stateDir: entry.stateDir, workspace: entry.workspace, name: entry.name }, { common: identity.common, repo: item.repo ?? repoLabel(identity.root) });
     materializer.removeRepo(repoDir);
     migrated.push(repoDir);
   }
-  const latest = await readJson(join(home(), 'config.json'), {});
+  const latest = await readJson(NodePath.join(home(), 'config.json'), {});
   latest.machine = {
     version: materializer.GLOBAL_VERSION,
     harnesses,
-    stateDirs: [...new Set([...(latest.machine?.stateDirs ?? []), ...(stateDir ? [await fs.realpath(resolve(stateDir))] : [])])],
+    stateDirs: [...new Set([...(latest.machine?.stateDirs ?? []), ...(stateDir ? [await NodeFSP.realpath(NodePath.resolve(stateDir))] : [])])],
     files: rendered.files,
     at: new Date().toISOString(),
   };
-  await atomic(join(home(), 'config.json'), latest);
+  await atomic(NodePath.join(home(), 'config.json'), latest);
   return { harnesses, detected: materializer.detectHarnesses(), migrated, status: 'installed' };
 }
 
 export async function uninstall({ materializer } = {}) {
   materializer ??= await import('../lib/materialize.mjs');
   const removed = materializer.removeGlobal();
-  const config = await readJson(join(home(), 'config.json'), {});
+  const config = await readJson(NodePath.join(home(), 'config.json'), {});
   delete config.machine;
-  await atomic(join(home(), 'config.json'), config);
+  await atomic(NodePath.join(home(), 'config.json'), config);
   return { removed, status: 'uninstalled' };
 }
 
@@ -212,8 +212,8 @@ export async function main(argv) {
   }
   // Rendering lives with the checkout, not under ~/.flow; only rendering verbs load it.
   const materializer = () => import('../lib/materialize.mjs');
-  const requestedFolder = resolve(options.folder ?? process.cwd());
-  const folder = await fs.realpath(requestedFolder).catch(error => { if (['status', 'resolve'].includes(action) && error.code === 'ENOENT') return requestedFolder; throw error; });
+  const requestedFolder = NodePath.resolve(options.folder ?? process.cwd());
+  const folder = await NodeFSP.realpath(requestedFolder).catch(error => { if (['status', 'resolve'].includes(action) && error.code === 'ENOENT') return requestedFolder; throw error; });
   // The installer connects a Cloud Brain from wherever it was run: that folder means
   // nothing, and checkouts of the Brain's repositories connect themselves.
   if (action === 'install' || (action === 'setup' && (!options.brain || (options.cloud && !options.folder)))) {
@@ -222,15 +222,15 @@ export async function main(argv) {
     return;
   }
   if (action === 'tools') {
-    const config = await readJson(join(home(), 'config.json'), {});
+    const config = await readJson(NodePath.join(home(), 'config.json'), {});
     console.log(JSON.stringify({ installed: config.machine?.harnesses ?? [], detected: (await materializer()).detectHarnesses() }));
     return;
   }
   if (action === 'uninstall') { console.log(JSON.stringify(await uninstall({ materializer: await materializer() }), null, 2)); return; }
   if (action === 'resolve') { console.log(JSON.stringify(await resolveBinding(folder), null, 2)); return; }
   if (action === 'status') {
-    const manifest = await readJson(join(home(), 'integrations.json'), {});
-    const config = await readJson(join(home(), 'config.json'), {});
+    const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
+    const config = await readJson(NodePath.join(home(), 'config.json'), {});
     const legacy = manifest.repos?.[folder];
     let resolved = { status: 'unbound', reason: 'This folder does not exist.' };
     try { resolved = await resolveBinding(folder, { config }); } catch (error) { resolved = { status: 'unbound', reason: error.message }; }
@@ -238,7 +238,7 @@ export async function main(argv) {
     const harnesses = config.machine?.harnesses ?? legacy?.harnesses ?? [];
     const configured = Boolean(binding?.connector) && (resolved.status === 'bound' || Boolean(legacy)) && harnesses.length > 0;
     const project = resolved.status === 'bound' ? resolved.project : legacy?.project;
-    const pending = project && binding?.connector ? await fs.readdir(spoolPath(project)).catch(error => { if (error.code === 'ENOENT') return []; throw error; }) : [];
+    const pending = project && binding?.connector ? await NodeFSP.readdir(spoolPath(project)).catch(error => { if (error.code === 'ENOENT') return []; throw error; }) : [];
     const message = configured
       ? 'Configured. Restart the selected tools and approve their connection prompts. Capture is confirmed only after a conversation runs.'
       : !harnesses.length ? 'Install Flow’s coding-agent tools on this computer to use its Brains from other tools.'
@@ -247,14 +247,14 @@ export async function main(argv) {
     return;
   }
   if (action === 'unbind' || action === 'remove') {
-    const manifest = await readJson(join(home(), 'integrations.json'), {});
+    const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
     if (manifest.repos?.[folder]) (await materializer()).removeRepo(folder);
     await forgetBinding(gitIdentity(folder).common);
     return;
   }
   if (action === 'doctor' || action === 'flush') {
-    const config = await readJson(join(home(), 'config.json'), {});
-    const manifest = await readJson(join(home(), 'integrations.json'), {});
+    const config = await readJson(NodePath.join(home(), 'config.json'), {});
+    const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
     const legacy = manifest.repos?.[folder]?.project;
     const project = options.project ?? legacy;
     const binding = await bindingFor(project, folder);
@@ -269,7 +269,7 @@ export async function main(argv) {
   }
   if (action !== 'setup' && action !== 'bind') throw Error('Usage: flow setup [--brain ID --state-dir DIRECTORY --folder DIRECTORY] [--harness claude,codex,…|detected|all] [--scope repo]; flow agents install|uninstall|bind|unbind|resolve|status|doctor|flush|remove [--folder DIRECTORY]');
   if (!options.brain || !options['state-dir']) throw Error('Usage: flow setup --brain ID --state-dir DIRECTORY --folder DIRECTORY');
-  const stateDir = await fs.realpath(resolve(options['state-dir']));
+  const stateDir = await NodeFSP.realpath(NodePath.resolve(options['state-dir']));
   const identity = gitIdentity(folder);
   const brain = await brainOn(stateDir, options.brain);
   if (options.local === 'true' && brain.remote) throw Error('The selected Brain is Cloud-connected. Choose a local Brain or omit --local.');
@@ -280,13 +280,13 @@ export async function main(argv) {
     if (!options.harness) throw Error('Choose --harness for per-repo setup.');
     const materializer = await import('../lib/materialize.mjs');
     const project = `agents-${hash(stateDir + ':' + options.brain).slice(0, 20)}`;
-    const config = await readJson(join(home(), 'config.json'), {});
+    const config = await readJson(NodePath.join(home(), 'config.json'), {});
     const previous = config.projects?.[project];
     const harnesses = options.harness === 'detected' ? materializer.detectHarnesses() : options.harness.split(',');
     if (!harnesses.length) throw Error('No supported coding tools detected. Install a coding tool, then repeat setup.');
     if (harnesses.some(h => !materializer.ALL_HARNESSES.includes(h))) throw Error(`Supported harnesses: ${materializer.ALL_HARNESSES.join(', ')}`);
-    const entry = { ...previous, connector: connectorPath(), stateDir, workspace: options.brain, instance: previous?.instance ?? `agents-${randomUUID()}`, name: brain.name };
-    const manifest = await readJson(join(home(), 'integrations.json'), {});
+    const entry = { ...previous, connector: connectorPath(), stateDir, workspace: options.brain, instance: previous?.instance ?? `agents-${NodeCrypto.randomUUID()}`, name: brain.name };
+    const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
     const current = manifest.repos?.[folder];
     if (current && current.project !== project && options.rebind !== 'true') throw Error('Folder already has a different Brain binding. Remove that integration before switching.');
     if (current && (current.project !== project || current.harnesses.some(h => !harnesses.includes(h)))) materializer.removeRepo(folder);
@@ -296,18 +296,20 @@ export async function main(argv) {
     console.log(JSON.stringify({ brain: brain.name, workspace: brain.id, folder, harnesses, scope: 'repo', status: 'configured', next: 'Restart the selected coding agents; approve their MCP and hook trust prompts, then run flow agents doctor in this folder.' }, null, 2));
     return;
   }
-  const config = await readJson(join(home(), 'config.json'), {});
+  const config = await readJson(NodePath.join(home(), 'config.json'), {});
   const installed = await (config.machine && !options.harness
     ? Promise.resolve({ harnesses: config.machine.harnesses })
     : install({ stateDir, harness: options.harness, materializer: await materializer() }));
-  const manifest = await readJson(join(home(), 'integrations.json'), {});
+  const manifest = await readJson(NodePath.join(home(), 'integrations.json'), {});
   if (manifest.repos?.[folder]) (await materializer()).removeRepo(folder);
   const saved = await persistBinding({ stateDir, workspace: brain.id, name: brain.name }, { common: identity.common, repo });
-  const machine = await readJson(join(home(), 'config.json'), {});
+  const machine = await readJson(NodePath.join(home(), 'config.json'), {});
   if (!machine.machine?.stateDirs?.includes(stateDir)) {
-    machine.machine = { ...(machine.machine ?? {}), stateDirs: [...new Set([...(machine.machine?.stateDirs ?? []), stateDir])] };
-    await atomic(join(home(), 'config.json'), machine);
+    machine.machine = { ...machine.machine, stateDirs: [...new Set([...(machine.machine?.stateDirs ?? []), stateDir])] };
+    await atomic(NodePath.join(home(), 'config.json'), machine);
   }
   console.log(JSON.stringify({ brain: brain.name, workspace: brain.id, folder, project: saved.project, harnesses: installed.harnesses, status: 'configured', next: 'Restart your coding agents in this folder; approve their MCP and hook trust prompts once per computer, then run flow agents doctor here.' }, null, 2));
 }
-if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) main(process.argv.slice(2)).catch(error => { console.error(error.message); process.exitCode = 1; });
+// A host whose argv[1] is not a real file (OpenCode's compiled binary imports this module) is not a direct run.
+const runDirectly = () => { try { return NodeURL.pathToFileURL(NodeFS.realpathSync(process.argv[1])).href === import.meta.url; } catch { return false; } };
+if (process.argv[1] && runDirectly()) main(process.argv.slice(2)).catch(error => { console.error(error.message); process.exitCode = 1; });

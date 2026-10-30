@@ -13,13 +13,14 @@ import * as NodePath from "node:path";
 import * as NodeHttp from "node:http";
 import * as NodeCrypto from "node:crypto";
 import * as Schema from "effect/Schema";
-import { McpSchema } from "effect/unstable/ai";
+import { McpSchema } from "effect/ai";
 import {
   BrainCommand,
   BrainDocument,
   BrainState,
   ChatMemoryList,
   ProjectId,
+  type BrainChatCurationOutput,
 } from "@t3tools/contracts";
 import type { BrainRuntime } from "./BrainRuntime.ts";
 import {
@@ -27,12 +28,16 @@ import {
   type BrainCapture,
   type BrainSessionContext,
 } from "./session-worker.ts";
+import type { BrainCurationOutputs } from "@flow/brain-runtime";
 export type BrainClient = Pick<
   BrainRuntime,
   | "projectBindings"
   | "chatMemories"
   | "brainDocument"
   | "projectBrainId"
+  | "threadBrainId"
+  | "bindThread"
+  | "setThreadCurationChoice"
   | "callProjectTool"
   | "captureProjectEvent"
   | "bindProject"
@@ -48,6 +53,11 @@ const Context = Schema.Struct({
   branch: Schema.optionalKey(Schema.String),
   workspaceRoot: Schema.optionalKey(Schema.String),
 });
+const CurationOutputs = Schema.Struct({
+  docs: Schema.Boolean,
+  skills: Schema.Boolean,
+  notesAgent: Schema.optionalKey(Schema.Boolean),
+});
 const Capture = Schema.Struct({
   context: Context,
   receipt: Schema.String,
@@ -55,6 +65,7 @@ const Capture = Schema.Struct({
   kind: Schema.Literals(["user_prompt", "update", "error", "created", "graph"]),
   data: Schema.Unknown,
   closed: Schema.optionalKey(Schema.Boolean),
+  outputs: Schema.optionalKey(CurationOutputs),
 });
 const Request = Schema.Struct({
   method: Schema.Literals([
@@ -80,6 +91,7 @@ const Request = Schema.Struct({
   ),
   metadataOnly: Schema.optional(Schema.Boolean),
   revision: Schema.optionalKey(Schema.String),
+  outputs: Schema.optionalKey(CurationOutputs),
   workspace: Schema.optionalKey(Schema.String),
   name: Schema.optionalKey(Schema.String),
   args: Schema.optional(Schema.Record(Schema.String, Schema.Unknown)),
@@ -93,7 +105,15 @@ const decodeChatMemories = Schema.decodeUnknownSync(ChatMemoryList);
 const decodeDescriptor = Schema.decodeUnknownSync(
   Schema.fromJsonString(Schema.Struct({ url: Schema.String, token: Schema.String })),
 );
-export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) {
+/**
+ * `globalCurationOutputs` reads this machine's Notes agent, Auto-Docs and Auto-Skills switches
+ * for conversations from external coding agents, which belong to no Flow project.
+ */
+export async function serveSharedBrain(
+  runtime: BrainRuntime,
+  stateDir: string,
+  globalCurationOutputs?: () => Promise<BrainCurationOutputs>,
+) {
   const token = NodeCrypto.randomBytes(32).toString("hex");
   const server = NodeHttp.createServer(async (request, response) => {
     response.setHeader("content-type", "application/json");
@@ -133,9 +153,11 @@ export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) 
               : hook.events;
           if (!events.length && hook.closed)
             events.push({ kind: "update", data: { sessionUpdate: "turn_complete" } });
+          const outputs = await globalCurationOutputs?.();
           for (const [index, event] of events.entries()) {
             await runtime.captureBrainEvent(input.workspace, {
               ...event,
+              ...(outputs ? { outputs } : {}),
               context: {
                 ...input.context,
                 session: `${input.instance}:${input.hook.harness}:${hook.externalId}`,
@@ -164,8 +186,13 @@ export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) 
           result = await runtime.listGithubBranches(input.name, input.workspace);
           break;
         case "command":
-          if (!input.command || input.command.action === "bindProject")
-            throw Error("Project bindings belong to the calling instance");
+          if (
+            !input.command ||
+            input.command.action === "bindProject" ||
+            input.command.action === "bindThread" ||
+            input.command.action === "setChatCurationOutput"
+          )
+            throw Error("Project and chat bindings belong to the calling instance");
           result = await runtime.command(input.command);
           break;
         case "call":
@@ -182,6 +209,7 @@ export async function serveSharedBrain(runtime: BrainRuntime, stateDir: string) 
             input.workspace,
             `${input.instance}:${input.context.session}`,
             input.revision,
+            input.outputs,
           );
           break;
         case "document":
@@ -313,23 +341,66 @@ export class SharedBrainRuntime implements BrainClient {
   projectBrainId(project: ProjectId) {
     return this.projectBindings.resolve(project, (id) => this.bindings[id]);
   }
-  async chatMemories(projectId: ProjectId, session: string, revision?: string) {
-    const workspace = this.projectBrainId(projectId);
+  /** The chat's own Brain choice when it has one, otherwise its project's (fork). */
+  threadBrainId(project: ProjectId, threadId: string) {
+    const choice = this.projectBindings.threadChoice(threadId);
+    if (choice !== undefined) {
+      return choice ?? undefined;
+    }
+    return this.projectBrainId(project);
+  }
+  bindThread(threadId: string, workspace: string | null | undefined) {
+    const pending = this.writes.then(async () => {
+      if (workspace && !(await this.state()).workspaces.some((w) => w.id === workspace))
+        throw Error("Brain is not available on the source instance");
+      await this.projectBindings.bindThread(threadId, workspace);
+    });
+    this.writes = pending.catch(() => {});
+    return pending;
+  }
+  /** The choice stays with this instance, which owns the chat; the source only gets the result. */
+  setThreadCurationChoice(
+    threadId: string,
+    output: BrainChatCurationOutput,
+    enabled: boolean | undefined,
+  ) {
+    const pending = this.writes.then(() =>
+      this.projectBindings.setThreadCurationChoice(threadId, output, enabled),
+    );
+    this.writes = pending.catch(() => {});
+    return pending;
+  }
+  async chatMemories(
+    projectId: ProjectId,
+    session: string,
+    revision?: string,
+    outputs?: BrainCurationOutputs,
+  ) {
+    const workspace = this.threadBrainId(projectId, session);
     if (!workspace) return { memories: [], status: "disabled" as const };
     const result = decodeChatMemories(
-      await this.request("memories", { workspace, context: { session }, revision }),
+      await this.request("memories", { workspace, context: { session }, revision, outputs }),
     );
-    if (this.projectBrainId(projectId) !== workspace)
+    if (this.threadBrainId(projectId, session) !== workspace)
       throw Error("The project’s brain changed. Retry the request.");
     return result;
   }
-  async state(projectId?: ProjectId, metadataOnly = false) {
+  /** With threadId, a project's workspaces narrow to that chat's own Brain choice (fork). */
+  async state(projectId?: ProjectId, metadataOnly = false, threadId?: string) {
     const state = decodeState(await this.request("state", { metadataOnly }));
+    let selectedBrainId: string | undefined;
+    if (projectId !== undefined) {
+      if (threadId === undefined) {
+        selectedBrainId = this.projectBrainId(projectId);
+      } else {
+        selectedBrainId = this.threadBrainId(projectId, threadId);
+      }
+    }
     return {
       ...state,
       configuredProjectIds: this.projectBindings.configuredProjectIds(),
       workspaces: state.workspaces
-        .filter((w) => !projectId || this.projectBrainId(projectId) === w.id)
+        .filter((w) => !projectId || w.id === selectedBrainId)
         .map((w) => ({
           ...w,
           projectIds: this.projectBindings.idsFor(
@@ -356,12 +427,12 @@ export class SharedBrainRuntime implements BrainClient {
     args: Record<string, unknown>,
     context: BrainSessionContext,
   ) {
-    const workspace = this.projectBrainId(project);
+    const workspace = this.threadBrainId(project, context.session);
     if (!workspace) throw Error("This project has no connected shared brain");
     return decodeToolResult(await this.request("call", { workspace, name, args, context }));
   }
   async captureProjectEvent(project: ProjectId, capture: BrainCapture) {
-    const workspace = this.projectBrainId(project);
+    const workspace = this.threadBrainId(project, capture.context.session);
     if (!workspace) return;
     capture = { ...capture, occurredAt: capture.occurredAt ?? Date.now() };
     this.sequence = Math.max(this.sequence + 1, Date.now() * 1000);

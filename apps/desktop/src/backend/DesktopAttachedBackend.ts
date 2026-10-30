@@ -61,10 +61,10 @@ const { logWarning } = DesktopObservability.makeComponentLogger("desktop-attache
 
 const decodeDescriptor = Schema.decodeUnknownOption(ExecutionEnvironmentDescriptor);
 
-export class AttachProbeError extends Schema.TaggedErrorClass<AttachProbeError>()(
-  "AttachProbeError",
-  { detail: Schema.String, cause: Schema.Defect() },
-) {
+export class AttachProbeError extends Schema.TaggedError<AttachProbeError>()("AttachProbeError", {
+  detail: Schema.String,
+  cause: Schema.Defect(),
+}) {
   override get message(): string {
     return this.detail;
   }
@@ -81,6 +81,12 @@ export interface AttachedBackendSpec {
   readonly label: Effect.Effect<string>;
   readonly environment: AttachedBackendEnvironment;
   readonly onReady?: (httpBaseUrl: URL) => Effect.Effect<void>;
+  // Runs before onReady with what the service reported about itself, so
+  // network access settings follow the service rather than this app.
+  readonly onServiceAttached?: (service: {
+    readonly httpBaseUrl: URL;
+    readonly networkAccess: boolean;
+  }) => Effect.Effect<void>;
   readonly onShutdown?: () => Effect.Effect<void>;
   // Returning true asks for one more attach attempt (the user pressed retry,
   // or the caller fixed something). False leaves the instance failed.
@@ -112,6 +118,7 @@ interface AttachSuccess {
   readonly _tag: "attached";
   readonly httpBaseUrl: URL;
   readonly dataHome: string;
+  readonly networkAccess: boolean;
 }
 
 interface AttachFailed {
@@ -234,49 +241,52 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
   const attached = yield* Ref.make(Option.none<AttachSuccess>());
   const parkedFailure = yield* Ref.make(Option.none<DesktopBackendManager.PreflightFailure>());
 
-  const checkCompatibility = (
+  const checkCompatibility = Effect.fn("DesktopAttachedBackend.checkCompatibility")(function* (
     httpBaseUrl: URL,
-  ): Effect.Effect<Option.Option<DesktopBackendManager.PreflightFailure>> =>
-    Effect.gen(function* () {
-      const payload = yield* Effect.result(fetchDescriptor(httpBaseUrl));
-      if (Result.isFailure(payload))
-        return Option.some(
-          failure("unreachable", "The Flow service did not answer.", payload.failure.detail),
-        );
-      const descriptor = decodeDescriptor(payload.success);
-      // A malformed `desktopProtocol` fails the whole decode. That is the
-      // same signal as an absent one — the server cannot state a generation
-      // this build understands — so both land on "update the service".
-      if (Option.isNone(descriptor))
-        return Option.some(
-          failure(
-            "incompatible",
-            "The Flow service needs to be updated.",
-            "Its environment descriptor could not be read.",
-          ),
-        );
-      const generation = descriptor.value.desktopProtocol;
-      if (generation === undefined)
-        return Option.some(
-          failure(
-            "incompatible",
-            "The Flow service needs to be updated.",
-            "It does not report a desktop-attach protocol generation.",
-          ),
-        );
-      if (
-        generation < DESKTOP_PROTOCOL_SUPPORTED.min ||
-        generation > DESKTOP_PROTOCOL_SUPPORTED.max
-      )
-        return Option.some(
-          failure(
-            "incompatible",
-            "The Flow service needs to be updated.",
-            `It speaks desktop-attach generation ${String(generation)}; this app supports ${String(DESKTOP_PROTOCOL_SUPPORTED.min)} through ${String(DESKTOP_PROTOCOL_SUPPORTED.max)}.`,
-          ),
-        );
-      return Option.none<DesktopBackendManager.PreflightFailure>();
-    });
+  ): Effect.fn.Return<Option.Option<DesktopBackendManager.PreflightFailure>> {
+    const payload = yield* Effect.result(fetchDescriptor(httpBaseUrl));
+    if (Result.isFailure(payload)) {
+      return Option.some(
+        failure("unreachable", "The Flow service did not answer.", payload.failure.detail),
+      );
+    }
+    const descriptor = decodeDescriptor(payload.success);
+    // A malformed `desktopProtocol` fails the whole decode. That is the
+    // same signal as an absent one: the server cannot state a generation
+    // this build understands, so both land on "update the service".
+    if (Option.isNone(descriptor)) {
+      return Option.some(
+        failure(
+          "incompatible",
+          "The Flow service needs to be updated.",
+          "Its environment descriptor could not be read.",
+        ),
+      );
+    }
+    const generation = descriptor.value.desktopProtocol;
+    if (generation === undefined) {
+      return Option.some(
+        failure(
+          "incompatible",
+          "The Flow service needs to be updated.",
+          "It does not report a desktop-attach protocol generation.",
+        ),
+      );
+    }
+    if (
+      generation < DESKTOP_PROTOCOL_SUPPORTED.min ||
+      generation > DESKTOP_PROTOCOL_SUPPORTED.max
+    ) {
+      return Option.some(
+        failure(
+          "incompatible",
+          "The Flow service needs to be updated.",
+          `It speaks desktop-attach generation ${String(generation)}; this app supports ${String(DESKTOP_PROTOCOL_SUPPORTED.min)} through ${String(DESKTOP_PROTOCOL_SUPPORTED.max)}.`,
+        ),
+      );
+    }
+    return Option.none<DesktopBackendManager.PreflightFailure>();
+  });
 
   // A service that is still booting is polled rather than rejected; anything
   // else is decided on the first look. None means it never settled — the
@@ -322,6 +332,8 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
       _tag: "attached",
       httpBaseUrl: origin.value,
       dataHome: result.dataHome,
+      // A supervisor that predates the setting always listens on loopback.
+      networkAccess: result.networkAccess === true,
     } satisfies AttachSuccess;
   });
 
@@ -336,6 +348,12 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
         yield* Ref.set(attached, Option.some(outcome));
         yield* Ref.set(parkedFailure, Option.none());
         yield* Ref.set(ready, true);
+        yield* (
+          spec.onServiceAttached?.({
+            httpBaseUrl: outcome.httpBaseUrl,
+            networkAccess: outcome.networkAccess,
+          }) ?? Effect.void
+        );
         yield* spec.onReady?.(outcome.httpBaseUrl) ?? Effect.void;
         return;
       }
@@ -355,11 +373,10 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
   // No-op on the service itself, on purpose. `DesktopApp`'s quit finalizer
   // and `DesktopUpdates`' pre-install stop both skip detached instances;
   // this keeps any future caller honest too.
-  const stop = () =>
-    Effect.gen(function* () {
-      yield* Ref.set(desiredRunning, false);
-      yield* Ref.set(ready, false);
-    });
+  const stop = Effect.fn("desktop.attachedBackend.stop")(function* () {
+    yield* Ref.set(desiredRunning, false);
+    yield* Ref.set(ready, false);
+  });
 
   const buildConfig = (
     httpBaseUrl: URL,
@@ -413,7 +430,7 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
     const current = yield* Ref.get(attached);
     if (Option.isNone(current)) return Option.none<string>();
     return yield* mintCredential({ dataHome: current.value.dataHome }).pipe(
-      Effect.map(Option.some),
+      Effect.asSome,
       Effect.catch((error) =>
         logWarning("could not mint a pairing credential for the attached service", {
           detail: error.detail,
@@ -440,22 +457,24 @@ export const makeAttachedBackendInstance = Effect.fn("desktop.attachedBackend.ma
     } satisfies DesktopBackendManager.DesktopBackendSnapshot;
   });
 
-  const waitForReady = (timeout: Duration.Duration) =>
-    Effect.gen(function* () {
-      // Give up early once something flipped desiredRunning off: there is
-      // nothing left to become ready.
-      if (!(yield* Ref.get(desiredRunning))) return { done: true, ready: false };
-      const isReady = yield* Ref.get(ready);
-      return isReady ? { done: true, ready: true } : { done: false, ready: false };
-    }).pipe(
-      Effect.repeat({
-        until: (status) => status.done,
-        schedule: Schedule.spaced(STARTING_POLL_INTERVAL),
-      }),
-      Effect.map((status) => status.ready),
-      Effect.timeoutOption(timeout),
-      Effect.map(Option.getOrElse(() => false)),
-    );
+  const waitForReady = Effect.fn("DesktopAttachedBackend.waitForReady")(
+    (timeout: Duration.Duration) =>
+      Effect.gen(function* () {
+        // Give up early once something flipped desiredRunning off: there is
+        // nothing left to become ready.
+        if (!(yield* Ref.get(desiredRunning))) return { done: true, ready: false };
+        const isReady = yield* Ref.get(ready);
+        return isReady ? { done: true, ready: true } : { done: false, ready: false };
+      }).pipe(
+        Effect.repeat({
+          until: (status) => status.done,
+          schedule: Schedule.spaced(STARTING_POLL_INTERVAL),
+        }),
+        Effect.map((status) => status.ready),
+        Effect.timeoutOption(timeout),
+        Effect.map(Option.getOrElse(() => false)),
+      ),
+  );
 
   return {
     id: spec.id,

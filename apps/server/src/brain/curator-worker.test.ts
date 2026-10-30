@@ -199,4 +199,59 @@ it("captures immediately, curates all documents over private MCP, and advances o
     await worker.close();
     await NodeFSP.rm(directory, { recursive: true, force: true });
   }
-}, 30_000);
+});
+
+it("keeps capturing with the notes agent off, also across a restart, and catches up once a read turns it on", async () => {
+  const directory = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "flow-notes-agent-"));
+  const environment = {
+    GRAPH_NAME: "notes_agent_test",
+    FALKOR_SOCKET: NodePath.join(directory, "unused.socket"),
+    FLOW_EMBED_URL: "http://127.0.0.1:1",
+    FLOW_EMBED_TOKEN: "test-embedding-token",
+    FLOW_ADMIN_TOKEN: "test-private-token",
+    DB_PATH: NodePath.join(directory, "flow.db"),
+    JOURNAL_PATH: NodePath.join(directory, "journal.jsonl"),
+    OPENCODE_WORKSPACE_DIR: directory,
+    FLOW_DISTILLER: "1",
+    FLOW_SESSION_SEARCH: "0",
+  };
+  const requests: BrainCuratorRun[] = [];
+  const run = async (request: BrainCuratorRun) => {
+    requests.push(request);
+    return { nativeThreadId: "fake-ephemeral", assistantCharacters: 5 };
+  };
+  const off = { docs: true, skills: true, notesAgent: false };
+  let worker = await startSessionWorker(environment, false, process.env.T3_TEST_BRAIN_ENTRY, run);
+  try {
+    await worker.capture({
+      context: { session: "chat", repo: "flow" },
+      receipt: "first",
+      kind: "user_prompt",
+      data: { text: "A chat whose notes agent is off." },
+      closed: true,
+      outputs: off,
+    });
+    await worker.drain();
+    expect((await worker.memories("chat", undefined, off)).notes ?? null).toBeNull();
+    await worker.close();
+    worker = await startSessionWorker(environment, false, process.env.T3_TEST_BRAIN_ENTRY, run);
+    await worker.capture({
+      context: { session: "chat", repo: "flow" },
+      receipt: "second",
+      kind: "user_prompt",
+      data: { text: "Still captured after the restart." },
+      closed: true,
+    });
+    await worker.drain();
+    expect(requests).toHaveLength(0);
+    await worker.memories("chat", undefined, { ...off, notesAgent: true });
+    await worker.drain();
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.input).toContain("A chat whose notes agent is off.");
+    expect(requests[0]?.input).toContain("Still captured after the restart.");
+    expect((await worker.memories("chat")).notes?.text).toContain("notes agent is off");
+  } finally {
+    await worker.close();
+    await NodeFSP.rm(directory, { recursive: true, force: true });
+  }
+});

@@ -1,49 +1,36 @@
-// resolve.mjs — which Flow Brain owns the folder a coding agent runs in?
-//
-// Machine-level hooks and MCP servers run in every folder, so the binding is
-// resolved here at run time instead of being baked into per-repo files:
-//
-//   1. An explicit binding for this checkout or folder (recorded by the app,
-//      `flow setup`, or an earlier inference) wins.
-//   2. A git checkout resolves through its origin: the running Flow instance
-//      reports which Brain has that repository as a source or project.
-//   3. A plain folder resolves through its immediate child checkouts when
-//      they all belong to one Brain (the "workspace of repos" layout).
-//   4. Anything else is unbound. Two or more candidate Brains is ambiguous and
-//      also unbound; guessing would leak one team's sessions into another's
-//      Brain. The app can bind the folder explicitly to settle it.
-//
-// Unbound is a normal answer, never an error: hooks stay silent and the MCP
-// server advertises no tools.
+// Which Flow Brain owns the folder a coding agent runs in, resolved at run time:
+// an explicit binding wins, then a checkout's origin, then child checkouts that
+// all share one Brain. Anything else, including two candidate Brains, is
+// unbound, a normal answer: hooks stay silent and the MCP server has no tools.
 import { agentHome } from './agent-home.mjs';
 import { readJson, request } from './capture-replay.mjs';
-import { execFileSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
-import { readdirSync, realpathSync, existsSync } from 'node:fs';
-import * as fs from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import * as NodeChildProcess from 'node:child_process';
+import * as NodeCrypto from 'node:crypto';
+import * as NodeFS from 'node:fs';
+import * as NodeFSP from 'node:fs/promises';
+import * as NodePath from 'node:path';
 
 const home = agentHome;
-const hash = value => createHash('sha256').update(value).digest('hex');
+const hash = value => NodeCrypto.createHash('sha256').update(value).digest('hex');
 const MAX_CHILDREN = 200;
 const NEGATIVE_CACHE_MS = 60_000;
 
 export async function atomic(file, value) {
-  await fs.mkdir(dirname(file), { recursive: true, mode: 0o700 });
-  const temporary = `${file}.${randomUUID()}.tmp`;
-  await fs.writeFile(temporary, JSON.stringify(value), { mode: 0o600 });
-  await fs.rename(temporary, file);
+  await NodeFSP.mkdir(NodePath.dirname(file), { recursive: true, mode: 0o700 });
+  const temporary = `${file}.${NodeCrypto.randomUUID()}.tmp`;
+  await NodeFSP.writeFile(temporary, JSON.stringify(value), { mode: 0o600 });
+  await NodeFSP.rename(temporary, file);
 }
 
 export function gitIdentity(folder) {
-  const git = args => execFileSync('git', ['-C', folder, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const git = args => NodeChildProcess.execFileSync('git', ['-C', folder, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   try {
-    return { common: resolve(folder, git(['rev-parse', '--git-common-dir'])), root: git(['rev-parse', '--show-toplevel']) };
+    return { common: NodePath.resolve(folder, git(['rev-parse', '--git-common-dir'])), root: git(['rev-parse', '--show-toplevel']) };
   } catch (error) {
     // Plain folders can use a Brain too; do not create a Git repository merely to bind tools.
     // Other Git failures (permissions, unsafe ownership, missing Git) must remain visible.
     if (!String(error.stderr).includes('not a git repository')) throw error;
-    const root = realpathSync(folder);
+    const root = NodeFS.realpathSync(folder);
     return { common: `folder:${root}`, root };
   }
 }
@@ -66,7 +53,7 @@ export function normalizeRemote(value) {
 
 export function gitOrigin(root) {
   try {
-    const url = execFileSync('git', ['-C', root, 'remote', 'get-url', 'origin'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const url = NodeChildProcess.execFileSync('git', ['-C', root, 'remote', 'get-url', 'origin'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     const canonical = normalizeRemote(url);
     const github = canonical.startsWith('github.com/') ? canonical.slice('github.com/'.length) : undefined;
     return { canonical, github };
@@ -75,7 +62,7 @@ export function gitOrigin(root) {
 
 /** The label sessions carry for a checkout: its GitHub name when known, else the folder name. */
 export function repoLabel(root, origin = gitOrigin(root)) {
-  return origin.github ?? basename(root);
+  return origin.github ?? NodePath.basename(root);
 }
 
 export function projectKey(stateDir, workspace) {
@@ -102,7 +89,7 @@ function stateDirs(config) {
 }
 
 const samePath = (a, b) => {
-  try { return realpathSync(a) === realpathSync(b); } catch { return a === b; }
+  try { return NodeFS.realpathSync(a) === NodeFS.realpathSync(b); } catch { return a === b; }
 };
 
 /** Every Brain a checkout could belong to, across the Flow instances this machine knows. */
@@ -115,7 +102,7 @@ export async function brainsFor(config, { root, origin }) {
   };
   let reachable = false;
   for (const stateDir of stateDirs(config)) {
-    const choices = await readJson(join(stateDir, 'brain', 'project-brains.json'), {}).catch(() => ({}));
+    const choices = await readJson(NodePath.join(stateDir, 'brain', 'project-brains.json'), {}).catch(() => ({}));
     const chosen = origin.canonical ? choices[`repository:${origin.canonical}`] : undefined;
     const state = await request({ stateDir, instance: 'agents-resolver' }, 'state', { metadataOnly: true }, 5000).catch(() => null);
     if (!state) continue;
@@ -134,7 +121,7 @@ export async function brainsFor(config, { root, origin }) {
 }
 
 async function negativeCache(root) {
-  const file = join(home(), 'resolve-cache.json');
+  const file = NodePath.join(home(), 'resolve-cache.json');
   const cache = await readJson(file, {}).catch(() => ({}));
   const at = cache[root];
   return { file, cache, fresh: typeof at === 'number' && Date.now() - at < NEGATIVE_CACHE_MS };
@@ -149,16 +136,16 @@ async function rememberNegative(root) {
 }
 
 export async function persistBinding(brain, folder) {
-  const file = join(home(), 'config.json');
+  const file = NodePath.join(home(), 'config.json');
   const config = await readJson(file, {});
   const project = projectKey(brain.stateDir, brain.workspace);
   const previous = config.projects?.[project];
   const entry = {
     ...previous,
-    connector: previous?.connector ?? join(home(), 'bin', 'agent-connector.mjs'),
+    connector: previous?.connector ?? NodePath.join(home(), 'bin', 'agent-connector.mjs'),
     stateDir: brain.stateDir,
     workspace: brain.workspace,
-    instance: previous?.instance ?? `agents-${randomUUID()}`,
+    instance: previous?.instance ?? `agents-${NodeCrypto.randomUUID()}`,
     name: brain.name ?? previous?.name ?? null,
     folders: [...(previous?.folders ?? []).filter(item => item.common !== folder.common), folder],
   };
@@ -166,13 +153,13 @@ export async function persistBinding(brain, folder) {
   for (const [key, other] of Object.entries(config.projects ?? {})) {
     if (key !== project && Array.isArray(other?.folders)) other.folders = other.folders.filter(item => item.common !== folder.common);
   }
-  config.projects = { ...(config.projects ?? {}), [project]: entry };
+  config.projects = { ...config.projects, [project]: entry };
   await atomic(file, config);
   return { project, entry, folder };
 }
 
 export async function forgetBinding(common) {
-  const file = join(home(), 'config.json');
+  const file = NodePath.join(home(), 'config.json');
   const config = await readJson(file, {});
   let changed = false;
   for (const entry of Object.values(config.projects ?? {})) {
@@ -207,13 +194,13 @@ async function inferCheckout(config, identity, persist) {
 
 export function childCheckouts(root) {
   let entries;
-  try { entries = readdirSync(root, { withFileTypes: true }); } catch { return []; }
+  try { entries = NodeFS.readdirSync(root, { withFileTypes: true }); } catch { return []; }
   const children = [];
   for (const entry of entries) {
     if (children.length >= MAX_CHILDREN) break;
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
-    const path = join(root, entry.name);
-    if (existsSync(join(path, '.git'))) children.push(path);
+    const path = NodePath.join(root, entry.name);
+    if (NodeFS.existsSync(NodePath.join(path, '.git'))) children.push(path);
   }
   return children;
 }
@@ -233,7 +220,7 @@ async function inferFolder(config, identity, persist) {
   }
   if (brains.size === 1) {
     const brain = brains.values().next().value;
-    const folder = { common: identity.common, repo: basename(identity.root), inferred: true, repos };
+    const folder = { common: identity.common, repo: NodePath.basename(identity.root), inferred: true, repos };
     if (!persist) return { status: 'bound', project: projectKey(brain.stateDir, brain.workspace), entry: { ...brain }, folder, cwd: identity.root, name: brain.name, source: 'children' };
     const saved = await persistBinding(brain, folder);
     return bound(saved.project, saved.entry, saved.folder, identity.root, { source: 'children' });
@@ -248,7 +235,7 @@ async function inferFolder(config, identity, persist) {
  * only Git or filesystem failures that must stay visible propagate.
  */
 export async function resolveBinding(cwd, { persist = true, config } = {}) {
-  config ??= await readJson(join(home(), 'config.json'), {});
+  config ??= await readJson(NodePath.join(home(), 'config.json'), {});
   const identity = gitIdentity(cwd);
   const explicit = findExplicit(config, identity.common, identity.root);
   if (explicit) return explicit;
@@ -265,6 +252,6 @@ export function eventFolder(event, fallback = process.cwd()) {
     process.env.CLAUDE_PROJECT_DIR,
     process.env.CURSOR_PROJECT_DIR,
   ];
-  for (const candidate of candidates) if (typeof candidate === 'string' && candidate && existsSync(candidate)) return candidate;
+  for (const candidate of candidates) if (typeof candidate === 'string' && candidate && NodeFS.existsSync(candidate)) return candidate;
   return fallback;
 }

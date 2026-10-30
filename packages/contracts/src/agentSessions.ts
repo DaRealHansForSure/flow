@@ -2,11 +2,9 @@ import * as Schema from "effect/Schema";
 import { IsoDateTime, NonNegativeInt, ProjectId, TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { ProviderInstanceId } from "./providerInstance.ts";
 
-/** Coding agent home directories the scanner knows how to read. */
 export const AgentSessionSource = Schema.Literals(["claudeAgent", "codex"]);
 export type AgentSessionSource = typeof AgentSessionSource.Type;
 
-/** File identity saved with an imported session so bounded retries can skip unchanged history. */
 export const AgentSessionImportSource = Schema.Struct({
   provider: AgentSessionSource,
   providerInstanceId: ProviderInstanceId,
@@ -15,15 +13,12 @@ export const AgentSessionImportSource = Schema.Struct({
   size: NonNegativeInt,
   mtimeMs: Schema.NullOr(Schema.Number),
   device: Schema.Number,
-  inode: Schema.NullOr(Schema.Number),
+  // A decimal string keeps file IDs above 2^53 (common on NTFS) exact. Older
+  // records stored a number.
+  inode: Schema.NullOr(Schema.Union([Schema.String, Schema.Number])),
   birthtimeMs: Schema.NullOr(Schema.Number),
 });
 export type AgentSessionImportSource = typeof AgentSessionImportSource.Type;
-
-/** Imported message ids retain their origin after event metadata is projected into SQLite. */
-export function isImportedAgentSessionMessageId(messageId: string): boolean {
-  return messageId.startsWith("import:");
-}
 
 /** Optional user-selected folders to discover projects without existing agent history. */
 export const AgentSessionScanInput = Schema.Struct({
@@ -31,17 +26,6 @@ export const AgentSessionScanInput = Schema.Struct({
 });
 export type AgentSessionScanInput = typeof AgentSessionScanInput.Type;
 
-/**
- * A directory that at least one agent CLI has run in, suitable for import as a
- * T3 Code project. `alreadyImported` marks candidates that already have an
- * active project rooted at the same path.
- */
-/**
- * Git identity of a candidate directory, read from `.git/config` without
- * spawning git. `remoteKey` is the normalized origin URL, shared by every
- * clone of the same repository so the client can group them. `repository`
- * is the GitHub `owner/name` when the origin is on GitHub.
- */
 export const AgentSessionProjectGit = Schema.Struct({
   remoteKey: Schema.NullOr(Schema.String),
   repository: Schema.NullOr(Schema.String),
@@ -56,8 +40,7 @@ export const AgentSessionProjectCandidate = Schema.Struct({
   threadCount: NonNegativeInt,
   lastActiveAt: Schema.NullOr(IsoDateTime),
   alreadyImported: Schema.Boolean,
-  /** `null` when the directory is not the root of a git repository. */
-  git: Schema.NullOr(AgentSessionProjectGit),
+  git: Schema.optionalKey(Schema.NullOr(AgentSessionProjectGit)),
 });
 export type AgentSessionProjectCandidate = typeof AgentSessionProjectCandidate.Type;
 
@@ -74,7 +57,7 @@ export const AgentSessionImportInput = Schema.Struct({
 });
 export type AgentSessionImportInput = typeof AgentSessionImportInput.Type;
 
-export class AgentSessionImportProjectNotFoundError extends Schema.TaggedErrorClass<AgentSessionImportProjectNotFoundError>()(
+export class AgentSessionImportProjectNotFoundError extends Schema.TaggedError<AgentSessionImportProjectNotFoundError>()(
   "AgentSessionImportProjectNotFoundError",
   { projectId: ProjectId },
 ) {
@@ -83,7 +66,7 @@ export class AgentSessionImportProjectNotFoundError extends Schema.TaggedErrorCl
   }
 }
 
-export class AgentSessionImportProjectChangedError extends Schema.TaggedErrorClass<AgentSessionImportProjectChangedError>()(
+export class AgentSessionImportProjectChangedError extends Schema.TaggedError<AgentSessionImportProjectChangedError>()(
   "AgentSessionImportProjectChangedError",
   { projectId: ProjectId },
 ) {
@@ -98,7 +81,7 @@ export const AgentSessionImportResult = Schema.Struct({
 });
 export type AgentSessionImportResult = typeof AgentSessionImportResult.Type;
 
-export class AgentSessionScanError extends Schema.TaggedErrorClass<AgentSessionScanError>()(
+export class AgentSessionScanError extends Schema.TaggedError<AgentSessionScanError>()(
   "AgentSessionScanError",
   {
     operation: Schema.Literals(["read-settings", "read-projects"]),

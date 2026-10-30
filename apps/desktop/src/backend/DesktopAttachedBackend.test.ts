@@ -1,6 +1,6 @@
 // @effect-diagnostics nodeBuiltinImport:off - the compatibility probe is a real HTTP read, so the fixture serves a real descriptor.
-import { createServer, type Server } from "node:http";
-import { once } from "node:events";
+import * as NodeHttp from "node:http";
+import * as NodeEvents from "node:events";
 
 import { afterEach, assert, describe, it } from "@effect/vitest";
 import * as Duration from "effect/Duration";
@@ -12,7 +12,7 @@ import * as DesktopAttachedBackend from "./DesktopAttachedBackend.ts";
 import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import type { ServiceDiscoveryResult } from "./serviceDiscovery.ts";
 
-const servers: Server[] = [];
+const servers: NodeHttp.Server[] = [];
 
 afterEach(async () => {
   while (servers.length > 0) {
@@ -24,7 +24,7 @@ afterEach(async () => {
 /** A server answering `/.well-known/t3/environment` with `body`. Returns its
     origin, which stands in for what a live service's `/status` reports. */
 async function descriptorServer(body: unknown): Promise<string> {
-  const server = createServer((request, response) => {
+  const server = NodeHttp.createServer((request, response) => {
     if (request.url !== "/.well-known/t3/environment") {
       response.writeHead(404).end();
       return;
@@ -34,7 +34,7 @@ async function descriptorServer(body: unknown): Promise<string> {
   });
   servers.push(server);
   server.listen(0, "127.0.0.1");
-  await once(server, "listening");
+  await NodeEvents.EventEmitter.once(server, "listening");
   const address = server.address();
   const port = typeof address === "object" && address !== null ? address.port : 0;
   return `http://127.0.0.1:${String(port)}`;
@@ -117,7 +117,8 @@ describe("desktop attached backend", () => {
 
       // The bridge reads the config over a synchronous IPC channel, so it
       // must be runnable with runSync: no minting inside it.
-      const first = Effect.runSync(instance.currentConfig);
+      // @effect-diagnostics-next-line runEffectInsideEffect:off - The synchronous run is what this asserts.
+      const first = Effect.runSync(instance.currentConfig); // oxlint-disable-line t3code/no-manual-effect-runtime-in-tests -- The bridge reads currentConfig with runSync; this asserts that works.
       assert.isTrue(Option.isSome(first));
       const config = Option.getOrThrow(first);
       assert.equal(config.httpBaseUrl.origin, origin);
@@ -170,29 +171,27 @@ describe("desktop attached backend", () => {
     }),
   );
 
-  for (const [name, descriptor] of [
-    ["absent", readyDescriptor({ desktopProtocol: undefined })],
-    ["out of range", readyDescriptor({ desktopProtocol: 99 })],
-    ["malformed", readyDescriptor({ desktopProtocol: "one" })],
-  ] as const) {
-    it.effect(`refuses a service whose protocol generation is ${name}`, () =>
-      Effect.gen(function* () {
-        const origin = yield* Effect.promise(() => descriptorServer(descriptor));
-        const { instance, readyUrls } = yield* makeInstance({ discoveries: [ready(origin)] });
+  it.effect.each([
+    { name: "absent", descriptor: readyDescriptor({ desktopProtocol: undefined }) },
+    { name: "out of range", descriptor: readyDescriptor({ desktopProtocol: 99 }) },
+    { name: "malformed", descriptor: readyDescriptor({ desktopProtocol: "one" }) },
+  ] as const)("refuses a service whose protocol generation is $name", ({ descriptor }) =>
+    Effect.gen(function* () {
+      const origin = yield* Effect.promise(() => descriptorServer(descriptor));
+      const { instance, readyUrls } = yield* makeInstance({ discoveries: [ready(origin)] });
 
-        yield* instance.start;
+      yield* instance.start;
 
-        assert.isFalse((yield* instance.snapshot).ready);
-        assert.deepEqual(readyUrls, []);
-        const config = Option.getOrThrow(yield* instance.currentConfig);
-        const failure = Option.getOrThrow(config.preflightFailure);
-        assert.equal(failure.attach?.kind, "incompatible");
-        assert.isTrue(failure.fatal);
-        // No credential is minted for a service we refuse to talk to.
-        assert.equal(config.bootstrap.desktopBootstrapToken, "");
-      }),
-    );
-  }
+      assert.isFalse((yield* instance.snapshot).ready);
+      assert.deepEqual(readyUrls, []);
+      const config = Option.getOrThrow(yield* instance.currentConfig);
+      const failure = Option.getOrThrow(config.preflightFailure);
+      assert.equal(failure.attach?.kind, "incompatible");
+      assert.isTrue(failure.fatal);
+      // No credential is minted for a service we refuse to talk to.
+      assert.equal(config.bootstrap.desktopBootstrapToken, "");
+    }),
+  );
 
   it.effect("reports an unreachable service rather than attaching to it", () =>
     Effect.gen(function* () {

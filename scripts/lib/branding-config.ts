@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off - Build-time branding script.
 import type defaults from "../../branding.json";
 type Branding = typeof defaults;
 

@@ -1,10 +1,11 @@
 import { BrainWorkspaceView, type BrainWorkspaceViewProps } from "@flow/brain-ui";
 import { BrainCircuit } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { BrainSnapshot } from "../../brain/repository";
 import { isElectron } from "../../env";
 import { SidebarInset } from "../ui/sidebar";
 import { WorkspacePageHeader } from "../WorkspacePageHeader";
+import { BrainGraphDialog, BrainGraphExpandButton } from "./BrainGraphDialog";
 
 export function BrainPage({
   snapshot,
@@ -41,8 +42,11 @@ export function BrainPage({
   /** Absent where this computer cannot host a Brain, so none is offered. */
   onCreate?: () => void;
 }) {
+  const [graphExpanded, setGraphExpanded] = useState(false);
+  const knowledge = { entities: snapshot.entities, edges: snapshot.edges };
+  const hasKnowledge = knowledge.entities.length > 0;
   return (
-    <SidebarInset className="h-dvh min-h-0 overflow-hidden bg-background text-foreground">
+    <SidebarInset className="h-dvh min-h-0 overflow-hidden">
       <WorkspacePageHeader electron={isElectron} className="border-b border-border/50">
         <BrainCircuit size={16} className="text-muted-foreground" />
         <span className="text-sm">Brain</span>
@@ -70,8 +74,19 @@ export function BrainPage({
           docs={docs}
           skills={skills}
           {...(onCreate ? { onCreate } : {})}
+          graphCorner={
+            hasKnowledge ? (
+              <BrainGraphExpandButton onClick={() => setGraphExpanded(true)} />
+            ) : undefined
+          }
         />
       </main>
+      <BrainGraphDialog
+        open={graphExpanded}
+        onOpenChange={setGraphExpanded}
+        title={snapshot.name}
+        knowledge={knowledge}
+      />
     </SidebarInset>
   );
 }

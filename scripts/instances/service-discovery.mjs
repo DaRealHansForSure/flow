@@ -1,9 +1,9 @@
-import { readFile, realpath } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import * as NodeFSP from "node:fs/promises";
+import * as NodePath from "node:path";
 
 async function readJson(path) {
   try {
-    return JSON.parse(await readFile(path, "utf8"));
+    return JSON.parse(await NodeFSP.readFile(path, "utf8"));
   } catch (error) {
     if (error.code === "ENOENT") return null;
     throw error;
@@ -14,11 +14,13 @@ async function readJson(path) {
 // in `config.json` (an installer may point it at data that already exists, see
 // the launcher's `--home`); `<instance>/data` is the layout when it does not.
 export async function primaryStateDir(registryRoot) {
-  const directory = join(resolve(registryRoot), "instances/primary");
-  const config = await readJson(join(directory, "config.json")).catch(() => null);
+  const directory = NodePath.join(NodePath.resolve(registryRoot), "instances/primary");
+  const config = await readJson(NodePath.join(directory, "config.json")).catch(() => null);
   const home =
-    typeof config?.home === "string" && config.home ? config.home : join(directory, "data");
-  return join(home, "userdata");
+    typeof config?.home === "string" && config.home
+      ? config.home
+      : NodePath.join(directory, "data");
+  return NodePath.join(home, "userdata");
 }
 
 // Discovery never starts, stops, migrates or repairs an installation. In
@@ -29,13 +31,13 @@ export async function discoverService({
   channel = "cloud-cli",
   installationHome,
 }) {
-  const root = resolve(registryRoot);
-  const directory = join(root, "instances", name);
+  const root = NodePath.resolve(registryRoot);
+  const directory = NodePath.join(root, "instances", name);
   const base = { version: 1, installationHome: installationHome ?? root, channel };
   let config, runtime;
   try {
-    config = await readJson(join(directory, "config.json"));
-    runtime = await readJson(join(directory, "runtime.json"));
+    config = await readJson(NodePath.join(directory, "config.json"));
+    runtime = await readJson(NodePath.join(directory, "runtime.json"));
   } catch {
     return { ...base, status: "invalid", reason: "Unreadable service metadata." };
   }
@@ -57,7 +59,7 @@ export async function discoverService({
   // outside its instance directory. Only its absence disqualifies it, because
   // discovery must never invent a home it did not find.
   try {
-    await realpath(config.home);
+    await NodeFSP.realpath(config.home);
   } catch {
     return { ...base, status: "invalid", reason: "Service data directory is unavailable." };
   }
@@ -114,7 +116,13 @@ export async function discoverService({
       };
     // Do not forward arbitrary server fields: runtime tokens and control URLs
     // belong to the lifecycle owner, never to a renderer or CLI JSON response.
-    return { ...identity, status: live.phase };
+    // `networkAccess` is what the running server listens on, absent from
+    // supervisors that predate the setting.
+    return {
+      ...identity,
+      status: live.phase,
+      ...(typeof live.networkAccess === "boolean" ? { networkAccess: live.networkAccess } : {}),
+    };
   } catch {
     return { ...identity, status: "unreachable", reason: "Service could not be reached." };
   }
@@ -123,6 +131,6 @@ export async function discoverService({
 // The cloud CLI's installation layout: one `primary` service under `instance-home`.
 export const discoverCloudService = (home) =>
   discoverService({
-    registryRoot: join(resolve(home), "instance-home"),
-    installationHome: resolve(home),
+    registryRoot: NodePath.join(NodePath.resolve(home), "instance-home"),
+    installationHome: NodePath.resolve(home),
   });

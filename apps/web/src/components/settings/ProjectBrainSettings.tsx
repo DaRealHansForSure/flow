@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BrainCommand, BrainState, EnvironmentId } from "@t3tools/contracts";
 import type { SidebarProjectGroupMember } from "../../sidebarProjectGrouping";
 import { brainCommand } from "../../state/brain";
@@ -6,6 +6,7 @@ import { useAtomCommand } from "../../state/use-atom-command";
 import { BrainSelect, CreateBrainDialog } from "../brain/BrainControls";
 import { BrainIcon } from "../brain/BrainIcon";
 import { Button } from "../ui/button";
+import { BrainCurationSettingRows } from "./BrainCurationSettings";
 import { SettingsRow, SettingsSection } from "./settingsLayout";
 
 export function ProjectBrainSettings({
@@ -14,17 +15,14 @@ export function ProjectBrainSettings({
   members: readonly SidebarProjectGroupMember[];
 }) {
   const execute = useAtomCommand(brainCommand, { reportFailure: false });
-  const targets = useMemo(
-    () => [...new Map(members.map((member) => [member.environmentId, member])).values()],
-    [members],
-  );
+  const targets = [...new Map(members.map((member) => [member.environmentId, member])).values()];
   const [states, setStates] = useState<Map<EnvironmentId, BrainState>>(new Map());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const pending = useRef(false);
   const generation = useRef(0);
-  const refresh = useCallback(async () => {
+  const refresh = async () => {
     const request = ++generation.current;
     const results = await Promise.all(
       targets.map(async (target) => {
@@ -44,8 +42,10 @@ export function ProjectBrainSettings({
     setStates(next);
     if (next.size !== targets.length)
       setError("Could not load brains from every machine for this project. Reconnect and retry.");
-  }, [execute, targets]);
+  };
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Reads Brain state from each machine's server; no atom holds per-project Brain reads.
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- The read's result lands asynchronously, after the servers answer.
     void refresh();
     return () => {
       generation.current++;
@@ -171,6 +171,7 @@ export function ProjectBrainSettings({
           </Button>
         </div>
       )}
+      <BrainCurationSettingRows />
       <CreateBrainDialog
         open={createOpen}
         onOpenChange={setCreateOpen}

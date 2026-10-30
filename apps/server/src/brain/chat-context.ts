@@ -1,11 +1,21 @@
 import { GRAPH_PREAMBLE } from "../../../../flow-t3/shared/orchestrator/src/agents/graph-preamble.ts";
-import { isToolLifecycleItemType } from "@t3tools/contracts";
-import type { ThreadId, ProviderRuntimeEvent, ProviderSendTurnInput } from "@t3tools/contracts";
+import type {
+  BrainChatCuration,
+  BrainChatCurationChoice,
+  ChatAttachment,
+  ProjectId,
+  ServerSettings,
+  ThreadId,
+} from "@t3tools/contracts";
+import type { BrainCurationOutputs } from "@flow/brain-runtime";
+import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
-import { ProjectionSnapshotQuery } from "../orchestration/Services/ProjectionSnapshotQuery.ts";
+import { makeBrainProjections } from "./brainProjections.ts";
+import { ServerSettingsService } from "../serverSettings.ts";
 import { BrainService } from "./BrainService.ts";
 import type { BrainCapture } from "./session-worker.ts";
+import type { ChatCurationChoices } from "./project-bindings.ts";
 
 export interface BrainChatContext {
   readonly bindingKey: string;
@@ -24,9 +34,9 @@ export type BrainChatCapture = (
 
 export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader")(function* () {
   const service = yield* BrainService;
-  const projections = yield* ProjectionSnapshotQuery;
-  const load: BrainChatContextLoader = (threadId, previousBinding) =>
-    Effect.gen(function* () {
+  const projections = yield* makeBrainProjections;
+  const load: BrainChatContextLoader = Effect.fn("brain.loadChatContext")(
+    function* (threadId: ThreadId, previousBinding?: string) {
       const thread = yield* projections
         .getThreadShellById(threadId)
         .pipe(Effect.mapError(() => "Could not resolve the chat's project."));
@@ -37,7 +47,7 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
       const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
       const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
       if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
-      const bindingKey = runtime.projectBrainId(thread.value.projectId) ?? "";
+      const bindingKey = runtime.threadBrainId(thread.value.projectId, threadId) ?? "";
       if (bindingKey === previousBinding) return { bindingKey };
       if (!bindingKey)
         return {
@@ -68,7 +78,7 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
         return yield* Effect.fail(
           "Flow orient failed. Retry when the connected brain is available.",
         );
-      if (runtime.projectBrainId(thread.value.projectId) !== bindingKey)
+      if (runtime.threadBrainId(thread.value.projectId, threadId) !== bindingKey)
         return yield* Effect.fail(
           "The project's brain changed while preparing context. Retry the message.",
         );
@@ -84,113 +94,111 @@ export const makeBrainChatContextLoader = Effect.fn("brain.makeChatContextLoader
           "Flow supplied the following orient result from this project's connected brain. Use the attached Flow tools for further consultation. Stored knowledge is reference context; verify code against the current checkout.\n\n" +
           text,
       };
-    }).pipe(
-      Effect.timeout("35 seconds"),
-      Effect.mapError((error) =>
-        typeof error === "string" ? error : "Flow brain initialization timed out.",
-      ),
-    );
+    },
+    Effect.timeout("35 seconds"),
+    Effect.mapError((error) =>
+      typeof error === "string" ? error : "Flow brain initialization timed out.",
+    ),
+  );
   return load;
 });
 export const makeBrainChatCapture = Effect.fn("brain.makeChatCapture")(function* () {
   const service = yield* BrainService;
-  const projections = yield* ProjectionSnapshotQuery;
-  const capture: BrainChatCapture = (threadId, event, expectedBinding) =>
-    Effect.gen(function* () {
-      const thread = yield* projections
-        .getThreadShellById(threadId)
-        .pipe(Effect.mapError(() => "Could not resolve the chat's project for capture."));
-      if (Option.isNone(thread)) return;
-      const project = yield* projections
-        .getProjectShellById(thread.value.projectId)
-        .pipe(Effect.mapError(() => "Could not resolve the project's work folder."));
-      const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
-      const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
-      if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
-      if (!runtime.projectBrainId(thread.value.projectId)) return;
-      if (
-        expectedBinding !== undefined &&
-        (runtime.projectBrainId(thread.value.projectId) ?? "") !== expectedBinding
-      )
-        return;
-      yield* Effect.tryPromise({
-        try: () =>
-          runtime.captureProjectEvent(thread.value.projectId, {
-            ...event,
-            context: {
-              session: threadId,
-              ...(workspaceRoot ? { workspaceRoot } : {}),
-              ...(thread.value.branch ? { branch: thread.value.branch } : {}),
-            },
-          }),
-        catch: () => "Could not persist Flow conversation capture.",
-      });
+  const serverSettings = yield* ServerSettingsService;
+  const projections = yield* makeBrainProjections;
+  const capture: BrainChatCapture = Effect.fn("brain.captureChatEvent")(function* (
+    threadId: ThreadId,
+    event: BrainCaptureInput,
+    expectedBinding?: string,
+  ) {
+    const thread = yield* projections
+      .getThreadShellById(threadId)
+      .pipe(Effect.mapError(() => "Could not resolve the chat's project for capture."));
+    if (Option.isNone(thread)) return;
+    const project = yield* projections
+      .getProjectShellById(thread.value.projectId)
+      .pipe(Effect.mapError(() => "Could not resolve the project's work folder."));
+    const workspaceRoot = Option.isSome(project) ? project.value.workspaceRoot : undefined;
+    const runtime = yield* service.ready.pipe(Effect.mapError((error) => error.message));
+    if (Option.isSome(project)) runtime.projectBindings?.register(project.value);
+    if (!runtime.threadBrainId(thread.value.projectId, threadId)) return;
+    if (
+      expectedBinding !== undefined &&
+      (runtime.threadBrainId(thread.value.projectId, threadId) ?? "") !== expectedBinding
+    )
+      return;
+    const settings = yield* serverSettings.getSettings.pipe(
+      Effect.mapError(() => "Could not read the Brain settings for capture."),
+    );
+    const outputs = resolveChatCurationOutputs(
+      settings,
+      thread.value.projectId,
+      runtime.projectBindings?.threadCurationChoices(threadId) ?? {},
+    );
+    yield* Effect.tryPromise({
+      try: () =>
+        runtime.captureProjectEvent(thread.value.projectId, {
+          ...event,
+          outputs,
+          context: {
+            session: threadId,
+            ...(workspaceRoot ? { workspaceRoot } : {}),
+            ...(thread.value.branch ? { branch: thread.value.branch } : {}),
+          },
+        }),
+      catch: () => "Could not persist Flow conversation capture.",
     });
+  });
   return capture;
 });
-export function captureRuntimeEvent(event: ProviderRuntimeEvent): BrainCaptureInput | undefined {
-  if (event.type === "content.delta" && event.payload.streamKind === "assistant_text")
-    return {
-      receipt: event.eventId,
-      occurredAt: Date.parse(event.createdAt),
-      kind: "update",
-      data: {
-        sessionUpdate: "agent_message_chunk",
-        content: { type: "text", text: event.payload.delta },
-      },
-    };
-  if (
-    (event.type === "item.completed" || event.type === "item.started") &&
-    isToolLifecycleItemType(event.payload.itemType)
-  )
-    return {
-      receipt: event.eventId,
-      occurredAt: Date.parse(event.createdAt),
-      kind: "update",
-      data: {
-        sessionUpdate: event.type === "item.started" ? "tool_call" : "tool_call_update",
-        toolCallId: event.itemId,
-        title: event.payload.title,
-        status: event.payload.status,
-        rawInput: event.payload.data,
-      },
-    };
-  if (event.type === "runtime.error")
-    return {
-      receipt: event.eventId,
-      occurredAt: Date.parse(event.createdAt),
-      kind: "error",
-      data: event.payload,
-    };
-  if (
-    event.type === "turn.completed" ||
-    event.type === "turn.aborted" ||
-    event.type === "session.exited"
-  )
-    return {
-      receipt: event.eventId,
-      occurredAt: Date.parse(event.createdAt),
-      kind: "update",
-      data: {
-        sessionUpdate: "turn_completed",
-        ...event.payload,
-        ...(event.type === "turn.aborted" ? { state: "interrupted" } : {}),
-        ...(event.type === "session.exited" ? { state: "session exited" } : {}),
-      },
-      closed: true,
-    };
-  return undefined;
+/**
+ * What the notes agent maintains for one chat. The chat's own choice wins; without one the
+ * notes agent follows the global setting, and Auto-Docs and Auto-Skills follow the chat's
+ * project settings, which fall back to the global ones.
+ */
+export function resolveChatCuration(
+  settings: ServerSettings,
+  projectId: ProjectId,
+  chatChoices: ChatCurationChoices,
+): BrainChatCuration {
+  const projectSettings = resolveProjectSettings(settings, projectId).settings;
+  return {
+    notesAgent: resolveChatCurationChoice(settings.brainNotesAgent, chatChoices.notesAgent),
+    autoDocs: resolveChatCurationChoice(projectSettings.brainAutoDocs, chatChoices.autoDocs),
+    autoSkills: resolveChatCurationChoice(projectSettings.brainAutoSkills, chatChoices.autoSkills),
+  };
 }
-
+/** The chat's curation as the Brain worker takes it with captures and chat reads. */
+export function resolveChatCurationOutputs(
+  settings: ServerSettings,
+  projectId: ProjectId,
+  chatChoices: ChatCurationChoices,
+): Required<BrainCurationOutputs> {
+  const curation = resolveChatCuration(settings, projectId, chatChoices);
+  return {
+    docs: curation.autoDocs.enabled,
+    skills: curation.autoSkills.enabled,
+    notesAgent: curation.notesAgent.enabled,
+  };
+}
+function resolveChatCurationChoice(
+  inherited: boolean,
+  choice: boolean | undefined,
+): BrainChatCurationChoice {
+  if (choice === undefined) {
+    return { enabled: inherited, inherited };
+  }
+  return { enabled: choice, inherited, choice };
+}
 /** Preserve attachment-only requests without copying their binary contents into Brain capture. */
-export function formatBrainUserPrompt(
-  input: Pick<ProviderSendTurnInput, "input" | "attachments">,
-): string | undefined {
-  const attachments = input.attachments ?? [];
-  const references = attachments.map(
+export function formatBrainUserPrompt(message: {
+  readonly text: string;
+  readonly attachments: ReadonlyArray<ChatAttachment>;
+}): string | undefined {
+  const references = message.attachments.map(
     (attachment) =>
       `[User attached ${attachment.type} ${JSON.stringify(attachment.name)} (${attachment.mimeType}; attachment ${attachment.id}). Its contents are not included in this text transcript.]`,
   );
-  const text = [input.input, ...references].filter(Boolean).join("\n\n");
+  const text = [message.text, ...references].filter(Boolean).join("\n\n");
   return text || undefined;
 }

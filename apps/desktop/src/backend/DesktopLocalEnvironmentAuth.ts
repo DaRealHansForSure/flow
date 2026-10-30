@@ -1,18 +1,39 @@
 import { BRAND } from "@t3tools/shared/branding";
 import { bootstrapRemoteBearerSession } from "@t3tools/client-runtime/authorization";
+import type { RemoteEnvironmentRequestError } from "@t3tools/client-runtime/rpc";
 import { PRIMARY_LOCAL_ENVIRONMENT_ID } from "@t3tools/contracts";
+import { currentDesktopBootstrapToken } from "@t3tools/shared/desktopBootstrapToken";
+import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Ref from "effect/Ref";
+import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
-import * as HttpClient from "effect/unstable/http/HttpClient";
+import * as HttpClient from "effect/http/HttpClient";
 
 import * as DesktopBackendPool from "./DesktopBackendPool.ts";
 
-export class DesktopLocalEnvironmentAuthBackendNotConfiguredError extends Schema.TaggedErrorClass<DesktopLocalEnvironmentAuthBackendNotConfiguredError>()(
+const BOOTSTRAP_TRANSIENT_RETRY_TIMEOUT = Duration.seconds(15);
+const BOOTSTRAP_TRANSIENT_RETRY_INTERVAL = Duration.millis(500);
+const TRANSIENT_BOOTSTRAP_STATUS_CODES = new Set([502, 503, 504]);
+
+const isTransientBearerBootstrapError = (error: RemoteEnvironmentRequestError): boolean => {
+  switch (error._tag) {
+    case "RemoteEnvironmentAuthFetchError":
+    case "RemoteEnvironmentAuthTimeoutError":
+      return true;
+    case "RemoteEnvironmentAuthUndeclaredStatusError":
+      return TRANSIENT_BOOTSTRAP_STATUS_CODES.has(error.status);
+    default:
+      return false;
+  }
+};
+
+export class DesktopLocalEnvironmentAuthBackendNotConfiguredError extends Schema.TaggedError<DesktopLocalEnvironmentAuthBackendNotConfiguredError>()(
   "DesktopLocalEnvironmentAuthBackendNotConfiguredError",
   {},
 ) {
@@ -21,7 +42,7 @@ export class DesktopLocalEnvironmentAuthBackendNotConfiguredError extends Schema
   }
 }
 
-export class DesktopLocalEnvironmentAuthSessionBootstrapError extends Schema.TaggedErrorClass<DesktopLocalEnvironmentAuthSessionBootstrapError>()(
+export class DesktopLocalEnvironmentAuthSessionBootstrapError extends Schema.TaggedError<DesktopLocalEnvironmentAuthSessionBootstrapError>()(
   "DesktopLocalEnvironmentAuthSessionBootstrapError",
   { cause: Schema.Defect() },
 ) {
@@ -43,6 +64,7 @@ export class DesktopLocalEnvironmentAuth extends Context.Service<
   }
 >()("@t3tools/desktop/backend/DesktopLocalEnvironmentAuth") {}
 
+/** @public */
 export const make = Effect.gen(function* () {
   const pool = yield* DesktopBackendPool.DesktopBackendPool;
   const httpClient = yield* HttpClient.HttpClient;
@@ -64,12 +86,16 @@ export const make = Effect.gen(function* () {
           return yield* new DesktopLocalEnvironmentAuthBackendNotConfiguredError();
         }
         const config = configOption.value;
-        // The attached Flow service carries no token in its config (that read
-        // is synchronous and minting spawns a process); it mints a single-use
-        // credential on request instead. Exchanged once here, cached as a
-        // bearer like the legacy token.
+        // Secret-authenticated backends accept the current window token; the launch token may be stale.
+        // The attached Flow service carries no token in its config; it mints a single-use
+        // credential on request instead, exchanged once here and cached as a bearer.
+        const secret = config.bootstrap.desktopBootstrapSecret;
+        const configuredCredential =
+          secret === undefined
+            ? config.bootstrap.desktopBootstrapToken
+            : currentDesktopBootstrapToken(secret, yield* Clock.currentTimeMillis);
         const credential =
-          config.bootstrap.desktopBootstrapToken ||
+          configuredCredential ||
           (primary?.mintBootstrapCredential
             ? Option.getOrUndefined(yield* primary.mintBootstrapCredential)
             : undefined);
@@ -85,6 +111,11 @@ export const make = Effect.gen(function* () {
           },
         }).pipe(
           Effect.provideService(HttpClient.HttpClient, httpClient),
+          Effect.retry({
+            while: isTransientBearerBootstrapError,
+            schedule: Schedule.spaced(BOOTSTRAP_TRANSIENT_RETRY_INTERVAL),
+          }),
+          Effect.timeout(BOOTSTRAP_TRANSIENT_RETRY_TIMEOUT),
           Effect.mapError(
             (cause) =>
               new DesktopLocalEnvironmentAuthSessionBootstrapError({

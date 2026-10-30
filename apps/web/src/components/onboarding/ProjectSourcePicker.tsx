@@ -97,85 +97,87 @@ export function ProjectSourcePicker({
               {mode === "folder" ? "Choose a project folder" : "Add a GitHub repository"}
             </DialogTitle>
           </DialogHeader>
-          <DialogPanel className="space-y-3">
-            {mode === "folder" ? (
-              <>
-                <form
-                  className="flex gap-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void openFolder(path);
-                  }}
-                >
+          <DialogPanel>
+            <div className="space-y-3">
+              {mode === "folder" ? (
+                <>
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void openFolder(path);
+                    }}
+                  >
+                    <Input
+                      aria-label="Folder location"
+                      value={path}
+                      disabled={busy}
+                      onChange={(event) => setPath(event.target.value)}
+                    />
+                    <Button variant="outline" type="submit" disabled={busy || !path.trim()}>
+                      Go
+                    </Button>
+                  </form>
+                  <p className="text-xs text-muted-foreground">
+                    Choose a project, or a parent folder containing several projects.
+                  </p>
+                  <div className="max-h-64 overflow-auto rounded-lg border">
+                    {listing ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          disabled={busy}
+                          onClick={() =>
+                            void openFolder(
+                              listing.parentPath.replace(/[/\\][^/\\]+[/\\]?$/, "") || "/",
+                            )
+                          }
+                        >
+                          <ArrowUpIcon className="size-4" />
+                          Parent folder
+                        </Button>
+                        {listing.entries
+                          .filter((entry) => !entry.name.startsWith("."))
+                          .map((entry) => (
+                            <button
+                              type="button"
+                              key={entry.fullPath}
+                              disabled={busy}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+                              onClick={() => void openFolder(entry.fullPath)}
+                            >
+                              <FolderIcon className="size-4" />
+                              <span className="flex-1 text-left">{entry.name}</span>
+                              <ChevronRightIcon className="size-4" />
+                            </button>
+                          ))}
+                      </>
+                    ) : (
+                      <p className="p-3 text-sm text-muted-foreground">
+                        {busy ? "Opening folders…" : "Choose a folder location above."}
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <label className="block space-y-2 text-sm">
+                  GitHub URL
                   <Input
-                    aria-label="Folder location"
-                    value={path}
+                    autoFocus
+                    value={repository}
                     disabled={busy}
-                    onChange={(event) => setPath(event.target.value)}
+                    placeholder="https://github.com/team/project"
+                    onChange={(event) => setRepository(event.target.value)}
                   />
-                  <Button variant="outline" type="submit" disabled={busy || !path.trim()}>
-                    Go
-                  </Button>
-                </form>
-                <p className="text-xs text-muted-foreground">
-                  Choose a project, or a parent folder containing several projects.
+                </label>
+              )}
+              {error ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
                 </p>
-                <div className="max-h-64 overflow-auto rounded-lg border">
-                  {listing ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start"
-                        disabled={busy}
-                        onClick={() =>
-                          void openFolder(
-                            listing.parentPath.replace(/[/\\][^/\\]+[/\\]?$/, "") || "/",
-                          )
-                        }
-                      >
-                        <ArrowUpIcon className="size-4" />
-                        Parent folder
-                      </Button>
-                      {listing.entries
-                        .filter((entry) => !entry.name.startsWith("."))
-                        .map((entry) => (
-                          <button
-                            type="button"
-                            key={entry.fullPath}
-                            disabled={busy}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
-                            onClick={() => void openFolder(entry.fullPath)}
-                          >
-                            <FolderIcon className="size-4" />
-                            <span className="flex-1 text-left">{entry.name}</span>
-                            <ChevronRightIcon className="size-4" />
-                          </button>
-                        ))}
-                    </>
-                  ) : (
-                    <p className="p-3 text-sm text-muted-foreground">
-                      {busy ? "Opening folders…" : "Choose a folder location above."}
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <label className="block space-y-2 text-sm">
-                GitHub URL
-                <Input
-                  autoFocus
-                  value={repository}
-                  disabled={busy}
-                  placeholder="https://github.com/team/project"
-                  onChange={(event) => setRepository(event.target.value)}
-                />
-              </label>
-            )}
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
+              ) : null}
+            </div>
           </DialogPanel>
           <DialogFooter>
             <Button variant="ghost" disabled={busy} onClick={() => setOpen(false)}>

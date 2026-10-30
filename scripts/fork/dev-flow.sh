@@ -1,0 +1,257 @@
+#!/usr/bin/env bash
+# Starts the Dev Flow: the desktop app from this checkout with hot reload, on its
+# own server and its own data in ~/.flow-dev, so the installed Flow (and the chat
+# running in it) is never touched.
+#
+# Usage: scripts/fork/dev-flow.sh [--seed [--force]]
+#   --seed  copy a snapshot of your real chats and your real Brain into
+#           ~/.flow-dev first (each only when the Dev Flow has none yet; the live
+#           data is only read)
+#   --force with --seed, first delete the Dev Flow's chats and Brain, so both
+#           are copied fresh
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Outside the checkout: T3 offers "No project" chats only when the data
+# directory is not inside a git work tree.
+DEV_HOME="${FLOW_DEV_HOME:-${HOME}/.flow-dev}"
+LEGACY_DEV_HOME="${REPO_ROOT}/.t3/dev"
+LIVE_HOME="${HOME}/.t3"
+LIVE_DATABASE="${LIVE_HOME}/userdata/state.sqlite"
+LIVE_BRAIN="${LIVE_HOME}/userdata/brain"
+DEV_DATABASE="${DEV_HOME}/userdata/state.sqlite"
+DEV_BRAIN="${DEV_HOME}/userdata/brain"
+LOG_DIRECTORY="${DEV_HOME}/logs"
+LOG_FILE="${LOG_DIRECTORY}/dev-flow.log"
+
+# dev-electron.mjs marks the dev app it starts with this argument.
+DEV_APP_MARKER="--t3code-dev-root=${REPO_ROOT}/apps/desktop"
+CHECK_INTERVAL_SECONDS=2
+# Long enough to ride out the restart dev-electron.mjs does after a desktop change.
+WINDOW_CLOSED_GRACE_SECONDS=15
+
+# Mirrors everything this run prints into LOG_FILE, so an agent can read the app's
+# logs while the owner develops. The previous run is kept as dev-flow.previous.log.
+start_log() {
+    mkdir -p "${LOG_DIRECTORY}"
+    if [[ -e "${LOG_FILE}" ]]; then
+        mv "${LOG_FILE}" "${LOG_DIRECTORY}/dev-flow.previous.log"
+    fi
+    exec > >(tee -a "${LOG_FILE}") 2>&1
+    echo "dev-flow: $(date '+%Y-%m-%d %H:%M:%S') logging to ${LOG_FILE}"
+}
+
+# The Brain's graph folder is named after the Brain store path, so it moves too.
+brain_graph_dir() {
+    printf '%s/.flow-brain/%s' "${HOME}" "$(printf '%s' "$1/userdata/brain" | sha256sum | cut -c1-12)"
+}
+
+# Moves the data of an earlier Dev Flow from .t3/dev to DEV_HOME, once.
+migrate_legacy_dev_home() {
+    if [[ -e "${DEV_HOME}" || ! -d "${LEGACY_DEV_HOME}" ]]; then
+        return
+    fi
+    if pgrep -f -- "--home-dir ${LEGACY_DEV_HOME}" > /dev/null; then
+        echo "dev-flow: an earlier Dev Flow still uses ${LEGACY_DEV_HOME}; close it, then start again." >&2
+        exit 1
+    fi
+    echo "dev-flow: moving the Dev Flow data from ${LEGACY_DEV_HOME} to ${DEV_HOME}"
+    mv "${LEGACY_DEV_HOME}" "${DEV_HOME}"
+    local legacy_graph new_graph
+    legacy_graph="$(brain_graph_dir "${LEGACY_DEV_HOME}")"
+    new_graph="$(brain_graph_dir "${DEV_HOME}")"
+    if [[ -d "${legacy_graph}" && ! -e "${new_graph}" ]]; then
+        mv "${legacy_graph}" "${new_graph}"
+    fi
+}
+
+seed_dev_database() {
+    if [[ -e "${DEV_DATABASE}" ]]; then
+        echo "dev-flow: ${DEV_DATABASE} already exists, not seeding again."
+        return
+    fi
+    if [[ ! -e "${LIVE_DATABASE}" ]]; then
+        echo "dev-flow: no live database at ${LIVE_DATABASE}, starting empty."
+        return
+    fi
+    mkdir -p "${DEV_HOME}/userdata"
+    # VACUUM INTO gives one consistent file even while the live server has it open.
+    node -e '
+        const { DatabaseSync } = require("node:sqlite");
+        const [source, target] = process.argv.slice(1);
+        new DatabaseSync(source, { readOnly: true }).exec(`VACUUM INTO '"'"'${target}'"'"'`);
+    ' "${LIVE_DATABASE}" "${DEV_DATABASE}"
+    echo "dev-flow: seeded ${DEV_DATABASE} from ${LIVE_DATABASE}."
+}
+
+# Copies the real Brain: its store with consistent database snapshots, and its
+# knowledge graph. Paths to the store in the Brain's own index files are rewritten,
+# so the Dev Flow never writes into the real Brain. Text that merely mentions a path
+# (notes, transcripts) is left as it is.
+seed_dev_brain() {
+    if [[ -e "${DEV_BRAIN}/workspaces.json" ]]; then
+        echo "dev-flow: ${DEV_BRAIN} already has a Brain, not seeding again."
+        return
+    fi
+    if [[ ! -e "${LIVE_BRAIN}/workspaces.json" ]]; then
+        echo "dev-flow: no Brain at ${LIVE_BRAIN}, the Dev Flow starts without one."
+        return
+    fi
+    mkdir -p "${DEV_BRAIN}"
+    rsync -a --exclude 'flow.db' --exclude 'flow.db-wal' --exclude 'flow.db-shm' \
+        --exclude 'cloud-instance' "${LIVE_BRAIN}/" "${DEV_BRAIN}/"
+    local workspace
+    for workspace in "${LIVE_BRAIN}"/workspaces/*/; do
+        local name
+        name="$(basename "${workspace}")"
+        if [[ -e "${workspace}flow.db" ]]; then
+            node -e '
+                const { DatabaseSync } = require("node:sqlite");
+                const [source, target] = process.argv.slice(1);
+                new DatabaseSync(source, { readOnly: true }).exec(`VACUUM INTO '"'"'${target}'"'"'`);
+            ' "${workspace}flow.db" "${DEV_BRAIN}/workspaces/${name}/flow.db"
+        fi
+    done
+    local index_file
+    for index_file in "${DEV_BRAIN}/workspaces.json" "${DEV_BRAIN}"/workspaces/*/repos.json; do
+        if [[ -e "${index_file}" ]]; then
+            sed -i "s#${LIVE_BRAIN}#${DEV_BRAIN}#g" "${index_file}"
+        fi
+    done
+    local live_graph dev_graph
+    live_graph="$(brain_graph_dir "${LIVE_HOME}")"
+    dev_graph="$(brain_graph_dir "${DEV_HOME}")"
+    if [[ -d "${live_graph}" ]]; then
+        # The Dev Flow's own graph belongs to its empty Brain; the copy replaces it.
+        rm -rf "${dev_graph}"
+        mkdir -p "${dev_graph}"
+        # owner.lock and the sockets belong to the installed Flow's running database.
+        rsync -a --exclude '*.sock' --exclude 'owner.lock' "${live_graph}/" "${dev_graph}/"
+    fi
+    echo "dev-flow: seeded ${DEV_BRAIN} and ${dev_graph} from your real Brain."
+}
+
+# Deletes only the Dev Flow's own copies; the next seed replaces them.
+forget_dev_seed() {
+    echo "dev-flow: deleting the Dev Flow's chats and Brain before seeding again."
+    # statev2.sqlite is rebuilt from state.sqlite only when it is missing.
+    rm -f "${DEV_HOME}"/userdata/state.sqlite* "${DEV_HOME}"/userdata/statev2.sqlite*
+    rm -rf "${DEV_BRAIN}" "$(brain_graph_dir "${DEV_HOME}")"
+}
+
+# The Dev Flow deletes and replaces its own data; it must never be the real home.
+if [[ "$(realpath -m "${DEV_HOME}")" == "$(realpath -m "${LIVE_HOME}")" ]]; then
+    echo "dev-flow: ${DEV_HOME} is the installed Flow's data; choose another FLOW_DEV_HOME." >&2
+    exit 2
+fi
+
+seed=false
+force=false
+for argument in "$@"; do
+    case "${argument}" in
+        --seed) seed=true ;;
+        --force) force=true ;;
+        *)
+            echo "dev-flow: unknown option ${argument}" >&2
+            exit 2
+            ;;
+    esac
+done
+if [[ "${force}" == true && "${seed}" != true ]]; then
+    echo "dev-flow: --force only works together with --seed." >&2
+    exit 2
+fi
+
+migrate_legacy_dev_home
+start_log
+
+if [[ "${seed}" == true ]]; then
+    if pgrep -f -- "--home-dir ${DEV_HOME}" > /dev/null; then
+        echo "dev-flow: a Dev Flow is still running; close it, then seed again." >&2
+        exit 1
+    fi
+    if [[ "${force}" == true ]]; then
+        forget_dev_seed
+    fi
+    seed_dev_database
+    seed_dev_brain
+fi
+
+# True while the dev app runs inside the runner's process group. Limiting the
+# match to that group keeps unrelated processes that merely mention the marker
+# (an agent's shell command, an editor) from counting. Only looks, never signals.
+is_dev_app_running() {
+    local runner_group="$1"
+    pgrep -g "${runner_group}" -f -- "${DEV_APP_MARKER}" >/dev/null
+}
+
+# Upstream's dev-electron.mjs keeps the session alive when the app quits, so the
+# runner would outlive a closed window. Stop it once the app has been gone a while.
+stop_when_window_closes() {
+    local runner_pid="$1"
+    local seen_app=false
+    local absent_seconds=0
+    while kill -0 "${runner_pid}" 2>/dev/null; do
+        sleep "${CHECK_INTERVAL_SECONDS}"
+        if is_dev_app_running "${runner_pid}"; then
+            seen_app=true
+            absent_seconds=0
+        elif [[ "${seen_app}" == true ]]; then
+            absent_seconds=$((absent_seconds + CHECK_INTERVAL_SECONDS))
+        fi
+        if (( absent_seconds >= WINDOW_CLOSED_GRACE_SECONDS )); then
+            echo "dev-flow: the Flow window was closed, stopping the dev session."
+            kill -INT -- "-${runner_pid}" 2>/dev/null || true
+            kill -CONT -- "-${runner_pid}" 2>/dev/null || true
+            return
+        fi
+    done
+}
+
+cd "${REPO_ROOT}"
+if [[ ! -x "${REPO_ROOT}/node_modules/.bin/vp" ]]; then
+    echo "dev-flow: dependencies are missing, run 'pnpm install' first." >&2
+    exit 1
+fi
+# The desktop build compiles a C helper for browser login import against libsecret.
+if ! pkg-config --exists libsecret-1 2>/dev/null; then
+    echo "dev-flow: libsecret headers are missing, run 'sudo apt install libsecret-1-dev' first." >&2
+    exit 1
+fi
+# dev-runner spawns `vp`, which only the repo's own node_modules provides; `vp run`
+# and `pnpm run` add this to PATH, a direct call has to do it itself.
+export PATH="${REPO_ROOT}/node_modules/.bin:${PATH}"
+# Makes Electron print the renderer console (including the [flow-perf] lines of
+# apps/web/src/debug/devPerformanceLog.ts) to stderr, so it lands in LOG_FILE.
+export ELECTRON_ENABLE_LOGGING=1
+# The legacy backend makes the dev app run its own server from this checkout
+# instead of attaching to the installed flow.service.
+export FLOW_DESKTOP_LEGACY_BACKEND=1
+# The dev app runs its server on Electron; the Brain worker needs the Node the
+# checkout's native modules (better-sqlite3) were built for.
+FLOW_BRAIN_NODE="$(command -v node)"
+export FLOW_BRAIN_NODE
+# Own process group (set -m), so Ctrl+C and a closed window both stop the runner
+# and everything it started, exactly as an interactive Ctrl+C would. A background
+# group that touches the terminal is suspended by the kernel (SIGTTIN), and Vite
+# reads stdin for its key shortcuts, so the runner gets no terminal input at all.
+set -m
+node scripts/dev-runner.ts dev:desktop --home-dir "${DEV_HOME}" </dev/null &
+RUNNER_PID=$!
+set +m
+stop_runner() {
+    kill -INT -- "-${RUNNER_PID}" 2>/dev/null || true
+    # Wakes anything the kernel suspended, so it can act on the interrupt.
+    kill -CONT -- "-${RUNNER_PID}" 2>/dev/null || true
+}
+trap stop_runner INT TERM
+stop_when_window_closes "${RUNNER_PID}" &
+WATCHER_PID=$!
+RUNNER_STATUS=0
+wait "${RUNNER_PID}" || RUNNER_STATUS=$?
+# A trapped Ctrl+C interrupts the first wait while the runner is still shutting down.
+if kill -0 "${RUNNER_PID}" 2>/dev/null; then
+    wait "${RUNNER_PID}" || RUNNER_STATUS=$?
+fi
+kill "${WATCHER_PID}" 2>/dev/null || true
+exit "${RUNNER_STATUS}"

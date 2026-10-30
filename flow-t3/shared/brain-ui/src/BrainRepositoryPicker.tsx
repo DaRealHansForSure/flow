@@ -58,6 +58,7 @@ export function BrainRepositoryPicker({ connectedRepositories, connection, loadR
     } catch (error) { setError(error instanceof Error ? error.message : "Could not connect the repository. Retry."); }
     finally { setBusy(false); }
   }
+  // oxlint-disable-next-line react/exhaustive-effect-dependencies, react/set-state-in-effect -- Lists the GitHub repositories once when the picker opens in browse mode; browse is a new function every render.
   useEffect(() => { if (autoBrowse) void browse(); }, [autoBrowse]);
   const visible = repositories.filter((repo) => repo.name.toLowerCase().includes(query.toLowerCase()));
   return <div className="flow-brain-repository-picker" aria-busy={busy}>

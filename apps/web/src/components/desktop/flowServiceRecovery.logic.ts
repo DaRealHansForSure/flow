@@ -1,15 +1,14 @@
 import { BRAND } from "@t3tools/shared/branding";
-import type { DesktopAttachFailure, DesktopFlowServiceAdoption } from "@t3tools/contracts";
+import type {
+  DesktopAttachFailure,
+  DesktopFlowServiceAdoption,
+  DesktopFlowServiceUpdate,
+} from "@t3tools/contracts";
 
 /**
- * Attach failure -> what the recovery screen says and offers.
- *
- * Kept out of the component because the interesting part is the mapping. The
- * desktop cannot talk to the Flow service, and the right answer differs per
- * reason: a service that was never installed is still being set up or needs a
- * second try, a stopped one needs starting, and one this build is too old to
- * talk to must never be offered a downgrade or a server of our own — only an
- * update, a browser, or another attempt.
+ * Attach failure -> what the recovery screen says and offers. A service this
+ * build is too old to talk to must never be offered a downgrade or a server of
+ * our own, only an update, a browser, or another attempt.
  */
 
 export type FlowServiceRecoveryAction =
@@ -17,7 +16,9 @@ export type FlowServiceRecoveryAction =
   | "start-service"
   | "check-for-updates"
   | "open-in-browser"
-  | "use-legacy-backend";
+  | "use-legacy-backend"
+  | "retry-update"
+  | "skip-update";
 
 export interface FlowServiceRecoveryPresentation {
   readonly title: string;
@@ -39,6 +40,7 @@ const STEP_LABELS: Record<string, string> = {
   "install-service": "Registering the background service",
   "wait-ready": "Waiting for the service to start",
   verify: "Checking your data is where it was",
+  "restart-service": "Restarting the service",
   "rollback-uninstall": "Undoing the partial setup",
 };
 
@@ -54,10 +56,15 @@ const LEGACY_CONSEQUENCE = `${BRAND.name} will run its own server instead, and c
 export function describeFlowServiceRecovery(input: {
   readonly failure: DesktopAttachFailure;
   readonly adoption: DesktopFlowServiceAdoption | null;
+  /** Flow: the service update the app is running, read while `failure.kind` is `updating`. */
+  readonly update?: DesktopFlowServiceUpdate | null;
   /** False on shells that cannot check for an app update. */
   readonly canCheckForUpdates: boolean;
 }): FlowServiceRecoveryPresentation {
   const { failure, adoption } = input;
+  if (failure.kind === "updating") {
+    return describeServiceUpdate(input.update ?? null);
+  }
   const steps = (adoption?.steps ?? []).map((step) => ({ name: step.name, ok: step.ok }));
 
   if (failure.kind === "not-installed" && adoption?.outcome === "in-progress") {
@@ -104,7 +111,7 @@ export function describeFlowServiceRecovery(input: {
   if (failure.kind === "incompatible") {
     return {
       title: `This app needs an update to connect to your ${BRAND.name} service.`,
-      body: `The service is running and your data is untouched. This app is too old to talk to it, so update the app — the service is never downgraded to match.`,
+      body: `The service is running and your data is untouched. This app is too old to talk to it, so update the app. The service is never downgraded to match.`,
       // Never "use the built-in server": a private child would fight the
       // running service for the instance lock.
       actions: [
@@ -128,10 +135,40 @@ export function describeFlowServiceRecovery(input: {
   };
 }
 
+/** Flow: the app moving the service to its own version, with a retry and a way out. */
+function describeServiceUpdate(
+  update: DesktopFlowServiceUpdate | null,
+): FlowServiceRecoveryPresentation {
+  const steps = (update?.steps ?? []).map((step) => ({ name: step.name, ok: step.ok }));
+  if (update?.outcome === "failed") {
+    const failedStep = update.failure ? `"${describeAdoptionStep(update.failure.step)}"` : "A step";
+    return {
+      title: `${BRAND.name} could not update its service to ${update.targetVersion}.`,
+      body: `${failedStep} did not work. Your chats, projects and Brain are untouched. Try again, or choose Later to keep the current service until the next start.`,
+      actions: ["retry-update", "skip-update"],
+      steps,
+      detail: update.failure?.message ?? null,
+      legacyConsequence: null,
+    };
+  }
+  const target = update === null ? "" : ` to ${update.targetVersion}`;
+  return {
+    title: `Updating the ${BRAND.name} service${target}…`,
+    body: `${BRAND.name} is installing the service that matches this app and restarting it. Your chats, projects and Brain stay where they are.`,
+    // Nothing to offer while it runs; stopping halfway is how a half-switched service happens.
+    actions: [],
+    steps,
+    detail: null,
+    legacyConsequence: null,
+  };
+}
+
 export const FLOW_SERVICE_RECOVERY_ACTION_LABELS: Record<FlowServiceRecoveryAction, string> = {
   retry: "Try again",
   "start-service": "Start service",
   "check-for-updates": "Check for updates",
   "open-in-browser": "Open in browser",
   "use-legacy-backend": "Continue with the built-in server",
+  "retry-update": "Try again",
+  "skip-update": "Later",
 };

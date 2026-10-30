@@ -11,6 +11,7 @@ const fs = NodeFSP;
 const { tmpdir } = NodeOS;
 const { join } = NodePath;
 // These run on Windows too, where the launcher is a batch file named flow.cmd.
+// oxlint-disable-next-line t3code/no-global-process-runtime -- Standalone installer tests run against the host platform.
 const win = process.platform === "win32";
 const flowCommand = win ? "flow.cmd" : "flow";
 const { execFile } = NodeChildProcess;

@@ -8,7 +8,7 @@ import { CurationStore } from "./curation/store.js";
 import { registerCuratorMcp } from "./curation/tools.js";
 import { CurationPublicTools } from "./curation/public-tools.js";
 import type { BrainContributor, BrainDocumentSync, BrainDocumentSyncAck } from "./curation/types.js";
-import type { BrainCuratorReply, BrainCuratorRun } from "../../runtime/src/contracts.js";
+import type { BrainCurationOutputs, BrainCuratorReply, BrainCuratorRun } from "../../runtime/src/contracts.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { sessionContext, type SessionContext } from "../../graph-gateway/src/session-context.js";
@@ -79,7 +79,7 @@ if (process.argv.includes("--catalog")) {
       const r = row as { seq: number; kind: import("./agents/runtime.js").SessionEvent["kind"]; data: string; ts: number };
       return { ...r, data: JSON.parse(r.data) };
     }) : undefined);
-  const capture = db.transaction((input: { context: SessionContext; receipt: string; occurredAt?: number; kind: string; data: unknown; closed?: boolean }) => {
+  const capture = db.transaction((input: { context: SessionContext; receipt: string; occurredAt?: number; kind: string; data: unknown; closed?: boolean; outputs?: BrainCurationOutputs }) => {
     const id = `t3-${input.context.session}`;
     const now = Date.now();
     const occurredAt = typeof input.occurredAt === "number" && Number.isFinite(input.occurredAt) && input.occurredAt > 0
@@ -204,6 +204,12 @@ if (process.argv.includes("--catalog")) {
         result = await (await integration()).action(String(message.params.action));
       } else if (message.method === "chatMemories") {
         const sessionId = `t3-${String(message.params.session)}`;
+        // The host resolves the chat's settings on every read, so a switch made while the chat
+        // had nothing new to capture still applies, and turning the agent on catches up.
+        const outputs = message.params.outputs as BrainCurationOutputs | undefined;
+        if (outputs && process.env.FLOW_DISTILLER !== "0") {
+          curator.configure(sessionId, outputs);
+        }
         result = readMemories(sessionId);
         if (message.params.revision && (result as { revision: string }).revision === message.params.revision) {
           const until = Date.now() + 20_000;
@@ -216,7 +222,11 @@ if (process.argv.includes("--catalog")) {
       } else if (message.method === "capture") {
         const input = message.params as Parameters<typeof capture>[0];
         const stored = capture(input);
-        if (input.kind === "user_prompt") {
+        if (input.outputs) {
+          documents.setCurationOutputs(stored.id, input.outputs);
+        }
+        // With the notes agent off for this chat, not even the first-prompt notes are written.
+        if (input.kind === "user_prompt" && documents.curationOutputs(stored.id).notesAgent) {
           const text=(input.data as {text?:unknown}).text;
           if (typeof text === "string") {
             documents.bootstrap({sessionId:stored.id,repo:input.context.repo??null,after:0,through:stored.sequence},text);
@@ -224,7 +234,7 @@ if (process.argv.includes("--catalog")) {
           }
         }
         if (process.env.FLOW_DISTILLER !== "0" && input.kind !== "graph") {
-          curator.capture(stored.id,input.context.repo ?? null,stored.sequence,Boolean(input.closed));
+          curator.capture(stored.id,input.context.repo ?? null,stored.sequence,Boolean(input.closed),input.outputs);
         }
         result = { stored: true, sequence: stored.sequence };
       } else if (message.method === "drain") {
