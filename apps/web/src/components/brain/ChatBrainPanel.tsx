@@ -221,34 +221,30 @@ export function ChatBrainPanel({
             label="Conversation notes"
             expanded={notesExpanded}
             onToggle={() => setNotesExpanded((value) => !value)}
-            actions={
-              <>
-                {curationSwitch("notesAgent", "Notes agent")}
-                {notes?.notes && (
-                  <button
-                    type="button"
-                    aria-label="Read full conversation notes"
-                    onClick={() => setView("notes")}
-                    className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <Maximize2Icon className="size-3.5" />
-                  </button>
-                )}
-              </>
-            }
+            actions={curationSwitch("notesAgent", "Notes agent")}
           />
           {notesExpanded && (
             <>
               {notes?.notes ? (
-                <button
-                  type="button"
-                  aria-label="Read full notes"
-                  onClick={() => setView("notes")}
-                  className={`w-full rounded-xl px-2 py-2 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
-                >
-                  <ConversationNotesPreview text={notes.notes.text} />
-                  <span className="mt-2 block text-2xs text-primary">Read full notes →</span>
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label="Read full notes"
+                    onClick={() => setView("notes")}
+                    className={`w-full rounded-xl py-2 pr-9 pl-2 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
+                  >
+                    <ConversationNotesPreview text={notes.notes.text} />
+                    <span className="mt-2 block text-2xs text-primary">Read full notes →</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Read full conversation notes"
+                    onClick={() => setView("notes")}
+                    className="absolute top-1.5 right-1.5 rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Maximize2Icon className="size-3.5" />
+                  </button>
+                </div>
               ) : (
                 <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">
                   {brain
