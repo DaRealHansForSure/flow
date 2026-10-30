@@ -61,6 +61,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The computer picker in Brain settings and "Connect an existing project" search computers and
+  projects; they had taken over the Brain picker's "Search Brains" box.
+
 - A chat whose provider instance is missing or turned off says so: its model shows in red,
   a notice links to the provider settings, and sending waits until you pick another model.
   It no longer switches to another instance silently, and Plan can be chosen in it again.

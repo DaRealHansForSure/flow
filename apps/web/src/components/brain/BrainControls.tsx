@@ -1,17 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { BrainCli, BrainState, BrainCommand, BrainResponse } from "@t3tools/contracts";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
-import {
-  Combobox,
-  ComboboxEmpty,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxPopup,
-  ComboboxSearchInput,
-  ComboboxTrigger,
-} from "../ui/combobox";
+import { SearchableSelect, type SearchableSelectOption } from "../SearchableSelect";
 import {
   Dialog,
   DialogPopup,
@@ -30,91 +21,21 @@ export type SendBrainCommand = (
 export const cliName = (cli: BrainCli) =>
   cli === "claude" ? "Claude Code" : cli === "codex" ? "Codex" : "OpenCode";
 
-/** Fork-only: a searchable Brain list with each Brain's icon, like the project picker. */
-export function BrainSelect({
-  label,
-  value,
-  options,
-  onChange,
-  disabled = false,
-  compact = false,
-}: {
+/** Fork-only: picks a Brain, searchable, with each Brain's icon. */
+export function BrainSelect(props: {
   label: string;
   value: string;
   options: readonly BrainSelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
-  /** A small ghost trigger for inline use, such as next to the new-chat headline. */
   compact?: boolean;
 }) {
-  const [query, setQuery] = useState("");
-  const needle = query.trim().toLowerCase();
-  const filteredOptions = needle
-    ? options.filter((option) => option.label.toLowerCase().includes(needle))
-    : options;
-  const selected = options.find((option) => option.value === value) ?? null;
   return (
-    <Combobox
-      items={options}
-      filteredItems={filteredOptions}
-      autoHighlight
-      itemToStringLabel={(option) => option.label}
-      isItemEqualToValue={(a, b) => a.value === b.value}
-      value={selected}
-      onOpenChange={(open) => {
-        if (!open) {
-          setQuery("");
-        }
-      }}
-      onValueChange={(option) => {
-        if (option && !option.disabled && option.value !== value) {
-          onChange(option.value);
-        }
-      }}
-    >
-      <ComboboxTrigger
-        render={
-          <Button
-            type="button"
-            variant={compact ? "ghost" : "outline"}
-            size={compact ? "xs" : "sm"}
-            disabled={disabled}
-            aria-label={label}
-          />
-        }
-      >
-        {selected?.icon}
-        <span className="max-w-60 truncate">{selected?.label ?? label}</span>
-        <ChevronDownIcon className="opacity-60" />
-      </ComboboxTrigger>
-      <ComboboxPopup align="start" className="w-64">
-        <ComboboxSearchInput
-          aria-label="Search Brains"
-          placeholder="Search Brains"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <ComboboxEmpty>No matching Brains.</ComboboxEmpty>
-        <ComboboxList>
-          {(option: BrainSelectOption) => (
-            <ComboboxItem key={option.value} value={option} disabled={option.disabled}>
-              {option.icon}
-              <span className="min-w-0 flex-1 truncate">{option.label}</span>
-              {option.value === value ? <CheckIcon className="ml-auto" /> : null}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxPopup>
-    </Combobox>
+    <SearchableSelect {...props} searchLabel="Search Brains" emptyLabel="No matching Brains." />
   );
 }
 
-export interface BrainSelectOption {
-  readonly value: string;
-  readonly label: string;
-  readonly icon?: ReactNode;
-  readonly disabled?: boolean;
-}
+export type BrainSelectOption = SearchableSelectOption;
 
 export function CreateBrainDialog({
   open,
