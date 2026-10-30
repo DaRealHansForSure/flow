@@ -61,6 +61,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The terminal's split, new and close buttons are larger, with 16 px icons, in the bottom drawer
+  and in the right panel.
 - The terminal and right panel buttons at the top right show an arrow while their panel is open, like
   the sidebar toggle, so you can see at a glance what is open.
 - Long chats open with their last five turns (at most 300 entries) and load older turns in chunks
