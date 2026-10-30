@@ -3233,6 +3233,13 @@ export const OrchestrationV2Command = Schema.Union([
     threadId: ThreadId,
     planId: PlanId,
   }),
+  // Flow: makes a closed proposed plan the thread's open one again.
+  Schema.Struct({
+    type: Schema.Literal("thread.proposed-plan.reopen"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    planId: PlanId,
+  }),
   Schema.Struct({
     type: Schema.Literal("checkpoint.rollback"),
     restoreFiles: Schema.optional(Schema.Boolean),

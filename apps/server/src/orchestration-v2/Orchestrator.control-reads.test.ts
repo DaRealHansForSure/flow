@@ -669,6 +669,61 @@ it.effect("declines an active proposed plan, which then cannot be implemented", 
   }).pipe(Effect.provide(layerTest)),
 );
 
+it.effect("reopens a closed proposed plan and replaces the open one", () =>
+  Effect.gen(function* () {
+    const orchestrator = yield* Orchestrator.OrchestratorV2;
+    const projections = yield* ProjectionStore.ProjectionStoreV2;
+    const threadId = ThreadId.make("thread:reopen-plan");
+    const now = yield* DateTime.now;
+    yield* orchestrator.dispatch({
+      type: "thread.create",
+      commandId: CommandId.make("create-reopen-plan"),
+      threadId,
+      projectId: ProjectId.make("project:reopen-plan"),
+      title: "Plan",
+      modelSelection,
+      runtimeMode: "full-access",
+      interactionMode: "plan",
+      branch: null,
+      worktreePath: null,
+      createdBy: "user",
+      creationSource: "web",
+    });
+    const declinedPlanId = PlanId.make("plan:reopen-declined");
+    const openPlanId = PlanId.make("plan:reopen-open");
+    for (const [planId, status] of [
+      [declinedPlanId, "declined"],
+      [openPlanId, "active"],
+    ] as const) {
+      yield* projections.apply({
+        id: EventId.make(`event:${planId}`),
+        type: "plan.updated",
+        threadId,
+        occurredAt: now,
+        payload: {
+          id: planId,
+          threadId,
+          runId: null,
+          nodeId: NodeId.make(`node:${planId}`),
+          kind: "proposed_plan",
+          status,
+          markdown: "# Plan",
+        },
+      });
+    }
+
+    yield* orchestrator.dispatch({
+      type: "thread.proposed-plan.reopen",
+      commandId: CommandId.make("reopen-plan"),
+      threadId,
+      planId: declinedPlanId,
+    });
+
+    assert.equal((yield* projections.getPlan(threadId, declinedPlanId))?.status, "active");
+    assert.equal((yield* projections.getPlan(threadId, openPlanId))?.status, "superseded");
+  }).pipe(Effect.provide(layerTest)),
+);
+
 it.effect("settles only the stopped run's background work, once", () =>
   Effect.gen(function* () {
     const orchestrator = yield* Orchestrator.OrchestratorV2;

@@ -527,6 +527,7 @@ function commandThreadId(command: OrchestrationV2ServerCommand): ThreadId {
     case "runtime-request.delivery.fail":
     case "thread.user-input.dismiss":
     case "thread.proposed-plan.decline":
+    case "thread.proposed-plan.reopen":
     case "checkpoint.rollback":
     case "checkpoint.rollback.fail":
     case "thread.background-work.settle":
@@ -8969,6 +8970,57 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
     },
   );
 
+  // Flow: a thread has one open plan, so reopening one replaces any other open plan.
+  const dispatchProposedPlanReopen = Effect.fn("Orchestrator.dispatchProposedPlanReopen")(
+    function* (
+      command: Extract<OrchestrationV2Command, { readonly type: "thread.proposed-plan.reopen" }>,
+      events: Ref.Ref<Array<OrchestrationV2DomainEvent>>,
+    ) {
+      const projection = yield* projectionStore
+        .getThreadRecords(command.threadId, ["plans"])
+        .pipe(mapDispatchError(command));
+      const plan = projection.plans.find((candidate) => candidate.id === command.planId);
+      if (plan?.kind !== "proposed_plan") {
+        return yield* new OrchestratorDispatchError({
+          commandId: command.commandId,
+          commandType: command.type,
+          cause: `Proposed plan ${command.planId} does not exist on thread ${command.threadId}.`,
+        });
+      }
+      if (plan.status === "active") {
+        return;
+      }
+      const occurredAt = yield* DateTime.now;
+      for (const other of projection.plans) {
+        if (other.kind !== "proposed_plan" || other.status !== "active") {
+          continue;
+        }
+        yield* emit(
+          events,
+          command,
+        )({
+          type: "plan.updated",
+          threadId: other.threadId,
+          ...(other.runId === null ? {} : { runId: other.runId }),
+          nodeId: other.nodeId,
+          occurredAt,
+          payload: { ...other, status: "superseded" },
+        });
+      }
+      yield* emit(
+        events,
+        command,
+      )({
+        type: "plan.updated",
+        threadId: plan.threadId,
+        ...(plan.runId === null ? {} : { runId: plan.runId }),
+        nodeId: plan.nodeId,
+        occurredAt,
+        payload: { ...plan, status: "active" },
+      });
+    },
+  );
+
   const dispatchQueuedMessagePromoteToSteer = Effect.fn(
     "Orchestrator.dispatchQueuedMessagePromoteToSteer",
   )(function* (
@@ -12650,6 +12702,9 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         break;
       case "thread.proposed-plan.decline":
         yield* dispatchProposedPlanDecline(command, events);
+        break;
+      case "thread.proposed-plan.reopen":
+        yield* dispatchProposedPlanReopen(command, events);
         break;
       case "subagent.stop":
         yield* dispatchSubagentStop(command, events, effects);
