@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The Windows service release installs only Windows packages again: pnpm 12 no longer expands
+  the `FLOW_INSTALL_*` variables in `pnpm-workspace.yaml`, so the release build pins its copy
+  to the machine it runs on.
+
 ### Changed
 
 - One release page per version: `flow-vX.Y.Z` holds the service and the desktop app, with the
