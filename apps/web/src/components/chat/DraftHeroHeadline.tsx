@@ -373,7 +373,7 @@ export function DraftHeroHeadline({
         <TooltipTrigger
           render={
             <InlineButton
-              tone="muted"
+              tone="link"
               className="pointer-events-auto"
               onClick={() =>
                 void startScratch().then((started) => {

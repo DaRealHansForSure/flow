@@ -108,6 +108,8 @@ const inlineButtonVariants = cva(
         // Flow: the new-chat headline's project picker reads as a link in the accent colour.
         picker:
           "gap-1 text-primary decoration-from-font underline-offset-4 data-popup-open:underline",
+        // Flow: a secondary choice next to the picker, in the same accent colour.
+        link: "text-primary",
       },
     },
   },
