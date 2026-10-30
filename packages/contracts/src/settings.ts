@@ -1175,8 +1175,8 @@ export const StorageCleanupSettings = Schema.Struct({
     Schema.withDecodingDefault(Effect.succeed(null)),
   ),
   logsAfterDays: StorageRetentionDays.pipe(Schema.withDecodingDefault(Effect.succeed(null))),
-  // Flow: folders of deleted No project chats; on by default, they hold nothing anyone uses.
-  scratchFolders: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  // Flow: folders no No project chat uses, removed once untouched this many days; on by default.
+  scratchFoldersAfterDays: StorageRetentionDays.pipe(Schema.withDecodingDefault(Effect.succeed(1))),
 });
 export type StorageCleanupSettings = typeof StorageCleanupSettings.Type;
 
@@ -1579,7 +1579,7 @@ export const ServerSettingsPatch = Schema.Struct({
       worktreeUnchanged: Schema.optionalKey(Schema.Boolean),
       browserArtifactsAfterDays: Schema.optionalKey(StorageRetentionDays),
       logsAfterDays: Schema.optionalKey(StorageRetentionDays),
-      scratchFolders: Schema.optionalKey(Schema.Boolean),
+      scratchFoldersAfterDays: Schema.optionalKey(StorageRetentionDays),
     }),
   ),
   worktreesDirectory: Schema.optionalKey(TrimmedString),

@@ -96,7 +96,7 @@ function setup() {
       worktreeUnchanged: false,
       browserArtifactsAfterDays: null,
       logsAfterDays: null,
-      scratchFolders: false,
+      scratchFoldersAfterDays: null,
     },
     projectSettingsOverrides: {},
   };

@@ -8,12 +8,6 @@ import * as Path from "effect/Path";
 import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
 import * as ManagedProjectFolders from "./ManagedProjectFolders.ts";
 
-/**
- * A folder younger than this is left alone: a new No project chat creates its folder just before
- * the chat itself exists, so an unreferenced young folder may be a chat still starting.
- */
-const MIN_ORPHAN_AGE_MS = 60 * 60 * 1000;
-
 export interface ScratchFolderRemoval {
   readonly path: string;
   readonly outcome: "removed" | "kept" | "failed";
@@ -29,8 +23,15 @@ export interface ScratchFolderRemoval {
 export interface ScratchFolderCleanupShape {
   /** After a chat is deleted: removes its folder unless another chat still works there. */
   readonly removeThreadFolder: (worktreePath: string) => Effect.Effect<void>;
-  /** Removes every scratch folder that no chat, active or archived, works in any more. */
-  readonly removeOrphans: (nowMs: number) => Effect.Effect<ReadonlyArray<ScratchFolderRemoval>>;
+  /**
+   * Removes every scratch folder that no chat, active or archived, works in any more and that was
+   * not touched for `olderThanMs`. A new chat creates its folder just before it exists, so the
+   * age must stay well above a chat's start.
+   */
+  readonly removeOrphans: (input: {
+    readonly nowMs: number;
+    readonly olderThanMs: number;
+  }) => Effect.Effect<ReadonlyArray<ScratchFolderRemoval>>;
 }
 
 export class ScratchFolderCleanup extends Context.Reference<ScratchFolderCleanupShape>(
@@ -103,7 +104,7 @@ const make = Effect.gen(function* () {
 
   const removeOrphans: ScratchFolderCleanupShape["removeOrphans"] = Effect.fn(
     "ScratchFolderCleanup.removeOrphans",
-  )(function* (nowMs) {
+  )(function* ({ nowMs, olderThanMs }) {
     const root = yield* managedFolders.scratchRoot;
     if (Option.isNone(root)) {
       return [];
@@ -122,7 +123,7 @@ const make = Effect.gen(function* () {
         onNone: () => nowMs,
         onSome: (date) => date.getTime(),
       });
-      if (nowMs - modifiedMs < MIN_ORPHAN_AGE_MS || (yield* isInUse(folder))) {
+      if (nowMs - modifiedMs < olderThanMs || (yield* isInUse(folder))) {
         continue;
       }
       const bytes = yield* folderBytes(folder);

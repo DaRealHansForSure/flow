@@ -1164,7 +1164,13 @@ const make = Effect.gen(function* () {
       );
     }
     // Flow: folders of No project chats that were deleted.
-    const scratchRemovals = settings.scratchFolders ? yield* scratchFolders.removeOrphans(now) : [];
+    const scratchRemovals =
+      settings.scratchFoldersAfterDays === null
+        ? []
+        : yield* scratchFolders.removeOrphans({
+            nowMs: now,
+            olderThanMs: settings.scratchFoldersAfterDays * DAY_MS,
+          });
     for (const removal of scratchRemovals) {
       entries.push({
         kind: "scratch-folder",

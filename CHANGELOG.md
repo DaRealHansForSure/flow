@@ -12,8 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Deleting a No project chat also deletes its folder under `~/.t3/scratch`, unless another chat
   still works in it. Settings > Maintenance has a rule, Delete unused No project folders (on by
-  default), that removes folders no chat uses any more when cleanup runs or on Delete now; folders
-  younger than an hour are left alone.
+  default, after 1 day), that removes folders no chat uses any more once untouched for that many
+  days, when cleanup runs or on Delete now.
 - Settings > Appearance > Highlight code in tool calls (on by default): off shows commands and tool
   input in expanded tool calls as plain text.
 - On a phone the chat is the main page: Back closes an open menu or sheet, then a full-screen page

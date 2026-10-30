@@ -163,28 +163,6 @@ function RetentionControl({
   );
 }
 
-/** An on/off rule laid out like RetentionControl: its state as text beside the switch. */
-function RuleSwitch({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs text-muted-foreground">{checked ? "On" : "Off"}</span>
-      <Switch
-        aria-label={label}
-        checked={checked}
-        onCheckedChange={(enabled) => onChange(Boolean(enabled))}
-      />
-    </div>
-  );
-}
-
 const KEEP_WHEN_LABELS = {
   "any-local-files": "Any local files",
   "uncommitted-changes": "Uncommitted changes",
@@ -340,7 +318,7 @@ function CleanupSection() {
     return (
       settings.storageCleanup.browserArtifactsAfterDays !== null ||
       settings.storageCleanup.logsAfterDays !== null ||
-      settings.storageCleanup.scratchFolders ||
+      settings.storageCleanup.scratchFoldersAfterDays !== null ||
       enabled(resolveWorktreeCleanup(settings, null)) ||
       Object.values(settings.projectSettingsOverrides).some(
         (override) =>
@@ -729,7 +707,9 @@ export function StorageCleanupSections() {
   const updateSettings = useUpdateScopedSettings();
   if (scope.kind === "project" || scope.kind === "checkout") return null;
   const settings = scopedSettings.storageCleanup;
-  const ruleStatus = (key: "browserArtifactsAfterDays" | "logsAfterDays") =>
+  const ruleStatus = (
+    key: "browserArtifactsAfterDays" | "logsAfterDays" | "scratchFoldersAfterDays",
+  ) =>
     targets.some((target) => target.settings.storageCleanup[key] !== settings[key])
       ? "Mixed across selected machines"
       : undefined;
@@ -786,20 +766,14 @@ export function StorageCleanupSections() {
         />
         <SettingsRow
           title="Delete unused No project folders"
-          status={
-            targets.some(
-              (target) => target.settings.storageCleanup.scratchFolders !== settings.scratchFolders,
-            )
-              ? "Mixed across selected machines"
-              : undefined
-          }
-          description="Delete folders under scratch that no chat uses any more, such as those of deleted No project chats. Folders younger than an hour are kept."
+          status={ruleStatus("scratchFoldersAfterDays")}
+          description="Delete folders under scratch that no chat uses any more, such as those of deleted No project chats, once untouched for this many days."
           serverScoped
           control={
-            <RuleSwitch
+            <RetentionControl
               label="Delete unused No project folders"
-              checked={settings.scratchFolders}
-              onChange={(scratchFolders) => update({ scratchFolders })}
+              value={settings.scratchFoldersAfterDays}
+              onChange={(scratchFoldersAfterDays) => update({ scratchFoldersAfterDays })}
             />
           }
         />
