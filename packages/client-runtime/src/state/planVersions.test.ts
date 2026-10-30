@@ -10,7 +10,7 @@ import {
 import * as DateTime from "effect/DateTime";
 import { describe, expect, it } from "vite-plus/test";
 
-import { deriveProposedPlanVersions, planVersionLabel } from "./planVersions";
+import { deriveProposedPlanVersions, planVersionLabel } from "./planVersions.ts";
 
 const threadId = ThreadId.make("thread-plan-versions");
 const runId = RunId.make("run-plan-versions");

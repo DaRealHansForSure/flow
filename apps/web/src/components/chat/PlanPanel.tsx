@@ -22,7 +22,7 @@ import {
 } from "../files/fileSurfaceChrome";
 import { PlanCommentSelection } from "./PlanCommentSelection";
 import { PlanReviewActions, usePlanReview } from "./planReview";
-import { type PlanVersion, planVersionLabel } from "./planVersions";
+import { type PlanVersion, planVersionLabel } from "@t3tools/client-runtime/state/plan-versions";
 import { usePlanFileActions } from "./usePlanFileActions";
 
 const ReadOnlySourcePreview = lazy(() => import("../files/ReadOnlySourcePreview"));

@@ -1,4 +1,4 @@
-import type { ThreadStructure } from "@t3tools/client-runtime/state/shell";
+import type { ThreadStructure } from "./shell.ts";
 import type { OrchestrationV2PlanArtifact, PlanId, RunId } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 
@@ -58,8 +58,8 @@ export function deriveProposedPlanVersions(
     });
   }
   // A plan whose turn item was paged out is the open one of a long chat, so it sorts last.
-  return versions
-    .toSorted(
+  return [...versions]
+    .sort(
       (left, right) =>
         Number(left.updatedAt === "") - Number(right.updatedAt === "") ||
         left.updatedAt.localeCompare(right.updatedAt) ||

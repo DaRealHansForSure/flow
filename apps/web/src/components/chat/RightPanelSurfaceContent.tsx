@@ -25,7 +25,7 @@ import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavail
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
 import { ChatBrainPanel } from "../brain/ChatBrainPanel";
 import type { ChatBrain } from "../brain/useChatBrain";
-import type { PlanVersion } from "./planVersions";
+import type { PlanVersion } from "@t3tools/client-runtime/state/plan-versions";
 import { PlanPanel } from "./PlanPanel";
 
 const PreviewPanel = lazy(() =>

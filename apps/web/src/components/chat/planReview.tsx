@@ -13,7 +13,7 @@ import {
   MenuSeparator,
   MenuTrigger,
 } from "../ui/menu";
-import type { PlanVersion } from "./planVersions";
+import type { PlanVersion } from "@t3tools/client-runtime/state/plan-versions";
 import { runtimeModeConfig } from "./runtimeModeConfig";
 
 /** Flow: what can be done with the chat's open proposed plan. */

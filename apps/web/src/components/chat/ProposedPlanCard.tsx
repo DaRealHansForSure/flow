@@ -12,7 +12,7 @@ import { Badge } from "../ui/badge";
 import { useRightPanelStore } from "../../rightPanelStore";
 import { PlanCommentSelection } from "./PlanCommentSelection";
 import { PlanReviewActions, usePlanReview } from "./planReview";
-import { planVersionLabel } from "./planVersions";
+import { planVersionLabel } from "@t3tools/client-runtime/state/plan-versions";
 import { usePlanFileActions } from "./usePlanFileActions";
 
 export const ProposedPlanCard = memo(function ProposedPlanCard({

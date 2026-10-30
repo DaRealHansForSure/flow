@@ -182,7 +182,7 @@ import { BranchToolbar, type BranchToolbarHandle } from "./BranchToolbar";
 import { ComposerContextPermissions } from "./ComposerContextPermissions";
 import { resolveCompatibleRuntimeMode, resolvePermissionMode } from "./chat/runtimeModeConfig";
 import { PlanReviewProvider } from "./chat/planReview";
-import { deriveProposedPlanVersions } from "./chat/planVersions";
+import { deriveProposedPlanVersions } from "@t3tools/client-runtime/state/plan-versions";
 import { buildPlanReviewComment } from "./chat/planComments";
 import { makeWorkspaceFileDropHandlers } from "./chat/workspaceFileDrop";
 import { isEditableFocused } from "../lib/editableFocus";
