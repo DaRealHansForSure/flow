@@ -1,6 +1,6 @@
 # Worklog
 
-Updated: 2026-10-30 12:40
+Updated: 2026-10-30 11:45
 
 ## Current focus
 
@@ -8,11 +8,13 @@ Updated: 2026-10-30 12:40
 - **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
   accepted, revised or declined with comments; commands always ask while in Plan
 - **Branch:** feat/plan-permission-mode (from develop), one commit per step
-- **Last step done:** Reopen for closed plans (`thread.proposed-plan.reopen`, one open
-  plan per thread at ingestion), after step 6 (plan comments)
-- **Next step:** Step 7: mobile (picker, settings, plan review); then step 8 docs
-- **Open questions / blockers:** Playwright runs with PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64;
-  mobile still has its own legacy plan switch (step 7)
+- **Last step done:** Step 7 (mobile): Plan in the Runtime list and server settings, legacy
+  switch removed, plan cards with Accept/Revise/Decline/Reopen (`plan-review.tsx`); plan
+  versions and the implementation prompt now shared (client-runtime, shared)
+- **Next step:** Step 8 docs (`docs/user/` Plan section); optional native Cite and plan
+  Comment via the selection menu (needs a fork Android build to test)
+- **Open questions / blockers:** native mobile changes are untested on a device (owner uses
+  the Play Store T3 app); shared dev server for phone tests runs on ~/.flow-dev
 
 ## Finished features
 
@@ -29,6 +31,8 @@ Updated: 2026-10-30 12:40
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 11:45 - Step 7 mobile committed; web fixes from phone tests merged (Cite on touch, chips, comments)
 
 - 2026-10-30 12:40 - Reopen for closed plans committed (owner request while testing)
 
