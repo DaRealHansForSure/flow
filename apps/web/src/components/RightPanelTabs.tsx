@@ -1295,6 +1295,8 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
           ownsDesktopTitleBar && "drag-region",
           ownsDesktopTitleBar && "wco:pr-(--workspace-native-controls-inset)",
           props.mode === "inline" && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
+          // Flow: the full-width phone sheet leaves room for the sidebar toggle floating above it.
+          props.mode === "sheet" && "max-sm:pl-13",
         )}
         data-right-panel-tabbar
       >
