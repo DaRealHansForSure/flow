@@ -309,6 +309,29 @@ describe("file embeds in native thread and file Markdown", () => {
   });
 });
 
+// Flow: md4c ends a bare URL's fragment at `=`, which cut pairing links before their token.
+it("keeps bare URLs whole in native Markdown", async () => {
+  const pairing = "https://devbox.example.com:5733/pair#token=TESTTOKEN1234";
+  const query = "https://example.com/search?q=plan&mode=raw";
+  const markdown = [
+    `Pair with ${pairing}.`,
+    `**${query}**`,
+    `Already linked: [site](https://example.com/a) and <https://example.com/b>`,
+    "`https://example.com/in-code`",
+  ].join("\n\n");
+
+  const native = await parseMarkdown(
+    markdownForNativeRendering(markdown, ENRICHED_INLINE_FILE_LINK_REGEX),
+  );
+  const urls: string[] = [];
+  const collect = (node: { attributes?: { url?: string }; children?: unknown[] }) => {
+    if (node.attributes?.url) urls.push(node.attributes.url);
+    node.children?.forEach((child) => collect(child as typeof node));
+  };
+  collect(native);
+  expect(urls).toEqual([pairing, query, "https://example.com/a", "https://example.com/b"]);
+});
+
 describe("Windows paths in native Markdown", () => {
   // regression: #23722 Markdown escapes ate the separator before `.t3` and `_build`
   it("keeps backslashes in Windows image and link destinations", async () => {

@@ -42,6 +42,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   "After the plan" row for the mode a thread switches to once its plan is accepted. New
   threads always start with these defaults instead of copying the previous thread's mode.
 
+- Running background commands and subagents show as a chip at the end of the chat instead of
+  a plain line of text, so their Stop button reads as part of one control.
+
+### Fixed
+
+- The Brain button's dot for notes being written is blue. It used the theme colour, which is
+  amber in some themes and looked like a warning.
+
+- The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
+  `=` after a `#`, so a pairing link lost its token, and older builds left such addresses
+  as plain text.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added

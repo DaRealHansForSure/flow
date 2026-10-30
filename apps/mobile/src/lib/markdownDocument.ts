@@ -306,7 +306,10 @@ function transformNativeMarkdown(
       }
     }
   }
-  if (!linkFiles && !breakTables) return markdown;
+  // Flow: md4c's bare-URL scan stops early (a `#token=` fragment ends at `=`), so the bare
+  // URLs GFM finds are handed over as `<url>` autolinks, which md4c takes whole.
+  const wrapBareUrls = markdown.includes("://");
+  if (!linkFiles && !breakTables && !wrapBareUrls) return markdown;
   const edits: MarkdownEdit[] = [];
   const fileEdits: MarkdownEdit[] = [];
   let rewritesPipe = false;
@@ -329,6 +332,19 @@ function transformNativeMarkdown(
         edits.push(edit);
         fileEdits.push(edit);
         if (node.value.includes("|")) rewritesPipe = true;
+      }
+    } else if (wrapBareUrls && node.type === "link") {
+      const start = node.position?.start.offset;
+      const end = node.position?.end.offset;
+      if (
+        start !== undefined &&
+        end !== undefined &&
+        /^https?:\/\//i.test(node.url) &&
+        markdown.slice(start, end) === node.url &&
+        // Only prose words; a URL in a half-streamed HTML attribute stays as written.
+        (start === 0 || /[\s(*_~]/.test(markdown[start - 1]!))
+      ) {
+        edits.push({ start, end, content: `<${node.url}>` });
       }
     } else if (node.type !== "link" && node.type !== "linkReference" && "children" in node)
       node.children.forEach((child, index) => {

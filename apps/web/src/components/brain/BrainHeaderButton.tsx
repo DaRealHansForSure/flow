@@ -1,6 +1,6 @@
 // Fork-only: the chat header's way into the Brain tab. It behaves like T3's diff toggle:
 // opens or focuses the tab, and a press while the tab is showing hides the panel. While
-// the tab is not showing, a static dot says the Brain is writing this chat's notes. An amber
+// the tab is not showing, a static blue dot says the Brain is writing this chat's notes. An amber
 // icon says the Brain has not answered yet, a red one that it failed to answer.
 
 import type { ScopedThreadRef } from "@t3tools/contracts";
@@ -52,7 +52,7 @@ export function BrainHeaderButton({ threadRef }: { readonly threadRef: ScopedThr
           <span
             aria-hidden
             data-brain-update-dot
-            className="pointer-events-none absolute top-1 right-1 size-1.5 rounded-full bg-primary"
+            className="pointer-events-none absolute top-1 right-1 size-1.5 rounded-full bg-info"
           />
         ) : null}
       </TooltipTrigger>
