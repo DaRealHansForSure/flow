@@ -18,6 +18,8 @@ export class DesktopState extends Context.Service<
     readonly backendReady: Ref.Ref<boolean>;
     readonly quitting: Ref.Ref<boolean>;
     readonly primaryBackendStartup: SubscriptionRef.SubscriptionRef<PrimaryBackendStartup>;
+    // Flow: the primary runs the app's own server, so quitting ends it and its chats.
+    readonly primaryRunsOwnServer: Ref.Ref<boolean>;
   }
 >()("@t3tools/desktop/app/DesktopState") {}
 
@@ -25,6 +27,7 @@ const make = Effect.all({
   backendReady: Ref.make(false),
   quitting: Ref.make(false),
   primaryBackendStartup: SubscriptionRef.make<PrimaryBackendStartup>({ _tag: "Starting" }),
+  primaryRunsOwnServer: Ref.make(false),
 });
 
 export const layer = Layer.effect(DesktopState, make);

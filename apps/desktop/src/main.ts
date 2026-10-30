@@ -44,6 +44,7 @@ import * as DesktopApplicationMenu from "./window/DesktopApplicationMenu.ts";
 import * as DesktopAssets from "./app/DesktopAssets.ts";
 import * as DesktopBackendConfiguration from "./backend/DesktopBackendConfiguration.ts";
 import * as DesktopBackendPool from "./backend/DesktopBackendPool.ts";
+import * as DesktopBackgroundMode from "./backend/DesktopBackgroundMode.ts";
 import * as DesktopLocalEnvironmentAuth from "./backend/DesktopLocalEnvironmentAuth.ts";
 import * as DesktopServiceSync from "./backend/DesktopServiceSync.ts";
 import * as DesktopServiceSyncState from "./backend/DesktopServiceSyncState.ts";
@@ -192,6 +193,8 @@ const layerDesktopAppActivation = DesktopAppActivation.layer.pipe(
 const layerDesktopBackend = DesktopBackendPool.layer.pipe(
   // Flow: the pool parks the primary while the app updates the service.
   Layer.provideMerge(DesktopServiceSyncState.layer),
+  // Flow: app-only by default; attaches to the service only in background mode.
+  Layer.provideMerge(DesktopBackgroundMode.layer),
   Layer.provideMerge(DesktopAppIdentity.layer),
   Layer.provideMerge(DesktopBackendConfiguration.layer),
   Layer.provideMerge(DesktopShellEnvironment.layer),

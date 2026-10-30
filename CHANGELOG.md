@@ -69,6 +69,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Flow runs only while the app is open: the desktop app starts its own server and stops it
+  when you quit, instead of attaching to the background service. Settings > General > Keep
+  Flow running in the background brings the service back. A machine with the service
+  installed is asked once at startup whether to stop it and turn off its autostart.
+
 - The knowledge graph's "open larger" button sits in the graph's top right corner on both the
   Brain page and the chat's Brain tab; the second one in the Brain tab's header is gone.
 
