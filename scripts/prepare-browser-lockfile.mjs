@@ -32,6 +32,19 @@ export function projectCpuLockfile(lockfile) {
   return projected;
 }
 
+// pnpm 12 writes its own version as a leading YAML document; only the last one is the lockfile.
+export function splitLockfileDocuments(source) {
+  const separator = "\n---\n";
+  const start = source.lastIndexOf(separator);
+  if (start < 0) {
+    return { leading: "", lockfile: source };
+  }
+  return {
+    leading: source.slice(0, start + separator.length),
+    lockfile: source.slice(start + separator.length),
+  };
+}
+
 // This is a staged, CPU-only projection, never an update to dependency versions.
 // Bootstrap the same pure-JS YAML parser pinned in the workspace without needing
 // the workspace installed first, and verify its exact lockfile integrity.
@@ -55,7 +68,8 @@ export async function prepareCpuLockfile(source, temporary) {
   );
   const lockPath = NodePath.join(source, "pnpm-lock.yaml");
   const workspacePath = NodePath.join(source, "pnpm-workspace.yaml");
-  const lockfile = projectCpuLockfile(yaml.parse(await NodeFSP.readFile(lockPath, "utf8")));
+  const documents = splitLockfileDocuments(await NodeFSP.readFile(lockPath, "utf8"));
+  const lockfile = projectCpuLockfile(yaml.parse(documents.lockfile));
   const workspace = yaml.parse(await NodeFSP.readFile(workspacePath, "utf8"));
   workspace.ignoredOptionalDependencies = [
     ...new Set([
@@ -64,6 +78,6 @@ export async function prepareCpuLockfile(source, temporary) {
     ]),
   ];
   lockfile.ignoredOptionalDependencies = workspace.ignoredOptionalDependencies;
-  await NodeFSP.writeFile(lockPath, yaml.stringify(lockfile));
+  await NodeFSP.writeFile(lockPath, documents.leading + yaml.stringify(lockfile));
   await NodeFSP.writeFile(workspacePath, yaml.stringify(workspace));
 }
