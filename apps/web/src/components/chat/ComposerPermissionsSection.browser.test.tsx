@@ -1,4 +1,3 @@
-import type { RuntimeMode } from "@t3tools/contracts";
 import { type ReactNode, useRef, useState } from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
@@ -12,14 +11,14 @@ import {
   useComposerMenuProps,
 } from "./composerEventScope";
 import { ComposerFooterModeControls, ComposerPermissionsSection } from "./ComposerFooterControls";
-import { runtimeModeConfig, runtimeModeOptions } from "./runtimeModeConfig";
+import { type PermissionMode, runtimeModeConfig, runtimeModeOptions } from "./runtimeModeConfig";
 
 const options = runtimeModeOptions.map((mode) => ({ mode, ...runtimeModeConfig[mode] }));
 
 // Mirrors the effort menu: effort radio items first, then the Permissions section.
 function EffortMenu() {
   const [effort, setEffort] = useState("high");
-  const [mode, setMode] = useState<RuntimeMode>("full-access");
+  const [mode, setMode] = useState<PermissionMode>("full-access");
   const composerMenuProps = useComposerMenuProps();
   const triggerRef = useRef<HTMLButtonElement>(null);
   return (
@@ -32,9 +31,9 @@ function EffortMenu() {
             <MenuRadioItem value="high">High</MenuRadioItem>
           </MenuRadioGroup>
           <ComposerPermissionsSection
-            runtimeMode={mode}
-            runtimeModeOptions={options}
-            onRuntimeModeChange={setMode}
+            permissionMode={mode}
+            permissionModeOptions={options}
+            onPermissionModeChange={setMode}
           />
         </MenuPopup>
       </Menu>
@@ -120,7 +119,7 @@ it("opens on the checked permission when composer.mode marked the trigger", asyn
 
 // Mirrors ComposerControlsBar: the chip shows only while the mode differs from the default.
 function PermissionsChip() {
-  const [mode, setMode] = useState<RuntimeMode>("approval-required");
+  const [mode, setMode] = useState<PermissionMode>("approval-required");
   return (
     <div data-slot="composer-shell">
       <button type="button" data-composer-shortcut="composer.effort composer.mode">
@@ -128,13 +127,10 @@ function PermissionsChip() {
       </button>
       {mode === "full-access" ? null : (
         <ComposerFooterModeControls
-          showInteractionModeToggle={false}
-          interactionMode="default"
-          runtimeMode={mode}
-          runtimeModeOptions={options}
+          permissionMode={mode}
+          permissionModeOptions={options}
           accessDisplay="label"
-          onToggleInteractionMode={() => {}}
-          onRuntimeModeChange={setMode}
+          onPermissionModeChange={setMode}
         />
       )}
     </div>

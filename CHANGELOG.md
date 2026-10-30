@@ -8,6 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Plan is a permission mode: the fifth entry in the composer's permission picker, shown as a
+  "Plan" chip, with Shift+Tab and `/plan` still switching to it. It replaces the separate
+  Build/Plan toggle and the Legacy settings switch, and is available for every provider
+  that plans.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added

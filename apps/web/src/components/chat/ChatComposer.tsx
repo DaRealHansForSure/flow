@@ -2,7 +2,10 @@ import { useComposerTypingGuard } from "./useComposerTypingGuard";
 import { insertAttachmentReferencesForDraft } from "./composerAttachmentReferences";
 import { DESKTOP_PASTE_AS_TEXT_EVENT } from "../../lib/desktopPasteAsText";
 import {
+  type PermissionMode,
+  planPermissionModeOption,
   resolveCompatibleRuntimeMode,
+  resolvePermissionMode,
   runtimeModeConfig,
   runtimeModeOptions as runtimeModes,
 } from "./runtimeModeConfig";
@@ -939,9 +942,20 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const selectedPromptEffort = composerProviderState.promptEffort;
   const selectedModelOptionsForDispatch = composerProviderState.modelOptionsForDispatch;
   const { enabled: planModeUiEnabled, interactionMode } = resolveComposerInteractionMode({
-    planModeEnabled: settings.planModeEnabled,
     provider: selectedProviderStatus,
     interactionMode: requestedInteractionMode,
+  });
+  const permissionMode = resolvePermissionMode(compatibleRuntimeMode, interactionMode);
+  const permissionModeOptions = planModeUiEnabled
+    ? [...compatibleRuntimeModeOptions, planPermissionModeOption]
+    : compatibleRuntimeModeOptions;
+  const handlePermissionModeChange = useStableCallback((mode: PermissionMode) => {
+    if (mode === "plan") {
+      handleInteractionModeChange("plan");
+      return;
+    }
+    handleInteractionModeChange("default");
+    handleRuntimeModeChange(mode);
   });
   const selectedModelSelection: ModelSelection = createModelSelection(
     selectedInstanceId,
@@ -2302,14 +2316,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       reportedModelSelection={reportedModelSelection}
       promptUltrathink={promptUltrathink}
       onPromptEdit={editPromptFromTraitsStable}
-      planModeEnabled={settings.planModeEnabled}
-      planModeUiEnabled={planModeUiEnabled}
-      interactionMode={interactionMode}
-      compatibleRuntimeMode={compatibleRuntimeMode}
+      permissionMode={permissionMode}
       defaultRuntimeMode={props.defaultRuntimeMode}
-      compatibleRuntimeModeOptions={compatibleRuntimeModeOptions}
-      toggleInteractionMode={toggleInteractionMode}
-      handleRuntimeModeChange={handleRuntimeModeChange}
+      permissionModeOptions={permissionModeOptions}
+      handlePermissionModeChange={handlePermissionModeChange}
       composerControlsCollapsed={composerControlsCollapsed}
       effortDisplay={settings.effortDisplay}
       permissionsShownInStrip={props.permissionsShownInStrip}
@@ -2826,7 +2836,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           reportedModelSelection,
           prompt: promptRef.current,
           cursor: readComposerSnapshotStable().expandedCursor,
-          planModeEnabled: settings.planModeEnabled,
+          planModeEnabled: false,
           direction,
         });
         if (!change) return;
@@ -3020,7 +3030,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       selectedModel,
       selectedInstanceId,
       reportedModelSelection,
-      settings.planModeEnabled,
       selectedModelSelection,
       multipleModelSelections,
       setMultipleModelSelections,

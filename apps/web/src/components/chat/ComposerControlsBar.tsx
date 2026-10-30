@@ -9,14 +9,13 @@ import {
   ComposerPermissionsSection,
   ComposerFooterModeControls,
   ComposerModelPicker,
-  type RuntimeModeOption,
 } from "./ComposerFooterControls";
+import type { PermissionMode, PermissionModeOption } from "./runtimeModeConfig";
 import {
   type EnvironmentId,
   type ModelSelection,
   type ProviderDriverKind,
   type ProviderInstanceId,
-  type ProviderInteractionMode,
   type RuntimeMode,
   type ServerProvider,
 } from "@t3tools/contracts";
@@ -51,17 +50,13 @@ export function ComposerControlsBar(props: {
   reportedModelSelection: ChatComposerProps["reportedModelSelection"];
   promptUltrathink: PromptUltrathink;
   onPromptEdit: (edit: (prompt: string) => string) => void;
-  planModeEnabled: boolean;
-  planModeUiEnabled: boolean;
   effortDisplay: EffortDisplay;
   /** The strip under a new thread names the permissions, so the row does not repeat them. */
   permissionsShownInStrip: boolean;
-  interactionMode: ProviderInteractionMode;
-  compatibleRuntimeMode: RuntimeMode;
+  permissionMode: PermissionMode;
   defaultRuntimeMode: RuntimeMode | undefined;
-  compatibleRuntimeModeOptions: ReadonlyArray<RuntimeModeOption>;
-  toggleInteractionMode: () => void;
-  handleRuntimeModeChange: (mode: RuntimeMode) => void;
+  permissionModeOptions: ReadonlyArray<PermissionModeOption>;
+  handlePermissionModeChange: (mode: PermissionMode) => void;
   composerControlsCollapsed: boolean;
   composerControlsHidden: boolean;
   restingHiddenBlockCount: number;
@@ -102,14 +97,10 @@ export function ComposerControlsBar(props: {
     reportedModelSelection,
     promptUltrathink,
     onPromptEdit,
-    planModeEnabled,
-    planModeUiEnabled,
-    interactionMode,
-    compatibleRuntimeMode,
+    permissionMode,
     defaultRuntimeMode,
-    compatibleRuntimeModeOptions,
-    toggleInteractionMode,
-    handleRuntimeModeChange,
+    permissionModeOptions,
+    handlePermissionModeChange,
     composerControlsCollapsed,
     composerControlsHidden,
     restingHiddenBlockCount: measuredHiddenBlockCount,
@@ -148,9 +139,9 @@ export function ComposerControlsBar(props: {
     reportedModelSelection,
     promptUltrathink,
     onPromptEdit,
-    planModeEnabled,
+    planModeEnabled: false,
   });
-  const accessMatchesDefault = compatibleRuntimeMode === defaultRuntimeMode;
+  const accessMatchesDefault = permissionMode === defaultRuntimeMode;
   const permissionsChipHidden = accessMatchesDefault || props.permissionsShownInStrip;
   const providerTraitsPickerInput = {
     provider: selectedProvider,
@@ -163,24 +154,24 @@ export function ComposerControlsBar(props: {
     reportedModelSelection,
     promptUltrathink,
     onPromptEdit,
-    planModeEnabled,
+    planModeEnabled: false,
     isComposerOwned: true,
     effortDisplay: props.effortDisplay,
     triggerClassName: cn("ps-1.5 pe-1", TEXT_CONTROL_STATES),
     // Permissions always live in the effort menu, so the section never unmounts while open.
     extraMenuContent: (
       <ComposerPermissionsSection
-        runtimeMode={compatibleRuntimeMode}
-        runtimeModeOptions={compatibleRuntimeModeOptions}
-        onRuntimeModeChange={handleRuntimeModeChange}
+        permissionMode={permissionMode}
+        permissionModeOptions={permissionModeOptions}
+        onPermissionModeChange={handlePermissionModeChange}
       />
     ),
     ...(permissionsChipHidden
       ? {
           extraMenuHint: [
             `Permissions: ${
-              compatibleRuntimeModeOptions.find((option) => option.mode === compatibleRuntimeMode)
-                ?.label ?? compatibleRuntimeMode
+              permissionModeOptions.find((option) => option.mode === permissionMode)?.label ??
+              permissionMode
             }`,
             shortcutLabelForCommand(keybindings, "composer.mode"),
           ]
@@ -201,7 +192,6 @@ export function ComposerControlsBar(props: {
   } = resolveComposerControlsOwnership({
     matchesDefault: permissionsChipHidden,
     hasTraits: providerTraitsPicker !== null,
-    planModeUiEnabled,
     collapsed: composerControlsCollapsed,
     measuredHiddenBlockCount,
   });
@@ -227,16 +217,13 @@ export function ComposerControlsBar(props: {
             id: "mode",
             content: (
               <ComposerFooterModeControls
-                showInteractionModeToggle={planModeUiEnabled}
-                interactionMode={interactionMode}
-                runtimeMode={compatibleRuntimeMode}
-                runtimeModeOptions={compatibleRuntimeModeOptions}
+                permissionMode={permissionMode}
+                permissionModeOptions={permissionModeOptions}
                 size={composerControlsCollapsed ? "xs" : "sm"}
                 hidden={composerControlsHidden || restingHiddenBlockCount > 0}
                 accessDisplay={accessDisplay}
                 emphasized={!accessMatchesDefault}
-                onToggleInteractionMode={toggleInteractionMode}
-                onRuntimeModeChange={handleRuntimeModeChange}
+                onPermissionModeChange={handlePermissionModeChange}
               />
             ),
           },
@@ -342,19 +329,16 @@ export function ComposerControlsBar(props: {
           )}
         >
           <CompactComposerControlsMenu
-            interactionMode={interactionMode}
-            runtimeMode={compatibleRuntimeMode}
-            runtimeModeOptions={compatibleRuntimeModeOptions}
+            permissionMode={permissionMode}
+            permissionModeOptions={permissionModeOptions}
             size={composerControlsCollapsed ? "xs" : "sm"}
             hidden={composerControlsHidden || hiddenRestingBlockIds.length === 0}
-            showInteractionModeToggle={planModeUiEnabled && hiddenRestingBlockIds.includes("mode")}
             traitsMenuContent={
               hiddenRestingBlockIds.includes("traits") ? providerTraitsMenuContent : undefined
             }
             // Permissions join the overflow only when their normal home is in it.
             showPermissions={overflowShowsPermissions}
-            onToggleInteractionMode={toggleInteractionMode}
-            onRuntimeModeChange={handleRuntimeModeChange}
+            onPermissionModeChange={handlePermissionModeChange}
           />
         </div>
       </>

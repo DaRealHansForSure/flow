@@ -743,12 +743,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/about",
   },
   {
-    id: "legacy-plan-mode",
-    title: "Plan mode (legacy)",
-    to: "/settings/labs",
-    searchTerms: ["build plan composer old"],
-  },
-  {
     id: "legacy-context-window-indicator",
     title: "Context window indicator (legacy)",
     to: "/settings/labs",

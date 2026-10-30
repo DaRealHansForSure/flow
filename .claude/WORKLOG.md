@@ -1,22 +1,19 @@
 # Worklog
 
-Updated: 2026-10-30 03:30
+Updated: 2026-10-30 08:50
 
 ## Current focus
 
-- **Topic:** First own release 0.2.0 (AppImage plus service from DaRealHansForSure/flow)
-- **Goal:** The machine runs this fork's Flow, installed and updated only from the fork
-- **Branch:** chore/release-0.2.0-rerun into develop, main and release; feat/windows-desktop
-  (one commit, not pushed) waits for the Windows desktop work
-- **Last step done:** 0.2.0 releases and tags deleted for a clean rerun; release fixes merged:
-  pnpm 12 lockfile, reflink licences, Windows install pinned to the build machine, one release
-  page per version with the CHANGELOG section as its text (desktop appends to flow-vX.Y.Z)
-- **Next step:** Owner runs "Flow release" on `release` with 0.2.0; then Windows desktop app
-  (build on windows-2025, better-sqlite3 for Electron 44, leave Brain payloads out) and the
-  plan permission mode
-- **Open questions / blockers:** Actions and workflow write permission must be on in the fork;
-  the "Keep Flow running in the background" Settings row is untested in a real app; codex/opencode curator flags untested; four Brain web tests need a rewrite without
-  react-test-renderer; DesktopPreReadyPlatform has 4 failing tests already on develop
+- **Topic:** Plan as a permission mode (concept: 9 steps, owner approved 2026-10-30)
+- **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
+  accepted, revised or declined with comments; commands always ask while in Plan
+- **Branch:** feat/plan-permission-mode (from develop), one commit per step
+- **Last step done:** Step 1: Plan is the picker's fifth entry (chip, Shift+Tab, /plan);
+  Build/Plan toggle, Legacy switch and the `planModeEnabled` setting removed
+- **Next step:** Step 2: while a chat is in Plan its turns run as Supervised
+  (`apps/server/src/orchestration-v2/RuntimePolicy.ts`), with a test
+- **Open questions / blockers:** Playwright Chromium missing, so web browser tests do not
+  run here; mobile still has its own legacy plan switch (step 7)
 
 ## Finished features
 
@@ -33,6 +30,8 @@ Updated: 2026-10-30 03:30
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 08:50 - Plan permission mode step 1 committed on feat/plan-permission-mode
 
 - 2026-10-30 02:05 - app-only merged, 67 focused tests pass, AppImage rebuild started
 - 2026-10-30 01:50 - backup-brain.sh refuses --stop-service from inside Flow; install guide backup step

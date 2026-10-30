@@ -1,5 +1,12 @@
-import type { RuntimeMode } from "@t3tools/contracts";
-import { type LucideIcon, LockIcon, PenLineIcon, ShieldOffIcon, SparklesIcon } from "lucide-react";
+import type { ProviderInteractionMode, RuntimeMode } from "@t3tools/contracts";
+import {
+  type LucideIcon,
+  LockIcon,
+  PencilRulerIcon,
+  PenLineIcon,
+  ShieldOffIcon,
+  SparklesIcon,
+} from "lucide-react";
 
 export const runtimeModeConfig: Record<
   RuntimeMode,
@@ -29,6 +36,31 @@ export const runtimeModeConfig: Record<
 };
 
 export const runtimeModeOptions = Object.keys(runtimeModeConfig) as RuntimeMode[];
+
+/** The permission picker's entries: the runtime modes, plus Plan for providers that plan. */
+export type PermissionMode = RuntimeMode | "plan";
+
+export type PermissionModeOption = {
+  mode: PermissionMode;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+export const planPermissionModeOption: PermissionModeOption = {
+  mode: "plan",
+  label: "Plan",
+  description: "Read and plan only; commands ask first. Nothing changes before you accept.",
+  icon: PencilRulerIcon,
+};
+
+/** Plan sits on top of the remembered runtime mode, which applies again once Plan ends. */
+export function resolvePermissionMode(
+  runtimeMode: RuntimeMode,
+  interactionMode: ProviderInteractionMode,
+): PermissionMode {
+  return interactionMode === "plan" ? "plan" : runtimeMode;
+}
 
 /** The modes a provider supports (all when it reports none) and the mode a thread really runs in. */
 export function resolveCompatibleRuntimeMode(

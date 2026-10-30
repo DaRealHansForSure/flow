@@ -1,11 +1,5 @@
-import type {
-  ModelSelection,
-  ProviderInstanceId,
-  ProviderInteractionMode,
-  RuntimeMode,
-} from "@t3tools/contracts";
+import type { ModelSelection, ProviderInstanceId } from "@t3tools/contracts";
 import { createModelSelection } from "@t3tools/shared/model";
-import { BotIcon, PencilRulerIcon } from "lucide-react";
 import { type ComponentProps, memo, useId, useRef, useState } from "react";
 
 import type { ContextWindowSnapshot } from "../../lib/contextWindow";
@@ -18,83 +12,40 @@ import { ComposerPrimaryActions } from "./ComposerPrimaryActions";
 import { ContextWindowMeter, ContextWindowMeterPlaceholder } from "./ContextWindowMeter";
 import { resolveModelPickerSelectedModel } from "./ModelPickerContent";
 import { ProviderModelPicker } from "./ProviderModelPicker";
-import { runtimeModeConfig } from "./runtimeModeConfig";
+import {
+  type PermissionMode,
+  type PermissionModeOption,
+  runtimeModeConfig,
+} from "./runtimeModeConfig";
 import { useComposerMenuState } from "./useComposerMenuState";
 
-export type RuntimeModeOption = { mode: RuntimeMode } & (typeof runtimeModeConfig)[RuntimeMode];
-const supervisedRuntimeModeOption = {
-  mode: "approval-required" as const,
+const supervisedPermissionModeOption: PermissionModeOption = {
+  mode: "approval-required",
   ...runtimeModeConfig["approval-required"],
 };
 export const ComposerFooterModeControls = memo(function ComposerFooterModeControls(props: {
-  showInteractionModeToggle: boolean;
-  interactionMode: ProviderInteractionMode;
-  runtimeMode: RuntimeMode;
-  runtimeModeOptions: ReadonlyArray<RuntimeModeOption>;
+  permissionMode: PermissionMode;
+  permissionModeOptions: ReadonlyArray<PermissionModeOption>;
   size?: "sm" | "xs";
   hidden?: boolean;
   /** How the permissions chip shows: hidden while the thread matches the user's default. */
   accessDisplay?: "label" | "icon" | "hidden";
   /** Draw the icon in the label color, not muted (the mode differs from the user's default). */
   emphasized?: boolean;
-  onToggleInteractionMode: () => void;
-  onRuntimeModeChange: (mode: RuntimeMode) => void;
+  onPermissionModeChange: (mode: PermissionMode) => void;
 }) {
   const size = props.size ?? "sm";
   const accessDisplay = props.accessDisplay ?? "label";
   const composerFloatingLayerProps = useComposerMenuProps();
   const [open, setOpen] = useComposerMenuState(props.hidden);
   const permissionsChipRef = useRef<HTMLButtonElement>(null);
-  const runtimeModeOption =
-    props.runtimeModeOptions.find((option) => option.mode === props.runtimeMode) ??
-    supervisedRuntimeModeOption;
-  const RuntimeModeIcon = runtimeModeOption.icon;
-  const interactionModeTooltip =
-    props.interactionMode === "plan"
-      ? "Plan mode. Click to return to normal build mode"
-      : "Default mode. Click to enter plan mode";
-
-  const interactionModeToggle = props.showInteractionModeToggle ? (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <ComposerControl
-            size={size}
-            className="shrink-0 whitespace-nowrap"
-            aria-pressed={props.interactionMode === "plan"}
-            type="button"
-            onClick={props.onToggleInteractionMode}
-            aria-label={interactionModeTooltip}
-          />
-        }
-      >
-        {props.interactionMode === "plan" ? (
-          <ComposerControlIcon
-            icon={PencilRulerIcon}
-            size={size}
-            className="text-current opacity-100"
-          />
-        ) : (
-          <ComposerControlIcon
-            icon={BotIcon}
-            size={size}
-            opticalSize={size === "xs" ? "default" : "large"}
-          />
-        )}
-        {/* The compacted row (xs) keeps this icon-only, like the other controls there. */}
-        <span
-          data-composer-control-label
-          className={size === "xs" ? "sr-only" : "sr-only sm:not-sr-only"}
-        >
-          {props.interactionMode === "plan" ? "Plan" : "Build"}
-        </span>
-      </TooltipTrigger>
-      <TooltipPopup side="top">{interactionModeTooltip}</TooltipPopup>
-    </Tooltip>
-  ) : null;
+  const permissionModeOption =
+    props.permissionModeOptions.find((option) => option.mode === props.permissionMode) ??
+    supervisedPermissionModeOption;
+  const PermissionModeIcon = permissionModeOption.icon;
 
   // The chip opens the same Permissions toggle used in the effort menu.
-  const permissionsTooltip = `Permissions: ${runtimeModeOption.label}. ${runtimeModeOption.description}`;
+  const permissionsTooltip = `Permissions: ${permissionModeOption.label}. ${permissionModeOption.description}`;
   const permissionsChip = (
     <Menu
       open={open}
@@ -114,14 +65,14 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
                   size={size}
                   // Mirrors the effort chip's trailing pe-1 so both gaps around the bars match.
                   className="ps-1.5"
-                  aria-label={`Permissions: ${runtimeModeOption.label}`}
+                  aria-label={`Permissions: ${permissionModeOption.label}`}
                 />
               }
             />
           }
         >
           <ComposerControlIcon
-            icon={RuntimeModeIcon}
+            icon={PermissionModeIcon}
             size={size}
             // Match the label, not full foreground: the chip's presence already marks the mode.
             {...(props.emphasized ? { className: "text-current" } : {})}
@@ -130,27 +81,22 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
             data-composer-control-label
             className={accessDisplay === "icon" ? "sr-only" : undefined}
           >
-            {runtimeModeOption.label}
+            {permissionModeOption.label}
           </span>
         </TooltipTrigger>
         <TooltipPopup side="top">{permissionsTooltip}</TooltipPopup>
       </Tooltip>
       <MenuPopup align="start" {...composerFloatingLayerProps}>
         <ComposerPermissionsSection
-          runtimeMode={props.runtimeMode}
-          runtimeModeOptions={props.runtimeModeOptions}
-          onRuntimeModeChange={props.onRuntimeModeChange}
+          permissionMode={props.permissionMode}
+          permissionModeOptions={props.permissionModeOptions}
+          onPermissionModeChange={props.onPermissionModeChange}
         />
       </MenuPopup>
     </Menu>
   );
 
-  return (
-    <>
-      {accessDisplay === "hidden" ? null : permissionsChip}
-      {interactionModeToggle}
-    </>
-  );
+  return accessDisplay === "hidden" ? null : permissionsChip;
 });
 
 /**
@@ -160,27 +106,25 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
  * or the overflow menu.
  */
 export function ComposerPermissionsSection(props: {
-  runtimeMode: RuntimeMode;
-  runtimeModeOptions: ReadonlyArray<
-    { mode: RuntimeMode } & (typeof runtimeModeConfig)[RuntimeMode]
-  >;
-  onRuntimeModeChange: (mode: RuntimeMode) => void;
+  permissionMode: PermissionMode;
+  permissionModeOptions: ReadonlyArray<PermissionModeOption>;
+  onPermissionModeChange: (mode: PermissionMode) => void;
 }) {
   // Hover or keyboard focus previews a mode's name and description before a pick.
-  const [previewMode, setPreviewMode] = useState<RuntimeMode | null>(null);
-  const shownMode = previewMode ?? props.runtimeMode;
+  const [previewMode, setPreviewMode] = useState<PermissionMode | null>(null);
+  const shownMode = previewMode ?? props.permissionMode;
   const shown =
-    props.runtimeModeOptions.find((option) => option.mode === shownMode) ??
-    supervisedRuntimeModeOption;
+    props.permissionModeOptions.find((option) => option.mode === shownMode) ??
+    supervisedPermissionModeOption;
   const descriptionId = useId();
   return (
     <div data-composer-permissions className="grid w-72 gap-1.5 px-2 py-1.5">
       <div className="font-medium text-muted-foreground text-xs">Permissions</div>
       <MenuPrimitive.RadioGroup
         aria-label="Permissions"
-        value={props.runtimeMode}
-        onValueChange={(value: RuntimeMode) => {
-          if (value !== props.runtimeMode) props.onRuntimeModeChange(value);
+        value={props.permissionMode}
+        onValueChange={(value: PermissionMode) => {
+          if (value !== props.permissionMode) props.onPermissionModeChange(value);
         }}
         className="flex gap-0.5 rounded-lg bg-input/40 p-0.5"
         // Menus navigate with Up/Down only; the row reads horizontally, so Left/Right move too.
@@ -197,7 +141,7 @@ export function ComposerPermissionsSection(props: {
           next.focus();
         }}
       >
-        {props.runtimeModeOptions.map((option) => {
+        {props.permissionModeOptions.map((option) => {
           const OptionIcon = option.icon;
           return (
             <MenuPrimitive.RadioItem
@@ -219,7 +163,7 @@ export function ComposerPermissionsSection(props: {
         })}
       </MenuPrimitive.RadioGroup>
       {/* Static per-mode descriptions for screen readers; the preview below is visual only. */}
-      {props.runtimeModeOptions.map((option) => (
+      {props.permissionModeOptions.map((option) => (
         <span key={option.mode} id={`${descriptionId}-${option.mode}`} className="sr-only">
           {option.description}
         </span>
@@ -227,7 +171,7 @@ export function ComposerPermissionsSection(props: {
       <div className="grid gap-0.5" aria-hidden="true">
         <span
           className={
-            shownMode === props.runtimeMode
+            shownMode === props.permissionMode
               ? "text-foreground text-sm"
               : "text-muted-foreground text-sm"
           }

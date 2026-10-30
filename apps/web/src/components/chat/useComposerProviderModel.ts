@@ -81,7 +81,7 @@ export function useComposerProviderModel(
     models: selectedProviderModels,
     promptInjectionState,
     modelOptions: modelState.modelOptions?.[selectedInstanceId],
-    planModeEnabled: settings.planModeEnabled,
+    planModeEnabled: false,
   });
   return {
     providerInstanceEntries,
