@@ -2,6 +2,7 @@
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/models";
 import type { BrainCommand, BrainSource, BrainState, BrainWorkspace } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
+import type { ReactNode } from "react";
 
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { useThreadShells } from "../../state/entities";
@@ -9,7 +10,7 @@ import { formatRelativeTimeLabel } from "../../timestampFormat";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { SearchableSelect } from "../SearchableSelect";
 import { DataTable, type DataTableColumn } from "../ui/data-table";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import type { DataTableSort } from "../ui/data-table.logic";
 import { BrainSelect } from "./BrainControls";
 import { BrainIcon } from "./BrainIcon";
@@ -91,21 +92,40 @@ function samePath(left: string | undefined, right: string): boolean {
   return left !== undefined && left.replace(/\/+$/u, "") === right.replace(/\/+$/u, "");
 }
 
-/** Cuts a long path in the middle, keeping its last folder; the full path shows on hover. */
+/** A hint that opens on hover, and on tap where there is no hover (phones). */
+function Hint(props: {
+  readonly triggerClassName: string;
+  readonly children: ReactNode;
+  readonly hint: ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        openOnHover
+        render={<button type="button" className={props.triggerClassName} />}
+      >
+        {props.children}
+      </PopoverTrigger>
+      <PopoverPopup tooltipStyle side="top">
+        {props.hint}
+      </PopoverPopup>
+    </Popover>
+  );
+}
+
+/** Cuts a long path in the middle, keeping its last folder; the full path shows in a hint. */
 function MiddleTruncatedPath(props: { readonly path: string }) {
   const cut = props.path.lastIndexOf("/");
   const head = cut > 0 ? props.path.slice(0, cut) : "";
   const tail = cut > 0 ? props.path.slice(cut) : props.path;
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={<span className="flex min-w-0 font-mono text-2xs text-muted-foreground" />}
-      >
-        <span className="truncate">{head}</span>
-        <span className="max-w-[75%] shrink-0 truncate">{tail}</span>
-      </TooltipTrigger>
-      <TooltipPopup variant="code">{props.path}</TooltipPopup>
-    </Tooltip>
+    <Hint
+      triggerClassName="flex w-full min-w-0 cursor-help text-start font-mono text-2xs text-muted-foreground"
+      hint={<span className="font-mono break-all">{props.path}</span>}
+    >
+      <span className="truncate">{head}</span>
+      <span className="max-w-[75%] shrink-0 truncate">{tail}</span>
+    </Hint>
   );
 }
 
@@ -163,24 +183,18 @@ export function ConnectedProjectsTable(props: {
         const status = row.source ? SOURCE_STATUS[row.source.status] : null;
         const detail = row.source?.message.trim();
         return (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <span
-                  className={`inline-flex cursor-help items-center gap-1.5 text-xs ${status === null ? "text-muted-foreground" : row.source?.status === "error" ? "text-destructive" : ""}`}
-                />
-              }
-            >
-              {status ? (
-                <span aria-hidden className={`size-1.5 rounded-full ${status.dot}`} />
-              ) : null}
-              {status?.label ?? NO_SOURCE_LABEL}
-            </TooltipTrigger>
-            <TooltipPopup>
-              {status?.meaning ?? NO_SOURCE_MEANING}
-              {detail && row.source?.status !== "ready" ? ` ${detail}` : ""}
-            </TooltipPopup>
-          </Tooltip>
+          <Hint
+            triggerClassName={`inline-flex cursor-help items-center gap-1.5 text-xs ${status === null ? "text-muted-foreground" : row.source?.status === "error" ? "text-destructive" : ""}`}
+            hint={
+              <>
+                {status?.meaning ?? NO_SOURCE_MEANING}
+                {detail && row.source?.status !== "ready" ? ` ${detail}` : ""}
+              </>
+            }
+          >
+            {status ? <span aria-hidden className={`size-1.5 rounded-full ${status.dot}`} /> : null}
+            {status?.label ?? NO_SOURCE_LABEL}
+          </Hint>
         );
       },
     },
