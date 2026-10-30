@@ -200,8 +200,10 @@ export function RightPanelSurfaceContent(props: {
     // Flow: the Agents tab.
     case "agents":
       return (
-        // Flow: on a phone the section's own insets land its rows on the tabs' icon line.
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2 max-sm:px-1">
+        <div
+          data-right-panel-agents
+          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2"
+        >
           <ThreadRelationshipsPanel
             environmentId={props.environmentId}
             threadId={threadRef.threadId}
