@@ -1,7 +1,4 @@
-import { ChevronDownIcon, PaperclipIcon } from "lucide-react";
-
-import { cn } from "~/lib/utils";
-import { STATUS_PILL_CLASS, STATUS_PILL_PART_CLASS } from "./statusPill";
+import { PaperclipIcon } from "lucide-react";
 
 export function WorkspaceFileDropOverlay() {
   return (
@@ -16,42 +13,6 @@ export function WorkspaceFileDropOverlay() {
         <PaperclipIcon className="size-4 text-primary" aria-hidden="true" />
         Drop files to attach
       </div>
-    </div>
-  );
-}
-
-/**
- * Sits `bottom` pixels up, clear of the composer and its attached banners. The summary names
- * what waits at the end of the timeline, which is out of view while it shows.
- */
-export function ScrollToEndButton(props: {
-  readonly bottom: number;
-  readonly summary: string | null;
-  readonly onScrollToEnd: () => void;
-}) {
-  return (
-    <div
-      className="chat-scroll-to-bottom pointer-events-none absolute z-30 flex justify-center py-1.5"
-      style={{ bottom: props.bottom }}
-    >
-      <button
-        type="button"
-        data-scroll-to-end="true"
-        onPointerDown={(event) => event.preventDefault()}
-        onClick={props.onScrollToEnd}
-        className={cn(
-          STATUS_PILL_CLASS,
-          "pointer-events-auto cursor-pointer hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring",
-        )}
-      >
-        <ChevronDownIcon aria-hidden />
-        Scroll to end
-        {props.summary === null ? null : (
-          <span className={cn(STATUS_PILL_PART_CLASS, "text-muted-foreground")}>
-            {props.summary}
-          </span>
-        )}
-      </button>
     </div>
   );
 }

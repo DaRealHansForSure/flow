@@ -53,6 +53,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- One status pill stays above the composer instead of scrolling with the chat, as in the mobile\n app: background work with its actions, how long the thread has been working, its browsers and\n queued messages, with a round button beside it to scroll back to the end.
 - The pills above the composer (Scroll to end, background work, browsers) share one taller, rounded
   look with dividers, like the mobile app's status pill.
 - On touch screens the sidebar's icon buttons (Settings, Pull requests, Usage, and the filter, add
