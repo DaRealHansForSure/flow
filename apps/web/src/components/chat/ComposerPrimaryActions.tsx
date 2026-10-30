@@ -379,6 +379,11 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
     !isSendDisabled &&
     !isEnvironmentUnavailable;
 
+  const sendButtonDisabled =
+    isSendBusy ||
+    isSendDisabled ||
+    isEnvironmentUnavailable ||
+    (!hasSendableContent && !showResume);
   const sendButton = (
     <button
       ref={setFollowUpMenuAnchor}
@@ -386,7 +391,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
       className={cn(
         "relative isolate flex h-9 w-9 select-none items-center justify-center overflow-hidden rounded-full shadow-xs [-webkit-touch-callout:none] transition-all duration-150 enabled:cursor-pointer enabled:inset-shadow-control-highlight hover:scale-105 active:inset-shadow-control-pressed active:shadow-none disabled:pointer-events-none disabled:shadow-none disabled:hover:scale-100 sm:h-8 sm:w-8 [&_svg]:pointer-events-none",
         stageBackdropVariant
-          ? "bg-transparent text-white enabled:shadow-black/24 enabled:hover:brightness-110 disabled:opacity-64"
+          ? "bg-transparent text-white enabled:shadow-black/24 enabled:hover:brightness-110 disabled:bg-foreground/12 disabled:text-muted-foreground"
           : "bg-message-action text-message-action-foreground enabled:shadow-message-action/24 hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground",
       )}
       {...pointerFocusProps}
@@ -409,15 +414,11 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
         if (showResume) onResume?.();
         else onSubmitMessage?.(event);
       }}
-      disabled={
-        isSendBusy ||
-        isSendDisabled ||
-        isEnvironmentUnavailable ||
-        (!hasSendableContent && !showResume)
-      }
+      disabled={sendButtonDisabled}
       aria-label={submitStatus ?? submitLabel}
     >
-      {stageBackdropVariant ? (
+      {/* Flow: the art marks a ready button; a disabled one stays plain grey. */}
+      {stageBackdropVariant && !sendButtonDisabled ? (
         <span className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
           <StageBackdropButtonArt variant={stageBackdropVariant} />
         </span>
