@@ -63,6 +63,7 @@ export function observeSelectionActions({
   let dismissed = false;
   let restorable = false;
   let pointer: SelectionActionPoint | null = null;
+  let touchGesture = false;
   let timer: number | null = null;
   let frame: number | null = null;
 
@@ -86,6 +87,8 @@ export function observeSelectionActions({
     onDismiss("cancel");
   };
   const onContextMenu = () => {
+    // Chrome on Android fires contextmenu for the long press that selects text.
+    if (touchGesture && gestureActive) return;
     cancel();
     onDismiss("interaction");
   };
@@ -121,6 +124,7 @@ export function observeSelectionActions({
     const target = event.target as Element | null;
     if (target?.closest("button, [role=button]")) return;
     gestureActive = event.button === 0 && !event.defaultPrevented;
+    touchGesture = event.pointerType !== "mouse";
     dismissed = !gestureActive;
   };
   const onPointerUp = (event: PointerEvent) => {

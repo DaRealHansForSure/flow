@@ -2,8 +2,8 @@ import { expect, it, vi } from "vite-plus/test";
 
 import { observeSelectionActions } from "./selectionActions";
 
-// regression: a long-press selection on a phone never showed Cite, because its pointercancel
-// read as a dismissal.
+// regression: a long-press selection on a phone never showed Cite, because its contextmenu
+// (Chrome on Android) and pointercancel read as a dismissal.
 it("reports a selection made by a touch long press", async () => {
   const element = document.createElement("p");
   element.textContent = "Cite this sentence from the answer.";
@@ -18,6 +18,7 @@ it("reports a selection made by a touch long press", async () => {
     range.selectNodeContents(element);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
+    element.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
     window.dispatchEvent(new PointerEvent("pointercancel", touch));
 
     await vi.waitFor(() => expect(onSelection).toHaveBeenCalled());
