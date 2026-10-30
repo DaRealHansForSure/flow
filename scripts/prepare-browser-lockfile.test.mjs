@@ -1,6 +1,10 @@
 import * as NodeTest from "node:test";
 import * as NodeAssert from "node:assert/strict";
-import { projectCpuLockfile, splitLockfileDocuments } from "./prepare-browser-lockfile.mjs";
+import {
+  pinCurrentArchitectures,
+  projectCpuLockfile,
+  splitLockfileDocuments,
+} from "./prepare-browser-lockfile.mjs";
 
 NodeTest.test(
   "CPU projection removes only optional GPU payloads without changing pinned runtime dependencies",
@@ -50,4 +54,19 @@ NodeTest.test("Lockfile split keeps pnpm's leading document and returns the lock
   const lockfile = "lockfileVersion: '9.0'\n\npackages: {}\n";
   NodeAssert.deepEqual(splitLockfileDocuments(leading + lockfile), { leading, lockfile });
   NodeAssert.deepEqual(splitLockfileDocuments(lockfile), { leading: "", lockfile });
+});
+
+NodeTest.test("A release install pins every architecture list to the current machine", () => {
+  const workspace = [
+    "supportedArchitectures:",
+    '  cpu: [current, "${FLOW_INSTALL_CPU-x64}"]',
+    '  libc: [current, "${FLOW_INSTALL_LIBC-glibc}"]',
+    '  os: [current, "${FLOW_INSTALL_OS-linux}"]',
+    "",
+  ].join("\n");
+  NodeAssert.equal(
+    pinCurrentArchitectures(workspace),
+    "supportedArchitectures:\n  cpu: [current]\n  libc: [current]\n  os: [current]\n",
+  );
+  NodeAssert.throws(() => pinCurrentArchitectures("packages: []\n"), /no FLOW_INSTALL/);
 });

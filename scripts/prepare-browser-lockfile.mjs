@@ -45,6 +45,16 @@ export function splitLockfileDocuments(source) {
   };
 }
 
+// pnpm 12 no longer expands ${FLOW_INSTALL_*} in pnpm-workspace.yaml, so a staged
+// release install names only the machine it runs on.
+export function pinCurrentArchitectures(workspace) {
+  const pinned = workspace.replace(/\[current, "\$\{FLOW_INSTALL_[A-Z]+-[^}"]*\}"\]/g, "[current]");
+  if (pinned === workspace) {
+    throw Error("pnpm-workspace.yaml lists no FLOW_INSTALL_* architectures to pin.");
+  }
+  return pinned;
+}
+
 // This is a staged, CPU-only projection, never an update to dependency versions.
 // Bootstrap the same pure-JS YAML parser pinned in the workspace without needing
 // the workspace installed first, and verify its exact lockfile integrity.
