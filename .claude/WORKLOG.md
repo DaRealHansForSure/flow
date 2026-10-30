@@ -1,23 +1,23 @@
 # Worklog
 
-Updated: 2026-10-30 11:45
+Updated: 2026-10-30 13:45
 
 ## Current focus
 
-- **Topic:** Plan as a permission mode (concept: 9 steps, owner approved 2026-10-30)
-- **Goal:** Plan is the fifth permission mode; plans open in a right-pane tab and are
-  accepted, revised or declined with comments; commands always ask while in Plan
-- **Branch:** feat/plan-permission-mode (from develop), one commit per step
-- **Last step done:** Step 7 (mobile): Plan in the Runtime list and server settings, legacy
-  switch removed, plan cards with Accept/Revise/Decline/Reopen (`plan-review.tsx`); plan
-  versions and the implementation prompt now shared (client-runtime, shared)
-- **Next step:** Step 8 docs (`docs/user/` Plan section); optional native Cite and plan
-  Comment via the selection menu (needs a fork Android build to test)
-- **Open questions / blockers:** native mobile changes are untested on a device (owner uses
-  the Play Store T3 app); shared dev server for phone tests runs on ~/.flow-dev
+- **Topic:** Visual pass over the fork additions (phone and desktop)
+- **Goal:** fork screens look clean on a phone: Plan tab, review actions, comment dialog,
+  missing-provider notice, Brain panel
+- **Branch:** develop (fix/fork-visual-pass merged)
+- **Last step done:** phone sheet header without the duplicate Brain button; Brain section
+  switches wrap under their title in narrow panels. Plan permission mode and the release
+  page guide link merged into develop; Brain type errors and the React Compiler bailout fixed
+- **Next step:** release 0.2.1 (needs the owner's push OK)
+- **Open questions / blockers:** ten more fork components still use try/finally the React
+  Compiler skips (reactCompilerCoverage); the Dev Flow lacks the claude_work instance
 
 ## Finished features
 
+- 2026-10-30 - Plan as a permission mode, steps 1 to 8 plus Reopen (merged into develop)
 - 2026-10-30 - Flow runs only while the app is open; backup step in the install guide (develop)
 - 2026-10-30 - uninstall-flow.sh, code block download, graph dialog, Brain status colours (develop)
 - 2026-10-30 - App keeps the service at its version, release workflow, installs from fork (develop)
@@ -31,6 +31,8 @@ Updated: 2026-10-30 11:45
 - 2026-10-29 - Fork guide in CLAUDE.md - merged into develop
 
 ## History
+
+- 2026-10-30 13:45 - Plan work merged; check fixes merged; visual pass fixes merged
 
 - 2026-10-30 11:45 - Step 7 mobile committed; web fixes from phone tests merged (Cite on touch, chips, comments)
 
