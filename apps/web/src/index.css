@@ -2641,3 +2641,34 @@ code {
 .messages-timeline-scroll [data-chat-text] {
   font-size: calc(var(--text-sm) * var(--chat-font-scale, 1));
 }
+
+/* Flow: the chat header's buttons are finger-sized on touch screens, whatever the font size. */
+@media (pointer: coarse) {
+  :root,
+  [class*="workspace-titlebar-control-size"] {
+    --workspace-titlebar-control-size: 2.5rem;
+  }
+  :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
+    :is([data-slot="toggle"], button),
+  [data-right-panel-tabbar] [aria-label="Add panel surface"] {
+    width: 2.5rem;
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+  :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
+    :is([data-slot="toggle"], button)
+    svg,
+  [data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
+  :is([data-slot="sidebar-trigger"], [data-sidebar="trigger"], [aria-label="Toggle main sidebar"])
+    svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* Flow: on a phone the right panel fills the screen, so its sheet drops the edge it keeps beside a chat. */
+@media (max-width: 639px) {
+  [data-slot="sheet-popup"]:has([data-right-panel-tabbar]) {
+    border-inline-start-width: 0;
+  }
+}
