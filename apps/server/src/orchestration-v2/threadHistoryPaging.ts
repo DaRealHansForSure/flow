@@ -13,9 +13,9 @@ import type {
  * very long turn, stops at `maxItems` rows.
  */
 export const THREAD_HISTORY_PAGE_POLICY = {
-  maxUserTurns: 1,
+  maxUserTurns: 5,
   maxItems: 75,
-  maxTurnItems: 200,
+  maxTurnItems: 300,
   maxEncodedBytes: 1_048_576,
 } as const;
 

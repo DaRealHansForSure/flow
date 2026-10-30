@@ -88,9 +88,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A file opened from a link in the chat (or from search) opens on its own, without the file
   tree beside it, and Markdown files always open rendered; switching to the source applies to that
   file only. The tree and the source view are still one click away.
-- Long chats open with only their newest turn (at most 200 entries) and load older turns in
-  chunks of five as you scroll up, instead of the last ten at once behind a "Load earlier turns"
-  button.
+- Long chats open with their last five turns (at most 300 entries) and load older turns in chunks
+  of five as you scroll up, instead of the last ten at once behind a "Load earlier turns" button.
 - The Brain panel is tidier: the Default / On / Off switches drop the "Follows Settings" line
   under them (it moved into their tooltip), and the conversation notes' enlarge button sits in
   the top right of the notes instead of the section header.
