@@ -117,6 +117,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Sending the first message of a No project chat no longer asks to connect the scratch folder to a
+  Brain; the Brain picker above the composer (or No Brain) already decides it.
 - An empty composer's send button looks disabled (grey) instead of a ready blue, also in the
   collapsed phone composer.
 - On a phone the composer no longer grows a few pixels when text arrives: the stop button is as big

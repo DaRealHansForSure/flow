@@ -2960,7 +2960,8 @@ export default function ChatView(props: ChatViewProps) {
   // Fork: the first message in a project asks which Brain the project belongs to.
   const { ensureBrainChoice, brainSetupDialog } = useProjectBrainSetup();
   const confirmProjectBrain = async (): Promise<boolean> => {
-    if (!activeProject) {
+    // No project chats pick their Brain per chat in the hero, so the project is never asked about.
+    if (!activeProject || activeProjectIsScratch) {
       return true;
     }
     const sendRouteThreadKey = routeThreadKey;
