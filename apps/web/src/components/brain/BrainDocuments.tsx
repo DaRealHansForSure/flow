@@ -7,7 +7,6 @@ import type {
 } from "@t3tools/contracts";
 import {
   BookOpenIcon,
-  ChevronDownIcon,
   CheckIcon,
   CopyIcon,
   DownloadIcon,
@@ -16,6 +15,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { brainCommand } from "../../state/brain";
+import { BrainSectionHeader } from "./BrainSectionHeader";
 import { useAtomCommand } from "../../state/use-atom-command";
 import ChatMarkdown from "../ChatMarkdown";
 import { Button } from "../ui/button";
@@ -326,38 +326,17 @@ export function BrainDocumentLibrary({
             aria-label={label}
             className={compact ? "mt-3 border-t border-border/60 pt-3" : "space-y-3"}
           >
-            <header className={`flex items-start gap-2 ${compact ? "px-2 py-2" : ""}`}>
-              <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-medium">
-                  {label}
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    {all.length + old.length}
-                  </span>
-                </h2>
-                {!compact && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {kind === "doc"
-                      ? "Maintained facts, customer context, and standing constraints."
-                      : kind === "skill"
-                        ? "Procedures your agents can find, read, and reuse."
-                        : "Decisions, lessons, and context carried across conversations."}
-                  </p>
-                )}
-              </div>
-              {kind === "doc" || kind === "skill" ? chatSwitches?.[kind] : null}
-              <button
-                type="button"
-                aria-label={`${collapsed[kind] ? "Expand" : "Collapse"} ${label}`}
-                aria-expanded={!collapsed[kind]}
-                onClick={() =>
-                  setCollapsed((previous) => ({ ...previous, [kind]: !previous[kind] }))
-                }
-                className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
-              >
-                <ChevronDownIcon className={`size-4 ${collapsed[kind] ? "" : "rotate-180"}`} />
-              </button>
-            </header>
+            <BrainSectionHeader
+              icon={Icon}
+              label={label}
+              count={all.length + old.length}
+              description={compact ? undefined : sectionDescription(kind)}
+              expanded={!collapsed[kind]}
+              onToggle={() =>
+                setCollapsed((previous) => ({ ...previous, [kind]: !previous[kind] }))
+              }
+              actions={kind === "doc" || kind === "skill" ? chatSwitches?.[kind] : null}
+            />
             <div
               hidden={Boolean(collapsed[kind])}
               className={
@@ -454,4 +433,14 @@ export function BrainDocumentLibrary({
       </Dialog>
     </>
   );
+}
+
+function sectionDescription(kind: "doc" | "skill" | "memory"): string {
+  if (kind === "doc") {
+    return "Maintained facts, customer context, and standing constraints.";
+  }
+  if (kind === "skill") {
+    return "Procedures your agents can find, read, and reuse.";
+  }
+  return "Decisions, lessons, and context carried across conversations.";
 }

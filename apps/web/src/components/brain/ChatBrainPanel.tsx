@@ -26,6 +26,7 @@ import { BrainGraph } from "./BrainGraph";
 import { BrainDocumentDialog, BrainDocumentLibrary } from "./BrainDocuments";
 import { ConversationNotesPreview } from "./ConversationNotesPreview";
 import { cliName } from "./BrainControls";
+import { BrainSectionHeader } from "./BrainSectionHeader";
 import { ChatCurationSwitch } from "./ChatCurationSwitch";
 import type { ChatBrain } from "./useChatBrain";
 
@@ -244,30 +245,27 @@ export function ChatBrainPanel({
           />
         )}
         <section aria-label="Conversation notes" className="mt-3 border-t border-border/60 pt-3">
-          <header className="flex items-start gap-2 px-2 py-2">
-            <BookOpenIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-            <h2 className="min-w-0 flex-1 text-sm font-medium">Conversation notes</h2>
-            {curationSwitch("notesAgent", "Notes agent")}
-            {notes?.notes && (
-              <button
-                type="button"
-                aria-label="Read full conversation notes"
-                onClick={() => setView("notes")}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Maximize2Icon className="size-3.5" />
-              </button>
-            )}
-            <button
-              type="button"
-              aria-label={`${notesExpanded ? "Collapse" : "Expand"} Conversation notes`}
-              aria-expanded={notesExpanded}
-              onClick={() => setNotesExpanded((value) => !value)}
-              className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
-            >
-              <ChevronDownIcon className={`size-4 ${notesExpanded ? "rotate-180" : ""}`} />
-            </button>
-          </header>
+          <BrainSectionHeader
+            icon={BookOpenIcon}
+            label="Conversation notes"
+            expanded={notesExpanded}
+            onToggle={() => setNotesExpanded((value) => !value)}
+            actions={
+              <>
+                {curationSwitch("notesAgent", "Notes agent")}
+                {notes?.notes && (
+                  <button
+                    type="button"
+                    aria-label="Read full conversation notes"
+                    onClick={() => setView("notes")}
+                    className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Maximize2Icon className="size-3.5" />
+                  </button>
+                )}
+              </>
+            }
+          />
           {notesExpanded && (
             <>
               {notes?.notes ? (
