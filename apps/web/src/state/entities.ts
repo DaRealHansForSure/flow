@@ -25,6 +25,7 @@ import type {
   OrchestrationV2ThreadShell,
   ThreadId,
 } from "@t3tools/contracts";
+import type { ThreadTurnSubagents } from "@t3tools/client-runtime/state/thread-subagents";
 import type { ThreadCheckpointSummary } from "@t3tools/client-runtime/state/thread-checkpoints";
 import { Atom } from "effect/reactivity";
 import { appAtomRegistry } from "../rpc/atomRegistry";
@@ -70,6 +71,9 @@ const EMPTY_LAST_VISITED_AT_ATOM = Atom.make<DateTime.Utc | null>(null).pipe(
 );
 const EMPTY_UPDATED_AT_ATOM = Atom.make<DateTime.Utc | null>(null).pipe(
   Atom.withLabel("web-thread-updated-at:empty"),
+);
+const EMPTY_TURN_SUBAGENTS_ATOM = Atom.make<ThreadTurnSubagents | null>(null).pipe(
+  Atom.withLabel("web-thread-turn-subagents:empty"),
 );
 const EMPTY_THREAD_HISTORY_ATOM = Atom.make<ThreadHistoryMeta>(EMPTY_THREAD_HISTORY_META).pipe(
   Atom.withLabel("web-thread-history:empty"),
@@ -183,6 +187,13 @@ export function useThreadUpdatedAt(ref: ScopedThreadRef | null): DateTime.Utc | 
 export function useThreadStatus(ref: ScopedThreadRef | null): EnvironmentThreadStatus {
   return useAtomValue(
     ref === null ? EMPTY_THREAD_STATUS_ATOM : environmentThreadDetails.statusAtom(ref),
+  );
+}
+
+/** Flow: this turn's subagents, for the status pill's agents segment. */
+export function useThreadTurnSubagents(ref: ScopedThreadRef | null): ThreadTurnSubagents | null {
+  return useAtomValue(
+    ref === null ? EMPTY_TURN_SUBAGENTS_ATOM : environmentThreadDetails.turnSubagentsAtom(ref),
   );
 }
 

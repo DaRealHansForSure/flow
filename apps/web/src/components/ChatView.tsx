@@ -86,6 +86,7 @@ import {
   deriveLatestThreadRun,
   deriveThreadStructureRuntime,
 } from "@t3tools/client-runtime/state/thread-execution";
+import { resolveSubagentPillSegment } from "@t3tools/client-runtime/state/thread-subagents";
 import {
   resolveWorkflowOpening,
   workflowOpeningParentThreadId,
@@ -262,6 +263,7 @@ import {
   useThreadHistory,
   useQuietThreadShell,
   useThreadCheckpointSummaries,
+  useThreadTurnSubagents,
 } from "../state/entities";
 import { useEnvironmentShellHasSnapshot } from "../state/shell";
 import { ChatComposer, type ChatComposerHandle } from "./chat/ChatComposer";
@@ -483,6 +485,7 @@ export default function ChatView(props: ChatViewProps) {
   });
   const serverThreadProjection = useQuietThreadProjection(routeThreadDetailRef);
   const serverProjection = serverThreadProjection?.projection ?? null;
+  const turnSubagents = useThreadTurnSubagents(routeThreadDetailRef);
   // Subagent rows, an open child's own row and its ancestors come from the family when the shell
   // leaves idle children out. Every source agrees on the root, so the key never flips.
   useThreadFamily(
@@ -3197,6 +3200,7 @@ export default function ChatView(props: ChatViewProps) {
       : null;
   const hasThreadNow = childInputNow !== null || goalNow !== null || shownThreadSyncPhase !== null;
   const queuedRunCount = serverProjection ? getUserQueuedThreadRuns(serverProjection).length : 0;
+  const agentsPillSegment = resolveSubagentPillSegment(turnSubagents);
   // The queue control is mounted for every server thread but joins the footer only while it shows
   // something, by its own rule: an optimistic message stops counting once the server has it.
   const hasQueuedTurns =
@@ -3604,6 +3608,11 @@ export default function ChatView(props: ChatViewProps) {
                   work={backgroundWorkNow}
                   workingSince={activeWorkStartedAt}
                   browsers={browserNow}
+                  agents={
+                    agentsPillSegment === null
+                      ? null
+                      : { segment: agentsPillSegment, onOpen: openAgentsSurfaceStable }
+                  }
                   queuedCount={queuedRunCount}
                   showScrollToEnd={showScrollToBottom}
                   onScrollToEnd={() => scrollToEnd(true)}
