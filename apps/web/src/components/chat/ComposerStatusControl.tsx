@@ -1,8 +1,10 @@
 import { ChevronDownIcon, GlobeIcon, ListOrderedIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { tickTextContent } from "~/lib/tickTextContent";
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popover";
+import { Sheet, SheetHeader, SheetPopup, SheetTitle } from "../ui/sheet";
 import { cn } from "~/lib/utils";
 import { STATUS_PILL_CLASS } from "./statusPill";
 import type { ThreadNowItem } from "./ThreadNow";
@@ -14,11 +16,53 @@ export interface ComposerStatusBrowsers {
   readonly onOpen: () => void;
 }
 
+const WORK_TRIGGER_CLASS =
+  "flex min-w-0 cursor-pointer items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-ring";
+
+/** On phones the list is a bottom sheet over the chat, as in the mobile app. */
+function BackgroundWorkSheet(props: {
+  readonly icon: ReactNode;
+  readonly title: ReactNode;
+  readonly details: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        className={WORK_TRIGGER_CLASS}
+        aria-label="Show background work"
+        onPointerDown={(event) => event.preventDefault()}
+        onClick={() => setOpen(true)}
+      >
+        <span aria-hidden className="flex shrink-0">
+          {props.icon}
+        </span>
+        <span className="min-w-0 truncate text-foreground">{props.title}</span>
+      </button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetPopup side="bottom" className="max-h-[70dvh]">
+          <SheetHeader>
+            <SheetTitle>Background work</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 overflow-y-auto px-6 pb-6 [&_li]:py-3.5 [&_li_.text-xs]:text-sm">
+            {props.details}
+          </div>
+        </SheetPopup>
+      </Sheet>
+    </>
+  );
+}
+
 /**
  * Closes on any press outside, caught in the capture phase: the composer handles its own presses
  * and would otherwise keep the popover open.
  */
-function BackgroundWorkPopover(props: { readonly title: ReactNode; readonly details: ReactNode }) {
+function BackgroundWorkPopover(props: {
+  readonly icon: ReactNode;
+  readonly title: ReactNode;
+  readonly details: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -42,12 +86,15 @@ function BackgroundWorkPopover(props: { readonly title: ReactNode; readonly deta
           <button
             ref={triggerRef}
             type="button"
-            className="min-w-0 cursor-pointer truncate text-left text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            className={WORK_TRIGGER_CLASS}
             aria-label="Show background work"
           />
         }
       >
-        {props.title}
+        <span aria-hidden className="flex shrink-0">
+          {props.icon}
+        </span>
+        <span className="min-w-0 truncate text-foreground hover:underline">{props.title}</span>
       </PopoverTrigger>
       <PopoverPopup ref={popupRef} side="top" align="center" className="w-[min(92vw,24rem)]">
         <PopoverTitle className="mb-1">Background work</PopoverTitle>
@@ -100,6 +147,7 @@ export function ComposerStatusControl(props: {
   readonly showScrollToEnd: boolean;
   readonly onScrollToEnd: () => void;
 }) {
+  const isPhone = useMediaQuery("max-sm");
   const segments: ReactNode[] = [];
   if (props.work !== null) {
     const work = props.work;
@@ -108,13 +156,17 @@ export function ComposerStatusControl(props: {
         key="work"
         className="flex h-full min-w-0 items-center gap-2 px-3 first:ps-4 last:pe-4 text-muted-foreground"
       >
-        <span aria-hidden className="flex shrink-0">
-          {work.icon}
-        </span>
-        {work.details ? (
-          <BackgroundWorkPopover title={work.title} details={work.details} />
+        {!work.details ? (
+          <>
+            <span aria-hidden className="flex shrink-0">
+              {work.icon}
+            </span>
+            <span className="min-w-0 truncate text-foreground">{work.title}</span>
+          </>
+        ) : isPhone ? (
+          <BackgroundWorkSheet icon={work.icon} title={work.title} details={work.details} />
         ) : (
-          <span className="min-w-0 truncate text-foreground">{work.title}</span>
+          <BackgroundWorkPopover icon={work.icon} title={work.title} details={work.details} />
         )}
         {work.actions ? (
           <span className="flex shrink-0 items-center gap-2 border-l border-border ps-3">

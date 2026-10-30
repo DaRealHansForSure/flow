@@ -11,7 +11,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Tapping the background work in the status pill lists every running command and subagent with what
-  it is doing, and opens a subagent's thread, like the mobile app's Background work screen.
+  it is doing, and opens a subagent's thread, like the mobile app's Background work screen. On a
+  phone the list opens as a bottom sheet, and the icon is part of the tap target.
 - On web and desktop, holding the send button while the agent works (or right-clicking it) opens a
   menu to Steer now or Queue the message, as in the mobile app.
 - The browser panel and the floating browser can be magnified on your screen without zooming the
