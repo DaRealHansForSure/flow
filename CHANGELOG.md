@@ -53,6 +53,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The context window indicator turns amber from 80 % and red from 90 %, so a filling context shows
+  before it compacts.
 - The update dialog names the app Flow instead of T3 Code, and lists each provider with the version
   it moves from and to (for example Claude 2.1.300 → 2.1.308).
 - In the folder sidebar every thread uses two lines, with its provider icon always at the end of
