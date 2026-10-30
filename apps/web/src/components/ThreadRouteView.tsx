@@ -1,9 +1,11 @@
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
-import { Navigate, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import ChatView from "./ChatView";
 import { BackgroundThreadContext } from "./chat/backgroundThread";
+import { Button } from "./ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "./ui/empty";
 import { SidebarInset } from "./ui/sidebar";
 import { useComposerDraftStore } from "../composerDraftStore";
 import { useSidebarPendingFileDropStore } from "../sidebarPendingFileDropStore";
@@ -16,6 +18,32 @@ import {
   resolveThreadRouteRenderState,
   type ThreadRouteTarget,
 } from "../threadRoutes";
+
+// Flow: a chat that never arrives (an old link, a reset server, a failed load) left a blank page.
+const CHAT_UNAVAILABLE_AFTER_MS = 10_000;
+
+function ThreadUnavailable() {
+  return (
+    <Empty className="flex-1">
+      <EmptyHeader>
+        <EmptyTitle>This chat could not be opened</EmptyTitle>
+        <EmptyDescription>
+          It may have been deleted, or it belongs to a computer this app is not connected to.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <div className="flex gap-2">
+          <Button size="sm" render={<Link to="/" replace />}>
+            Go to start
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </EmptyContent>
+    </Empty>
+  );
+}
 
 /**
  * Unkeyed so navigating between server threads reuses one ChatView. Rendered by the `_chat`
@@ -88,6 +116,17 @@ export function ThreadRouteView({
     draftThreadExists: draftThread !== null,
   });
   const environmentHasAnyThreads = environmentThreadRefs.length > 0 || environmentHasDraftThreads;
+  const waitingForChat =
+    target.kind === "server" && renderState === "loading" && serverThreadShell === null;
+  const waitingKey = waitingForChat ? scopedThreadKey(target.threadRef) : null;
+  const [timedOutKey, setTimedOutKey] = useState<string | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- a timer: a chat still unknown after the wait gets a message instead of a blank page
+  useEffect(() => {
+    if (waitingKey === null) return;
+    const timer = window.setTimeout(() => setTimedOutKey(waitingKey), CHAT_UNAVAILABLE_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, [waitingKey]);
+  const chatUnavailable = waitingKey !== null && timedOutKey === waitingKey;
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clears pending file drops and navigates the router home once a server thread is confirmed missing
   useEffect(() => {
@@ -137,6 +176,8 @@ export function ThreadRouteView({
     } else {
       redirect = <Navigate to="/" replace />;
     }
+  } else if (chatUnavailable) {
+    view = <ThreadUnavailable />;
   } else if (renderState === "ready" || (renderState === "loading" && serverThreadShell !== null)) {
     view = (
       <ChatView

@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Opening a chat that no longer exists, or that belongs to a computer the app is not connected to,
+  shows "This chat could not be opened" after ten seconds, with Go to start and Retry, instead of a
+  blank page.
+
 ## [0.2.1] - 2026-10-30
 
 ### Added
