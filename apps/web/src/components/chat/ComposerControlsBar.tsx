@@ -159,7 +159,7 @@ export function ComposerControlsBar(props: {
     planModeEnabled: false,
     isComposerOwned: true,
     effortDisplay: props.effortDisplay,
-    triggerClassName: cn("ps-1.5 pe-1", TEXT_CONTROL_STATES),
+    triggerClassName: cn("ps-1.5 pe-1 max-sm:text-xs", TEXT_CONTROL_STATES),
     // Permissions always live in the effort menu, so the section never unmounts while open.
     extraMenuContent: (
       <ComposerPermissionsSection
@@ -265,7 +265,7 @@ export function ComposerControlsBar(props: {
         TEXT_CONTROL_STATES,
         composerControlsCollapsed ? "min-w-13 shrink text-xs!" : "min-w-13",
         // Flow: the smaller model label of the mobile app on phones.
-        "max-sm:text-sm",
+        "max-sm:text-xs",
         missingProviderInstanceId !== null && "text-destructive-foreground",
       )}
       terminalOpen={terminalOpen}

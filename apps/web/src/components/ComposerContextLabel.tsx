@@ -17,7 +17,8 @@ export function ComposerContextLabel({
         "min-w-0",
         displayMode === "panel"
           ? "flex-1 overflow-x-clip overflow-y-visible text-left"
-          : "max-w-[240px] group-data-[compact]/composer-context:max-w-0",
+          : // Flow: phones show the strip as icons, so it does not jump with label lengths.
+            "max-w-[240px] group-data-[compact]/composer-context:max-w-0 max-sm:sr-only",
       )}
     >
       <span
