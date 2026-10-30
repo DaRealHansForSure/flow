@@ -64,6 +64,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Brain page's Connected projects is a searchable table: each project's path, source status,
+  last index, number of chats and last activity, sortable by clicking a column (the sort is
+  remembered). On a phone the rows stack and the sort sits in a menu.
 - A page the agent rendered in chat (a chart, diagram or mockup) opens full screen when you tap or
   click it, like an image, instead of through a small button in its corner; it is interactive in
   the full-screen view. On a phone that view's close button stays on the screen.
