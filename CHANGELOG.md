@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The mobile app links bare web addresses in chat in full. Its Markdown parser stopped at
+  `=` after a `#`, so a pairing link lost its token, and older builds left such addresses
+  as plain text.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added
