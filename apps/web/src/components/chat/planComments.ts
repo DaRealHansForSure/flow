@@ -8,7 +8,6 @@ const PLAN_COMMENT_QUOTE_MAX_CHARS = 32;
  */
 export function buildPlanReviewComment(input: {
   readonly id: string;
-  readonly planId: string;
   readonly passage: string;
   readonly note: string;
 }): ReviewCommentContext {
@@ -20,7 +19,8 @@ export function buildPlanReviewComment(input: {
       : firstLine;
   return {
     id: input.id,
-    sectionId: `plan:${input.planId}`,
+    // A plan id can exceed the context's 255-character section id, so all plan comments share one.
+    sectionId: "plan",
     sectionTitle: "Plan comment",
     filePath: "Plan.md",
     startIndex: 0,

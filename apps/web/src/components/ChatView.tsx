@@ -2982,7 +2982,6 @@ export default function ChatView(props: ChatViewProps) {
         composerDraftTarget,
         buildPlanReviewComment({
           id: `plan-comment:${randomUUID()}`,
-          planId: activeProposedPlan.id,
           passage,
           note,
         }),
