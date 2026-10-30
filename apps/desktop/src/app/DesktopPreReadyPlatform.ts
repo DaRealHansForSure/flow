@@ -14,6 +14,7 @@ import * as DesktopEarlyElectronStartup from "./DesktopEarlyElectronStartup.ts";
 import { resolveDesktopAppBranding } from "./DesktopEnvironment.ts";
 import { renderUrlHandlerDesktopEntry } from "./DesktopLinuxUrlHandler.ts";
 import * as ElectronProtocol from "../electron/ElectronProtocol.ts";
+import { withWaylandVulkanDisabled } from "./WaylandVulkan.ts";
 
 export interface DesktopPreReadyCommandLineReader {
   readonly hasSwitch: (switchName: string) => boolean;
@@ -150,8 +151,17 @@ export const make = Effect.gen(function* () {
             maxBuffer: 64 * 1024,
           }),
       });
-      if (disableFeatures !== null) {
-        Electron.app.commandLine.appendSwitch("disable-features", disableFeatures);
+      // Flow: also skip Chromium's Vulkan attempt on Wayland, which only logs an error.
+      const disableFeaturesWithVulkan = withWaylandVulkanDisabled({
+        env: process.env,
+        ozonePlatform: readCommandLineSwitchValue(Electron.app.commandLine, "ozone-platform"),
+        enableFeatures: readCommandLineSwitchValue(Electron.app.commandLine, "enable-features"),
+        disableFeatures:
+          disableFeatures ??
+          readCommandLineSwitchValue(Electron.app.commandLine, "disable-features"),
+      });
+      if (disableFeaturesWithVulkan !== null) {
+        Electron.app.commandLine.appendSwitch("disable-features", disableFeaturesWithVulkan);
       }
     }
 

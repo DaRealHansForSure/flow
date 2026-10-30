@@ -130,6 +130,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On Wayland the desktop app no longer logs "'--ozone-platform=wayland' is not compatible with
+  Vulkan" at every start; Chromium skips Vulkan there, which it could not use anyway.
+
 - The loading indicator no longer pushes the layout aside while a dialog such as Settings
   loads; it overlays the area instead of taking space.
 
