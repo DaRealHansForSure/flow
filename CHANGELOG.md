@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Releases no longer carry `install-cloud.sh`, a copy of `install-cli.sh` for upstream's Cloud
+  dashboard, and each desktop download gets its own `.sha256` file instead of one `SHA256SUMS`,
+  the way the service archive already has one.
+
 ## [0.2.0] - 2026-10-30
 
 ### Added

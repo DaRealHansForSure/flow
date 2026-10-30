@@ -300,7 +300,10 @@ jobs:
             node scripts/merge-update-manifests.ts --platform mac "$arm64_manifest" "$x64_manifest"
             rm "$x64_manifest"
           done
-          (cd release-assets && sha256sum * > SHA256SUMS)
+          # One checksum file per download, the way the service archive has its own.
+          (cd release-assets && for file in *.AppImage *.exe *.dmg *.zip; do
+            sha256sum "$file" > "$file.sha256"
+          done)
 
       - name: Publish versioned and rolling releases
         shell: bash

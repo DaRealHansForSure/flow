@@ -112,14 +112,11 @@ jobs:
           HOME="$test_home" "$test_home/staging/runtime/bin/node" "$test_home/staging/scripts/flow-release.mjs" install-bundle "$test_home/staging" "$digest"
           test "$(cat "$test_home/.local/bin/flow")" = 'someone else owns this'
           HOME="$test_home" "$test_home/.local/share/flow-browser/bin/flow" status
-      - name: Pin the dashboard installer to this release
+      - name: Pin the installer to this release
         if: runner.os == 'Linux'
         env:
           FLOW_VERSION: ${{ needs.version.outputs.version }}
-        # install-cloud.sh is the asset name the deployed dashboard may still fetch.
-        run: |
-          sed "s/__FLOW_CLI_VERSION__/$FLOW_VERSION/g" install.sh > release-browser/install-cli.sh
-          cp release-browser/install-cli.sh release-browser/install-cloud.sh
+        run: sed "s/__FLOW_CLI_VERSION__/$FLOW_VERSION/g" install.sh > release-browser/install-cli.sh
       - uses: actions/upload-artifact@v4
         with:
           name: flow-browser-release-${{ matrix.os }}
