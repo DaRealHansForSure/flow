@@ -700,6 +700,7 @@ export const make = Effect.gen(function* () {
       platform: environment.platform,
       appName: environment.displayName,
       isAppQuitting: () => Ref.getUnsafe(desktopState.quitting),
+      isOwnServerRunning: () => Ref.getUnsafe(desktopState.primaryRunsOwnServer),
       isConfirmationEnabled: () => runPromise(readConfirmWindowClose),
       disableConfirmation: () => runPromise(disableConfirmWindowClose),
     });
