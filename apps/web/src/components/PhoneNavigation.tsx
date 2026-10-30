@@ -123,8 +123,9 @@ export function PhoneNavigation() {
           case "open-sidebar":
             setOpenMobile(true);
             return true;
-          case "browser":
-            return false;
+          case "close-sidebar":
+            setOpenMobile(false);
+            return true;
         }
       },
     });

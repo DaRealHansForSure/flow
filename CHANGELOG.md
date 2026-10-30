@@ -18,7 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   input in expanded tool calls as plain text.
 - On a phone the chat is the main page: Back closes an open menu or sheet, then a full-screen page
   such as Settings (back to the chat it came from), then the side panel, and then opens the projects
-  sidebar. Swiping in from the left edge opens the sidebar, from the right edge the side panel, and
+  sidebar; Back in the sidebar returns to the chat. Swiping in from the left edge opens the sidebar, from the right edge the side panel, and
   swiping back toward the edge closes it.
 - The model chip under the composer turns amber when the selected account has used more than 80 %
   of a usage limit and red above 90 %; its tooltip names the limit and when it resets.

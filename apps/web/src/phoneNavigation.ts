@@ -17,7 +17,7 @@ export type PhoneBackAction =
   | "close-screen"
   | "close-right-panel"
   | "open-sidebar"
-  | "browser";
+  | "close-sidebar";
 
 export function phoneBackAction(state: PhoneBackState): PhoneBackAction {
   if (state.popupOpen) {
@@ -29,8 +29,9 @@ export function phoneBackAction(state: PhoneBackState): PhoneBackAction {
   if (state.rightPanelOpen) {
     return "close-right-panel";
   }
+  // The sidebar is reached from the chat, so Back returns there; the app is left with Home.
   if (state.sidebarOpen) {
-    return "browser";
+    return "close-sidebar";
   }
   return "open-sidebar";
 }

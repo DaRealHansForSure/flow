@@ -19,7 +19,7 @@ describe("phoneBackAction", () => {
     [{ popupOpen: true, screenOpen: true, rightPanelOpen: true }, "close-popup"],
     [{ screenOpen: true, rightPanelOpen: true }, "close-screen"],
     [{ rightPanelOpen: true }, "close-right-panel"],
-    [{ sidebarOpen: true }, "browser"],
+    [{ sidebarOpen: true }, "close-sidebar"],
     [{}, "open-sidebar"],
   ] as const)("%o gives %s", (open, action) => {
     expect(phoneBackAction({ ...CLOSED, ...open })).toBe(action);
