@@ -8,18 +8,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Fixed
-
-- The Windows service release installs only Windows packages again: pnpm 12 no longer expands
-  the `FLOW_INSTALL_*` variables in `pnpm-workspace.yaml`, so the release build pins its copy
-  to the machine it runs on.
-
-### Changed
-
-- One release page per version: `flow-vX.Y.Z` holds the service and the desktop app, with the
-  version's CHANGELOG.md section as its text. The separate `flow-desktop-v*` page, the
-  duplicate `flow-cloud-cli-v*` release and the `builder-debug.yml` asset are gone.
-
 ## [0.2.0] - 2026-10-30
 
 ### Added
@@ -90,6 +78,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- One release page per version: `flow-vX.Y.Z` holds the service and the desktop app, with the
+  version's CHANGELOG.md section as its text. The separate `flow-desktop-v*` page, the
+  duplicate `flow-cloud-cli-v*` release and the `builder-debug.yml` asset are gone.
+
 - Flow runs only while the app is open: the desktop app starts its own server and stops it
   when you quit, instead of attaching to the background service. Settings > General > Keep
   Flow running in the background brings the service back. A machine with the service
@@ -158,6 +150,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   agent on an inexpensive model.
 
 ### Fixed
+
+- The Windows service release installs only Windows packages again: pnpm 12 no longer expands
+  the `FLOW_INSTALL_*` variables in `pnpm-workspace.yaml`, so the release build pins its copy
+  to the machine it runs on.
 
 - The Linux service release builds again: it reads pnpm 12's lockfile, which starts with a
   document of its own.
