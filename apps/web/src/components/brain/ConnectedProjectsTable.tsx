@@ -2,11 +2,11 @@
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/models";
 import type { BrainCommand, BrainSource, BrainState, BrainWorkspace } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
-import { Folder } from "lucide-react";
 
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { useThreadShells } from "../../state/entities";
 import { formatRelativeTimeLabel } from "../../timestampFormat";
+import { ProjectFavicon } from "../ProjectFavicon";
 import { SearchableSelect } from "../SearchableSelect";
 import { DataTable, type DataTableColumn } from "../ui/data-table";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
@@ -109,7 +109,7 @@ export function ConnectedProjectsTable(props: {
       sortValue: (row) => row.project.title,
       renderCell: (row) => (
         <div className="flex max-w-96 min-w-0 items-center gap-2.5">
-          <Folder aria-hidden size={16} className="shrink-0 text-muted-foreground" />
+          <ProjectFavicon project={row.project} className="size-4 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium">{row.project.title}</div>
             <MiddleTruncatedPath path={row.project.workspaceRoot} />
