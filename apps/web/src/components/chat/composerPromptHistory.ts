@@ -3,7 +3,7 @@ import {
   ATTACHMENT_ONLY_BOOTSTRAP_PROMPT,
   collectComposerContextReferences,
 } from "@t3tools/shared/composerContextReferences";
-import { PLAN_IMPLEMENTATION_PROMPT_PREFIX } from "../../proposedPlan";
+import { PLAN_IMPLEMENTATION_PROMPT_PREFIX, PLAN_REVISION_PROMPT_PREFIX } from "../../proposedPlan";
 
 const CLAUDE_ULTRATHINK_PREFIX = "Ultrathink:\n";
 const REVIEW_COMMENT_BLOCK_PATTERN = /<review_comment\b[^>]*>[\s\S]*?<\/review_comment>/g;
@@ -107,7 +107,10 @@ export function recallableComposerPrompt(messageText: string): string {
     prompt = prompt.slice(0, start) + prompt.slice(end);
   }
 
-  const trimmed = prompt.trim();
+  // Flow: recall the feedback the user typed, not the frame a plan revision adds.
+  const trimmed = prompt.trim().startsWith(PLAN_REVISION_PROMPT_PREFIX.trim())
+    ? prompt.trim().slice(PLAN_REVISION_PROMPT_PREFIX.trim().length).trim()
+    : prompt.trim();
   if (
     trimmed === ATTACHMENT_ONLY_BOOTSTRAP_PROMPT ||
     trimmed.startsWith(PLAN_IMPLEMENTATION_PROMPT_PREFIX)

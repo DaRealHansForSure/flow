@@ -1,5 +1,5 @@
 import { SourceControlProviderKind } from "@t3tools/contracts";
-import { resolvePlanFollowUpSubmission } from "../../proposedPlan";
+import { PLAN_REVISION_PROMPT_PREFIX, resolvePlanFollowUpSubmission } from "../../proposedPlan";
 import {
   GitCommandError,
   ProjectId,
@@ -855,7 +855,10 @@ describe("asking about a change rather than working on it", () => {
       previewAnnotations: [],
       reviewComments: [comment],
     });
-    expect(submission).toEqual({ text: draftText, interactionMode: "plan" });
+    expect(submission).toEqual({
+      text: `${PLAN_REVISION_PROMPT_PREFIX}${draftText}`,
+      interactionMode: "plan",
+    });
     expect(context?.records[0]).toMatchObject({ pullRequest: base });
   });
 

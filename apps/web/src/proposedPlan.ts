@@ -1,7 +1,9 @@
 import {
   buildPlanImplementationPrompt,
   PLAN_IMPLEMENTATION_PROMPT_PREFIX,
+  PLAN_REVISION_PROMPT_PREFIX,
   proposedPlanTitle,
+  resolvePlanFollowUpSubmission,
   stripDisplayedPlanMarkdown,
 } from "@t3tools/shared/proposedPlanText";
 
@@ -56,26 +58,13 @@ function sanitizePlanFileSegment(input: string): string {
   return sanitized.length > 0 ? sanitized : "plan";
 }
 
-// Flow: shared with the mobile app's Accept.
-export { buildPlanImplementationPrompt, PLAN_IMPLEMENTATION_PROMPT_PREFIX };
-
-export function resolvePlanFollowUpSubmission(input: { draftText: string; planMarkdown: string }): {
-  text: string;
-  interactionMode: "default" | "plan";
-} {
-  const trimmedDraftText = input.draftText.trim();
-  if (trimmedDraftText.length > 0) {
-    return {
-      text: trimmedDraftText,
-      interactionMode: "plan",
-    };
-  }
-
-  return {
-    text: buildPlanImplementationPrompt(input.planMarkdown),
-    interactionMode: "default",
-  };
-}
+// Flow: shared with the mobile app's Accept and with evals/plan-revisions.
+export {
+  buildPlanImplementationPrompt,
+  PLAN_IMPLEMENTATION_PROMPT_PREFIX,
+  PLAN_REVISION_PROMPT_PREFIX,
+  resolvePlanFollowUpSubmission,
+};
 
 export function buildPlanImplementationThreadTitle(planMarkdown: string): string {
   const title = proposedPlanTitle(planMarkdown);

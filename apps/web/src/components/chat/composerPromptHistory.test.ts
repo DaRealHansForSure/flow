@@ -1,5 +1,6 @@
 import { ScheduledTaskId } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
+import { buildPlanRevisionPrompt } from "@t3tools/shared/proposedPlanText";
 
 import {
   buildComposerPromptHistoryEntries,
@@ -47,6 +48,11 @@ describe("recallableComposerPrompt", () => {
         "email@build:7\n<terminal_context>\n- Build line 7:\n  output\n</terminal_context>",
       ),
     ).toBe("email@build:7");
+  });
+  it("recalls the feedback a plan revision sent, without its frame", () => {
+    expect(recallableComposerPrompt(buildPlanRevisionPrompt("only do steps 0 and 1"))).toBe(
+      "only do steps 0 and 1",
+    );
   });
   it("strips legacy send-time context blocks and the ultrathink prefix", () => {
     const sent =

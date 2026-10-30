@@ -95,6 +95,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Feedback typed while a plan waits (Revise) asks the agent to rework the plan and not to carry out
+  its steps yet, so a remark like "only do steps 0 and 1" no longer starts the work.
 - A new chat on a project's own checkout records the branch it starts on, so the sidebar shows it
   like it does for other chats.
 - A new chat on the project's own checkout shows its branch in the sidebar again: the server
