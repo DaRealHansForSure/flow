@@ -3035,6 +3035,15 @@ export default function ChatView(props: ChatViewProps) {
     isServerThread && hasActionableProposedPlan(activeProposedPlan)
       ? (activeProposedPlan?.id ?? null)
       : null;
+  // Flow: Revise brings the composer into view and says the next message changes the plan; the
+  // hint ends when that plan is no longer the one to review.
+  const [revisingPlanId, setRevisingPlanId] = useState<PlanId | null>(null);
+  const revisingPlan = revisingPlanId !== null && revisingPlanId === reviewablePlanId;
+  const revisePlanStable = useStableCallback(() => {
+    setRevisingPlanId(reviewablePlanId);
+    composerOverlayElement?.scrollIntoView({ block: "nearest" });
+    focusComposer();
+  });
   const { modes: reviewRuntimeModes, mode: reviewRuntimeMode } = resolveCompatibleRuntimeMode(
     runtimeMode,
     activeProviderStatus?.supportedRuntimeModes,
@@ -3054,7 +3063,7 @@ export default function ChatView(props: ChatViewProps) {
             disabled: reviewDisabled,
             accept: (mode: RuntimeMode) => void acceptPlanStable(mode),
             acceptInNewThread: () => void onImplementPlanInNewThreadStable(),
-            revise: focusComposerStable,
+            revise: revisePlanStable,
             decline: declinePlanStable,
             comment: commentOnPlanStable,
           },
@@ -3772,6 +3781,7 @@ export default function ChatView(props: ChatViewProps) {
                               activePendingQuestionIndex={activePendingQuestionIndex}
                               respondingRequestIds={respondingRequestIds}
                               showPlanFollowUpPrompt={showPlanFollowUpPrompt}
+                              revisingPlan={revisingPlan}
                               activeProposedPlan={activeProposedPlan}
                               threadSyncPhase={
                                 activeEnvironmentUnavailable ? null : threadSyncPhase

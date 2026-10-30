@@ -23,6 +23,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Revise on a plan brings the message box into view, puts the cursor there and says "Describe what
+  to change in the plan"; on a phone it looked as if nothing happened.
 - A subagent's chat opens at its prompt instead of behind "Load earlier turns": a chat that an
   agent drives now loads as many rows at once as a turn of yours does.
 - Settings > About no longer offers T3 Code's update tracks (Stable or Nightly, which pointed at
