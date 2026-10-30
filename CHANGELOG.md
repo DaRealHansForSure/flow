@@ -64,15 +64,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- In a No project chat the Brain tab says the chat only reads the Brain, in place of the notes,
-  Auto-Docs and Auto-Skills switches.
 - The Brain page's sources no longer list cards that are not built yet (Linear, Fireflies.ai,
   Meeting Notes, Slack Bot); only GitHub repositories and local folders remain.
 - The Flow logo on the start screen is part of the page itself, so it shows at once on a slow
   connection instead of after the app's first downloads.
-- The Brain page's Connected projects is a searchable table: each project's path, source status,
-  last index, number of chats and last activity, sortable by clicking a column (the sort is
-  remembered). On a phone the rows stack and the sort sits in a menu.
+- The Brain page's Connected projects is a searchable table with each project's icon, path, source
+  status, last index, number of chats and last activity, sortable by clicking a column (the sort is
+  remembered). Long paths are cut in the middle; the full path and what each status means open on
+  hover or tap. On a phone the rows stack and the sort sits in a menu.
 - A page the agent rendered in chat (a chart, diagram or mockup) opens full screen when you tap or
   click it, like an image, instead of through a small button in its corner; it is interactive in
   the full-screen view. On a phone that view's close button stays on the screen.
@@ -136,12 +135,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- The No project folder no longer shows up as a project in Settings, the settings scope picker,
-  the Brain page's Connected projects and its Connect an existing project picker, or the scheduled
-  task editor.
-- A chat started with No project only reads its Brain: nothing from it is recorded as notes,
-  Auto-Docs or Auto-Skills, the agent's save tools refuse it, and its folder can no longer be
-  connected to a Brain.
+- Chats started with No project stay temporary. Their folder no longer appears as a project (in
+  Settings, the settings scope picker, the Brain page's Connected projects and its picker, and the
+  scheduled task editor), the first message no longer asks to connect it to a Brain, and such a
+  chat only reads its Brain: nothing from it is recorded as notes, Auto-Docs or Auto-Skills, the
+  agent's save tools refuse it, and the Brain tab says so in place of the curation switches.
 - Two security fixes from T3 Code, taken ahead of the next sync: a failed clone no longer shows a
   token from the repository URL, and signed asset and upload URLs stay out of HTTP traces.
 - The Brain tab remembers which sections are open (graph, conversation notes, Auto-Docs,
@@ -149,8 +147,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   closed it.
 - A built-in provider such as Codex can be removed from Settings > Providers once it is turned off,
   and a turned-off one no longer stays in the list; Add provider brings it back.
-- Sending the first message of a No project chat no longer asks to connect the scratch folder to a
-  Brain; the Brain picker above the composer (or No Brain) already decides it.
 - An empty composer's send button looks disabled (grey) instead of a ready blue, also in the
   collapsed phone composer.
 - On a phone the composer no longer grows a few pixels when text arrives: the stop button is as big

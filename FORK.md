@@ -16,6 +16,9 @@ every change.
 - **Pick a Brain for a chat without a project.** A "No project" chat starts with no Brain; the
   menu on the new-chat screen gives it one of your Brains, and the chat keeps that choice. You
   get the Brain's memory in quick one-off chats without creating a project first.
+- **No project chats only read.** They never write to their Brain: no conversation notes,
+  Auto-Docs or Auto-Skills, and the agent's save tools refuse them. Their folder is not a project
+  either, so it stays out of Settings, the Brain page and every project picker.
 - **Turn the notes agent off.** The notes agent is the background helper that writes a chat's
   conversation notes, Auto-Docs and Auto-Skills. Settings > General > Brain > Notes agent turns
   it off everywhere, and the Notes agent choice in a chat's Brain tab (Default, On or Off)
@@ -28,6 +31,10 @@ every change.
 - **The notes agent runs your CLI directly.** It starts `claude`, `codex` or `opencode` itself
   instead of going through Flow's old provider adapters, and its sessions show up in that CLI's
   own history, so you can see what it did.
+- **A tidier Brain page.** Connected projects is a searchable, sortable table (icon, path, source
+  status with an explanation, last index, chats, last activity). The connected sources dialogs can
+  be searched, the knowledge graph has a Fit button, and source cards that do not exist yet are
+  hidden. The chat's Brain tab remembers which sections you opened.
 - **The Brain works with T3 Code's new chat engine.** After the sync with T3 Code v0.1.5, the
   Brain briefs and records chats through the new engine, so orientation and note taking keep
   working on the current T3 Code.
@@ -44,12 +51,39 @@ every change.
   whole: amber while it starts, red when it fails.
 - **A chat shows its own Brain.** A chat that picked its own Brain shows that Brain next to it,
   and a "No Brain" chat shows none, instead of the project's Brain.
+- **Plan is a permission mode.** Plan sits in the composer's permission picker and can be the
+  default. A plan opens in a Plan tab like a `Plan.md`, is answered with Accept, Revise or Decline,
+  takes comments on selected passages, keeps its versions and can be reopened. In Plan every
+  command asks first.
+- **More in the right panel.** Besides the Brain and Plan tabs, an Agents tab lists the chat's
+  active and previous agents. The terminal and panel buttons show an arrow while their panel is
+  open.
+- **A status pill above the composer**, as in the mobile app: background work (with the full list
+  one tap away), the working timer, the chat's browsers and queued messages. Holding the send
+  button while the agent works offers Steer now or Queue.
+- **Long chats open fast.** A chat opens with its last five turns and loads older ones in chunks
+  of five as you scroll up.
+- **Browsers, files and pages.** The floating browser can be moved into the right panel and stays
+  there for the chat; both can be magnified without zooming the page. Files from chat links open
+  on their own, Markdown rendered, with Download. A page the agent rendered opens full screen on a
+  tap. Each terminal can get its own font size with a pinch or Ctrl + wheel.
 - **"No project" comes first** in the command palette's project list, so a quick chat is one
   keypress away.
 - **A loading indicator** shows over the content pane while a page or chat is still loading,
   instead of an empty pane, and it does not push the layout around.
 
+### Phones and touch screens
+
+- **Made for the phone browser.** Side menus open full width, header and sidebar buttons are
+  finger-sized, the idle composer looks like a field, Cite works after a long press on Android,
+  hints open on a tap, and the start screen shows its logo at once.
+
 ### Settings
+
+- **Chat font.** Settings > Appearance > Chat font sizes only the chat's text, so the chat can be
+  smaller without shrinking the buttons.
+- **Built-in providers can go.** A turned-off Codex or Claude default leaves Settings > Providers;
+  Add provider brings it back.
 
 - **Pull requests can be turned off.** Settings > Source Control > Pull requests switches off
   every pull and merge request feature on web, desktop and mobile: no PR lookups, no PR status
@@ -132,9 +166,9 @@ every change.
 
 ## In progress
 
-- **The first release from this fork.** The install commands in the [README](./README.md#install),
-  the desktop download and the service updates the app offers all fetch this fork's releases.
-  They work once a release has been published from the fork's `release` branch.
+- **Release 0.2.1.** Plan mode and the chat, Brain and phone changes above are tested as
+  development AppImages (0.2.1-dev.N) before they are released. Version 0.2.0 was the first
+  release published from this fork.
 
 ## Platforms
 
