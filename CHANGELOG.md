@@ -31,8 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- On a phone the left menu's button hides while the side panel is open, instead of sitting over the
-  panel's tabs.
+- On a phone the left menu's button hides while the side panel is open, and the panel's tabs start
+  at the left edge instead of leaving room for it.
 - The "Loading…" shown while a page or dialog such as Usage or Settings opens sits in a solid pill
   instead of floating as bare text over the page below.
 - On a phone the message box takes the cursor, and raises the keyboard, only when you tap it (or
