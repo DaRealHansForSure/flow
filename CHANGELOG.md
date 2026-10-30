@@ -10,6 +10,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- On a phone the chat is the main page: Back closes an open menu or sheet, then a full-screen page
+  such as Settings (back to the chat it came from), then the side panel, and then opens the projects
+  sidebar. Swiping in from the left edge opens the sidebar, from the right edge the side panel, and
+  swiping back toward the edge closes it.
 - The model chip under the composer turns amber when the selected account has used more than 80 %
   of a usage limit and red above 90 %; its tooltip names the limit and when it resets.
 
@@ -23,6 +27,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, opening a chat from the sidebar shows the chat itself; its side panel no longer
+  covers it.
 - A plan card keeps its menu at the top right; a long title wraps to two lines instead of pushing
   the menu onto its own line on a phone.
 - Revise on a plan brings the message box into view, puts the cursor there and says "Describe what
