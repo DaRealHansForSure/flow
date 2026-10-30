@@ -23,6 +23,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   does not need the composer opened first.
 - Work rows tell their kind apart by colour: thinking blue, commands green, tools violet, file
   edits amber and searches cyan, on the icon and as a thin rail beside expanded details.
+  Expanded details of every kind start under the row's label with the same spacing.
 - Code and output inside a tool call or thinking block use a smaller code size than the
   conversation (80 % of the code font size), since they are reference, not the answer.
 - The status pill above the composer shows the turn's agents as in the mobile app ("2/3" while

@@ -2690,6 +2690,12 @@ code {
   border-inline-start: 2px solid var(--work-accent-rail);
   padding-inline-start: 0.625rem;
 }
+/* Commands and tools line their details up with thinking's: under the row's label, same spacing. */
+[data-work-accent] > [data-work-log-details="panel"] {
+  margin-inline-start: 1.75rem;
+  margin-block: 0.125rem 0.375rem;
+  padding-block: 0.25rem;
+}
 [data-work-accent="thinking"] {
   --work-accent-rail: color-mix(in oklab, var(--color-sky-600) 45%, transparent);
 }
