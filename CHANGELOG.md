@@ -64,6 +64,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- In a No project chat the Brain tab says the chat only reads the Brain, in place of the notes,
+  Auto-Docs and Auto-Skills switches.
 - The Brain page's sources no longer list cards that are not built yet (Linear, Fireflies.ai,
   Meeting Notes, Slack Bot); only GitHub repositories and local folders remain.
 - The Flow logo on the start screen is part of the page itself, so it shows at once on a slow

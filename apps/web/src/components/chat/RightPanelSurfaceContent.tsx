@@ -57,6 +57,7 @@ interface RightPanelPullRequestProps {
 interface RightPanelBrainProps {
   readonly threadId: ThreadId | null;
   readonly chatBrain: ChatBrain;
+  readonly readOnly: boolean;
 }
 
 /** Flow: the chat's latest proposed plan, shown in the Plan tab. */
@@ -193,6 +194,7 @@ export function RightPanelSurfaceContent(props: {
           environmentId={props.environmentId}
           threadId={props.brain.threadId}
           chatBrain={props.brain.chatBrain}
+          readOnly={props.brain.readOnly}
         />
       );
     // Flow: the Agents tab.
