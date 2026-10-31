@@ -31,6 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Plan feedback with an attachment.** A message with an image or file sent while a plan waits
   for review now revises the plan, as text-only feedback does, instead of going to the agent as an
   ordinary message.
+- **Provider settings.** The folded Runtime, Environment, Models and MCP servers sections keep a
+  margin to the sides of the provider card instead of meeting its edge.
 
 ## [0.2.2] - 2026-10-31
 
