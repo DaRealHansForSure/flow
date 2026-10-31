@@ -122,6 +122,10 @@ describe.each(["repository", "folder", "destination"] as const)("add-project %s"
     if (step === "repository") {
       await userEvent.keyboard("{Enter}");
       await expect.element(input()).toHaveValue("/workspace/計画");
+    } else if (step === "folder") {
+      await userEvent.keyboard("{Enter}");
+      // Flow: a submitted folder goes on to ask for the project's Brain.
+      await expect.element(page.getByText("Connect project to a brain")).toBeInTheDocument();
     } else {
       await userEvent.keyboard("{Enter}");
       await expect.element(page.getByRole("combobox")).not.toBeInTheDocument();
