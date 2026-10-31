@@ -8,13 +8,7 @@ import type {
   EnvironmentId,
   ThreadId,
 } from "@t3tools/contracts";
-import {
-  BrainCircuitIcon,
-  ChevronDownIcon,
-  BookOpenIcon,
-  Maximize2Icon,
-  AlertCircleIcon,
-} from "lucide-react";
+import { BrainCircuitIcon, ChevronDownIcon, Maximize2Icon, AlertCircleIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrainGraph } from "./BrainGraph";
 import { BrainGraphDialog, brainGraphCorner } from "./BrainGraphDialog";
@@ -105,7 +99,7 @@ export function ChatBrainPanel({
     <>
       <section
         aria-label="Flow brain and conversation notes"
-        className="h-full min-h-0 overflow-y-auto p-4"
+        className="h-full min-h-0 overflow-y-auto pb-4"
       >
         {error && (
           <p role="alert" className="mb-3 text-xs text-destructive">
@@ -120,29 +114,28 @@ export function ChatBrainPanel({
         {response && (
           <>
             <section aria-label="Connected brain">
-              <div className="flex items-center gap-1">
+              {/* Flow: the tab's header line, like the MCP and Agents tabs: name, summary, toggle. */}
+              <div className="flex items-center border-b">
                 <button
                   type="button"
                   aria-expanded={brainExpanded}
                   onClick={() => setBrainExpanded(!brainExpanded)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-left hover:bg-muted/60"
+                  className="flex min-h-11 min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-muted/40"
                 >
                   {brain ? (
                     <BrainIcon id={brain.id} />
                   ) : (
                     <BrainCircuitIcon className="size-4 shrink-0 text-muted-foreground" />
                   )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-xs text-muted-foreground">Brain</span>
-                    <span className="block truncate text-sm">
-                      {brain?.name ?? "No brain connected"}
-                    </span>
+                  <span className="min-w-0 truncate font-semibold text-sm">
+                    {brain?.name ?? "No brain connected"}
                   </span>
                   {consultedNodeCount > 0 && (
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-3xs font-medium text-primary">
-                      {consultedNodeCount} used
+                    <span className="shrink-0 text-muted-foreground text-xs">
+                      · {consultedNodeCount} used
                     </span>
                   )}
+                  <span className="flex-1" />
                   <ChevronDownIcon
                     className={`size-4 shrink-0 text-muted-foreground ${brainExpanded ? "rotate-180" : ""}`}
                   />
@@ -227,9 +220,8 @@ export function ChatBrainPanel({
             </section>
           </>
         )}
-        <section aria-label="Conversation notes" className="mt-3 border-t border-border/60 pt-3">
+        <section aria-label="Conversation notes">
           <BrainSectionHeader
-            icon={BookOpenIcon}
             label="Conversation notes"
             expanded={notesExpanded}
             onToggle={() => setNotesExpanded(!notesExpanded)}

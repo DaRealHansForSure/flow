@@ -55,6 +55,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Running, Finished and Related chats sections with their counts instead of the thread details'
   collapsible Lineage groups. A finished subagent reads Done instead of Idle, and a chat without
   agents says so instead of showing an empty tab.
+- The Brain tab follows the same layout: a header line with the Brain's name and how many of its
+  nodes the chat used, and Conversation notes, Auto-Docs and Auto-Skills as small uppercase section
+  labels without icons, their switches on the right.
 
 ### Fixed
 

@@ -14,7 +14,6 @@ import {
   DownloadIcon,
   FileCode2Icon,
   SearchIcon,
-  SparklesIcon,
 } from "lucide-react";
 import { brainCommand } from "../../state/brain";
 import { BrainSectionHeader } from "./BrainSectionHeader";
@@ -328,17 +327,10 @@ export function BrainDocumentLibrary({
           ) : null;
         const visible = all.filter((doc) => matches(`${doc.name} ${doc.description}`));
         const oldVisible = old.filter((doc) => matches(`${doc.title} ${doc.body}`));
-        const Icon =
-          kind === "skill" ? FileCode2Icon : kind === "doc" ? BookOpenIcon : SparklesIcon;
         const label = kind === "doc" ? "Auto-Docs" : kind === "skill" ? "Auto-Skills" : "Memories";
         return (
-          <section
-            key={kind}
-            aria-label={label}
-            className={compact ? "mt-3 border-t border-border/60 pt-3" : "space-y-3"}
-          >
+          <section key={kind} aria-label={label} className={compact ? undefined : "space-y-3"}>
             <BrainSectionHeader
-              icon={Icon}
               label={label}
               count={all.length + old.length}
               description={compact ? undefined : sectionDescription(kind)}

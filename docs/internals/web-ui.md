@@ -38,6 +38,25 @@ Build new UI the same way. Compose or extend a component instead of copying its 
 When a call site repeats a treatment another one already uses, make it a variant or a slot on the
 shared component. A new composer banner or notice uses the `ComposerBanner` slots.
 
+## Right panel tabs (Flow)
+
+The Brain, Agents and MCP tabs share one layout, so a new tab starts from it:
+
+- **Header line:** the tab's subject in `font-semibold text-sm`, a short muted summary after a
+  `·` (counts, last check), and the tab's actions on the right. It sits above a bottom border and
+  does not scroll. Examples: "Claude Home · checked 0:49", "Agents · 2 running · 4 done".
+- **Sections:** a small uppercase label (`text-2xs font-semibold uppercase tracking-wide`, muted)
+  with its count, or its switch, on the right. Sections are separated by spacing, not borders.
+- **Rows:** full width, `px-3` from the edge, hover fill, the name first and its state as muted text.
+- **Icons only where they inform:** status dots, provider icons and a Brain's own icon. Section
+  labels and headers carry no decorative icons; the tab bar already names the tab.
+
+The pieces: [`AgentsPanelFrame.tsx`](../../apps/web/src/components/chat/AgentsPanelFrame.tsx),
+[`McpServerList.tsx`](../../apps/web/src/components/mcp/McpServerList.tsx) and
+[`BrainSectionHeader.tsx`](../../apps/web/src/components/brain/BrainSectionHeader.tsx). Touch sizes
+come from the shared variables at the end of [`index.css`](../../apps/web/src/index.css)
+(`--touch-control-size` and friends); never repeat those numbers in a component.
+
 ## Handlers in large components
 
 V8 gives every closure created in one render a single shared scope. A memoized handler keeps
