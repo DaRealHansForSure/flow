@@ -3,6 +3,7 @@
 import { readFile, writeFile, rename } from "node:fs/promises";
 import { exportBrain, importBrain } from "./curation/transfer.js";
 import * as NodeCrypto from "node:crypto";
+import { bearerTokenMatches, requireBearerToken } from "./bearer-token.js";
 import { CurationCoordinator } from "./curation/coordinator.js";
 import { CurationStore } from "./curation/store.js";
 import { registerCuratorMcp } from "./curation/tools.js";
@@ -46,9 +47,9 @@ if (process.argv.includes("--catalog")) {
     import("./memory/routes.js"), import("./corrections.js"), import("./db.js"),
     import("./agents/runtime.js"), import("../../graph-gateway/src/verbs.js"),
   ]);
-  const token = process.env.FLOW_ADMIN_TOKEN!;
+  const token = requireBearerToken(process.env.FLOW_ADMIN_TOKEN, "FLOW_ADMIN_TOKEN");
   app.addHook("onRequest", async (request, reply) => {
-    if (request.headers.authorization !== `Bearer ${token}`) return reply.code(401).send({ error: "Unauthorized" });
+    if (!bearerTokenMatches(request.headers.authorization, token)) return reply.code(401).send({ error: "Unauthorized" });
   });
   registerMemoryRoutes(app, process.env.FLOW_DISTILLER === "0" ? {} : { remember: context => {
     const sessionId = context.sessionId ?? `t3-remember-${NodeCrypto.randomUUID()}`;
