@@ -2659,6 +2659,8 @@ code {
   --touch-inline-control-height: 2.25rem;
   --touch-inline-icon-size: 1.125rem;
   --touch-inline-font-size: 0.9375rem;
+  /* A row in a menu, select or list popup: a full finger target, so neighbours are not hit. */
+  --touch-menu-item-height: 2.75rem;
   --desktop-control-size: 2rem;
   --desktop-icon-size: 1.125rem;
   --desktop-inline-control-height: 1.75rem;
@@ -2738,6 +2740,25 @@ code {
   svg:not([data-composer-control-chevron]) {
   width: var(--inline-icon-size);
   height: var(--inline-icon-size);
+}
+/* Menu, select and picker rows on touch screens. The DOM fallback context menu reads the same
+   variable through `--menu-item-min-height`. */
+@media (pointer: coarse) {
+  :root {
+    --menu-item-min-height: var(--touch-menu-item-height);
+  }
+  :is(
+    [data-slot="menu-item"],
+    [data-slot="menu-checkbox-item"],
+    [data-slot="menu-radio-item"],
+    [data-slot="menu-sub-trigger"],
+    [data-slot="select-item"],
+    [data-slot="combobox-item"],
+    [data-slot="autocomplete-item"],
+    [data-slot="command-item"]
+  ) {
+    min-height: var(--touch-menu-item-height);
+  }
 }
 /* A header button with a label (Restore device defaults): control height; icon only on a phone. */
 [data-header-control-labelled] {

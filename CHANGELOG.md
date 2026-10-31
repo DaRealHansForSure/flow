@@ -23,6 +23,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   same size as the header controls.
 - **Stop button.** The banner of a running or waiting chat stops it with a red stop icon instead
   of a text link.
+- **Menus on phones.** Rows of menus, context menus, selects and pickers are a full finger tall
+  (44 px) on touch screens, so a tap no longer hits the row next to it.
 - **Side panel tabs.** Brain, Agents and MCP share one frame: the header line stays in place while
   the tab scrolls and shows in every state, and loading or empty tabs show the same empty state.
 
