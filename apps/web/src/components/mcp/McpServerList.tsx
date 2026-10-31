@@ -216,7 +216,7 @@ export function McpServerList(props: { readonly servers: ReadonlyArray<ProviderM
           <section key={group} aria-label={group} data-panel-section="">
             <div className="flex justify-between px-3 pt-3 pb-1 font-semibold text-2xs text-muted-foreground uppercase tracking-wide">
               <span>{group}</span>
-              <span>{members.length}</span>
+              <span className="tabular-nums">{members.length}</span>
             </div>
             {members.map((server) => (
               <ServerRow key={server.name} server={server} group={group} />

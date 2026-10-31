@@ -17,6 +17,7 @@ import { ConversationNotesPreview } from "./ConversationNotesPreview";
 import { cliName } from "./BrainControls";
 import { BrainSectionHeader } from "./BrainSectionHeader";
 import { ChatCurationSwitch } from "./ChatCurationSwitch";
+import { PanelTabEmpty, PanelTabFrame } from "../chat/PanelTabFrame";
 import type { ChatBrain } from "./useChatBrain";
 
 const OUTPUT_NEEDS_NOTES_AGENT = "Needs the notes agent.";
@@ -97,9 +98,23 @@ export function ChatBrainPanel({
     ) : null;
   return (
     <>
-      <section
+      <PanelTabFrame
         aria-label="Flow brain and conversation notes"
-        className="h-full min-h-0 overflow-y-auto pb-4"
+        role="region"
+        title={brain?.name ?? (response ? "No brain connected" : "Brain")}
+        icon={brain ? <BrainIcon id={brain.id} /> : null}
+        summary={consultedNodeCount > 0 ? `${consultedNodeCount} used` : null}
+        actions={
+          brain ? (
+            <Link
+              to="/brain"
+              search={{ brain: brain.id, environment: environmentId }}
+              className="shrink-0 text-primary text-xs hover:underline"
+            >
+              Open
+            </Link>
+          ) : null
+        }
       >
         {error && (
           <p role="alert" className="px-3 py-2 text-xs text-destructive">
@@ -107,38 +122,12 @@ export function ChatBrainPanel({
           </p>
         )}
         {!response && !error && (
-          <p role="status" className="px-3 py-3 text-xs text-muted-foreground">
-            Loading your brain…
-          </p>
+          <div role="status">
+            <PanelTabEmpty icon={<BrainCircuitIcon />} title="Loading your brain…" />
+          </div>
         )}
         {response && (
           <>
-            {/* Flow: the tab's header line, like the MCP and Agents tabs: name, summary, action. */}
-            <div className="flex min-h-11 items-center gap-2 border-b px-3 py-2">
-              {brain ? (
-                <BrainIcon id={brain.id} />
-              ) : (
-                <BrainCircuitIcon className="size-4 shrink-0 text-muted-foreground" />
-              )}
-              <span className="min-w-0 truncate font-semibold text-sm">
-                {brain?.name ?? "No brain connected"}
-              </span>
-              {consultedNodeCount > 0 && (
-                <span className="shrink-0 text-muted-foreground text-xs">
-                  · {consultedNodeCount} used
-                </span>
-              )}
-              <span className="flex-1" />
-              {brain && (
-                <Link
-                  to="/brain"
-                  search={{ brain: brain.id, environment: environmentId }}
-                  className="shrink-0 text-primary text-xs hover:underline"
-                >
-                  Open
-                </Link>
-              )}
-            </div>
             {brain && failedSources.length > 0 && (
               <div
                 role="alert"
@@ -294,7 +283,7 @@ export function ChatBrainPanel({
             }}
           />
         )}
-      </section>
+      </PanelTabFrame>
       {brain && (
         <BrainDocumentDialog
           document={view === "notes" ? (notes?.notes ?? null) : null}

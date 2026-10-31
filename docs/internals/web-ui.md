@@ -55,7 +55,8 @@ The Brain, Agents and MCP tabs share one layout, so a new tab starts from it:
 - **Icons only where they inform:** status dots, provider icons and a Brain's own icon. Section
   labels and headers carry no decorative icons; the tab bar already names the tab.
 
-The pieces: [`AgentsPanelFrame.tsx`](../../apps/web/src/components/chat/AgentsPanelFrame.tsx),
+The pieces: [`PanelTabFrame.tsx`](../../apps/web/src/components/chat/PanelTabFrame.tsx) (the
+header line, sections and empty state every one of these tabs renders through),
 [`McpServerList.tsx`](../../apps/web/src/components/mcp/McpServerList.tsx) and
 [`BrainSectionHeader.tsx`](../../apps/web/src/components/brain/BrainSectionHeader.tsx). Control sizes
 come from the shared variables at the end of [`index.css`](../../apps/web/src/index.css):
