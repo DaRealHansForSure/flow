@@ -128,7 +128,9 @@ export function PhoneNavigation() {
     };
     // A chat opened straight from a link is the first entry, and Back there would leave the app
     // before the page sees it; one copy of the entry gives Back something to come back from.
-    if (window.history.state?.__TSR_index === 0) {
+    // Read the router's own history: a memory history (tests, embedded views) never changes
+    // window.history, so checking that one added a copy on every run.
+    if (router.history.location.state.__TSR_index === 0) {
       // Without the old state, so the router gives the copy its own history index; copying the
       // index made Back read as a jump, which the blocker let through.
       router.history.push(router.state.location.href);
