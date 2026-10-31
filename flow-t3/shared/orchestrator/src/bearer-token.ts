@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off - Plain Node script code outside the Effect runtime.
 import { timingSafeEqual } from "node:crypto";
 
 /** Shortest token a local Brain endpoint accepts: 32 random bytes in hex. */
