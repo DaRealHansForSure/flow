@@ -1,27 +1,26 @@
 # Worklog
 
-Updated: 2026-10-31 10:45
+Updated: 2026-10-31 12:00
 
 ## Current focus
 
-- **Topic:** UI consistency (icon sizes, panel frame, plan revise with attachments)
-- **Goal:** desktop icons on the shared size concept; side panel tabs on one frame
-- **Branch:** develop (fix/ui-consistency merged, provider inset and touch menu rows on top; not pushed)
-- **Last step done:** shared control + inline size tiers in index.css (sidebar top row, composer
-  strip, dialog close buttons, update icon next to Settings); plan feedback with an attachment
-  revises the plan; red Stop icon in the running banner; PanelTabFrame for Brain, Agents, MCP
-- **Next step:** owner checks in Dev Flow; then push on the owner's word. New test row in
-  apps/web/src/proposedPlan.test.ts written, not run
+- **Topic:** after 0.2.2: phone navigation, T3 Code sync, then Brain settings Part 2
+- **Goal:** sync tested and merged; Brain settings Part 2 next (plan file, step 3)
+- **Branch:** develop (not pushed; phone navigation and T3 sync merged)
+- **Last step done:** T3 Code main synced (414 commits, 19 conflicts), four test lanes run,
+  failures fixed or explained; phone composer focus fixes; dev AppImage 0.2.3-dev.1 building
+- **Next step:** owner checks phone navigation and composer on the dev server; then Part 2
 - **Open questions / blockers:**
-  - Tests failing already in 0.2.1, left for the next upstream sync: BrainRuntime integration
-    (local source lookup), OpenCode2 plan-mode integration, OpenCode2TextGeneration replay,
-    storageCleanup submodule deinit. Load-only flakes: FilePreviewPanel, MessagesTimeline and
-    AttachmentFilePreview browser tests, AcpAdapterV2.
+  - `dc8fe2f29` (new chats record their branch): its test fails on develop before the sync too;
+    the branch is dispatched but missing from the projection. Feature likely not working.
+  - T3's new `ChatView.browser.test.tsx` draft test hangs while rendering AppRoot in the fork.
+  - Known since 0.2.1: BrainRuntime integration, OpenCode2 plan mode, OpenCode2 text generation
+    replay (now 3 tests), storageCleanup submodule test. Load-only flakes in web and browser lanes.
   - Windows service bundle switched off until fixed.
-  - Copy of chats for the scroll repro served on :5734 (PID 2301163, .t3/repro).
 
 ## Finished features
 
+- 2026-10-31 - Phone navigation fixes and T3 Code sync of 31 Oct (develop)
 - 2026-10-31 - Shared icon sizes on desktop, plan revise with attachments, red Stop, shared panel tab frame (develop)
 - 2026-10-31 - Release 0.2.2 (service and desktop) published from release
 - 2026-10-31 - Brain tab sections, sidebar layout, touch sizes, CI fixes (develop, pushed)
@@ -40,6 +39,7 @@ Updated: 2026-10-31 10:45
 
 ## History
 
+- 2026-10-31 12:00 - T3 sync merged into develop after the four test lanes
 - 2026-10-31 03:30 - 0.2.2 released; suites green apart from issues already in 0.2.1
 - 2026-10-31 02:25 - develop pushed, CI quick tests fixed, full suites running for 0.2.2
 - 2026-10-31 01:00 - CI fixed, scratch cleanup merged; push and tests waiting
