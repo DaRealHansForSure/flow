@@ -2931,3 +2931,12 @@ code {
 :root {
   --work-row-foreground: color-mix(in oklab, var(--foreground) 58%, var(--background));
 }
+
+/* Flow: Cite and Comment for selected text, finger-sized on touch screens. */
+@media (pointer: coarse) {
+  [data-selection-action] {
+    min-height: var(--touch-control-size);
+    padding-inline: 1rem;
+    font-size: var(--inline-font-size);
+  }
+}

@@ -3,6 +3,14 @@ export type SelectionActionPoint = { x: number; y: number };
 export const SELECTION_MULTI_CLICK_INTERVAL_MS = 500;
 const SELECTION_SCROLL_SETTLE_MS = 150;
 
+/**
+ * Room below a selection for the phone's selection handle: on a touch screen the action button
+ * sits under the handle instead of beneath it, where it was hard to hit.
+ */
+export function touchSelectionHandleClearance(): number {
+  return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches ? 40 : 0;
+}
+
 export function resolveSelectionActionPosition(options: {
   bounds: { left: number; top: number; width: number; height: number };
   selectionRect: { right: number; bottom: number } | null;

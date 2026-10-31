@@ -35,6 +35,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, Cite and the plan's Comment button sit 40 px under the selection, clear of
+  Android's selection handle, and are finger-sized.
 - A chat's mode, Plan included, now follows the chat on every device: once a message or a plan
   Accept carries the mode to the server, the device drops its own remembered choice. Before, a
   plan accepted on the phone came back as Plan on the PC after a restart.
