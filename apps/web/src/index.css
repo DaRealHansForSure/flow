@@ -2682,12 +2682,13 @@ code {
 }
 /* Chat header, panel layout, the panel's add-tab, the terminal's action buttons, the sidebar's
    footer buttons (Settings, pull requests, usage) and the icon buttons of full-screen pages'
-   headers (Usage, Settings). */
+   headers (Usage, Settings), and the Brain graph's corner buttons. */
 :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
   :is([data-slot="toggle"], button),
 [data-page-header] [data-slot="button"]:has(> svg:only-child),
 [data-right-panel-tabbar] [aria-label="Add panel surface"],
 [data-terminal-actions] button,
+[data-graph-actions] button,
 [data-sidebar-utility] {
   width: var(--header-control-size);
   min-width: var(--header-control-size);
@@ -2725,6 +2726,7 @@ code {
   svg,
 [data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
 [data-terminal-actions] button svg,
+[data-graph-actions] button svg,
 [data-sidebar-utility] svg,
 [data-page-header] [data-slot="button"] > svg:only-child,
 [data-right-panel-tab-list] [data-active-tab] svg,
