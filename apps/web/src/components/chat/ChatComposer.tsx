@@ -419,6 +419,8 @@ export interface ChatComposerProps {
   showPlanFollowUpPrompt: boolean;
   /** Flow: Revise on the open plan was pressed; the next message changes that plan. */
   revisingPlan?: boolean;
+  /** Flow: sends the next message past the fresh plan instead of revising it. */
+  onDismissPlanFollowUp?: () => void;
   activeProposedPlan: LatestProposedPlanState | null;
   threadSyncPhase: ThreadSyncPhase | null;
 
@@ -551,6 +553,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     respondingRequestIds,
     showPlanFollowUpPrompt,
     revisingPlan = false,
+    onDismissPlanFollowUp,
     activeProposedPlan,
     runtimeMode,
     interactionMode: requestedInteractionMode,
@@ -3208,6 +3211,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   <ComposerPlanFollowUpBanner
                     key={activeProposedPlan.id}
                     planTitle={proposedPlanTitle(activeProposedPlan.planMarkdown) ?? null}
+                    onNewMessage={onDismissPlanFollowUp}
                   />
                 ) : null}
               </ComposerBanner.Root>

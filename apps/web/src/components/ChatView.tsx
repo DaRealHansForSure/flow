@@ -1460,12 +1460,32 @@ export default function ChatView(props: ChatViewProps) {
       .getState()
       .openPlanByDefault(activeThreadRef, autoOpenPlanId, !shouldUsePlanSidebarSheet);
   }, [activeThreadRef, autoOpenPlanId, shouldUsePlanSidebarSheet]);
+  const reviewablePlanId =
+    isServerThread && hasActionableProposedPlan(activeProposedPlan)
+      ? (activeProposedPlan?.id ?? null)
+      : null;
+  // Flow: Revise brings the composer into view and says the next message changes the plan; the
+  // hint ends when that plan is no longer the one to review.
+  const [revisingPlanId, setRevisingPlanId] = useState<PlanId | null>(null);
+  const revisingPlan = revisingPlanId !== null && revisingPlanId === reviewablePlanId;
+  // Flow: "New message" on the Plan ready banner sends past that plan instead of revising it.
+  const [dismissedFollowUpPlanId, setDismissedFollowUpPlanId] = useState<PlanId | null>(null);
   const showPlanFollowUpPrompt = shouldShowPlanFollowUpPrompt({
     pendingUserInputCount: pendingUserInputs.length,
     interactionMode,
     latestTurnSettled: planRunSettled,
     hasActionableProposedPlan: hasActionableProposedPlan(activeProposedPlan),
     hasComposerAttachments: composerHasAttachments,
+    planFromLatestRun:
+      activeProposedPlan !== null &&
+      activeProposedPlan.runId !== null &&
+      activeProposedPlan.runId === activeLatestRun?.runId,
+    revisingPlan,
+    followUpDismissed:
+      dismissedFollowUpPlanId !== null && dismissedFollowUpPlanId === activeProposedPlan?.id,
+  });
+  const dismissPlanFollowUpStable = useStableCallback(() => {
+    setDismissedFollowUpPlanId(activeProposedPlan?.id ?? null);
   });
   // Answering an approval or question on any client resumes quota spending, so include it in the key.
   const usageLimitsKey =
@@ -3065,14 +3085,6 @@ export default function ChatView(props: ChatViewProps) {
       );
     }
   });
-  const reviewablePlanId =
-    isServerThread && hasActionableProposedPlan(activeProposedPlan)
-      ? (activeProposedPlan?.id ?? null)
-      : null;
-  // Flow: Revise brings the composer into view and says the next message changes the plan; the
-  // hint ends when that plan is no longer the one to review.
-  const [revisingPlanId, setRevisingPlanId] = useState<PlanId | null>(null);
-  const revisingPlan = revisingPlanId !== null && revisingPlanId === reviewablePlanId;
   const revisePlanStable = useStableCallback(() => {
     setRevisingPlanId(reviewablePlanId);
     composerOverlayElement?.scrollIntoView({ block: "nearest" });
@@ -3818,6 +3830,7 @@ export default function ChatView(props: ChatViewProps) {
                               respondingRequestIds={respondingRequestIds}
                               showPlanFollowUpPrompt={showPlanFollowUpPrompt}
                               revisingPlan={revisingPlan}
+                              onDismissPlanFollowUp={dismissPlanFollowUpStable}
                               activeProposedPlan={activeProposedPlan}
                               threadSyncPhase={
                                 activeEnvironmentUnavailable ? null : threadSyncPhase

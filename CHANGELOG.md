@@ -69,6 +69,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sidebar, and a reload on Settings, the Brain page or Usage keeps the way back to the chat.
 - Picking another Brain on the Brain page no longer adds a page per pick, so Back closes the Brain
   page at once.
+- In Plan mode, a message is sent as feedback on a plan only when that plan came from the chat's
+  latest answer or Revise was pressed on it; an older open plan no longer turns a later answer into
+  "Revise your proposed plan". The Plan ready banner gets New message to send past a fresh plan.
 - A plan proposed while the chat still waits on its subagents no longer offers Accept, Revise and
   Decline before they finish; the run resumes afterwards and may still change the plan.
 - In Chrome on Android, Back in a chat opened straight from a link or after a reload opens the

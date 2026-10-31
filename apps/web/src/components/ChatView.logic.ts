@@ -819,13 +819,24 @@ export function shouldShowPlanFollowUpPrompt(input: {
   latestTurnSettled: boolean;
   hasActionableProposedPlan: boolean;
   hasComposerAttachments: boolean;
+  /** The open plan came from the chat's latest run, not an earlier one left open. */
+  planFromLatestRun: boolean;
+  /** Revise was pressed on the open plan. */
+  revisingPlan: boolean;
+  /** The user chose to send a new message past the fresh plan. */
+  followUpDismissed: boolean;
 }): boolean {
+  // Flow: only a plan the user is looking at takes the next message as feedback; an older open
+  // plan never turns a later answer into a revision.
+  const planTakesNextMessage =
+    input.revisingPlan || (input.planFromLatestRun && !input.followUpDismissed);
   return (
     input.pendingUserInputCount === 0 &&
     input.interactionMode === "plan" &&
     input.latestTurnSettled &&
     input.hasActionableProposedPlan &&
-    !input.hasComposerAttachments
+    !input.hasComposerAttachments &&
+    planTakesNextMessage
   );
 }
 
