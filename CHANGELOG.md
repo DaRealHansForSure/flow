@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Brain runs on fastify 5 and MCP SDK 1.32, which close the advisories for fastify 4 and older
+  MCP SDKs; its endpoints stay local and token-protected as before.
 - The "Enjoying T3 Code? Star on GitHub" toast no longer appears; it pointed at T3 Code's
   repository, not this fork.
 - Revoking a client, a pairing link or all other clients, and forgetting this device, ask in a
