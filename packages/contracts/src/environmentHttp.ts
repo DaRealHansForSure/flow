@@ -595,6 +595,14 @@ class EnvironmentAuthHttpApi extends HttpApiGroup.make("auth")
     }).middleware(EnvironmentAuthenticatedAuth),
   )
   .add(
+    // Flow: any signed-in client may forget its own pairing.
+    HttpApiEndpoint.post("revokeOwnSession", "/api/auth/session/revoke", {
+      headers: OptionalBearerHeaders,
+      success: AuthClientSessionRevokeResult,
+      error: [EnvironmentInternalError],
+    }).middleware(EnvironmentAuthenticatedAuth),
+  )
+  .add(
     HttpApiEndpoint.post("revokeOtherClients", "/api/auth/clients/revoke-others", {
       headers: OptionalBearerHeaders,
       success: AuthOtherClientSessionsRevokeResult,

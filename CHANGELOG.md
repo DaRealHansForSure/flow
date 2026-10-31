@@ -68,6 +68,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Provider settings.** The folded Runtime, Environment, Models and MCP servers sections keep a
   margin to the sides of the provider card instead of meeting its edge.
 
+### Added
+
+- A paired browser can forget itself: Settings → Sharing & access → Forget this device ends its
+  own session without the right to manage other clients; pairing again needs a new code.
+
 ## [0.2.2] - 2026-10-31
 
 ### Added
