@@ -1,6 +1,6 @@
 # Worklog
 
-Updated: 2026-10-31 01:00
+Updated: 2026-10-31 01:40
 
 ## Current focus
 
@@ -12,8 +12,9 @@ Updated: 2026-10-31 01:00
 - **Next step:** owner's word on push and tests; build 0.2.2-dev.2 for the server changes
 - **Open questions / blockers:**
   - Tests written, not run: paging, ThreadFind, usage tone, phone nav, MCP panel, selection.
-  - Usage refresh on tab return proposed, waiting for the owner.
   - Windows service bundle switched off until fixed.
+  - Next topic: research and redo routing/history for phone (chat base, one layer, replace) and
+    recheck desktop navigation; one fork module with fake-history table tests.
 
 ## Finished features
 
