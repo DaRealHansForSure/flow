@@ -51,6 +51,7 @@ import {
   deriveComposerSendState,
   deriveLockedProvider,
   hasServerAcknowledgedLocalDispatch,
+  shouldShowPlanFollowUpPrompt,
   waitForRevertedMessage,
 } from "./ChatView.logic";
 
@@ -102,6 +103,38 @@ const readySession = {
   lastError: null,
   updatedAt: "2026-03-29T00:00:10.000Z",
 };
+
+describe("shouldShowPlanFollowUpPrompt", () => {
+  const waitingPlan = {
+    pendingUserInputCount: 0,
+    interactionMode: "plan",
+    latestTurnSettled: true,
+    hasActionableProposedPlan: true,
+    hasComposerAttachments: false,
+    planFromLatestRun: true,
+    revisingPlan: false,
+    followUpDismissed: false,
+  } as const;
+
+  it.each([
+    ["a plan from the latest run", {}, true],
+    ["an open plan from an earlier run", { planFromLatestRun: false }, false],
+    [
+      "an earlier plan the user chose to revise",
+      { planFromLatestRun: false, revisingPlan: true },
+      true,
+    ],
+    ["a fresh plan the user sends a new message past", { followUpDismissed: true }, false],
+    [
+      "a dismissed plan the user then revises",
+      { followUpDismissed: true, revisingPlan: true },
+      true,
+    ],
+    ["default mode", { interactionMode: "default" }, false],
+  ] as const)("%s", (_case, overrides, expected) => {
+    expect(shouldShowPlanFollowUpPrompt({ ...waitingPlan, ...overrides })).toBe(expected);
+  });
+});
 
 describe("deriveComposerSendState", () => {
   it("keeps text sendable while excluding expired terminal pills", () => {

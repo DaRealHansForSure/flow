@@ -33,6 +33,7 @@ import {
   resolveLocalVersionStatusLabel,
 } from "./ConnectionsSettings.logic";
 import { SettingsPageContainer, SettingsRow, SettingsSection } from "./settingsLayout";
+import { ForgetThisDeviceRow } from "./ForgetThisDeviceRow";
 import { LocalEnvironmentSetting } from "./LocalEnvironmentSetting";
 import { searchableSetting } from "./settingsSearch";
 import { EnvironmentIconMenu } from "./EnvironmentIconPicker";
@@ -1069,6 +1070,7 @@ export function ConnectionsSettings({ view }: { readonly view: "environments" | 
               ) : null
             }
           >
+            {desktopBridge ? null : <ForgetThisDeviceRow />}
             {canManageLocalBackend ? (
               <SettingsRow
                 title="Version"
@@ -1521,6 +1523,7 @@ export function ConnectionsSettings({ view }: { readonly view: "environments" | 
       {hasCloudPublicConfig() ? (
         <RemoveT3ConnectEnvironmentDialog
           environmentLabel={pendingT3ConnectRemoval?.label ?? null}
+          environmentId={pendingT3ConnectRemoval?.environmentId ?? null}
           onCancel={() => setPendingT3ConnectRemoval(null)}
           onConfirm={() => {
             if (!pendingT3ConnectRemoval) return;

@@ -9,7 +9,7 @@ import {
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { Link } from "@tanstack/react-router";
-import { PlugIcon, PowerOffIcon } from "lucide-react";
+import { PlugIcon, PlugZapIcon, PowerOffIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";
@@ -23,8 +23,8 @@ import { useAtomCommand } from "~/state/use-atom-command";
 import { buildThreadRouteParams } from "~/threadRoutes";
 import { formatShortTimestamp } from "~/timestampFormat";
 import { Button } from "../ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 import { RefreshIcon } from "../ui/refresh-icon";
+import { PanelTabEmpty, PanelTabFrame } from "../chat/PanelTabFrame";
 import { McpServerList } from "./McpServerList";
 import { liveProviderSessionId } from "./mcpPanelSession";
 
@@ -47,22 +47,6 @@ function useProviderMcpListing(environmentId: EnvironmentId, input: ProviderMcpL
 
 function instanceOf(listing: ProviderMcpListing | null): ProviderInstanceId | undefined {
   return listing?.instanceId ?? undefined;
-}
-
-function CenteredEmpty(props: {
-  readonly icon: ReactNode;
-  readonly title: string;
-  readonly description: ReactNode;
-}) {
-  return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyMedia variant="icon">{props.icon}</EmptyMedia>
-        <EmptyTitle>{props.title}</EmptyTitle>
-        <EmptyDescription>{props.description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-  );
 }
 
 /** The MCP tab of a chat's right panel. */
@@ -107,26 +91,34 @@ export function McpPanel(props: {
 
   if (listing === null) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-muted-foreground text-xs">
-        {query.error ?? "Asking the agent for its MCP servers..."}
-      </div>
+      <PanelTabFrame title="MCP" actions={refreshButton}>
+        <div role="status">
+          <PanelTabEmpty
+            icon={<PlugZapIcon />}
+            title={
+              query.error ? "Could not ask the agent" : "Asking the agent for its MCP servers..."
+            }
+            description={query.error ?? undefined}
+          />
+        </div>
+      </PanelTabFrame>
     );
   }
   if (listing._tag === "no-session") {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <CenteredEmpty
+      <PanelTabFrame title="MCP" actions={refreshButton}>
+        <PanelTabEmpty
           icon={<PowerOffIcon />}
           title="The agent is not running"
           description="Send a message, then its MCP servers show here."
         />
-      </div>
+      </PanelTabFrame>
     );
   }
   if (listing._tag === "unsupported") {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <CenteredEmpty
+      <PanelTabFrame title={providerName}>
+        <PanelTabEmpty
           icon={<PlugIcon />}
           title={`${providerName} does not report MCP servers`}
           description={
@@ -136,32 +128,26 @@ export function McpPanel(props: {
             </>
           }
         />
-      </div>
+      </PanelTabFrame>
     );
   }
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm">{providerName}</span>
-          <span className="text-muted-foreground text-xs">
-            · checked {formatShortTimestamp(listing.checkedAt, timestampFormat)}
-          </span>
-          <span className="flex-1" />
-          {refreshButton}
+    <PanelTabFrame
+      title={providerName}
+      summary={`checked ${formatShortTimestamp(listing.checkedAt, timestampFormat)}`}
+      actions={refreshButton}
+    >
+      {query.error ? (
+        <div role="alert" className="px-3 pt-2 text-destructive text-xs">
+          {query.error}
         </div>
-        {query.error ? <div className="mt-1 text-destructive text-xs">{query.error}</div> : null}
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {listing.servers.length === 0 ? (
-          <div className="px-3 py-4 text-muted-foreground text-xs">
-            {providerName} has no MCP servers loaded.
-          </div>
-        ) : (
-          <McpServerList servers={listing.servers} />
-        )}
-      </div>
-    </div>
+      ) : null}
+      {listing.servers.length === 0 ? (
+        <PanelTabEmpty icon={<PlugIcon />} title={`${providerName} has no MCP servers loaded`} />
+      ) : (
+        <McpServerList servers={listing.servers} />
+      )}
+    </PanelTabFrame>
   );
 }
 

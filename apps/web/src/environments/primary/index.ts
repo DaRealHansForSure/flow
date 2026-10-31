@@ -6,6 +6,7 @@ export {
   resolveInitialServerAuthGateState,
   revokeOtherServerClientSessions,
   revokeServerClientSession,
+  forgetThisDevice,
   revokeServerPairingLink,
   stripPairingTokenFromUrl,
   submitServerAuthCredential,

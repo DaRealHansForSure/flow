@@ -52,13 +52,12 @@ import {
   ChevronDownIcon,
   CornerLeftUpIcon,
   GitForkIcon,
-  LoaderCircleIcon,
   MoreHorizontalIcon,
   PlusIcon,
   SquareIcon,
   UnplugIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { useArchivedThreadSnapshots } from "../../lib/archivedThreadsState";
 import { buildThreadRouteParams } from "../../threadRoutes";
@@ -74,13 +73,13 @@ import { orchestrationEnvironment } from "../../state/orchestration";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { AgentElapsed } from "./AgentElapsed";
 import { ThreadRelationshipIcon, threadRelationshipStatusLabel } from "./ThreadRelationshipIcon";
-import { AgentsPanelFrame, AgentsPanelSection } from "./AgentsPanelFrame";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+import { PanelTabEmpty, PanelTabFrame, PanelTabSection } from "./PanelTabFrame";
 import { ThreadLineageWorkflowRow } from "./ThreadLineageWorkflowRow";
 
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { toastManager } from "../ui/toast";
+import { Spinner } from "../ui/spinner";
 import { cn } from "~/lib/utils";
 import {
   THREAD_DETAILS_PANEL_CHEVRON_CLASS,
@@ -158,7 +157,7 @@ function ThreadLineageGroup(props: {
   if (props.rows.length === 0) return null;
   if (props.inPanel && props.label) {
     return (
-      <AgentsPanelSection label={props.label} count={props.rows.length}>
+      <PanelTabSection label={props.label} count={props.rows.length}>
         <ThreadLineageRowList
           hiddenCount={hiddenCount}
           onShowMore={() => setVisibleCount((count) => count + THREAD_LINEAGE_PAGE_COUNT)}
@@ -166,7 +165,7 @@ function ThreadLineageGroup(props: {
         >
           {props.children(visibleRows)}
         </ThreadLineageRowList>
-      </AgentsPanelSection>
+      </PanelTabSection>
     );
   }
   return (
@@ -421,6 +420,8 @@ export function ThreadRelationshipsPanel(props: {
     orchestrationEnvironment.stopWorkflow.permissionAtom(props.environmentId),
   );
   const [busyAction, setBusyAction] = useState<"merge" | "detach" | null>(null);
+  const mergeErrorToastId = useRef<string | null>(null);
+  const detachErrorToastId = useRef<string | null>(null);
   const [stoppingId, setStoppingId] = useState<string | null>(null);
   // Derive graphs after hooks to preserve their compiler cache.
   const providers = providersByEnvironment.get(props.environmentId);
@@ -542,6 +543,10 @@ export function ThreadRelationshipsPanel(props: {
 
   const merge = async () => {
     if (!latestMergeBackRun || mergeTargetThreadId === null || busyAction !== null) return;
+    if (mergeErrorToastId.current !== null) {
+      toastManager.close(mergeErrorToastId.current);
+      mergeErrorToastId.current = null;
+    }
     setBusyAction("merge");
     const result = await mergeBack({
       environmentId: props.environmentId,
@@ -552,17 +557,34 @@ export function ThreadRelationshipsPanel(props: {
       },
     });
     setBusyAction(null);
-    if (result._tag === "Success") openThread(mergeTargetThreadId);
+    if (result._tag === "Failure") {
+      mergeErrorToastId.current = toastManager.add({
+        type: "error",
+        title: "Could not merge back",
+      });
+      return;
+    }
+    openThread(mergeTargetThreadId);
   };
 
   const detach = async () => {
     if (!canDetach || busyAction !== null) return;
+    if (detachErrorToastId.current !== null) {
+      toastManager.close(detachErrorToastId.current);
+      detachErrorToastId.current = null;
+    }
     setBusyAction("detach");
-    await stopSession({
+    const result = await stopSession({
       environmentId: props.environmentId,
       input: { threadId: props.threadId },
     });
     setBusyAction(null);
+    if (result._tag === "Failure") {
+      detachErrorToastId.current = toastManager.add({
+        type: "error",
+        title: "Could not disconnect agent session",
+      });
+    }
   };
 
   const stopSubagent = async (
@@ -608,19 +630,13 @@ export function ThreadRelationshipsPanel(props: {
     delegatedFrom === undefined
   ) {
     return (
-      <AgentsPanelFrame summary={null}>
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <BotIcon />
-            </EmptyMedia>
-            <EmptyTitle>No agents in this chat yet</EmptyTitle>
-            <EmptyDescription>
-              Subagents and related chats show here once the agent starts one.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      </AgentsPanelFrame>
+      <PanelTabFrame title="Agents" data-thread-relationships-panel="">
+        <PanelTabEmpty
+          icon={<BotIcon />}
+          title="No agents in this chat yet"
+          description="Subagents and related chats show here once the agent starts one."
+        />
+      </PanelTabFrame>
     );
   }
 
@@ -907,7 +923,7 @@ export function ThreadRelationshipsPanel(props: {
                               onClick={() => void merge()}
                             >
                               {busyAction === "merge" ? (
-                                <LoaderCircleIcon className="size-3 animate-spin" />
+                                <Spinner size="xs" />
                               ) : (
                                 <PullRequestGlyph.merged className="size-3" />
                               )}
@@ -946,7 +962,7 @@ export function ThreadRelationshipsPanel(props: {
                           }
                         >
                           {stoppingId === threadId ? (
-                            <LoaderCircleIcon aria-hidden className="size-3 animate-spin" />
+                            <Spinner aria-hidden size="xs" />
                           ) : (
                             <SquareIcon aria-hidden className="size-3 fill-current" />
                           )}
@@ -980,9 +996,14 @@ export function ThreadRelationshipsPanel(props: {
   // Flow: the Agents tab gets its own frame, laid out like the MCP tab.
   if (inPanel) {
     return (
-      <AgentsPanelFrame summary={agentsSummary} actions={actionsMenu}>
+      <PanelTabFrame
+        title="Agents"
+        summary={agentsSummary}
+        actions={actionsMenu}
+        data-thread-relationships-panel=""
+      >
         {lineageContent}
-      </AgentsPanelFrame>
+      </PanelTabFrame>
     );
   }
   return (

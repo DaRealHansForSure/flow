@@ -808,6 +808,22 @@ export function useComposerSend(input: ComposerSendInput) {
       environmentContexts: composerEnvironmentContextsSnapshot,
       messageText: messageTextForSend,
     } = sendSnapshot;
+    // Feedback with an attachment can't take the plan follow-up path above, which has no
+    // upload step, so it revises the waiting plan through the normal send instead.
+    const revisedPlan =
+      !directAnnotation &&
+      sendInteractionModeEnabled &&
+      showPlanFollowUpPrompt &&
+      activeProposedPlan &&
+      (composerImages.length > 0 || composerFiles.length > 0)
+        ? resolvePlanFollowUpSubmission({
+            draftText: messageTextForSend,
+            planMarkdown: activeProposedPlan.planMarkdown,
+            hasAttachments: true,
+          })
+        : null;
+    const turnMessageText = revisedPlan ? revisedPlan.text.trim() : messageTextForSend;
+    const turnInteractionMode = revisedPlan ? revisedPlan.interactionMode : sendInteractionMode;
     const {
       missingWorktreeBaseBranch,
       baseBranchForWorktree,
@@ -856,7 +872,7 @@ export function useComposerSend(input: ComposerSendInput) {
       model: ctxSelectedModel,
       models: ctxSelectedProviderModels,
       effort: ctxSelectedPromptEffort,
-      text: messageTextForSend || ATTACHMENT_ONLY_BOOTSTRAP_PROMPT,
+      text: turnMessageText || ATTACHMENT_ONLY_BOOTSTRAP_PROMPT,
     });
     if (composerRef.current?.validateProviderInput(outgoingMessageText) === false) {
       return;
@@ -1210,7 +1226,7 @@ export function useComposerSend(input: ComposerSendInput) {
           ? { branch: localCheckoutBranchMismatch.currentBranch }
           : {}),
         runtimeMode,
-        interactionMode: sendInteractionMode,
+        interactionMode: turnInteractionMode,
       });
       if (settingsResult._tag === "Failure") {
         failure = settingsResult;
@@ -1243,7 +1259,7 @@ export function useComposerSend(input: ComposerSendInput) {
           },
           modelSelection: ctxSelectedModelSelection,
           runtimeMode,
-          interactionMode: sendInteractionMode,
+          interactionMode: turnInteractionMode,
         },
       });
       if (compactResult._tag === "Failure") {
@@ -1264,7 +1280,7 @@ export function useComposerSend(input: ComposerSendInput) {
                       title,
                       modelSelection: threadCreateModelSelection,
                       runtimeMode,
-                      interactionMode: sendInteractionMode,
+                      interactionMode: turnInteractionMode,
                       branch: activeThreadBranch,
                       worktreePath: activeThread.worktreePath,
                       createdAt: activeThread.createdAt,
@@ -1306,7 +1322,7 @@ export function useComposerSend(input: ComposerSendInput) {
           modelSelection: ctxSelectedModelSelection,
           titleSeed: title,
           runtimeMode,
-          interactionMode: sendInteractionMode,
+          interactionMode: turnInteractionMode,
           dispatchMode: turnDispatchMode,
           ...(bootstrap ? { bootstrap } : {}),
           createdAt: messageCreatedAt,
@@ -1341,6 +1357,13 @@ export function useComposerSend(input: ComposerSendInput) {
       } else {
         turnStartSucceeded = true;
         setKeepFullHistory(routeThreadKey, false);
+        if (isServerThread) {
+          // Flow: the chat now holds these modes; a device keeping its own choice would bring an
+          // old mode back after another device changed it (Plan accepted on a phone).
+          const draftStore = useComposerDraftStore.getState();
+          draftStore.setInteractionMode(composerDraftTarget, null);
+          draftStore.setRuntimeMode(composerDraftTarget, null);
+        }
         clearUsageLimitsFor(routeThreadKey);
         if (turnUsesAttachmentUploads) {
           releaseDraftAttachments(composerAttachmentsSnapshot);

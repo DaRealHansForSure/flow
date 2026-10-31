@@ -57,7 +57,7 @@ export function useProjectBrainChoice({ required = false }: { required?: boolean
     }).then((result) => {
       if (generation.current !== request) return;
       setLoading(false);
-      if (result._tag === "Success" && !result.value.error) {
+      if (result._tag === "Success" && result.value !== undefined && !result.value.error) {
         setState(result.value.state);
         const boundBrain = projectId
           ? result.value.state.workspaces.find((brain) => brain.projectIds?.includes(projectId))

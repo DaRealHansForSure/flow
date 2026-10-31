@@ -116,6 +116,8 @@ function SheetPopup({
           {showCloseButton && (
             <SheetPrimitive.Close
               aria-label="Close"
+              // Flow: the shared control size from index.css, like every header close.
+              data-header-control=""
               className="absolute end-2 top-2"
               render={<Button size="icon" variant="ghost" />}
             >

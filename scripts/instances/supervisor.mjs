@@ -266,6 +266,8 @@ export async function supervise(directory) {
         env: cleanEnvironment(process.env),
         stdio: ["ignore", "inherit", "inherit", "ipc"],
         detached: NodeOS.platform() !== "win32",
+        // The detached supervisor has no console, so Windows would open a window for each child.
+        windowsHide: true,
         ...options,
       },
     );

@@ -7,6 +7,7 @@ const [command, ...args] = process.argv.slice(2);
 const child = NodeChildProcess.spawn(command, args, {
   stdio: ["ignore", "inherit", "inherit"],
   detached: false,
+  windowsHide: true,
   env: process.env,
 });
 let stopping = false;

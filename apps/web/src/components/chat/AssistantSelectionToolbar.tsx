@@ -15,6 +15,7 @@ import {
   isSelectionRectVisible,
   observeSelectionActions,
   resolveSelectionActionPosition,
+  touchSelectionHandleClearance,
   selectionFocusRect,
   type SelectionActionPoint,
 } from "~/lib/selectionActions";
@@ -120,6 +121,12 @@ export function AssistantSelectionToolbar({
             pointer.y >= line.top - 8 &&
             pointer.y <= line.bottom + 8,
         );
+      const position = resolveSelectionActionPosition({
+        bounds: viewportRect,
+        selectionRect: selectionFocusRect(captured.range, window.getSelection()) ?? rect,
+        pointer: pointerOnText ? pointer : null,
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+      });
       setSelection({
         sourceAnchor: { source: captured.source, range: captured.range, viewport },
         citation: {
@@ -128,12 +135,7 @@ export function AssistantSelectionToolbar({
           messageId: MessageId.make(messageId),
           ...captured.selector,
         },
-        position: resolveSelectionActionPosition({
-          bounds: viewportRect,
-          selectionRect: selectionFocusRect(captured.range, window.getSelection()) ?? rect,
-          pointer: pointerOnText ? pointer : null,
-          viewport: { width: window.innerWidth, height: window.innerHeight },
-        }),
+        position: { ...position, y: position.y + touchSelectionHandleClearance() },
       });
     };
     const actions = observeSelectionActions({
@@ -195,6 +197,7 @@ export function AssistantSelectionToolbar({
       disabled={tooLong}
       aria-label={tooLong ? "Selection is too long to cite" : "Cite selection in composer"}
       className="fixed z-50 max-w-[calc(100vw-1rem)]"
+      data-selection-action=""
       style={{ left: selection.position.x, top: selection.position.y }}
       onPointerDown={(event) => event.preventDefault()}
       onClick={cite}

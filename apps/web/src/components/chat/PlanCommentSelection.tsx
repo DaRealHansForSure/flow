@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import {
   resolveSelectionActionPosition,
   selectionFocusRect,
+  touchSelectionHandleClearance,
   type SelectionActionPoint,
 } from "~/lib/selectionActions";
 import { Button } from "../ui/button";
@@ -89,7 +90,7 @@ export function PlanCommentSelection(props: {
         viewport: { width: window.innerWidth, height: window.innerHeight },
       });
       // Below the selection handles a touchscreen draws under the selected text.
-      const handleOffset = window.matchMedia("(pointer: coarse)").matches ? 28 : 0;
+      const handleOffset = touchSelectionHandleClearance();
       setSelection({ passage, position: { ...position, y: position.y + handleOffset } });
     };
     const schedule = () => {
@@ -156,6 +157,7 @@ export function PlanCommentSelection(props: {
               <Button
                 size="sm"
                 variant="default"
+                data-selection-action=""
                 onClick={() => {
                   setDraftPassage(selection.passage);
                   setSelection(null);

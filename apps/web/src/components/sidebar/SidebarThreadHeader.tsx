@@ -170,8 +170,9 @@ export function SidebarHeaderIconButton({
             size="icon"
             type="button"
             aria-label={label}
+            data-header-control
             {...rest}
-            className={cn("relative size-7 shrink-0", className)}
+            className={cn("relative shrink-0", className)}
           />
         }
       >

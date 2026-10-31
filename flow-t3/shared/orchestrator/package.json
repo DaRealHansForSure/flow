@@ -6,7 +6,7 @@
   "type": "module",
   "description": "Original Flow Brain orchestration, memory and indexing implementation shared by local and cloud hosts.",
   "scripts": {
-    "test": "node --import tsx/esm --test test/memory.test.ts test/live-scheduler.test.ts test/index-incremental.test.ts test/index-queue.test.ts test/curation.test.ts test/curation-coordinator.test.ts test/curation-public.test.ts test/curation-legacy-boundary.test.ts test/curation-notes.test.ts test/curation-migration-v2.test.ts test/brain-transfer.test.ts",
+    "test": "node --import tsx/esm --test test/memory.test.ts test/live-scheduler.test.ts test/index-incremental.test.ts test/index-queue.test.ts test/curation.test.ts test/curation-coordinator.test.ts test/curation-public.test.ts test/curation-legacy-boundary.test.ts test/curation-notes.test.ts test/curation-migration-v2.test.ts test/brain-transfer.test.ts test/bearer-token.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,10 +15,10 @@
     "@slack/bolt": "^5.1.0",
     "@slack/web-api": "^7.18.0",
     "better-sqlite3": "^12.11.1",
-    "fastify": "^4.28.0",
+    "fastify": "^5.12.7",
     "node-pty": "^1.1.0",
     "shell-quote": "^1.10.0",
-    "@modelcontextprotocol/sdk": "^1.12.0"
+    "@modelcontextprotocol/sdk": "^1.32.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

@@ -31,7 +31,7 @@ it("loads only a host-selected integration with its owning Brain storage and too
     FALKOR_SOCKET: NodePath.join(directory, "unused.socket"),
     FLOW_EMBED_URL: "http://127.0.0.1:1",
     FLOW_EMBED_TOKEN: "fixture-embedding-token",
-    FLOW_ADMIN_TOKEN: "fixture-admin-token",
+    FLOW_ADMIN_TOKEN: "a".repeat(64),
     DB_PATH: NodePath.join(directory, "flow.db"),
     JOURNAL_PATH: NodePath.join(directory, "journal.jsonl"),
     OPENCODE_WORKSPACE_DIR: directory,

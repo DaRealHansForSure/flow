@@ -293,6 +293,7 @@ export async function start(input) {
         input.name === "primary" && NodeOS.platform() !== "win32"
           ? await service.managedService()
           : null;
+      console.log(styles().dim(`Starting ${input.name} in the background…`));
       if (managed?.loaded) await service.restartManaged(managed);
       else {
         const log = openSync(join(directory, "runtime.log"), "a", 0o600);
@@ -308,6 +309,11 @@ export async function start(input) {
         });
         child.unref();
       }
+    }
+    if (status?.phase !== "ready") {
+      console.log(
+        styles().dim(`Waiting until it is ready (log: ${join(directory, "runtime.log")})…`),
+      );
     }
     status = await waitFor(directory, (value) => value?.phase === "ready");
     const style = styles();

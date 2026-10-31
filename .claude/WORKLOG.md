@@ -1,23 +1,29 @@
 # Worklog
 
-Updated: 2026-10-31 02:25
+Updated: 2026-10-31 15:20
 
 ## Current focus
 
-- **Topic:** release 0.2.2 (phone and panel polish, No project cleanup, fork CI)
-- **Goal:** full suites green, then release 0.2.2 (service and desktop) from the fork
-- **Branch:** develop (pushed to c0daab5a0; CI failed on two settings tests, fixed locally)
-- **Last step done:** Brain tab sections, sidebar top-row actions and bottom row, phone sidebar
-  stays mounted, touch sizes for composer, page headers and Settings list, Brain graph buttons
-- **Next step:** full suites in four background lanes (.t3/test-run/run-full.sh), fix until green,
-  then CHANGELOG [0.2.2], develop -> main -> release, tag flow-desktop-v0.2.2, back-merge
+- **Topic:** security review fixes done; next browser scenario tests or Brain settings Part 2
+- **Goal:** owner picks the next topic
+- **Branch:** develop (not pushed); `chore/brain-deps` merged and deleted
+- **Last step done:** F1 merged (fastify 5, MCP SDK 1.32): server Brain tests 123/123, graph
+  gateway 36/36, orchestrator 156/165 (the 9 failures are stale curation tests that save "memory"
+  documents, which the store refuses since upstream #108; unrelated to the upgrade)
+- **Next step:** owner's choice; the stale curation tests could be updated to notes documents
 - **Open questions / blockers:**
-  - Reload lands mid-chat on a running chat; not reproduced yet (copy of chats on :5734).
-  - Windows service bundle switched off until fixed.
-  - Next topic after the release: routing/history redesign; Brain settings Part 2.
+  - T3's `ChatView.browser.test.tsx` draft test times out under CPU load (also without the phone
+    navigation); passes on an idle machine. Run the web-browser lane alone.
+  - Test lanes: cap workers per lane (`.t3/test-run/run-full.sh`), else load timeouts.
+  - Remaining audit findings are T3's (MCP SDK's express helpers, node-llama-cpp's simple-git,
+    vitest's undici); they move with the next T3 sync.
 
 ## Finished features
 
+- 2026-10-31 - Security review fixes F2-F4, plan-mode feedback only for the plan in front of the user, plan waits for subagents, Android Chrome Back, Windows bundle (develop)
+- 2026-10-31 - Phone navigation fixes and T3 Code sync of 31 Oct (develop)
+- 2026-10-31 - Shared icon sizes on desktop, plan revise with attachments, red Stop, shared panel tab frame (develop)
+- 2026-10-31 - Release 0.2.2 (service and desktop) published from release
 - 2026-10-31 - Brain tab sections, sidebar layout, touch sizes, CI fixes (develop, pushed)
 - 2026-10-31 - Flow CI, T3 workflows removed, No project cleanup, Cite and composer fixes (develop)
 - 2026-10-30 - MCP view: MCP tab, /mcp, Settings > Providers MCP section, folded provider cards (merged into develop)
@@ -34,6 +40,8 @@ Updated: 2026-10-31 02:25
 
 ## History
 
+- 2026-10-31 12:00 - T3 sync merged into develop after the four test lanes
+- 2026-10-31 03:30 - 0.2.2 released; suites green apart from issues already in 0.2.1
 - 2026-10-31 02:25 - develop pushed, CI quick tests fixed, full suites running for 0.2.2
 - 2026-10-31 01:00 - CI fixed, scratch cleanup merged; push and tests waiting
 - 2026-10-30 23:45 - feat/mcp-view merged into develop; later: Check servers for Codex and OpenCode

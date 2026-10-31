@@ -317,7 +317,7 @@ import { useThreadLinkedPullRequest } from "./pullRequest/useThreadLinkedPullReq
 import { useProactivePanels } from "../hooks/useProactivePanels";
 import { useIncrementalTimelineEntries } from "../hooks/useIncrementalTimelineEntries";
 import { useRightPanelSurfaceClose } from "../hooks/useRightPanelSurfaceClose";
-import type { ComposerBannerStackItem } from "./chat/ComposerBannerStack";
+import { ComposerBannerStack, type ComposerBannerStackItem } from "./chat/ComposerBannerStack";
 import { modelFallbackBannerItem } from "./chat/ComposerUsageLimits";
 import { ComposerSurface } from "./chat/ComposerSurface";
 import { resolveThreadSyncPhase } from "../threadSync";
@@ -387,6 +387,7 @@ const EMPTY_PROVIDER_MODELS: ServerProvider["models"] = [];
 const EMPTY_USAGE_LIMIT_SOURCES: UsageLimitSourceSnapshots = [];
 import type { CodexArtifactTemplate } from "@t3tools/shared/codexArtifactTemplates";
 import { allowComposerFocus } from "../touchComposerFocus";
+import { backgroundWorkHoldsCompletion } from "@t3tools/shared/orchestrationV2PendingBackgroundWork";
 
 const EMPTY_FEEDBACK_SUBMISSIONS: ReadonlyArray<CodexFeedbackSubmission> = [];
 const EMPTY_PROVIDER_SKILLS: ServerProvider["skills"] = [];
@@ -870,6 +871,19 @@ export default function ChatView(props: ChatViewProps) {
           messages: serverProjection.messages,
           parentSubagents: workflowOpeningParentProjection?.projection.subagents ?? null,
         });
+  // Flow: a subagent's chat opens on its latest work; while its first message is still behind
+  // "Load earlier turns", show the task it was given from the parent's record.
+  const subagentOpeningParentProjection = useQuietThreadProjection(
+    activeThread?.lineage.relationshipToParent === "subagent" && serverThreadHistory.hasMoreHistory
+      ? parentSubagentThreadRef
+      : null,
+  );
+  const subagentOpeningTask =
+    activeThread === undefined || activeThread === null
+      ? null
+      : (subagentOpeningParentProjection?.projection.subagents.find(
+          (subagent) => subagent.childThreadId === activeThread.id,
+        )?.prompt ?? null);
   // A linked environment's agent may have delegated this thread from there.
   const delegatedFrom = activeThread?.delegatedFrom ?? null;
   const delegatedFromEnvironment = useEnvironment(delegatedFrom?.environmentId ?? null);
@@ -1026,7 +1040,12 @@ export default function ChatView(props: ChatViewProps) {
   useLayoutEffect(() => {
     const explicitThreadRef = explicitDiffOpenRef.current;
     explicitDiffOpenRef.current = null;
-    if (diffOpen && activeThreadRef && explicitThreadRef !== activeThreadRef) {
+    if (
+      diffOpen &&
+      activeThreadRef &&
+      explicitThreadRef !== activeThreadRef &&
+      !useDiffPanelStore.getState().consumeKeepSelectionOnOpen(activeThreadRef)
+    ) {
       useDiffPanelStore.getState().selectGitScope(activeThreadRef, "branch");
     }
   }, [activeThreadRef, diffOpen]);
@@ -1393,8 +1412,12 @@ export default function ChatView(props: ChatViewProps) {
   // Flow: the open plan wins over a newer closed one, so a reopened older plan is the one answered.
   const planVersions = deriveProposedPlanVersions(serverProjection);
   const openPlanVersion = planVersions.findLast((version) => version.status === "active");
+  const pendingBackgroundTasks = deriveThreadPendingBackgroundTasks(serverProjection);
+  // Flow: a run that waits on its subagents resumes when they finish and may change the plan, so
+  // the plan is answered only once that work is done too.
+  const planRunSettled = latestRunSettled && !backgroundWorkHoldsCompletion(pendingBackgroundTasks);
   const activeProposedPlan = (() => {
-    if (!latestRunSettled) {
+    if (!planRunSettled) {
       return null;
     }
     if (openPlanVersion !== undefined) {
@@ -1437,12 +1460,32 @@ export default function ChatView(props: ChatViewProps) {
       .getState()
       .openPlanByDefault(activeThreadRef, autoOpenPlanId, !shouldUsePlanSidebarSheet);
   }, [activeThreadRef, autoOpenPlanId, shouldUsePlanSidebarSheet]);
+  const reviewablePlanId =
+    isServerThread && hasActionableProposedPlan(activeProposedPlan)
+      ? (activeProposedPlan?.id ?? null)
+      : null;
+  // Flow: Revise brings the composer into view and says the next message changes the plan; the
+  // hint ends when that plan is no longer the one to review.
+  const [revisingPlanId, setRevisingPlanId] = useState<PlanId | null>(null);
+  const revisingPlan = revisingPlanId !== null && revisingPlanId === reviewablePlanId;
+  // Flow: "New message" on the Plan ready banner sends past that plan instead of revising it.
+  const [dismissedFollowUpPlanId, setDismissedFollowUpPlanId] = useState<PlanId | null>(null);
   const showPlanFollowUpPrompt = shouldShowPlanFollowUpPrompt({
     pendingUserInputCount: pendingUserInputs.length,
     interactionMode,
-    latestTurnSettled: latestRunSettled,
+    latestTurnSettled: planRunSettled,
     hasActionableProposedPlan: hasActionableProposedPlan(activeProposedPlan),
     hasComposerAttachments: composerHasAttachments,
+    planFromLatestRun:
+      activeProposedPlan !== null &&
+      activeProposedPlan.runId !== null &&
+      activeProposedPlan.runId === activeLatestRun?.runId,
+    revisingPlan,
+    followUpDismissed:
+      dismissedFollowUpPlanId !== null && dismissedFollowUpPlanId === activeProposedPlan?.id,
+  });
+  const dismissPlanFollowUpStable = useStableCallback(() => {
+    setDismissedFollowUpPlanId(activeProposedPlan?.id ?? null);
   });
   // Answering an approval or question on any client resumes quota spending, so include it in the key.
   const usageLimitsKey =
@@ -1524,7 +1567,6 @@ export default function ChatView(props: ChatViewProps) {
     activeThreadLiveTokenUsage,
     activeProviderThread,
   );
-  const pendingBackgroundTasks = deriveThreadPendingBackgroundTasks(serverProjection);
   const activeWorkStartedAt =
     deriveActiveWorkStartedAt(activeActivityRun, activeRuntime, localDispatchStartedAt) ??
     runlessWorkStartedAt;
@@ -2439,8 +2481,8 @@ export default function ChatView(props: ChatViewProps) {
   const {
     acknowledgeActiveThreadWoke,
     activeBranchMismatchKey,
-    backgroundWorkNow,
-    childInputNow,
+    attentionNow,
+    workNow,
     goalNow,
     handleSwitchCheckoutToThread,
     handleSwitchCheckoutToThreadStable,
@@ -2460,6 +2502,7 @@ export default function ChatView(props: ChatViewProps) {
     activeThread,
     activeThreadId,
     activeThreadRef,
+    threadDetailRef: routeThreadDetailRef,
     activeThreadKey,
     activeThreadShell,
     activeLatestRun,
@@ -2482,7 +2525,6 @@ export default function ChatView(props: ChatViewProps) {
     clearUsageLimitsFor,
     beginLocalDispatch,
     resetLocalDispatch,
-    scheduleComposerFocus,
     scrollToEnd,
     persistThreadSettingsForNextTurn,
   });
@@ -2737,6 +2779,11 @@ export default function ChatView(props: ChatViewProps) {
     : EMPTY_PROVIDER_SKILLS;
   const threadFindEnabled = isServerThread && serverConfig?.threadFind === true;
   const isThreadFindActive = useThreadFindOpen(activeThreadRef, threadFindEnabled);
+  const openThreadFindStable = useStableCallback((threadRef: ScopedThreadRef) => {
+    if (threadFindEnabled && scopedThreadKey(threadRef) === activeThreadKey) {
+      openThreadFind(activeThreadKey);
+    }
+  });
 
   useChatShortcuts({
     enabled: activeThreadId !== null && !backgroundThread,
@@ -3038,14 +3085,6 @@ export default function ChatView(props: ChatViewProps) {
       );
     }
   });
-  const reviewablePlanId =
-    isServerThread && hasActionableProposedPlan(activeProposedPlan)
-      ? (activeProposedPlan?.id ?? null)
-      : null;
-  // Flow: Revise brings the composer into view and says the next message changes the plan; the
-  // hint ends when that plan is no longer the one to review.
-  const [revisingPlanId, setRevisingPlanId] = useState<PlanId | null>(null);
-  const revisingPlan = revisingPlanId !== null && revisingPlanId === reviewablePlanId;
   const revisePlanStable = useStableCallback(() => {
     setRevisingPlanId(reviewablePlanId);
     composerOverlayElement?.scrollIntoView({ block: "nearest" });
@@ -3215,7 +3254,8 @@ export default function ChatView(props: ChatViewProps) {
               .activateSurface(activeThreadRef, browserSurfaceIds.at(-1)!),
         }
       : null;
-  const hasThreadNow = childInputNow !== null || goalNow !== null || shownThreadSyncPhase !== null;
+  // Flow: the thread's work shows in the status control above the composer, not in this banner.
+  const hasThreadNow = attentionNow !== null || goalNow !== null || shownThreadSyncPhase !== null;
   const queuedRunCount = serverProjection ? getUserQueuedThreadRuns(serverProjection).length : 0;
   const agentsPillSegment = resolveSubagentPillSegment(turnSubagents);
   // The queue control is mounted for every server thread but joins the footer only while it shows
@@ -3229,10 +3269,7 @@ export default function ChatView(props: ChatViewProps) {
     );
   // Flow: the status control above the composer stays put; leave room for it at the end.
   const statusControlPinned =
-    backgroundWorkNow !== null ||
-    activeWorkStartedAt !== null ||
-    browserNow !== null ||
-    queuedRunCount > 0;
+    workNow !== null || activeWorkStartedAt !== null || browserNow !== null || queuedRunCount > 0;
   // The end of the timeline holds the thread's present and next turns: what it is doing now,
   // its lifecycle status, guest messages awaiting you, then your queued messages.
   const timelineFooter =
@@ -3255,7 +3292,7 @@ export default function ChatView(props: ChatViewProps) {
         )}
         <ThreadNow
           key={routeThreadKey}
-          attention={childInputNow}
+          attention={attentionNow}
           work={null}
           syncPhase={shownThreadSyncPhase}
           goal={goalNow}
@@ -3479,6 +3516,7 @@ export default function ChatView(props: ChatViewProps) {
             {...(activeDraftLogicalProjectKey
               ? { onOpenProjectSettings: handleOpenDraftProjectSettingsStable }
               : {})}
+            {...(threadFindEnabled ? { onFindInThread: openThreadFindStable } : {})}
           />
         </header>
 
@@ -3617,12 +3655,13 @@ export default function ChatView(props: ChatViewProps) {
                 {...(threadHistoryControls === undefined
                   ? {}
                   : { historyControls: threadHistoryControls })}
+                openingTask={subagentOpeningTask}
               />
 
               {isThreadFindActive ? null : (
                 <ComposerStatusControl
                   bottom={scrollToEndClearance + 4}
-                  work={backgroundWorkNow}
+                  work={workNow}
                   workingSince={activeWorkStartedAt}
                   browsers={browserNow}
                   agents={
@@ -3766,7 +3805,7 @@ export default function ChatView(props: ChatViewProps) {
                                             : projectCloneSendBlockReason
                               }
                               isPreparingWorktree={isPreparingWorktree && !sendQueuesBehindSetup}
-                              bannerItems={composerBannerItems}
+                              bannerItems={isDraftHeroState ? [] : composerBannerItems}
                               resumeCompactionTokens={resumeCompactionTokens}
                               keepFullHistory={keepFullHistory}
                               onToggleKeepFullHistory={toggleKeepFullHistoryStable}
@@ -3791,6 +3830,7 @@ export default function ChatView(props: ChatViewProps) {
                               respondingRequestIds={respondingRequestIds}
                               showPlanFollowUpPrompt={showPlanFollowUpPrompt}
                               revisingPlan={revisingPlan}
+                              onDismissPlanFollowUp={dismissPlanFollowUpStable}
                               activeProposedPlan={activeProposedPlan}
                               threadSyncPhase={
                                 activeEnvironmentUnavailable ? null : threadSyncPhase
@@ -3939,6 +3979,12 @@ export default function ChatView(props: ChatViewProps) {
                           )}
                         </div>
                       </div>
+                      {isDraftHeroState && composerBannerItems.length > 0 ? (
+                        // Out of flow, like the headline, so a notice never moves the centered composer.
+                        <div className="absolute inset-x-0 top-full flex flex-col gap-1 pt-4">
+                          <ComposerBannerStack items={composerBannerItems} detached />
+                        </div>
+                      ) : null}
                     </ComposerSurface.Shell>
                     <div
                       aria-hidden
