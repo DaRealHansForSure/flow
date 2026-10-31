@@ -17,6 +17,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Desktop icon sizes.** The sidebar's top row (project filter, Add project, New thread) uses
   the same button and icon size as the chat header, and the composer's checkout, branch and
   permissions strip is larger and easier to read.
+- **Close buttons.** The close button of dialogs and sheets, such as the Brain graph, has the
+  same size as the header controls.
 
 ### Fixed
 
