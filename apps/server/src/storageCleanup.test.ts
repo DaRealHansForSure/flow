@@ -540,7 +540,14 @@ const submoduleCleanupFixture = () =>
     const recordSubmodules = () =>
       Effect.gen(function* () {
         yield* command(submodule, ["commit", "-am", "record child"]);
-        yield* command(submodule, ["push", "origin", "HEAD:submodule"]);
+        // The user's git config may refuse pushes with unpushed submodule commits.
+        yield* command(submodule, [
+          "-c",
+          "push.recurseSubmodules=no",
+          "push",
+          "origin",
+          "HEAD:submodule",
+        ]);
         yield* command(worktree, ["commit", "-am", "record module"]);
       });
     yield* recordSubmodules();
