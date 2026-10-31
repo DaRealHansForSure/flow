@@ -18,6 +18,7 @@ import {
   GitBranchIcon,
   MessageCircleIcon,
   ShieldQuestionIcon,
+  SquareIcon,
   TargetIcon,
   TerminalIcon,
 } from "lucide-react";
@@ -225,9 +226,22 @@ export function backgroundWorkNowItem(input: {
             className="tabular-nums"
           />
         )}
-        <InlineButton disabled={input.stopDisabled} onClick={() => void input.onStop()}>
-          {input.stopping ? "Stopping..." : "Stop"}
-        </InlineButton>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                size="icon-xs"
+                variant="destructive"
+                aria-label={input.stopping ? "Stopping..." : "Stop"}
+                disabled={input.stopDisabled}
+                onClick={() => void input.onStop()}
+              />
+            }
+          >
+            <SquareIcon className="fill-current" />
+          </TooltipTrigger>
+          <TooltipPopup side="top">{input.stopping ? "Stopping..." : "Stop"}</TooltipPopup>
+        </Tooltip>
       </>
     ),
   };

@@ -19,6 +19,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   permissions strip is larger and easier to read.
 - **Close buttons.** The close button of dialogs and sheets, such as the Brain graph, has the
   same size as the header controls.
+- **Stop button.** The banner of a running or waiting chat stops it with a red stop icon instead
+  of a text link.
 
 ### Fixed
 
