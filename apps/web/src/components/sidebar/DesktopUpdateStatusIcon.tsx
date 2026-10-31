@@ -93,7 +93,7 @@ function DesktopUpdateDownloadedIcon() {
   return (
     <span className="relative grid size-4 place-items-center">
       <RotateCwIcon className="size-4" />
-      <span className="absolute -right-1 -bottom-1 grid size-2.5 place-items-center rounded-full bg-foreground text-background ring-2 ring-background">
+      <span className="absolute -right-1 -bottom-1 grid size-2.5 place-items-center rounded-full bg-current ring-2 ring-background [&_svg]:text-background">
         <CheckIcon className="size-2" strokeWidth={3} />
       </span>
     </span>
@@ -111,12 +111,29 @@ export function DesktopUpdateStatusIcon({
   readonly onCheckAnimationIteration?: AnimationEventHandler<SVGSVGElement>;
   readonly status: DesktopUpdateStatusIconState;
 }) {
-  if (status === "available") return <DesktopUpdateAvailableIcon />;
-  if (status === "downloading") {
-    return <DesktopUpdateDownloadingIcon percent={downloadPercent ?? null} />;
+  // Flow: a pending update takes the theme's primary color; idle and checking stay neutral.
+  if (status === "available") {
+    return (
+      <span className="contents text-primary">
+        <DesktopUpdateAvailableIcon />
+      </span>
+    );
   }
-  if (status === "downloaded") return <DesktopUpdateDownloadedIcon />;
-  if (status === "everything") return <CircleArrowUpIcon className="size-4" />;
+  if (status === "downloading") {
+    return (
+      <span className="contents text-primary">
+        <DesktopUpdateDownloadingIcon percent={downloadPercent ?? null} />
+      </span>
+    );
+  }
+  if (status === "downloaded") {
+    return (
+      <span className="contents text-primary">
+        <DesktopUpdateDownloadedIcon />
+      </span>
+    );
+  }
+  if (status === "everything") return <CircleArrowUpIcon className="size-4 text-primary" />;
 
   return (
     <RefreshIcon

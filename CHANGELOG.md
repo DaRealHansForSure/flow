@@ -12,6 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Update dialog.** Flow, servers and providers are listed the same way, each as one line with
   the version it moves from and to.
+- **Update icon.** The sidebar update button takes the theme's primary color while an update is
+  waiting or downloading.
 
 ## [0.2.2] - 2026-10-31
 
