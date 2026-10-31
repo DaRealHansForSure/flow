@@ -35,6 +35,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A chat's mode, Plan included, now follows the chat on every device: once a message or a plan
+  Accept carries the mode to the server, the device drops its own remembered choice. Before, a
+  plan accepted on the phone came back as Plan on the PC after a restart.
 - On a phone, a resting composer no longer opens when a closing dialog or sheet hands focus back
   to one of its buttons; it opens only for a tap on it or an action like Revise.
 - On a phone, the touch that closes a sheet such as Background work no longer opens the resting

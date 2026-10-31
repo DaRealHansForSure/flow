@@ -181,13 +181,15 @@ export function usePlanFollowUpSend(input: PlanFollowUpSendInput) {
       settingsResult._tag === "Failure" ? settingsResult : null;
 
     if (failure === null) {
+      // Flow: the chat holds these modes now; this device drops its own choice so every device
+      // follows the chat (an Accept on the phone also ends Plan on the PC).
       setComposerDraftInteractionMode(
         scopeThreadRef(activeThread.environmentId, threadIdForSend),
-        nextInteractionMode,
+        null,
       );
       setComposerDraftRuntimeMode(
         scopeThreadRef(activeThread.environmentId, threadIdForSend),
-        nextRuntimeMode,
+        null,
       );
 
       const startResult = await startThreadTurn({
