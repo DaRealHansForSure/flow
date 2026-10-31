@@ -2682,10 +2682,10 @@ code {
 }
 /* Chat header, panel layout, the panel's add-tab, the terminal's action buttons, the sidebar's
    footer buttons (Settings, pull requests, usage) and the icon buttons of full-screen pages'
-   headers (Usage, Settings), and the Brain graph's corner buttons. */
+   headers (`data-header-control`: Usage, Settings, Brain), and the Brain graph's corner buttons. */
 :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
   :is([data-slot="toggle"], button),
-[data-page-header] [data-slot="button"]:has(> svg:only-child),
+[data-header-control],
 [data-right-panel-tabbar] [aria-label="Add panel surface"],
 [data-terminal-actions] button,
 [data-graph-actions] button,
@@ -2713,6 +2713,16 @@ code {
     height: var(--touch-icon-size);
   }
 }
+/* A header button with a label (Restore device defaults): control height; icon only on a phone. */
+[data-header-control-labelled] {
+  height: var(--header-control-size);
+}
+@media (max-width: 639px) {
+  [data-header-control-labelled] {
+    width: var(--header-control-size);
+    padding: 0;
+  }
+}
 /* The side panel's tabs: control height, icon on the same inset as a control's icon. */
 [data-right-panel-tab-list] [data-active-tab] {
   height: var(--header-tab-height);
@@ -2728,7 +2738,8 @@ code {
 [data-terminal-actions] button svg,
 [data-graph-actions] button svg,
 [data-sidebar-utility] svg,
-[data-page-header] [data-slot="button"] > svg:only-child,
+[data-header-control] svg,
+[data-header-control-labelled] svg,
 [data-right-panel-tab-list] [data-active-tab] svg,
 :is([data-slot="sidebar-trigger"], [data-sidebar="trigger"], [aria-label="Toggle main sidebar"])
   svg {

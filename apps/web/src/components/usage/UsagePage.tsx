@@ -435,6 +435,7 @@ export function UsagePage() {
           disabled={isRefreshing || (!showingLimits && !canReadDiagnostics)}
           size="icon-sm"
           variant="ghost"
+          data-header-control=""
         >
           <RefreshIcon size="sm" refreshing={isRefreshing} />
         </Button>
@@ -496,6 +497,7 @@ export function UsagePage() {
           disabled={isRefreshing || (!showingLimits && !canReadDiagnostics)}
           size="icon-sm"
           variant="ghost"
+          data-header-control=""
         >
           <RefreshIcon size="sm" refreshing={isRefreshing} />
         </Button>
@@ -506,10 +508,7 @@ export function UsagePage() {
   return (
     <AppRouteModal label="Usage">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header
-          className="@container/usage-header flex min-h-12 shrink-0 items-center gap-1 border-b ps-5 pe-2"
-          data-page-header=""
-        >
+        <header className="@container/usage-header flex min-h-(--workspace-topbar-height) shrink-0 items-center gap-1 border-b ps-5 pe-2">
           {topbarContent}
           <AppRouteModalClose />
         </header>

@@ -36,8 +36,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The Brain graph's Fit and Open larger buttons sit in a bordered group on a solid background, like
   the terminal's actions, so they stay readable over the graph, at the shared control size.
-- The icon buttons in the headers of Usage, Settings and the Brain page (refresh, close, Brain
-  settings) have the same size as the chat header's: 40 px on touch screens, 32 px on desktop.
+- The headers of Usage and Settings are as tall as the chat header, and their buttons (refresh,
+  close, restore defaults, the Brain page's settings) have the chat header's control and icon size:
+  40 px on touch screens, 32 px on desktop.
 - On touch screens the open composer's send and stop button is 44 px with a larger icon, and its
   attach button is 40 px.
 - The sidebar's Working, Snoozed and Settled headers are labelled like the side panel's sections
