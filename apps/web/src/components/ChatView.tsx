@@ -870,6 +870,19 @@ export default function ChatView(props: ChatViewProps) {
           messages: serverProjection.messages,
           parentSubagents: workflowOpeningParentProjection?.projection.subagents ?? null,
         });
+  // Flow: a subagent's chat opens on its latest work; while its first message is still behind
+  // "Load earlier turns", show the task it was given from the parent's record.
+  const subagentOpeningParentProjection = useQuietThreadProjection(
+    activeThread?.lineage.relationshipToParent === "subagent" && serverThreadHistory.hasMoreHistory
+      ? parentSubagentThreadRef
+      : null,
+  );
+  const subagentOpeningTask =
+    activeThread === undefined || activeThread === null
+      ? null
+      : (subagentOpeningParentProjection?.projection.subagents.find(
+          (subagent) => subagent.childThreadId === activeThread.id,
+        )?.prompt ?? null);
   // A linked environment's agent may have delegated this thread from there.
   const delegatedFrom = activeThread?.delegatedFrom ?? null;
   const delegatedFromEnvironment = useEnvironment(delegatedFrom?.environmentId ?? null);
@@ -3626,6 +3639,7 @@ export default function ChatView(props: ChatViewProps) {
                 {...(threadHistoryControls === undefined
                   ? {}
                   : { historyControls: threadHistoryControls })}
+                openingTask={subagentOpeningTask}
               />
 
               {isThreadFindActive ? null : (

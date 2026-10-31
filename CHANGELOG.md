@@ -35,6 +35,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A subagent's chat shows the task it was given at the top, above "Load earlier turns", while its
+  first message is not loaded yet.
 - A new chat on the project checkout keeps the branch it started on; preparing its first message
   no longer cleared it.
 - On a phone, Cite and the plan's Comment button sit 40 px under the selection, clear of

@@ -298,6 +298,8 @@ interface MessagesTimelineProps {
   emptyPlaceholderInset: number;
   topFadeEnabled?: boolean;
   historyControls?: MessagesTimelineHistoryControls | undefined;
+  /** Flow: a subagent's task, shown above "Load earlier turns" while its first message is not loaded. */
+  openingTask?: string | null;
   findExpanded?: boolean;
   findQuery?: string;
   activeFindMatch?: ThreadFindMatch | null;
@@ -392,6 +394,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
   emptyPlaceholderInset,
   topFadeEnabled = false,
   historyControls,
+  openingTask = null,
 }: MessagesTimelineProps) {
   const listIdentityKey = displayThreadKey ?? routeThreadKey;
   // Snapshot restore positions on identity changes; ongoing scroll writes must not move them.
@@ -1115,6 +1118,9 @@ const ConversationTimeline = memo(function ConversationTimeline({
   const listHeader = (
     <>
       {parentThreadLink === null ? listHeaderLeadingContent : null}
+      {openingTask !== null && historyControls?.hasMoreHistory === true ? (
+        <TimelineOpeningTask task={openingTask} />
+      ) : null}
       {historyControls ? <TimelineHistoryControl {...historyControls} /> : null}
       {parentThreadLink !== null ? listHeaderLeadingContent : null}
     </>
@@ -1390,6 +1396,22 @@ const ConversationTimeline = memo(function ConversationTimeline({
     </>
   );
 });
+
+function TimelineOpeningTask(props: { readonly task: string }) {
+  return (
+    <div className="messages-timeline-row-frame">
+      <div className="chat-content-lane pb-2">
+        <section
+          aria-label="Task"
+          className="max-h-60 overflow-y-auto rounded-xl border border-border bg-card px-3 py-2 text-sm"
+        >
+          <p className="mb-1 font-medium text-muted-foreground text-xs">Task</p>
+          <p className="whitespace-pre-wrap break-words">{props.task}</p>
+        </section>
+      </div>
+    </div>
+  );
+}
 
 function TimelineHistoryControl(props: MessagesTimelineHistoryControls) {
   if (!props.hasMoreHistory && props.error === null) {
