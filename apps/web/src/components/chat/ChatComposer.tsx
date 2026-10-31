@@ -1059,6 +1059,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     pendingUserInputs.length === 0;
 
   const composerEditorRef = useRef<ComposerPromptEditorHandle>(null);
+  const restingPressAtRef = useRef(Number.NEGATIVE_INFINITY);
   const pasteAsTextShortcutUntilRef = useRef(0);
   const composerFormRef = useRef<HTMLFormElement>(null);
   const composerSurfaceRef = useRef<HTMLDivElement>(null);
@@ -3241,8 +3242,21 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     "flex h-(--touch-field-height) min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-4 text-left text-sm focus:outline-none",
                     prompt.trim() ? "text-foreground" : "text-muted-foreground",
                   )}
-                  onPointerDown={(event) => event.preventDefault()}
-                  onClick={expandMobileComposerStable}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    restingPressAtRef.current = performance.now();
+                  }}
+                  onClick={(event) => {
+                    // A touch that closed a sheet lands its click here once the sheet is gone;
+                    // only a press that started on the field opens it (keyboard clicks have no detail).
+                    if (
+                      event.detail !== 0 &&
+                      performance.now() - restingPressAtRef.current > 1_000
+                    ) {
+                      return;
+                    }
+                    expandMobileComposerStable();
+                  }}
                   aria-label="Expand composer"
                 >
                   {prompt.trim() ? (

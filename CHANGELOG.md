@@ -33,6 +33,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, the touch that closes a sheet such as Background work no longer opens the resting
+  composer underneath it; only a tap that starts on the message field opens it.
 - On a phone, closing the Background work list hands focus back to its pill instead of the
   composer's attach button, so a resting composer stays at rest.
 - On a phone, coming back from Usage, Settings or another page leaves a resting composer at rest
