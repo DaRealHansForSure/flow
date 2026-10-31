@@ -34,6 +34,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- On desktop the header, side panel and terminal buttons are 32 px with 18 px icons, and the side
+  panel's tabs are a step larger; touch screens keep their 40 px.
 - The resting phone composer's message field and send button are 48 px high instead of 40 px.
 - The right side panel, its Plan tab included, has the same background as the left sidebar.
 - The resting phone composer keeps the attach button left of the message field; files picked there
