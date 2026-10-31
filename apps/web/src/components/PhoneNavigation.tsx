@@ -98,12 +98,19 @@ export function PhoneNavigation() {
     // A chat opened straight from a link is the first entry, and Back there would leave the app
     // before the page sees it; one copy of the entry gives Back something to come back from.
     if (window.history.state?.__TSR_index === 0) {
-      router.history.push(router.state.location.href, router.state.location.state);
+      // Without the old state, so the router gives the copy its own history index; copying the
+      // index made Back read as a jump, which the blocker let through.
+      router.history.push(router.state.location.href);
     }
     return router.history.block({
       enableBeforeUnload: false,
-      blockerFn: ({ action }) => {
-        if (action !== "BACK") {
+      blockerFn: ({ action, currentLocation, nextLocation }) => {
+        // A jump (GO) to an earlier or the same entry is a Back too, for example after entries
+        // that share an index.
+        const movesBack =
+          action === "BACK" ||
+          (action === "GO" && nextLocation.state.__TSR_index <= currentLocation.state.__TSR_index);
+        if (!movesBack) {
           return false;
         }
         const backAction = phoneBackAction(readState());
