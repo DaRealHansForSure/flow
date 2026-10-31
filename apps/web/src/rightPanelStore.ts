@@ -27,6 +27,8 @@ const RIGHT_PANEL_KINDS = [
   "plan",
   // Flow: the chat's active and previous agents.
   "agents",
+  // Flow: the MCP servers of the chat's running agent.
+  "mcp",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -86,7 +88,9 @@ export type RightPanelSurface =
   // Flow: one Plan tab per chat, showing its latest proposed plan.
   | { id: "plan"; kind: "plan" }
   // Flow: one Agents tab per chat, listing its active and previous agents.
-  | { id: "agents"; kind: "agents" };
+  | { id: "agents"; kind: "agents" }
+  // Flow: one MCP tab per chat, listing its running agent's MCP servers.
+  | { id: "mcp"; kind: "mcp" };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 14;
@@ -252,6 +256,9 @@ const singletonSurface = (
     // Flow: the Agents tab.
     case "agents":
       return { id: "agents", kind };
+    // Flow: the MCP tab.
+    case "mcp":
+      return { id: "mcp", kind };
   }
 };
 

@@ -285,6 +285,25 @@ describe("captureAssistantTextSelection", () => {
   });
 
   it.each([false, true])(
+    "cites from the response start when the drag starts above it, backwards=%s",
+    (backwards) => {
+      const outside = textNode("Worked for 16s");
+      const quote = textNode("Selected response.");
+      const source = assistantSource(quote);
+      const viewport = new SelectionNode("MAIN").append(
+        new SelectionNode("DIV").append(outside),
+        source,
+      );
+      const captured = capture(
+        viewport,
+        nativeSelection([outside, 3], [quote, quote.length], backwards),
+      );
+      expect(captured?.source).toBe(source);
+      expect(captured?.selector).toEqual(selector(quote.data));
+    },
+  );
+
+  it.each([false, true])(
     "rejects actual overlap with another response, backwards=%s",
     (backwards) => {
       const first = textNode("Repeated quote.");

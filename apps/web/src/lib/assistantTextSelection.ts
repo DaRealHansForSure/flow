@@ -209,17 +209,31 @@ function selectedTextBoundary(range: Range, node: Node, last: boolean): Text | n
   return null;
 }
 
+function citationSourceOf(node: Node): HTMLElement | null {
+  return node.parentElement?.closest<HTMLElement>("[data-assistant-citation-source]") ?? null;
+}
+
 export function captureAssistantTextSelection(
   viewport: HTMLElement,
   selection: Selection | null,
 ): { source: HTMLElement; selector: AssistantTextSelector; range: Range } | null {
   if (selection === null || selection.isCollapsed || selection.rangeCount !== 1) return null;
   const range = selection.getRangeAt(0).cloneRange();
+  const rawFirst = selectedTextBoundary(range, range.commonAncestorContainer, false);
+  const rawLast = selectedTextBoundary(range, range.commonAncestorContainer, true);
+  if (rawFirst === null || rawLast === null) return null;
+  // Flow: a drag that starts outside every answer (above it, at a list number) and ends inside
+  // one cites that answer from its start, rather than nothing. Spans across answers stay rejected.
+  const startSource = citationSourceOf(rawFirst);
+  const endSource = citationSourceOf(rawLast);
+  if (startSource === null && endSource !== null) {
+    range.setStart(endSource, 0);
+  }
+  const source = startSource ?? endSource;
+  if (!source || !viewport.contains(source)) return null;
   const first = selectedTextBoundary(range, range.commonAncestorContainer, false);
   const last = selectedTextBoundary(range, range.commonAncestorContainer, true);
   if (first === null || last === null) return null;
-  const source = first.parentElement?.closest<HTMLElement>("[data-assistant-citation-source]");
-  if (!source || !viewport.contains(source)) return null;
 
   // Paragraph selection can end at the next block's offset 0 or a parent
   // boundary. Validate the text actually selected, not that empty endpoint.

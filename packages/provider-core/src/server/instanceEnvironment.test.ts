@@ -30,6 +30,7 @@ describe("mergeProviderInstanceEnvironment", () => {
         CODEX_HOME: path.join("/home/ada", tail),
         CLAUDE_CONFIG_DIR: path.join("/home/ada", tail),
         CUSTOM_VALUE: value,
+        FLOW_SESSION_ID: "t3-managed",
       });
       expect(baseEnv).toEqual({
         CODEX_HOME: "~/.inherited-codex",
@@ -50,7 +51,7 @@ describe("mergeProviderInstanceEnvironment", () => {
           [{ name: "CUSTOM_VALUE", value: "~/.custom", sensitive: false }],
           baseEnv,
         ),
-      ).toEqual({ ...baseEnv, CUSTOM_VALUE: "~/.custom" });
+      ).toEqual({ ...baseEnv, CUSTOM_VALUE: "~/.custom", FLOW_SESSION_ID: "t3-managed" });
     }),
   );
 

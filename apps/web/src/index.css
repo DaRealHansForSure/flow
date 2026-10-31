@@ -1159,9 +1159,9 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --guest: var(--color-fuchsia-500);
   --guest-foreground: var(--color-fuchsia-600);
   --guest-surface: color-mix(in srgb, var(--guest) 14%, var(--message-surface));
-  --success: var(--color-emerald-500);
+  --success: var(--color-emerald-600);
   --success-foreground: var(--color-emerald-700);
-  --warning: var(--color-amber-500);
+  --warning: var(--color-amber-600);
   --warning-foreground: var(--color-amber-700);
   --warning-surface: color-mix(in srgb, var(--warning) 8%, transparent);
   --update: var(--primary);
@@ -1230,8 +1230,9 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
 /* Keep both sidebar implementations (default and legacy) on the same quiet
    zinc hierarchy: zinc-50 navigation, zinc-25 hover, and white selected/raised
-   surfaces. */
-[data-app-sidebar] {
+   surfaces. Flow: the right side panel shares the sidebar's palette. */
+[data-app-sidebar],
+[data-side-panel-palette] {
   --background: var(--color-zinc-25);
   --foreground: var(--color-zinc-900);
   --card: var(--color-white);
@@ -1560,7 +1561,7 @@ html[data-theme-id="t3-chat"] {
   }
 }
 
-html[data-theme-id] [data-app-sidebar] {
+html[data-theme-id] :is([data-app-sidebar], [data-side-panel-palette]) {
   --background: var(--app-theme-canvas);
   --foreground: var(--app-theme-text);
   --card: var(--app-theme-surface);
@@ -1589,7 +1590,7 @@ html[data-theme-id] [data-app-sidebar] {
 
 /* T3 Chat's panel divider is deliberately pink, and its resize affordance
    keeps that color while hovered. Do not neutralize this branded edge. */
-html[data-theme-id="t3-chat"] [data-app-sidebar] {
+html[data-theme-id="t3-chat"] :is([data-app-sidebar], [data-side-panel-palette]) {
   @variant dark {
     border-color: var(--contrast-sidebar-border);
   }
@@ -1597,7 +1598,8 @@ html[data-theme-id="t3-chat"] [data-app-sidebar] {
 
 /* Recompute contrast wherever a subtree owns its own semantic color palette. */
 :root,
-[data-app-sidebar] {
+[data-app-sidebar],
+[data-side-panel-palette] {
   --contrast-toolbar-foreground: color-mix(
     in oklab,
     color-mix(
@@ -2642,33 +2644,201 @@ code {
   font-size: calc(var(--text-sm) * var(--chat-font-scale, 1));
 }
 
-/* Flow: the chat header's buttons are finger-sized on touch screens, whatever the font size. */
+/* Flow: header and panel control sizes. One set of variables, sized per pointer: finger-sized on
+   touch screens, a step larger than T3's 28 px on desktop. A new control rule reuses them instead
+   of repeating sizes. */
+:root {
+  --touch-control-size: 2.5rem;
+  /* A one-line text field you tap to type in, such as the resting phone composer. */
+  --touch-field-height: 3rem;
+  --touch-icon-size: 1.25rem;
+  /* The open composer's send and stop button, the one control a phone reaches for most. */
+  --touch-primary-action-size: 2.75rem;
+  --desktop-control-size: 2rem;
+  --desktop-icon-size: 1.125rem;
+  --header-control-size: var(--desktop-control-size);
+  --header-icon-size: var(--desktop-icon-size);
+  --header-tab-height: 1.75rem;
+  --header-tab-font-size: 0.8125rem;
+}
+
 @media (pointer: coarse) {
-  :root,
-  [class*="workspace-titlebar-control-size"] {
-    --workspace-titlebar-control-size: 2.5rem;
+  :root {
+    --header-control-size: var(--touch-control-size);
+    --header-icon-size: var(--touch-icon-size);
+    --header-tab-height: var(--touch-control-size);
+    --header-tab-font-size: 0.9375rem;
   }
-  :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
-    :is([data-slot="toggle"], button),
-  [data-right-panel-tabbar] [aria-label="Add panel surface"] {
-    width: 2.5rem;
-    min-width: 2.5rem;
-    height: 2.5rem;
+}
+
+:root {
+  /* Where an icon starts inside a control: tabs use it so their icons line up with the buttons. */
+  --header-control-icon-inset: calc((var(--header-control-size) - var(--header-icon-size)) / 2);
+}
+
+:root,
+[class*="workspace-titlebar-control-size"] {
+  --workspace-titlebar-control-size: var(--header-control-size);
+}
+/* Chat header, panel layout, the panel's add-tab, the terminal's action buttons, the sidebar's
+   footer buttons (Settings, pull requests, usage) and the icon buttons of full-screen pages'
+   headers (`data-header-control`: Usage, Settings, Brain), and the Brain graph's corner buttons. */
+:is([data-workspace-titlebar-controls], [data-panel-layout-controls])
+  :is([data-slot="toggle"], button),
+[data-header-control],
+[data-right-panel-tabbar] [aria-label="Add panel surface"],
+[data-terminal-actions] button,
+[data-graph-actions] button,
+[data-sidebar-utility] {
+  width: var(--header-control-size);
+  min-width: var(--header-control-size);
+  height: var(--header-control-size);
+}
+/* The open composer on a touch screen: a bigger send/stop button and attach button. */
+@media (pointer: coarse) {
+  [data-composer-primary-action] {
+    width: var(--touch-primary-action-size);
+    height: var(--touch-primary-action-size);
   }
-  :is([data-workspace-titlebar-controls], [data-panel-layout-controls])
-    :is([data-slot="toggle"], button)
-    svg,
-  [data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
-  :is([data-slot="sidebar-trigger"], [data-sidebar="trigger"], [aria-label="Toggle main sidebar"])
-    svg {
-    width: 1.25rem;
-    height: 1.25rem;
+  [data-composer-primary-action] > svg {
+    width: var(--touch-icon-size);
+    height: var(--touch-icon-size);
   }
+  [data-composer-attach] {
+    width: var(--touch-control-size);
+    height: var(--touch-control-size);
+  }
+  [data-composer-attach] > svg {
+    width: var(--touch-icon-size);
+    height: var(--touch-icon-size);
+  }
+}
+/* A header button with a label (Restore device defaults): control height; icon only on a phone. */
+[data-header-control-labelled] {
+  height: var(--header-control-size);
+}
+@media (max-width: 639px) {
+  [data-header-control-labelled] {
+    width: var(--header-control-size);
+    padding: 0;
+  }
+}
+/* The side panel's tabs: control height, icon on the same inset as a control's icon. */
+[data-right-panel-tab-list] [data-active-tab] {
+  height: var(--header-tab-height);
+  max-width: 11rem;
+  gap: 0.375rem;
+  padding-inline: var(--header-control-icon-inset) 0.75rem;
+  font-size: var(--header-tab-font-size);
+}
+:is([data-workspace-titlebar-controls], [data-panel-layout-controls])
+  :is([data-slot="toggle"], button)
+  svg,
+[data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
+[data-terminal-actions] button svg,
+[data-graph-actions] button svg,
+[data-sidebar-utility] svg,
+[data-header-control] svg,
+[data-header-control-labelled] svg,
+[data-right-panel-tab-list] [data-active-tab] svg,
+:is([data-slot="sidebar-trigger"], [data-sidebar="trigger"], [aria-label="Toggle main sidebar"])
+  svg {
+  width: var(--header-icon-size);
+  height: var(--header-icon-size);
+}
+
+/* On a phone the side panel covers the chat, sheet or maximized, so its tab bar starts at the chat
+   header's controls inset: the first tab's icon sits where the left menu icon sits. */
+@media (max-width: 639px) {
+  [data-right-panel-tabbar] {
+    padding-inline-start: var(--workspace-controls-left);
+  }
+}
+
+/* Flow: code and output inside a tool call or thinking block are reference, so they use a smaller
+   code size than the conversation. */
+[data-work-log-details] {
+  --font-size-code: var(--font-size-work-detail, var(--text-2xs));
+}
+
+/* Flow: on touch screens a tool call's details grow with their content instead of scrolling inside
+   themselves. A finger that reaches the end of an inner scroller does not hand the swipe on to the
+   chat, so the page seemed stuck. */
+@media (pointer: coarse) {
+  [data-work-log-details],
+  [data-work-log-details] [class*="max-h-"] {
+    max-height: none;
+    /* Hidden, not visible: a box that still scrolls sideways would turn visible back into auto
+       and catch the swipe for the few pixels its padding adds. */
+    overflow-y: hidden;
+  }
+}
+
+/* Flow: an expanded work row's details carry a thin rail in the row's kind colour. */
+[data-work-accent] > [data-work-log-details] {
+  border-inline-start: 2px solid var(--work-accent-rail);
+  padding-inline-start: 0.625rem;
+}
+/* Commands and tools line their details up with thinking's: under the row's label, same spacing. */
+[data-work-accent] > [data-work-log-details="panel"] {
+  margin-inline-start: 1.75rem;
+  margin-block: 0.125rem 0.375rem;
+  padding-block: 0.25rem;
+}
+[data-work-accent="thinking"] {
+  --work-accent-rail: color-mix(in oklab, var(--color-sky-600) 45%, transparent);
+}
+[data-work-accent="command"] {
+  --work-accent-rail: color-mix(in oklab, var(--color-emerald-600) 45%, transparent);
+}
+[data-work-accent="tool"] {
+  --work-accent-rail: color-mix(in oklab, var(--color-violet-600) 45%, transparent);
+}
+[data-work-accent="edit"] {
+  --work-accent-rail: color-mix(in oklab, var(--color-amber-600) 45%, transparent);
+}
+[data-work-accent="search"] {
+  --work-accent-rail: color-mix(in oklab, var(--color-cyan-600) 45%, transparent);
 }
 
 /* Flow: on a phone the right panel fills the screen, so its sheet drops the edge it keeps beside a chat. */
 @media (max-width: 639px) {
   [data-slot="sheet-popup"]:has([data-right-panel-tabbar]) {
     border-inline-start-width: 0;
+  }
+}
+
+/* Flow: the sections of the Brain, Agents and MCP tabs end in a divider, so each reads as its own block. */
+[data-panel-section] {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+/* Flow: Settings' section list. Finger-sized rows and icons on touch screens, and a fade deep enough
+   to show there is more to scroll above or below. */
+[data-settings-nav] [data-slot="scroll-area-viewport"] {
+  --fade-size: 2.5rem;
+}
+@media (pointer: coarse) {
+  [data-settings-nav] [data-sidebar="menu-button"] {
+    min-height: var(--touch-control-size);
+  }
+  [data-settings-nav] [data-sidebar="menu-button"] > svg {
+    width: var(--touch-icon-size);
+    height: var(--touch-icon-size);
+  }
+}
+
+/* The sidebar's bottom row (Brain, pull requests, usage, Settings) on touch screens: icons 1.25x the
+   header's, in buttons grown to match. After the shared control rules, which it overrides. */
+@media (pointer: coarse) {
+  [data-sidebar-utility] {
+    width: calc(var(--header-control-size) * 1.125);
+    min-width: calc(var(--header-control-size) * 1.125);
+    height: calc(var(--header-control-size) * 1.125);
+  }
+  [data-sidebar-utility] svg {
+    width: calc(var(--header-icon-size) * 1.25);
+    height: calc(var(--header-icon-size) * 1.25);
   }
 }

@@ -22,6 +22,7 @@ import {
   THREAD_RESUME_MAX_REPLAY_EVENTS,
 } from "./ThreadStream.ts";
 import { projectDomainEventForWire } from "./WireProjection.ts";
+import { THREAD_HISTORY_PAGE_POLICY } from "./threadHistoryPaging.ts";
 
 const NOW = DateTime.makeUnsafe("2026-09-08T00:00:00.000Z");
 const THREAD_ID = ThreadId.make("thread-stream-test");
@@ -151,16 +152,16 @@ describe("decideThreadResume", () => {
   it("builds socket fallback snapshots with a bounded timeline and history cursor", () => {
     const snapshot = buildBoundedThreadStreamSnapshot({
       snapshotSequence: 44,
-      projection: timelineProjection(80),
+      projection: timelineProjection(THREAD_HISTORY_PAGE_POLICY.maxItems + 5),
     });
 
     expect(snapshot.kind).toBe("snapshot");
     expect(snapshot.snapshotSequence).toBe(44);
-    expect(snapshot.projection.visibleTurnItems).toHaveLength(75);
-    expect(snapshot.projection.turnItems).toHaveLength(75);
+    expect(snapshot.projection.visibleTurnItems).toHaveLength(THREAD_HISTORY_PAGE_POLICY.maxItems);
+    expect(snapshot.projection.turnItems).toHaveLength(THREAD_HISTORY_PAGE_POLICY.maxItems);
     expect(snapshot.historyCursor).not.toBeNull();
     expect(snapshot.hasMoreHistory).toBe(true);
-    expect(snapshot.latestLocalTurnOrdinal).toBe(80);
+    expect(snapshot.latestLocalTurnOrdinal).toBe(THREAD_HISTORY_PAGE_POLICY.maxItems + 5);
   });
 
   it("rejects a 10 MiB raw replay even when its projected form fits the wire budget", () => {

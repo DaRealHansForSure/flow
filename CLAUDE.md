@@ -136,8 +136,13 @@ Sync every week or two. Seven weeks of drift once gave 227 conflicting files.
 2. `git switch -c sync/upstream-<date> develop`
 3. `git merge --no-ff upstream/release`, then `git merge --no-ff t3/main` to take T3
    Code directly. Flow upstream merges T3 itself, but often lags behind it.
-4. Fix the conflicts, run the focused tests for what changed, and merge the sync branch
-   into `develop` with `--no-ff`.
+4. Fix the conflicts, then run `scripts/fork/prune-upstream-workflows.sh` before committing
+   each merge. The fork keeps only its `flow-*.yml` workflows: T3's run on Blacksmith runners
+   this repository does not have and wait for a runner forever. A sync brings back the ones T3
+   changed (as delete/modify conflicts) and adds new ones; the script removes both, and Flow CI
+   fails while any remain.
+5. Run the focused tests for what changed, and merge the sync branch into `develop` with
+   `--no-ff`.
 
 To sync with a specific T3 release instead of `t3/main`, fetch its tag on its own and merge the
 commit without keeping the tag: `git fetch t3 refs/tags/v0.1.6` then `git merge --no-ff FETCH_HEAD`.

@@ -7,6 +7,13 @@ interface PanelTabCloseButtonProps {
   label: string;
   onClick: () => void;
   tooltip?: string;
+  /**
+   * Flow: how the button behaves on a touch screen, where there is no hover. "close" shows the X
+   * (the tab you are on), "activate" shows the icon and only switches to the tab.
+   */
+  touch?:
+    | { readonly mode: "close" }
+    | { readonly mode: "activate"; readonly onActivate: () => void };
 }
 
 export function PanelTabCloseButton({
@@ -14,7 +21,32 @@ export function PanelTabCloseButton({
   label,
   onClick,
   tooltip,
+  touch,
 }: PanelTabCloseButtonProps) {
+  if (touch?.mode === "activate") {
+    return (
+      <button
+        type="button"
+        className="relative flex size-4 shrink-0 items-center justify-center"
+        aria-label={label.replace(/^Close /, "Show ")}
+        onClick={touch.onActivate}
+      >
+        <span className="relative flex size-3 items-center justify-center">{children}</span>
+      </button>
+    );
+  }
+  if (touch?.mode === "close") {
+    return (
+      <button
+        type="button"
+        className="cursor-pointer relative flex size-4 shrink-0 items-center justify-center rounded-sm before:absolute before:-inset-1.5 before:content-['']"
+        aria-label={label}
+        onClick={onClick}
+      >
+        <X className="size-3" />
+      </button>
+    );
+  }
   const button = (
     <button
       type="button"

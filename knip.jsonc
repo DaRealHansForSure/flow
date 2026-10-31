@@ -12,6 +12,8 @@
         // CodeRabbit loads its configuration by filename.
         ".coderabbit.config.ts",
         ".github/scripts/thread-transfer-report.cjs",
+        // Flow fork: run only by T3 Code's workflows, which the fork removed; kept for syncs.
+        ".github/scripts/mirror-play-apk.cjs",
       ],
       "vite": { "entry": [".github/**/*.test.cjs"] },
       "vitest": { "entry": [".github/**/*.test.cjs"] },
@@ -40,6 +42,10 @@
         "instances/child-guard.mjs",
         "verify-browser-install.mjs",
         "verify-browser-runtime.mjs",
+        // Flow fork: run only by T3 Code's workflows, which the fork removed; kept for syncs.
+        "build-cli-archive.ts",
+        "resolve-nightly-release.ts",
+        "smoke-cli-archive.ts",
       ],
       "ignoreDependencies": ["agent-device", "esbuild"],
       // The `t3` npm package's files: copied into the package, never imported.
@@ -104,7 +110,12 @@
     "apps/web": {
       // Worktree setup (scripts/setup-worktree.ts) runs this directly, and evidence
       // fixtures run under node.
-      "entry": ["scripts/warm-dep-cache.ts", "test/fixtures/**/*.mjs"],
+      "entry": [
+        "scripts/warm-dep-cache.ts",
+        "test/fixtures/**/*.mjs",
+        // Flow fork: run only by T3 Code's workflows, which the fork removed; kept for syncs.
+        "scripts/verify-built-boot.ts",
+      ],
       // UI component modules are copied and adapted as cohesive sets. Keep their
       // named subcomponents even before they have callers; the file audit still
       // reports an entire component module when nothing imports it.

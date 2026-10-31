@@ -1,4 +1,4 @@
-import type { OrchestrationV2HistoricalMessage } from "@t3tools/contracts";
+import type { OrchestrationV2HistoricalMessage, ProviderMcpServer } from "@t3tools/contracts";
 import {
   ChatAttachment,
   CheckpointId,
@@ -533,6 +533,22 @@ export interface ProviderAdapterV2McpApps {
   }) => Effect.Effect<{ readonly contents: ReadonlyArray<unknown> }, ProviderAdapterV2Error>;
 }
 
+export interface ProviderAdapterV2McpServerListing {
+  /** The config folder the session runs with, such as Claude's `CLAUDE_CONFIG_DIR`. */
+  readonly profile?: string;
+  readonly servers: ReadonlyArray<ProviderMcpServer>;
+}
+
+/**
+ * Rows are already mapped and stripped of config, commands, env, headers and URLs. Null means
+ * the session has no live provider process to ask; listing must never start one.
+ */
+export interface ProviderAdapterV2McpServers {
+  readonly list: (input: {
+    readonly providerThread: OrchestrationV2ProviderThread;
+  }) => Effect.Effect<ProviderAdapterV2McpServerListing | null, ProviderAdapterV2Error>;
+}
+
 export type ProviderAdapterV2SubagentOutcome = {
   readonly status: "completed" | "failed" | "cancelled";
   readonly completedAt: NonNullable<OrchestrationV2Subagent["completedAt"]>;
@@ -621,6 +637,8 @@ export interface ProviderAdapterV2SessionRuntime {
   }) => Effect.Effect<{ readonly feedbackId: string }, ProviderAdapterV2Error>;
   /** Absent means non-interactive apps with plain tool rows. */
   readonly mcpApps?: ProviderAdapterV2McpApps;
+  /** Absent means the provider cannot report its loaded MCP servers. */
+  readonly mcpServers?: ProviderAdapterV2McpServers;
   readonly rollbackThread: (
     input: ProviderAdapterV2RollbackThreadInput,
   ) => Effect.Effect<ProviderAdapterV2ThreadSnapshot, ProviderAdapterV2Error>;

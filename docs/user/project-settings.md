@@ -257,8 +257,9 @@ updating the chat's notes. A chat without a brain has no Brain button, and the p
 shows **Brain** greyed out.
 
 The button is amber until the brain has answered. Red means the brain failed; hover it for the
-reason, which a **Brain unavailable** message also shows once. The **Brain** entry at the top of
-the sidebar works the same way for the brain itself: amber while it starts, red when it fails.
+reason, which a **Brain unavailable** message also shows once. The **Brain** icon in the sidebar's
+bottom row does the same for the brain itself with a small dot: amber while it starts, red when it
+fails.
 
 Choose a brain for the project to give its chats Flow's graph, memory, and committed-source
 access. The next regular message automatically supplies Flow's orientation, including in an

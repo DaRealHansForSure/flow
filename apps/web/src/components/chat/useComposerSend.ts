@@ -54,6 +54,7 @@ import {
 import {
   type ComposerSubmissionIntent,
   collapseExpandedComposerCursor,
+  isMcpCommand,
   parseStandaloneComposerSlashCommand,
 } from "../../composer-logic";
 import { buildPlanImplementationPrompt, resolvePlanFollowUpSubmission } from "../../proposedPlan";
@@ -204,6 +205,8 @@ interface ComposerSendInput {
   readonly usageLimitsKey: string | null;
   readonly usageLimitsOffered: boolean;
   readonly openUsageLimits: UsageLimitsPanel["open"];
+  /** Flow: opens the chat's MCP tab; absent where the chat has none. */
+  readonly openMcp: (() => void) | undefined;
   readonly clearUsageLimitsFor: UsageLimitsPanel["clearFor"];
   readonly needsLoadBalancing: boolean;
   readonly loadBalancing: DraftEnvironmentRouting["loadBalancing"];
@@ -295,6 +298,7 @@ export function useComposerSend(input: ComposerSendInput) {
     usageLimitsKey,
     usageLimitsOffered,
     openUsageLimits,
+    openMcp,
     clearUsageLimitsFor,
     needsLoadBalancing,
     loadBalancing,
@@ -412,6 +416,18 @@ export function useComposerSend(input: ComposerSendInput) {
         setComposerDraftPrompt(composerDraftTarget, "");
         composerRef.current?.resetCursorState();
       }
+      return;
+    }
+    if (
+      openMcp !== undefined &&
+      !directAnnotation &&
+      !draftHasNonPromptContent(composerDraftTarget) &&
+      isMcpCommand(promptRef.current)
+    ) {
+      openMcp();
+      promptRef.current = "";
+      setComposerDraftPrompt(composerDraftTarget, "");
+      composerRef.current?.resetCursorState();
       return;
     }
 

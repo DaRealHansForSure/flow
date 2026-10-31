@@ -282,6 +282,7 @@ import { ComposerControlsBar } from "./ComposerControlsBar";
 import { heldMissingProvider } from "./missingProviderBanner";
 import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
+import { allowComposerFocus } from "../../touchComposerFocus";
 
 function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
   const armed = Date.now() <= deadline.current;
@@ -387,6 +388,8 @@ export interface ChatComposerProps {
   keepFullHistory: boolean;
   onToggleKeepFullHistory: () => void;
   onUsageLimitsCommand?: (() => void) | undefined;
+  /** Flow: opens the chat's MCP tab; absent where the chat has none. */
+  onMcpCommand?: (() => void) | undefined;
   environmentUnavailable: {
     readonly label: string;
     readonly connection: EnvironmentConnectionPresentation;
@@ -415,6 +418,8 @@ export interface ChatComposerProps {
   respondingRequestIds: RuntimeRequestId[];
 
   showPlanFollowUpPrompt: boolean;
+  /** Flow: Revise on the open plan was pressed; the next message changes that plan. */
+  revisingPlan?: boolean;
   activeProposedPlan: LatestProposedPlanState | null;
   threadSyncPhase: ThreadSyncPhase | null;
 
@@ -546,6 +551,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     activePendingQuestionIndex,
     respondingRequestIds,
     showPlanFollowUpPrompt,
+    revisingPlan = false,
     activeProposedPlan,
     runtimeMode,
     interactionMode: requestedInteractionMode,
@@ -1148,6 +1154,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     threadPullRequests,
     planModeUiEnabled,
     compactSlashCommandAvailable,
+    mcpCommandAvailable: props.onMcpCommand !== undefined,
     selectedProvider,
     selectedProviderSkills,
     selectedProviderSlashCommands,
@@ -1858,7 +1865,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     };
   };
 
-  const { onUsageLimitsCommand } = props;
+  const { onUsageLimitsCommand, onMcpCommand } = props;
   const onSelectComposerItem = (item: ComposerCommandItem) => {
     if (composerSelectLockRef.current) return;
     composerSelectLockRef.current = true;
@@ -1892,6 +1899,17 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         if (applied) {
           setComposerHighlightedItemId(null);
           setIsComposerModelPickerOpen(true);
+        }
+        return;
+      }
+      if (item.command === "mcp") {
+        const applied = applyPromptReplacement(trigger.rangeStart, trigger.rangeEnd, "", {
+          expectedText: snapshot.value.slice(trigger.rangeStart, trigger.rangeEnd),
+          focusEditorAfterReplace: false,
+        });
+        if (applied) {
+          setComposerHighlightedItemId(null);
+          onMcpCommand?.();
         }
         return;
       }
@@ -3105,9 +3123,18 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         onRemoveFile={removeComposerFileFromDraft}
       />
     ) : null;
+  // Flow: files picked while the phone composer rests open it, with the cursor in it.
+  const addAttachmentsFromButton: typeof addComposerAttachments = async (...args) => {
+    const inserted = await addComposerAttachments(...args);
+    if (inserted && isComposerCollapsedMobile) {
+      allowComposerFocus();
+      expandMobileComposer();
+    }
+    return inserted;
+  };
   const composerAttachButton = showComposerAttachAction ? (
     <ComposerAttachButton
-      addComposerAttachments={addComposerAttachments}
+      addComposerAttachments={addAttachmentsFromButton}
       focusComposer={focusComposer}
     />
   ) : null;
@@ -3224,12 +3251,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           >
             {showCollapsedMobilePromptRow ? (
               <div className="flex items-center justify-between gap-2 px-2 py-2">
+                {/* Flow: attaching stays one tap away while the phone composer rests. */}
+                {composerAttachButton}
                 {/* Flow: drawn as a field, so an idle composer reads as a place to type. */}
                 <button
                   type="button"
                   data-chat-composer-transition-prompt="true"
                   className={cn(
-                    "flex h-10 min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-3 text-left text-sm focus:outline-none",
+                    "flex h-(--touch-field-height) min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-4 text-left text-sm focus:outline-none",
                     prompt.trim() ? "text-foreground" : "text-muted-foreground",
                   )}
                   onPointerDown={(event) => event.preventDefault()}
@@ -3248,7 +3277,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 <button
                   type="button"
                   data-chat-composer-transition-actions="true"
-                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-message-action text-message-action-foreground hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground"
+                  className="flex size-(--touch-field-height) shrink-0 items-center justify-center rounded-full bg-message-action text-message-action-foreground hover:bg-message-action-hover disabled:bg-foreground/12 disabled:text-muted-foreground"
                   disabled={collapsedComposerPrimaryActionDisabled}
                   aria-label={collapsedComposerPrimaryActionLabel}
                   onPointerDown={(event) => event.preventDefault()}
@@ -3401,13 +3430,15 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                           ? isChoiceOnlyPendingQuestion
                             ? "Choose an option above"
                             : "Type your own answer, or leave this blank to use the selected option"
-                          : showPlanFollowUpPrompt && activeProposedPlan
-                            ? "Add feedback to refine the plan, or leave this blank to implement it"
-                            : projectSelectionRequired
-                              ? "Choose a project above to start a thread"
-                              : showProviderUnavailable
-                                ? "Enable a provider in Settings to send a message"
-                                : DEFAULT_COMPOSER_PLACEHOLDER
+                          : revisingPlan
+                            ? "Describe what to change in the plan"
+                            : showPlanFollowUpPrompt && activeProposedPlan
+                              ? "Add feedback to refine the plan, or leave this blank to implement it"
+                              : projectSelectionRequired
+                                ? "Choose a project above to start a thread"
+                                : showProviderUnavailable
+                                  ? "Enable a provider in Settings to send a message"
+                                  : DEFAULT_COMPOSER_PLACEHOLDER
                     }
                     disabled={
                       projectSelectionRequired ||

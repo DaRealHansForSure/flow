@@ -2,7 +2,11 @@ import { MessageSquarePlusIcon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { resolveSelectionActionPosition, type SelectionActionPoint } from "~/lib/selectionActions";
+import {
+  resolveSelectionActionPosition,
+  selectionFocusRect,
+  type SelectionActionPoint,
+} from "~/lib/selectionActions";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -71,16 +75,16 @@ export function PlanCommentSelection(props: {
         setSelection(null);
         return;
       }
-      const rects = range.getClientRects();
-      const lastRect = rects.item(rects.length - 1) ?? range.getBoundingClientRect();
+      const selectionBounds = range.getBoundingClientRect();
+      const focusRect = selectionFocusRect(range, nativeSelection);
       // Scrolled out of sight: hide until the selection comes back.
-      if (lastRect.bottom < 0 || lastRect.top > window.innerHeight) {
+      if (selectionBounds.bottom < 0 || selectionBounds.top > window.innerHeight) {
         setSelection(null);
         return;
       }
       const position = resolveSelectionActionPosition({
         bounds: container.getBoundingClientRect(),
-        selectionRect: lastRect,
+        selectionRect: focusRect,
         pointer: null,
         viewport: { width: window.innerWidth, height: window.innerHeight },
       });

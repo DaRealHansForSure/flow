@@ -1,4 +1,5 @@
-import { ChevronDownIcon, GlobeIcon, ListOrderedIcon } from "lucide-react";
+import type { SubagentPillSegment } from "@t3tools/client-runtime/state/thread-subagents";
+import { ChevronDownIcon, GlobeIcon, ListOrderedIcon, UsersIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useMediaQuery } from "~/hooks/useMediaQuery";
@@ -13,6 +14,11 @@ import { formatWorkingTimerNow } from "./TimelineWorkGroupRows.logic";
 export interface ComposerStatusBrowsers {
   readonly count: number;
   readonly unseen: boolean;
+  readonly onOpen: () => void;
+}
+
+export interface ComposerStatusAgents {
+  readonly segment: SubagentPillSegment;
   readonly onOpen: () => void;
 }
 
@@ -41,11 +47,12 @@ function BackgroundWorkSheet(props: {
         <span className="min-w-0 truncate text-foreground">{props.title}</span>
       </button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetPopup side="bottom" className="max-h-[70dvh]">
+        {/* Closing must not hand focus back to the composer: that would raise the phone keyboard. */}
+        <SheetPopup side="bottom" className="max-h-[70dvh]" finalFocus={false}>
           <SheetHeader>
             <SheetTitle>Background work</SheetTitle>
           </SheetHeader>
-          <div className="min-h-0 overflow-y-auto px-6 pb-6 [&_li]:py-3.5 [&_li_.text-xs]:text-sm">
+          <div className="min-h-0 overflow-y-auto px-6 pb-6 [&_[data-work-row]]:py-3.5 [&_li_.text-xs]:text-sm">
             {props.details}
           </div>
         </SheetPopup>
@@ -96,7 +103,13 @@ function BackgroundWorkPopover(props: {
         </span>
         <span className="min-w-0 truncate text-foreground hover:underline">{props.title}</span>
       </PopoverTrigger>
-      <PopoverPopup ref={popupRef} side="top" align="center" className="w-[min(92vw,24rem)]">
+      <PopoverPopup
+        ref={popupRef}
+        side="top"
+        align="center"
+        className="w-[min(92vw,24rem)]"
+        finalFocus={false}
+      >
         <PopoverTitle className="mb-1">Background work</PopoverTitle>
         {props.details}
       </PopoverPopup>
@@ -143,6 +156,8 @@ export function ComposerStatusControl(props: {
   readonly work: ThreadNowItem | null;
   readonly workingSince: string | null;
   readonly browsers: ComposerStatusBrowsers | null;
+  /** This turn's subagents, as in the mobile app: "2/3" while working, "3 done" after. */
+  readonly agents: ComposerStatusAgents | null;
   readonly queuedCount: number;
   readonly showScrollToEnd: boolean;
   readonly onScrollToEnd: () => void;
@@ -203,6 +218,19 @@ export function ComposerStatusControl(props: {
           ) : null}
         </span>
         {count > 1 ? <span className="tabular-nums">{count}</span> : null}
+      </Segment>,
+    );
+  }
+  if (props.agents !== null) {
+    const { segment } = props.agents;
+    segments.push(
+      <Segment
+        key="agents"
+        label={`Open agents, ${segment.accessibilityLabel}`}
+        onPress={props.agents.onOpen}
+      >
+        <UsersIcon aria-hidden />
+        <span className="tabular-nums">{segment.label}</span>
       </Segment>,
     );
   }

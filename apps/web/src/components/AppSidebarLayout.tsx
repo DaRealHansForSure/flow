@@ -7,7 +7,9 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { useLocation, useRouter, type AnyRouter } from "@tanstack/react-router";
+import { scopeThreadRef } from "@t3tools/client-runtime/environment";
+import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
+import { useLocation, useParams, useRouter, type AnyRouter } from "@tanstack/react-router";
 
 import { moveWorkspaceFocus, workspaceAreaProps } from "../lib/workspaceFocus";
 import { isCommandPaletteOpen } from "../commandPaletteBus";
@@ -27,7 +29,12 @@ import { isEditableFocused } from "../lib/editableFocus";
 import { isPreviewFocused } from "../lib/previewFocus";
 import { isTerminalFocused } from "../lib/terminalFocus";
 import { isModelPickerOpen } from "../modelPickerVisibility";
-import { selectActiveRightPanel, useRightPanelStore } from "../rightPanelStore";
+import { useMediaQuery } from "../hooks/useMediaQuery";
+import {
+  selectActiveRightPanel,
+  selectThreadRightPanelState,
+  useRightPanelStore,
+} from "../rightPanelStore";
 import { selectThreadTerminalUiState, useTerminalUiStateStore } from "../terminalUiStateStore";
 import { cn, isMacPlatform } from "../lib/utils";
 import { primaryServerKeybindingsAtom } from "../state/server";
@@ -54,6 +61,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { registerCommands, registerMenuAction } from "../shortcuts/dispatcher";
 import { resolveThreadRouteRef } from "../threadRoutes";
+import { PhoneNavigation } from "./PhoneNavigation";
 
 const MACOS_TRAFFIC_LIGHTS_LEFT_INSET = "var(--desktop-window-controls-inset, 90px)";
 
@@ -307,6 +315,25 @@ function SidebarControl() {
   const usagePageOpen = useLocation({ select: (location) => location.pathname === "/usage" });
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const { toggleSidebar, isMobile, mobileSheetMounted } = useSidebar();
+  // Flow: on a phone the right panel covers the whole screen, and this button sat over its tabs.
+  const isPhone = useMediaQuery("max-sm");
+  const routeParams = useParams({ strict: false }) as {
+    readonly environmentId?: string;
+    readonly threadId?: string;
+  };
+  const rightPanelCoversChat = useRightPanelStore(
+    (state) =>
+      isPhone &&
+      routeParams.environmentId !== undefined &&
+      routeParams.threadId !== undefined &&
+      selectThreadRightPanelState(
+        state.byThreadKey,
+        scopeThreadRef(
+          routeParams.environmentId as EnvironmentId,
+          routeParams.threadId as ThreadId,
+        ),
+      ).isOpen,
+  );
   const shortcutLabel = shortcutLabelForCommand(keybindings, "sidebar.toggle", {
     context: { usagePageOpen },
   });
@@ -363,7 +390,7 @@ function SidebarControl() {
       ref={appShellCommandsRef}
       className={cn(
         "pointer-events-none fixed left-[var(--workspace-controls-left)] top-[var(--workspace-controls-top)] z-50 ml-px flex h-[var(--workspace-topbar-height)] items-center",
-        isMobile && mobileSheetMounted && "hidden",
+        ((isMobile && mobileSheetMounted) || rightPanelCoversChat) && "hidden",
       )}
       data-sidebar-control=""
     >
@@ -459,6 +486,7 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
         {children}
         <BackgroundThreadAnnouncer />
         <SidebarControl />
+        <PhoneNavigation />
       </SidebarProvider>
     </PanelAnimationSuppressionProvider>
   );

@@ -67,6 +67,7 @@ import {
   MessageSquareIcon,
   PaletteIcon,
   BrainCircuit,
+  Plug,
   RotateCcwIcon,
   SettingsIcon,
   MonitorIcon,
@@ -1350,6 +1351,21 @@ function OpenCommandPaletteDialog(props: {
       icon: <BrainCircuit className={ITEM_ICON_CLASS} />,
       run: async () => {
         useRightPanelStore.getState().open(threadRef, "brain");
+      },
+    });
+  }
+
+  // Flow: opens the chat's MCP tab.
+  if (activeThread !== null) {
+    const threadRef = scopeThreadRef(activeThread.environmentId, activeThread.id);
+    actionItems.push({
+      kind: "action",
+      value: "action:open-thread-mcp",
+      searchTerms: ["mcp", "mcp servers", "tools", "connectors", "plugins", "panel"],
+      title: "Show MCP servers",
+      icon: <Plug className={ITEM_ICON_CLASS} />,
+      run: async () => {
+        useRightPanelStore.getState().open(threadRef, "mcp");
       },
     });
   }

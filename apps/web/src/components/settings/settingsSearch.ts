@@ -344,6 +344,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["latex tex katex equations formulas markdown"],
   },
   {
+    id: "work-detail-syntax-highlighting",
+    title: "Highlight code in tool calls",
+    to: "/settings/appearance",
+    searchTerms: ["syntax colour color commands tool input shell plain"],
+  },
+  {
     id: "panel-animations",
     title: "Panel animations",
     to: "/settings/appearance",

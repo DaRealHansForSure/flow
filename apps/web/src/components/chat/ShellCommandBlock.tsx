@@ -4,6 +4,7 @@ import {
 } from "@t3tools/client-runtime/work-log/command-label";
 import { Suspense, use } from "react";
 
+import { useClientSettings } from "../../hooks/useSettings";
 import { useRenderedAppearance } from "../../hooks/useTheme";
 import { RenderErrorBoundary } from "../RenderErrorBoundary";
 import { HighlightedTokens } from "./HighlightedTokens";
@@ -47,9 +48,13 @@ function HighlightedCommand({ code, theme }: { code: string; theme: "light" | "d
 
 export function ShellCommandBlock({ command }: { command: string }) {
   const resolvedTheme = useRenderedAppearance();
+  const highlight = useClientSettings((settings) => settings.workDetailSyntaxHighlighting);
   const code = withVisibleControlCharacters(command.trim());
   if (!code) return null;
   const plain = <PlainWords code={code} />;
+  if (!highlight) {
+    return <div className="text-foreground/85">{plain}</div>;
+  }
   return (
     <div className="text-foreground/85">
       <RenderErrorBoundary fallback={plain} resetKeys={[code]}>

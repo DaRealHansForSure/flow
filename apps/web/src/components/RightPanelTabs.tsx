@@ -29,6 +29,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Smartphone,
   BotIcon,
+  PlugIcon,
   BrainCircuitIcon,
   PencilRulerIcon,
   ChevronDown,
@@ -59,6 +60,7 @@ import { cn } from "~/lib/utils";
 import { resolveShortcutCommand, type ShortcutMatchContext } from "~/keybindings";
 import { readLocalApi } from "~/localApi";
 import { useStableCallback } from "~/hooks/useStableCallback";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { Button } from "~/components/ui/button";
 import { MorphIcon } from "~/components/MorphIcon";
 import { AndroidIcon, AppleIcon } from "~/components/Icons";
@@ -137,6 +139,7 @@ export interface RightPanelTabsProps {
   onAddBrain?: (() => void) | undefined;
   onAddPlan?: (() => void) | undefined;
   onAddAgents?: (() => void) | undefined;
+  onAddMcp?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -287,6 +290,7 @@ function flowSurfaceActions(
   onAddBrain: (() => void) | undefined,
   onAddPlan: (() => void) | undefined,
   onAddAgents: (() => void) | undefined,
+  onAddMcp: (() => void) | undefined,
 ) {
   return [
     {
@@ -312,6 +316,14 @@ function flowSurfaceActions(
       available: onAddAgents !== undefined,
       disabledReason: "Only saved chats have agents.",
       onClick: onAddAgents ?? (() => {}),
+    },
+    {
+      label: "MCP",
+      icon: PlugIcon,
+      shortcut: "S",
+      available: onAddMcp !== undefined,
+      disabledReason: "Only saved chats have an agent with MCP servers.",
+      onClick: onAddMcp ?? (() => {}),
     },
   ];
 }
@@ -351,6 +363,7 @@ function RightPanelEmptyState(props: {
   onAddBrain: (() => void) | undefined;
   onAddPlan: (() => void) | undefined;
   onAddAgents?: (() => void) | undefined;
+  onAddMcp?: (() => void) | undefined;
   browserAvailable: boolean;
   terminalAvailable: boolean;
   diffAvailable: boolean;
@@ -420,7 +433,7 @@ function RightPanelEmptyState(props: {
       onClick: props.onAddDevice,
     },
     // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
-    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents, props.onAddMcp),
   ] as const;
 
   type SurfaceAction = (typeof actions)[number];
@@ -613,6 +626,9 @@ function surfaceTitle(
     // Flow: the Agents tab.
     case "agents":
       return "Agents";
+    // Flow: the MCP tab.
+    case "mcp":
+      return "MCP";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -710,6 +726,8 @@ function SurfaceIcon({
       return <PencilRulerIcon className="size-3 shrink-0" />;
     case "agents":
       return <BotIcon className="size-3 shrink-0" />;
+    case "mcp":
+      return <PlugIcon className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -888,13 +906,25 @@ function RightPanelTab(
     onStartRename,
     onFinishRename,
   } = props;
+  const coarsePointer = useMediaQuery("(pointer: coarse)");
   const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: surface.id,
     disabled: props.dragDisabled,
   });
   const content = (
     <>
-      <PanelTabCloseButton label={`Close ${title}`} onClick={() => onClose(surface)}>
+      <PanelTabCloseButton
+        label={`Close ${title}`}
+        onClick={() => onClose(surface)}
+        // Flow: on a phone a tap on a tab only switches to it; only the open tab shows its X.
+        {...(coarsePointer
+          ? {
+              touch: props.active
+                ? { mode: "close" as const }
+                : { mode: "activate" as const, onActivate: () => onActivate(surface) },
+            }
+          : {})}
+      >
         <SurfaceIcon
           surface={surface}
           previewUrl={props.previewUrl}
@@ -1132,7 +1162,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       onClick: props.onAddDevice,
     },
     // Flow: the Brain and Plan tabs, disabled in a chat without a Brain or a plan.
-    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents),
+    ...flowSurfaceActions(props.onAddBrain, props.onAddPlan, props.onAddAgents, props.onAddMcp),
   ] as const;
 
   const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1312,8 +1342,6 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
           ownsDesktopTitleBar && "drag-region",
           ownsDesktopTitleBar && "wco:pr-(--workspace-native-controls-inset)",
           props.mode === "inline" && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
-          // Flow: the full-width phone sheet leaves room for the sidebar toggle floating above it.
-          props.mode === "sheet" && "max-sm:pl-13",
         )}
         data-right-panel-tabbar
       >
@@ -1512,6 +1540,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddBrain={props.onAddBrain}
             onAddPlan={props.onAddPlan}
             onAddAgents={props.onAddAgents}
+            onAddMcp={props.onAddMcp}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}
