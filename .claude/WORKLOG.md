@@ -1,25 +1,28 @@
 # Worklog
 
-Updated: 2026-10-31 12:00
+Updated: 2026-10-31 15:20
 
 ## Current focus
 
-- **Topic:** after 0.2.2: phone navigation, T3 Code sync, then Brain settings Part 2
-- **Goal:** sync tested and merged; Brain settings Part 2 next (plan file, step 3)
-- **Branch:** develop (not pushed; phone navigation and T3 sync merged)
-- **Last step done:** T3 Code main synced (414 commits, 19 conflicts), four test lanes run,
-  failures fixed or explained; phone composer focus fixes; dev AppImage 0.2.3-dev.1 building
-- **Next step:** owner checks phone navigation and composer on the dev server; then Part 2
+- **Topic:** security review fixes, then browser scenario tests or Brain settings Part 2
+- **Goal:** F1 (`chore/brain-deps`, fastify 5 + MCP SDK 1.32) merged once the Brain tests pass
+- **Branch:** develop (not pushed); `chore/brain-deps` open, not merged
+- **Last step done:** security review with `security-and-hardening`; F2 (Brain token check), F3
+  (phone Back return path), F4 (.gitignore keys) on develop; F1 committed on its branch, typecheck
+  clean, Brain tests not run yet. Plan-mode feedback fix, plan waits for subagents, Android Back fix,
+  Windows bundle merged.
+- **Next step:** owner's word to run the Brain tests (`flow-t3/shared/orchestrator` test script,
+  `apps/server/src/brain`), then merge `chore/brain-deps` with `--no-ff`
 - **Open questions / blockers:**
-  - `dc8fe2f29` (new chats record their branch): its test fails on develop before the sync too;
-    the branch is dispatched but missing from the projection. Feature likely not working.
-  - T3's new `ChatView.browser.test.tsx` draft test hangs while rendering AppRoot in the fork.
-  - Known since 0.2.1: BrainRuntime integration, OpenCode2 plan mode, OpenCode2 text generation
-    replay (now 3 tests), storageCleanup submodule test. Load-only flakes in web and browser lanes.
-  - Windows service bundle switched off until fixed.
+  - T3's `ChatView.browser.test.tsx` draft test times out under CPU load (also without the phone
+    navigation); passes on an idle machine. Run the web-browser lane alone.
+  - Test lanes: cap workers per lane (`.t3/test-run/run-full.sh`), else load timeouts.
+  - Remaining audit findings are T3's (MCP SDK's express helpers, node-llama-cpp's simple-git,
+    vitest's undici); they move with the next T3 sync.
 
 ## Finished features
 
+- 2026-10-31 - Security review fixes F2-F4, plan-mode feedback only for the plan in front of the user, plan waits for subagents, Android Chrome Back, Windows bundle (develop)
 - 2026-10-31 - Phone navigation fixes and T3 Code sync of 31 Oct (develop)
 - 2026-10-31 - Shared icon sizes on desktop, plan revise with attachments, red Stop, shared panel tab frame (develop)
 - 2026-10-31 - Release 0.2.2 (service and desktop) published from release
