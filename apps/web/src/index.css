@@ -2680,14 +2680,14 @@ code {
   /* The open composer's send and stop button, the one control a phone reaches for most. */
   --touch-primary-action-size: 2.75rem;
   --touch-inline-control-height: 2.25rem;
-  --touch-inline-icon-size: 1.125rem;
+  --touch-inline-icon-size: var(--touch-icon-size);
   --touch-inline-font-size: 0.9375rem;
   /* A row in a menu, select or list popup: a full finger target, so neighbours are not hit. */
   --touch-menu-item-height: 2.75rem;
   --desktop-control-size: 2rem;
   --desktop-icon-size: 1.125rem;
   --desktop-inline-control-height: 1.75rem;
-  --desktop-inline-icon-size: 1rem;
+  --desktop-inline-icon-size: var(--desktop-icon-size);
   --desktop-inline-font-size: 0.8125rem;
   --header-control-size: var(--desktop-control-size);
   --header-icon-size: var(--desktop-icon-size);

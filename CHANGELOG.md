@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The icons under the composer (checkout, branch, permissions) match the header icons: 18 px on
+  desktop and 20 px on touch screens.
 - Synced with T3 Code main as of 2026-10-31 (414 commits).
 - Thinking, command and tool rows between answers use a greyer text colour, mixed from the theme's
   own text and background, so they read apart from the answer in every theme.
