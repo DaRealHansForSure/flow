@@ -32,9 +32,11 @@ function BackgroundWorkSheet(props: {
   readonly details: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         className={WORK_TRIGGER_CLASS}
         aria-label="Show background work"
@@ -47,8 +49,9 @@ function BackgroundWorkSheet(props: {
         <span className="min-w-0 truncate text-foreground">{props.title}</span>
       </button>
       <Sheet open={open} onOpenChange={setOpen}>
-        {/* Closing must not hand focus back to the composer: that would raise the phone keyboard. */}
-        <SheetPopup side="bottom" className="max-h-[70dvh]" finalFocus={false}>
+        {/* Focus goes back to this pill, outside the composer: left alone it fell back to a
+            composer button (attach) and opened the resting composer. */}
+        <SheetPopup side="bottom" className="max-h-[70dvh]" finalFocus={triggerRef}>
           <SheetHeader>
             <SheetTitle>Background work</SheetTitle>
           </SheetHeader>
@@ -254,7 +257,7 @@ export function ComposerStatusControl(props: {
           aria-label="Thread status"
           className={cn(
             STATUS_PILL_CLASS,
-            "pointer-events-auto mx-0 gap-0 divide-x divide-border overflow-hidden px-0",
+            "pointer-events-auto mx-0 gap-0 divide-x divide-(--floating-pill-border) overflow-hidden px-0",
           )}
         >
           {segments}

@@ -10,6 +10,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The status pill and the scroll-to-end button above the composer keep a visible border at normal
+  contrast in every theme, mixed from the theme's text colour.
+- The icons under the composer (checkout, branch, permissions) match the header icons: 18 px on
+  desktop and 20 px on touch screens.
+- Synced with T3 Code main as of 2026-10-31 (414 commits).
 - Thinking, command and tool rows between answers use a greyer text colour, mixed from the theme's
   own text and background, so they read apart from the answer in every theme.
 - **Update dialog.** Flow, servers and providers are listed the same way, each as one line with
@@ -30,6 +35,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, a resting composer no longer opens when a closing dialog or sheet hands focus back
+  to one of its buttons; it opens only for a tap on it or an action like Revise.
+- On a phone, the touch that closes a sheet such as Background work no longer opens the resting
+  composer underneath it; only a tap that starts on the message field opens it.
+- On a phone, closing the Background work list hands focus back to its pill instead of the
+  composer's attach button, so a resting composer stays at rest.
 - On a phone, coming back from Usage, Settings or another page leaves a resting composer at rest
   instead of opening it without a cursor.
 - The "Loading…" pill shown while Settings, Usage or another page opens sits under the header

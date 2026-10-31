@@ -71,4 +71,6 @@ export * from "./brain.ts";
 export * from "./flowBrowserUpdate.ts";
 export * from "./worktreeSetup.ts";
 export * from "./secretRequest.ts";
+export * from "./secretReference.ts";
+export * from "./settingsSecretValue.ts";
 export * from "./clientRpcPermissions.ts";
