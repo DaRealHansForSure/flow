@@ -105,6 +105,7 @@ import {
 } from "./promptLinks/copyPromptLink";
 import { useClientSettings } from "../hooks/useSettings";
 import { useStableCallback } from "../hooks/useStableCallback";
+import { isMobileViewport } from "./ui/sidebar";
 import { readLocalApi } from "../localApi";
 import { desktopLocalBackendId } from "../connection/desktopLocal";
 import { filesystemEnvironment, useFilesystemReadAccess } from "../state/filesystem";
@@ -758,6 +759,7 @@ function OpenCommandPaletteDialog(props: {
     if (latestThread) {
       await navigate({
         to: "/$environmentId/$threadId",
+        replace: isMobileViewport(),
         params: buildThreadRouteParams(scopeThreadRef(latestThread.environmentId, latestThread.id)),
       });
       return;
@@ -1692,6 +1694,7 @@ function OpenCommandPaletteDialog(props: {
             runThread: async (thread) => {
               await navigate({
                 to: "/$environmentId/$threadId",
+                replace: isMobileViewport(),
                 params: buildThreadRouteParams(scopeThreadRef(thread.environmentId, thread.id)),
               });
             },
@@ -1791,6 +1794,7 @@ function OpenCommandPaletteDialog(props: {
       if (latestThread && latestThread.settledOverride !== "settled") {
         await navigate({
           to: "/$environmentId/$threadId",
+          replace: isMobileViewport(),
           params: buildThreadRouteParams(
             scopeThreadRef(latestThread.environmentId, latestThread.id),
           ),

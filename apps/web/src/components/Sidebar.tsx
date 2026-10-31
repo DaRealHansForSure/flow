@@ -1410,6 +1410,8 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     return router.navigate({
       to: "/$environmentId/$threadId",
       params: buildThreadRouteParams(threadRef),
+      // Flow: Back on a phone never walks chats, so a switch replaces the entry instead of piling up.
+      replace: isMobile,
     });
   };
 
