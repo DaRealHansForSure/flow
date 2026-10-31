@@ -114,7 +114,7 @@ NodeTest.test("first-message notes, optimistic revisions and checkpoint provenan
   );
   NodeAssert.throws(
     () =>
-      f.store.save(f.cp, { kind: "memory", name: "foreign", text: "unsupported", evidence: [3] }),
+      f.store.save(f.cp, { kind: "doc", name: "foreign", text: "unsupported", evidence: [3] }),
     /unavailable/,
   );
   f.db.close();
@@ -224,13 +224,13 @@ NodeTest.test(
   () => {
     const f = fixture();
     const standing = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Codex subscription",
       text: "Use T3's adapter.",
       evidence: [1],
     });
     const temporal = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Codex subscription limit",
       text: "Today's limit is reached.",
       lifecycle: "temporal",
@@ -241,7 +241,7 @@ NodeTest.test(
     NodeAssert.equal(f.store.search("Codex subscription")[0]?.id, standing.id);
     NodeAssert.ok(f.store.get(temporal.id));
     const issue = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Missing memory response",
       text: "MCP serialization needs a CallToolResult instance.",
       lifecycle: "issue",
@@ -261,7 +261,7 @@ NodeTest.test(
     const today = 100 * 86_400_000;
     f.setNow(today);
     const old = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Codex limit",
       text: "The subscription limit was reached.",
       lifecycle: "temporal",
@@ -272,7 +272,7 @@ NodeTest.test(
     NodeAssert.equal(old.updatedAt, today);
     f.db.prepare("UPDATE t3_capture SET ts = ? WHERE seq = 2").run(today);
     const recent = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Codex limit",
       text: "The current subscription limit was reached.",
       lifecycle: "temporal",
@@ -282,7 +282,7 @@ NodeTest.test(
     const revised = f.store.save(
       { ...f.cp, through: 4 },
       {
-        kind: "memory",
+        kind: "doc",
         id: old.id,
         expectedRevision: 1,
         text: "The historical subscription limit was reached and later cleared.",
@@ -302,7 +302,7 @@ NodeTest.test(
     const f = fixture();
     f.setNow(90 * 86_400_000);
     const doc = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Archived deployment",
       text: "A historical deployment was verified.",
       evidence: [1, 2],
@@ -547,7 +547,7 @@ NodeTest.test("credential-like values and pairing links are redacted", () => {
   );
   NodeAssert.doesNotMatch(
     f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Sign in",
       text: `The password=${opaque} was supplied.`,
       evidence: [2],
@@ -607,7 +607,7 @@ NodeTest.test(
 );
 
 NodeTest.test(
-  "existing legacy memories are read and refined in place with stale-edit protection",
+  "existing legacy memories stay readable for the Brain but hidden from and unchangeable by the curator",
   () => {
     const f = fixture();
     f.db.exec(
@@ -619,49 +619,34 @@ NodeTest.test(
       )
       .run(Buffer.from([1, 2]));
     const legacyStore = new CurationStore(f.db);
-    const tools = new CuratorTools(legacyStore, f.cp, new TranscriptBudget());
-    const hits = tools.execute("search_documents", {
-      query: "regression",
-      kind: "memory",
-    }) as Array<{
-      id: string;
-      revision: number;
-    }>;
     NodeAssert.deepEqual(
-      hits.map((hit) => [hit.id, hit.revision]),
+      legacyStore.search("regression", "memory").map((doc) => [doc.id, doc.revision]),
       [["mem:existing", 0]],
     );
-    const edit = {
-      id: "mem:existing",
-      kind: "memory",
-      expectedRevision: 0,
-      text: "Run the same focused regression check before and after the fix.",
-      evidence: [2],
-    };
-    NodeAssert.throws(() => tools.execute("write_document", edit), /Read this existing memory/);
-    tools.execute("read_document", { id: "mem:existing" });
-    f.db
-      .prepare(
-        "UPDATE memories SET claim='Run the focused check and retain the failure.' WHERE id='existing'",
-      )
-      .run();
-    NodeAssert.throws(() => tools.execute("write_document", edit), /source may have changed/);
-    tools.execute("read_document", { id: "mem:existing" });
-    const saved = tools.execute("write_document", edit) as { id: string; revision: number };
-    NodeAssert.equal(saved.revision, 1);
-    NodeAssert.equal(f.store.search("regression", "memory").length, 1);
-    NodeAssert.deepEqual(
-      f.db.prepare("SELECT claim,embedding FROM memories WHERE id='existing'").get(),
-      {
-        claim: edit.text,
-        embedding: null,
-      },
+    const tools = new CuratorTools(legacyStore, f.cp, new TranscriptBudget());
+    NodeAssert.throws(
+      () => tools.execute("search_documents", { query: "regression", kind: "memory" }),
+      /Invalid document kind/,
     );
-    NodeAssert.deepEqual(f.store.evidence(saved.id), [{ sessionId: "chat-a", seq: 2 }]);
-    f.db.prepare("DELETE FROM memories WHERE id='existing'").run();
-    NodeAssert.equal(f.store.get(saved.id), undefined);
-    NodeAssert.equal(f.store.search("regression", "memory").length, 0);
-    NodeAssert.deepEqual(f.store.evidence(saved.id), []);
+    NodeAssert.deepEqual(tools.execute("search_documents", { query: "regression" }), []);
+    NodeAssert.throws(
+      () => tools.execute("read_document", { id: "mem:existing" }),
+      /not found in this scope/,
+    );
+    NodeAssert.throws(
+      () =>
+        tools.execute("write_document", {
+          id: "mem:existing",
+          kind: "memory",
+          expectedRevision: 0,
+          text: "Run the same focused regression check before and after the fix.",
+          evidence: [2],
+        }),
+      /Invalid document kind/,
+    );
+    NodeAssert.deepEqual(f.db.prepare("SELECT claim FROM memories WHERE id='existing'").get(), {
+      claim: "Run a focused regression check.",
+    });
     f.db.close();
   },
 );
@@ -676,7 +661,7 @@ NodeTest.test(
     VALUES (?, 'notes', 'regression testing', '', 'regression testing', 1, ?, 'flow', 'standing', 'active', 1, 1)`)
         .run(`notes:foreign-${i}`, `foreign-${i}`);
     const memory = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Focused checks",
       text: "Use regression testing.",
       evidence: [2],
@@ -751,13 +736,13 @@ NodeTest.test(
   () => {
     const f = fixture();
     const first = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Trim normalization",
       text: "Preserve the failing regression assertion.",
       evidence: [1],
     });
     f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Deployment",
       text: "We completed the deployment and checked the service.",
       evidence: [2],
@@ -772,7 +757,7 @@ NodeTest.test(
     );
     NodeAssert.deepEqual(rebuilt.search("how do we"), []);
     rebuilt.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       id: first.id,
       expectedRevision: 1,
       name: "Whitespace validation",
@@ -782,7 +767,7 @@ NodeTest.test(
     NodeAssert.deepEqual(rebuilt.search("trim normalization"), []);
     NodeAssert.equal(rebuilt.search("whitespace validation")[0]?.id, first.id);
     const unicode = rebuilt.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "名前 正規化",
       text: "空白処理を確認する。",
       evidence: [2],
@@ -817,7 +802,7 @@ NodeTest.test(
   () => {
     const f = fixture();
     const memory = f.store.save(f.cp, {
-      kind: "memory",
+      kind: "doc",
       name: "Regression rule",
       text: "Keep the failing assertion unchanged.",
       lifecycle: "temporal",
@@ -826,7 +811,7 @@ NodeTest.test(
     });
     const corrected = f.store.save(f.cp, {
       id: memory.id,
-      kind: "memory",
+      kind: "doc",
       expectedRevision: 1,
       lifecycle: "standing",
       description: "A lasting regression verification rule.",
