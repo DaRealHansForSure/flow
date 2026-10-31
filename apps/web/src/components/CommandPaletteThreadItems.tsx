@@ -43,6 +43,7 @@ import {
   ThreadRowTrailingStatus,
   ThreadSearchPullRequestNumber,
 } from "./ThreadStatusIndicators";
+import { isMobileViewport } from "./ui/sidebar";
 
 function useProviderEntryByEnvironmentAndInstanceId() {
   const { environments } = useEnvironments();
@@ -186,6 +187,7 @@ export function useCommandPaletteThreadItems(input: {
       await navigate({
         to: "/$environmentId/$threadId",
         params: buildThreadRouteParams(scopeThreadRef(thread.environmentId, thread.id)),
+        replace: isMobileViewport(),
       });
     },
   });

@@ -10,6 +10,7 @@ import {
   type PhoneBackState,
 } from "../phoneNavigation";
 import { selectThreadRightPanelState, useRightPanelStore } from "../rightPanelStore";
+import { useThreadShell } from "../state/entities";
 import { useSidebar } from "./ui/sidebar";
 
 /** Open Base UI popups (dialogs, sheets, menus, popovers, selects), except the sidebar's sheet. */
@@ -44,6 +45,26 @@ interface PhoneNavigationSnapshot {
   readonly pathname: string;
   readonly threadRef: ScopedThreadRef | null;
   readonly sidebarOpen: boolean;
+  readonly parentThreadRef: ScopedThreadRef | null;
+}
+
+// The chat a full-screen page returns to, kept for the tab so a reload keeps the way back.
+const RETURN_CHAT_KEY = "flow:phone-return-chat";
+
+function readReturnChat(): string | null {
+  try {
+    return window.sessionStorage.getItem(RETURN_CHAT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveReturnChat(href: string) {
+  try {
+    window.sessionStorage.setItem(RETURN_CHAT_KEY, href);
+  } catch {
+    // Storage can be off in private modes; the way back then lasts until a reload.
+  }
 }
 
 /**
@@ -62,18 +83,27 @@ export function PhoneNavigation() {
     params.environmentId !== undefined && params.threadId !== undefined
       ? scopeThreadRef(params.environmentId as EnvironmentId, params.threadId as ThreadId)
       : null;
+  const shell = useThreadShell(threadRef);
+  const parentThreadRef =
+    threadRef !== null &&
+    shell?.lineage.relationshipToParent === "subagent" &&
+    shell.lineage.parentThreadId !== null
+      ? scopeThreadRef(threadRef.environmentId, shell.lineage.parentThreadId)
+      : null;
 
   const snapshotRef = useRef<PhoneNavigationSnapshot>({
     pathname,
     threadRef,
     sidebarOpen: openMobile,
+    parentThreadRef,
   });
-  const lastChatHrefRef = useRef<string | null>(null);
+  const lastChatHrefRef = useRef<string | null>(readReturnChat());
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the history blocker and touch listeners read the latest route and sidebar state at event time
   useLayoutEffect(() => {
-    snapshotRef.current = { pathname, threadRef, sidebarOpen: openMobile };
-    if (!isPhoneScreenPath(pathname)) {
+    snapshotRef.current = { pathname, threadRef, sidebarOpen: openMobile, parentThreadRef };
+    if (!isPhoneScreenPath(pathname) && lastChatHrefRef.current !== router.state.location.href) {
       lastChatHrefRef.current = router.state.location.href;
+      saveReturnChat(router.state.location.href);
     }
   });
 
@@ -93,6 +123,7 @@ export function PhoneNavigation() {
         screenOpen: isPhoneScreenPath(snapshot.pathname),
         rightPanelOpen: snapshot.threadRef !== null && rightPanel.isOpen,
         sidebarOpen: snapshot.sidebarOpen,
+        hasParentChat: snapshot.parentThreadRef !== null,
       };
     };
     // A chat opened straight from a link is the first entry, and Back there would leave the app
@@ -125,6 +156,18 @@ export function PhoneNavigation() {
           case "close-right-panel":
             if (snapshot.threadRef !== null) {
               useRightPanelStore.getState().close(snapshot.threadRef);
+            }
+            return true;
+          case "open-parent-chat":
+            if (snapshot.parentThreadRef !== null) {
+              void router.navigate({
+                to: "/$environmentId/$threadId",
+                params: {
+                  environmentId: snapshot.parentThreadRef.environmentId,
+                  threadId: snapshot.parentThreadRef.threadId,
+                },
+                replace: true,
+              });
             }
             return true;
           case "open-sidebar":

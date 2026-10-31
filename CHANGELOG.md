@@ -32,6 +32,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The "Loading…" pill shown while Settings, Usage or another page opens sits under the header
   again, above everything else; on a phone it was centred behind the composer and barely visible.
+- On a phone, Back in a subagent's chat returns to the chat that started it before it opens the
+  sidebar, and a reload on Settings, the Brain page or Usage keeps the way back to the chat.
+- Picking another Brain on the Brain page no longer adds a page per pick, so Back closes the Brain
+  page at once.
+- On a phone, switching chats from the sidebar or the command palette replaces the page instead of
+  adding one, so the browser history no longer grows with every chat.
 - **Update icon position.** The sidebar's update icon sits right next to Settings instead of in
   the middle of the row, at the same size as the other sidebar icons.
 - **Plan feedback with an attachment.** A message with an image or file sent while a plan waits
