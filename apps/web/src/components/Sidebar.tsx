@@ -2980,7 +2980,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                       <ProjectFavicon project={scopedProjectGroups[0]} className="size-4" />
                     </span>
                   ) : (
-                    <ListFilterIcon className="size-4" />
+                    <ListFilterIcon />
                   )}
                 </ComboboxTrigger>
                 <ComboboxPopup

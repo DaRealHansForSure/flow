@@ -29,6 +29,7 @@ export function HtmlRenderDialog(props: {
           <Button
             ref={closeButtonRef}
             aria-label="Close"
+            data-header-control=""
             size="icon-sm"
             variant="media-close"
             className="absolute right-0 top-0 z-20"

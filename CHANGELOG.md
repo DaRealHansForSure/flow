@@ -14,6 +14,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the version it moves from and to.
 - **Update icon.** The sidebar update button takes the theme's primary color while an update is
   waiting or downloading.
+- **Desktop icon sizes.** The sidebar's top row (project filter, Add project, New thread) uses
+  the same button and icon size as the chat header, and the composer's checkout, branch and
+  permissions strip is larger and easier to read.
+- **Close buttons.** The close button of dialogs and sheets, such as the Brain graph, has the
+  same size as the header controls.
+- **Stop button.** The banner of a running or waiting chat stops it with a red stop icon instead
+  of a text link.
+- **Side panel tabs.** Brain, Agents and MCP share one frame: the header line stays in place while
+  the tab scrolls and shows in every state, and loading or empty tabs show the same empty state.
+
+### Fixed
+
+- **Update icon position.** The sidebar's update icon sits right next to Settings instead of in
+  the middle of the row, at the same size as the other sidebar icons.
+- **Plan feedback with an attachment.** A message with an image or file sent while a plan waits
+  for review now revises the plan, as text-only feedback does, instead of going to the agent as an
+  ordinary message.
 
 ## [0.2.2] - 2026-10-31
 

@@ -13,6 +13,18 @@ describe("resolvePlanFollowUpSubmission", () => {
       });
     },
   );
+  it("revises the plan when only an attachment is sent", () => {
+    expect(
+      resolvePlanFollowUpSubmission({
+        draftText: "  ",
+        planMarkdown: "# Plan",
+        hasAttachments: true,
+      }),
+    ).toEqual({
+      text: PLAN_REVISION_PROMPT_PREFIX,
+      interactionMode: "plan",
+    });
+  });
   it("switches to default mode when implementing the ready plan without extra text", () => {
     expect(
       resolvePlanFollowUpSubmission({

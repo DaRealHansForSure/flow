@@ -74,8 +74,7 @@ import { orchestrationEnvironment } from "../../state/orchestration";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { AgentElapsed } from "./AgentElapsed";
 import { ThreadRelationshipIcon, threadRelationshipStatusLabel } from "./ThreadRelationshipIcon";
-import { AgentsPanelFrame, AgentsPanelSection } from "./AgentsPanelFrame";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+import { PanelTabEmpty, PanelTabFrame, PanelTabSection } from "./PanelTabFrame";
 import { ThreadLineageWorkflowRow } from "./ThreadLineageWorkflowRow";
 
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
@@ -158,7 +157,7 @@ function ThreadLineageGroup(props: {
   if (props.rows.length === 0) return null;
   if (props.inPanel && props.label) {
     return (
-      <AgentsPanelSection label={props.label} count={props.rows.length}>
+      <PanelTabSection label={props.label} count={props.rows.length}>
         <ThreadLineageRowList
           hiddenCount={hiddenCount}
           onShowMore={() => setVisibleCount((count) => count + THREAD_LINEAGE_PAGE_COUNT)}
@@ -166,7 +165,7 @@ function ThreadLineageGroup(props: {
         >
           {props.children(visibleRows)}
         </ThreadLineageRowList>
-      </AgentsPanelSection>
+      </PanelTabSection>
     );
   }
   return (
@@ -608,19 +607,13 @@ export function ThreadRelationshipsPanel(props: {
     delegatedFrom === undefined
   ) {
     return (
-      <AgentsPanelFrame summary={null}>
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <BotIcon />
-            </EmptyMedia>
-            <EmptyTitle>No agents in this chat yet</EmptyTitle>
-            <EmptyDescription>
-              Subagents and related chats show here once the agent starts one.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      </AgentsPanelFrame>
+      <PanelTabFrame title="Agents" data-thread-relationships-panel="">
+        <PanelTabEmpty
+          icon={<BotIcon />}
+          title="No agents in this chat yet"
+          description="Subagents and related chats show here once the agent starts one."
+        />
+      </PanelTabFrame>
     );
   }
 
@@ -980,9 +973,14 @@ export function ThreadRelationshipsPanel(props: {
   // Flow: the Agents tab gets its own frame, laid out like the MCP tab.
   if (inPanel) {
     return (
-      <AgentsPanelFrame summary={agentsSummary} actions={actionsMenu}>
+      <PanelTabFrame
+        title="Agents"
+        summary={agentsSummary}
+        actions={actionsMenu}
+        data-thread-relationships-panel=""
+      >
         {lineageContent}
-      </AgentsPanelFrame>
+      </PanelTabFrame>
     );
   }
   return (
