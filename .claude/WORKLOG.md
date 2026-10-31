@@ -1,16 +1,17 @@
 # Worklog
 
-Updated: 2026-10-31 03:30
+Updated: 2026-10-31 10:45
 
 ## Current focus
 
-- **Topic:** after release 0.2.2
-- **Goal:** next topics on the owner's word
-- **Branch:** develop (main merged back after 0.2.2)
-- **Last step done:** released flow-v0.2.2 (service and AppImage, update feed at 0.2.2); full
-  suites run in four lanes, failures fixed; 300-row history window reverted (transfer budget)
-- **Next step:** owner picks: subagent chat window fix (targeted, within the 110 KB budget),
-  reload-lands-mid-chat repro, routing/history redesign, Brain settings Part 2
+- **Topic:** UI consistency (icon sizes, panel frame, plan revise with attachments)
+- **Goal:** desktop icons on the shared size concept; side panel tabs on one frame
+- **Branch:** develop (fix/ui-consistency merged, not pushed)
+- **Last step done:** shared control + inline size tiers in index.css (sidebar top row, composer
+  strip, dialog close buttons, update icon next to Settings); plan feedback with an attachment
+  revises the plan; red Stop icon in the running banner; PanelTabFrame for Brain, Agents, MCP
+- **Next step:** owner checks in Dev Flow; then push on the owner's word. New test row in
+  apps/web/src/proposedPlan.test.ts written, not run
 - **Open questions / blockers:**
   - Tests failing already in 0.2.1, left for the next upstream sync: BrainRuntime integration
     (local source lookup), OpenCode2 plan-mode integration, OpenCode2TextGeneration replay,
@@ -21,6 +22,7 @@ Updated: 2026-10-31 03:30
 
 ## Finished features
 
+- 2026-10-31 - Shared icon sizes on desktop, plan revise with attachments, red Stop, shared panel tab frame (develop)
 - 2026-10-31 - Release 0.2.2 (service and desktop) published from release
 - 2026-10-31 - Brain tab sections, sidebar layout, touch sizes, CI fixes (develop, pushed)
 - 2026-10-31 - Flow CI, T3 workflows removed, No project cleanup, Cite and composer fixes (develop)
