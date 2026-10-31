@@ -1,6 +1,7 @@
 // @effect-diagnostics nodeBuiltinImport:off - The MCP SDK owns Node HTTP request/response objects.
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
+import { bearerTokenMatches } from "./bearer-token.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -19,7 +20,7 @@ export async function startAgentMcpBridge(spec: {
   const token = randomBytes(32).toString("hex");
   const connections = new Set<Server>();
   const http = createServer(async (request, response) => {
-    if (request.headers.authorization !== `Bearer ${token}`) {
+    if (!bearerTokenMatches(request.headers.authorization, token)) {
       response.writeHead(401).end();
       return;
     }

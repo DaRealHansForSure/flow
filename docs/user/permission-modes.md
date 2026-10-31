@@ -42,6 +42,11 @@ composer:
   it, choose **Comment**, and write a note. Comments are sent with the next revision.
 - **Decline** closes the plan and keeps the thread in Plan.
 
+A message typed right after a new plan is sent as Revise feedback. To send it as an ordinary
+message instead, choose **New message** in the composer's **Plan ready** banner. An older plan
+that is still open does not take your messages; use **Revise** on it to give feedback. While the
+thread still waits on its subagents, the plan can be answered once they finish.
+
 Each plan shows its version and whether it was accepted, revised, or declined; the Plan tab lists
 earlier versions. **Reopen this plan**, in a closed plan's menu or the Plan tab, makes it the open
 plan again. Changes already made from it stay. On web and desktop, a thread whose plan waits for

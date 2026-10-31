@@ -19,7 +19,7 @@ import { Button } from "../ui/button";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
 import { MiddleTruncate } from "../ui/middle-truncate";
 import { ScrollArea } from "../ui/scroll-area";
-import type { RestartingMachine, UpdateEverythingRow } from "./updateEverything.logic";
+import type { RestartingMachine, UpdateEverythingRow, UpdatePart } from "./updateEverything.logic";
 
 const isRunning = (status: string) =>
   status === "preparing" || status === "starting" || status === "running";
@@ -43,7 +43,6 @@ const runningThreadCountAtom = Atom.family((environmentIds: string) =>
 interface UpdateEverythingDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-  readonly version: string | null;
   readonly providerCount: number;
   readonly rows: ReadonlyArray<UpdateEverythingRow>;
   readonly restarts: ReadonlyArray<RestartingMachine>;
@@ -85,14 +84,17 @@ export function UpdateEverythingDialog({
   );
 }
 
-const APP_LABELS = {
-  "this-app": "This app",
-  server: "Server",
-  "desktop-app": "Desktop app",
+const APP_NAMES = {
+  "this-app": APP_BASE_NAME,
+  server: `${APP_BASE_NAME} server`,
+  "desktop-app": `${APP_BASE_NAME} desktop app`,
 } as const;
 
+function countLabel(count: number, noun: string): string | null {
+  return count === 0 ? null : `${count} ${noun} ${count === 1 ? "update" : "updates"}`;
+}
+
 function UpdateEverythingDialogContent({
-  version,
   providerCount,
   rows,
   restarts,
@@ -125,6 +127,10 @@ function UpdateEverythingDialogContent({
   const restarting = new Set(restarts.map((machine) => machine.environmentId));
   const updating = rows.filter((row) => row.app !== null || row.providers.length > 0);
   const skipped = rows.filter((row) => row.skipped !== null);
+  const counts = [
+    countLabel(updating.filter((row) => row.app !== null).length, APP_BASE_NAME),
+    countLabel(providerCount, "provider"),
+  ].filter((count) => count !== null);
 
   return (
     <>
@@ -132,17 +138,7 @@ function UpdateEverythingDialogContent({
         <AlertDialogTitle>
           {title ?? `Update ${updating.length} ${updating.length === 1 ? "machine" : "machines"}?`}
         </AlertDialogTitle>
-        <AlertDialogDescription>
-          {version !== null ? (
-            <>
-              {APP_BASE_NAME} <span className="font-mono text-xs">{version}</span>
-            </>
-          ) : null}
-          {version !== null && providerCount > 0 ? " · " : null}
-          {providerCount > 0
-            ? `${providerCount} provider ${providerCount === 1 ? "update" : "updates"}`
-            : null}
-        </AlertDialogDescription>
+        <AlertDialogDescription>{counts.join(" · ")}</AlertDialogDescription>
       </AlertDialogHeader>
       <ScrollArea scrollFade>
         <div className="flex flex-col gap-3 px-6 pb-4">
@@ -151,12 +147,11 @@ function UpdateEverythingDialogContent({
               {note}
             </p>
           ))}
-          {/* Machine names truncate first. Provider lists wrap between names, never inside one. */}
-          <div className="grid grid-cols-[minmax(4rem,max-content)_max-content_minmax(min-content,1fr)_max-content] gap-x-4 text-sm">
+          {/* Machine names truncate first. Each update is one line that never wraps inside. */}
+          <div className="grid grid-cols-[minmax(4rem,max-content)_minmax(min-content,1fr)_max-content] gap-x-4 text-sm">
             <div className="col-span-full grid grid-cols-subgrid border-b pb-1.5 text-muted-foreground text-xs">
               <span>Machine</span>
-              <span>{APP_BASE_NAME}</span>
-              <span>Providers</span>
+              <span>Updates</span>
               <span />
             </div>
             {updating.map((row) => (
@@ -167,21 +162,17 @@ function UpdateEverythingDialogContent({
                 <span className="max-w-32 min-w-0">
                   <MiddleTruncate value={row.label} />
                 </span>
-                <span>
-                  {row.app !== null ? APP_LABELS[row.app] : null}
-                  {row.app === null && row.skipped !== null ? (
+                <span className="flex flex-col gap-0.5">
+                  {row.app !== null ? (
+                    <UpdatePartLine
+                      part={{ name: APP_NAMES[row.app], from: row.appFrom, to: row.appTo }}
+                      note={row.app === "this-app" ? "restarts last" : null}
+                    />
+                  ) : row.skipped !== null ? (
                     <span className="text-muted-foreground">Skipped</span>
                   ) : null}
-                  {row.app === "this-app" ? (
-                    <span className="block text-muted-foreground text-xs">restarts last</span>
-                  ) : null}
-                </span>
-                <span>
-                  {row.providers.map((provider, index) => (
-                    <Fragment key={provider}>
-                      <span className="whitespace-nowrap">{provider}</span>
-                      {index < row.providers.length - 1 ? ", " : null}
-                    </Fragment>
+                  {row.providers.map((provider) => (
+                    <UpdatePartLine key={provider.name} part={provider} note={null} />
                   ))}
                 </span>
                 <span className="text-right">
@@ -236,6 +227,33 @@ function UpdateEverythingDialogContent({
         </Button>
       </AlertDialogFooter>
     </>
+  );
+}
+
+function UpdatePartLine({
+  part,
+  note,
+}: {
+  readonly part: UpdatePart;
+  readonly note: string | null;
+}) {
+  return (
+    <span className="whitespace-nowrap">
+      {part.name}
+      {part.to !== null ? (
+        <>
+          {part.from !== null ? (
+            <>
+              {" "}
+              <span className="font-mono text-xs">{part.from}</span>
+            </>
+          ) : null}
+          {" → "}
+          <span className="font-mono text-xs">{part.to}</span>
+        </>
+      ) : null}
+      {note !== null ? <span className="ms-2 text-muted-foreground text-xs">{note}</span> : null}
+    </span>
   );
 }
 

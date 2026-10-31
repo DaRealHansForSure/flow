@@ -54,7 +54,8 @@ every change.
 - **Plan is a permission mode.** Plan sits in the composer's permission picker and can be the
   default. A plan opens in a Plan tab like a `Plan.md`, is answered with Accept, Revise or Decline,
   takes comments on selected passages, keeps its versions and can be reopened. In Plan every
-  command asks first.
+  command asks first. A chat's mode follows it on every device, a message counts as plan feedback
+  only for the plan just proposed, and a plan waits for running subagents before it can be answered.
 - **More in the right panel.** Besides the Brain and Plan tabs, an Agents tab lists the chat's
   running and finished agents with their status, model and latest activity, and an MCP tab lists
   the MCP servers of the chat's agent with their status and tools (`/mcp`; tested with Claude).
@@ -85,9 +86,12 @@ every change.
   composer and settings buttons are finger-sized, the idle composer looks like a field, Cite works
   after a long press on Android, hints open on a tap, and the start screen shows its logo at once.
 - **The chat is the main page.** Back closes menus, full-screen pages and the side panel, then
-  opens the projects sidebar; swipes from the screen edges open the side menus.
-- **The keyboard stays down** unless you tap the message box: closing a dialog or menu no longer
-  raises it, and tapping a side panel tab switches to it instead of closing it.
+  opens the projects sidebar; in a subagent's chat it first returns to the chat that started it.
+  Switching chats does not grow the history, a reload keeps the way back, and swipes from the
+  screen edges open the side menus.
+- **The keyboard stays down** unless you tap the message box: closing a dialog, menu or sheet, or
+  coming back from another page, leaves a resting composer at rest, and tapping a side panel tab
+  switches to it instead of closing it.
 
 ### Settings
 
@@ -105,6 +109,8 @@ every change.
   every pull and merge request feature on web, desktop and mobile: no PR lookups, no PR status
   on threads, and git actions that commit and push without opening a PR. Useful when you do not
   work with pull requests, or when your host keeps printing `glab` or `gh` warnings.
+- **A paired browser can forget itself.** Settings > Sharing & access > Forget this device signs
+  that browser out without the right to manage other clients; revoking and forgetting ask first.
 - **Network access reaches the Flow service.** Settings > Sharing & access > Network access now
   opens the Flow service to your network and shows its real LAN and Tailscale addresses, so other
   devices can connect. Changing it restarts the service, which ends running chats.
@@ -148,8 +154,8 @@ every change.
   `release` branch, publishes the service and the desktop app of the same version together, so
   the service version every app asks for exists.
 - **Releases build for Linux.** The release workflows no longer build the macOS service bundle
-  or macOS desktop apps, so publishing needs no Apple signing keys. The Windows service bundle is
-  paused until its build is fixed.
+  or macOS desktop apps, so publishing needs no Apple signing keys. The Windows service bundle
+  builds again from 0.2.3.
 
 ### Development tooling
 
@@ -187,16 +193,16 @@ every change.
 
 ## In progress
 
-- **Phone navigation, second round.** Phone screens as standalone layers in the browser history,
-  and a check of the desktop's side panels and dialogs.
+- **Browser scenario tests.** Automated phone and desktop runs in a real browser for the flows
+  fixed by hand so far (Back, the resting composer, Plan mode on two devices).
 - **Brain settings in one place.** A Settings > Brain page for the agents that index and write
   notes, instructions per Brain and per source, storage, and moving a Brain to another folder.
-- Releases so far: 0.2.0 (the first from this fork), 0.2.1 and 0.2.2.
+- Releases so far: 0.2.0 (the first from this fork), 0.2.1, 0.2.2 and 0.2.3.
 
 ## Platforms
 
 This fork targets Linux x64 (Ubuntu 24.04 or compatible): the desktop app ships as an AppImage,
 and the `flow` command and service install with the app or with `install.sh`. Windows x64 still
 gets the `install.ps1` bundle, which connects to a Brain hosted on another computer or in Cloud;
-there is no Windows desktop app, and that bundle is paused from 0.2.2 until its build is fixed. macOS is not targeted: no macOS builds are published, although
+there is no Windows desktop app. macOS is not targeted: no macOS builds are published, although
 upstream's macOS code is still in the repository.

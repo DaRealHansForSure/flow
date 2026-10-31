@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { ensureLocalApi } from "~/localApi";
 import { useEnvironmentQuery } from "~/state/query";
 import { desktopFlowServiceAtom, refreshDesktopFlowService } from "~/state/desktopFlowService";
 import {
@@ -9,15 +10,6 @@ import {
 } from "./flowServiceSettings.logic";
 import { SettingsRow, SettingsSection } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogPopup,
-  AlertDialogTitle,
-} from "../ui/alert-dialog";
 import { Button } from "../ui/button";
 
 /**
@@ -39,7 +31,6 @@ export function FlowServiceSettings({
   const query = useEnvironmentQuery(canManage ? desktopFlowServiceAtom : null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<"stop" | "restart" | null>(null);
-  const [isStopDialogOpen, setIsStopDialogOpen] = useState(false);
 
   const runAction = async (action: "stop" | "restart") => {
     const call = action === "stop" ? bridge?.stopFlowService : bridge?.restartFlowService;
@@ -94,7 +85,14 @@ export function FlowServiceSettings({
               variant="outline"
               disabled={!view?.canStop || pendingAction !== null}
               onClick={() => {
-                setIsStopDialogOpen(true);
+                void ensureLocalApi()
+                  .dialogs.confirm(
+                    "Stop the Flow service?\nCoding agents running outside this app stop capturing until the service is started again. Open projects and any work in progress on this machine stop with it.",
+                    { variant: "destructive" },
+                  )
+                  .then((confirmed) => {
+                    if (confirmed) void runAction("stop");
+                  });
               }}
             >
               {pendingAction === "stop" ? "Stopping…" : "Stop service"}
@@ -133,41 +131,6 @@ export function FlowServiceSettings({
           status={<span className="block text-destructive">{actionError}</span>}
         />
       ) : null}
-      <AlertDialog
-        open={isStopDialogOpen}
-        onOpenChange={(open) => {
-          if (pendingAction !== null) return;
-          setIsStopDialogOpen(open);
-        }}
-      >
-        <AlertDialogPopup>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Stop the Flow service?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Coding agents running outside this app stop capturing until the service is started
-              again. Open projects and any work in progress on this machine stop with it.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogClose
-              disabled={pendingAction !== null}
-              render={<Button variant="outline" disabled={pendingAction !== null} />}
-            >
-              Cancel
-            </AlertDialogClose>
-            <Button
-              variant="destructive"
-              disabled={pendingAction !== null}
-              onClick={() => {
-                setIsStopDialogOpen(false);
-                void runAction("stop");
-              }}
-            >
-              Stop service
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogPopup>
-      </AlertDialog>
     </SettingsSection>
   );
 }

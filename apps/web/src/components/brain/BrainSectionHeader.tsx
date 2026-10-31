@@ -25,7 +25,7 @@ export function BrainSectionHeader({
   // contain the action buttons. Everything above it but the actions lets clicks through.
   // In a narrow panel (a phone) the actions move to a second row so the title keeps its line.
   return (
-    <header className="@container relative grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 px-3 pt-3 pb-1.5">
+    <header className="@container relative grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 px-3 pt-3 pb-1">
       <button
         type="button"
         aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
@@ -34,9 +34,9 @@ export function BrainSectionHeader({
         className="absolute inset-0 hover:bg-muted/40"
       />
       <div className="pointer-events-none relative min-w-0 flex-1">
-        <h2 className="font-semibold text-2xs text-muted-foreground uppercase tracking-wide">
-          {label}
-          {count !== undefined && <span className="ml-2 tabular-nums">{count}</span>}
+        <h2 className="flex justify-between gap-2 font-semibold text-2xs text-muted-foreground uppercase tracking-wide">
+          <span className="min-w-0 truncate">{label}</span>
+          {count !== undefined && <span className="shrink-0 tabular-nums">{count}</span>}
         </h2>
         {description && (
           <p className="mt-1 text-xs text-muted-foreground normal-case">{description}</p>

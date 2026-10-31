@@ -1720,6 +1720,10 @@ body {
   padding: 0;
 }
 
+[data-preview-url-input] {
+  font-variant-ligatures: none;
+}
+
 /* Lighter default icon stroke. In the base layer so stroke-* utilities still win; any
    CSS beats lucide's stroke-width="2" attribute. */
 @layer base {
@@ -2067,8 +2071,13 @@ code {
   margin: 0.65rem 0;
 }
 
-/* Preflight already draws the 1px rule, as it does in chat; only the block
-   spacing needs to match. */
+/* Surface borders can blend into dark message bubbles; rules need a readable color. */
+:is(.chat-markdown, .composer-tiptap) hr {
+  @variant dark {
+    border-color: var(--contrast-muted-foreground);
+  }
+}
+
 .composer-tiptap hr {
   margin: 0.65rem 0;
 }
@@ -2176,6 +2185,20 @@ code {
 
 :is(.chat-markdown, .composer-tiptap) .chat-markdown-shiki :is(.shiki, .diffs) {
   background: transparent !important;
+}
+
+/* Plain-text fences override the highlighter's inline foreground colors. */
+:is(.chat-markdown, .composer-tiptap)
+  .chat-markdown-codeblock:is(
+    [data-language="text" i],
+    [data-language="txt" i],
+    [data-language="plain" i],
+    [data-language="plaintext" i]
+  ) {
+  &,
+  & :is(pre, pre *) {
+    color: inherit !important;
+  }
 }
 
 /* Paragraphs and code blocks arrive in chunks while a response streams. Fade
@@ -2644,9 +2667,11 @@ code {
   font-size: calc(var(--text-sm) * var(--chat-font-scale, 1));
 }
 
-/* Flow: header and panel control sizes. One set of variables, sized per pointer: finger-sized on
-   touch screens, a step larger than T3's 28 px on desktop. A new control rule reuses them instead
-   of repeating sizes. */
+/* Flow: control sizes. Two tiers, each sized per pointer (finger-sized on touch screens, a step
+   larger than T3's on desktop): the control tier for icon buttons in headers, panel bars and the
+   sidebar's rows (`--header-*`), and the inline tier for labelled chips such as the composer's
+   checkout, branch and permissions strip (`--inline-*`). A new control rule reuses them instead of
+   repeating sizes. */
 :root {
   --touch-control-size: 2.5rem;
   /* A one-line text field you tap to type in, such as the resting phone composer. */
@@ -2654,12 +2679,23 @@ code {
   --touch-icon-size: 1.25rem;
   /* The open composer's send and stop button, the one control a phone reaches for most. */
   --touch-primary-action-size: 2.75rem;
+  --touch-inline-control-height: 2.25rem;
+  --touch-inline-icon-size: var(--touch-icon-size);
+  --touch-inline-font-size: 0.9375rem;
+  /* A row in a menu, select or list popup: a full finger target, so neighbours are not hit. */
+  --touch-menu-item-height: 2.75rem;
   --desktop-control-size: 2rem;
   --desktop-icon-size: 1.125rem;
+  --desktop-inline-control-height: 1.75rem;
+  --desktop-inline-icon-size: var(--desktop-icon-size);
+  --desktop-inline-font-size: 0.8125rem;
   --header-control-size: var(--desktop-control-size);
   --header-icon-size: var(--desktop-icon-size);
   --header-tab-height: 1.75rem;
   --header-tab-font-size: 0.8125rem;
+  --inline-control-height: var(--desktop-inline-control-height);
+  --inline-icon-size: var(--desktop-inline-icon-size);
+  --inline-font-size: var(--desktop-inline-font-size);
 }
 
 @media (pointer: coarse) {
@@ -2668,6 +2704,9 @@ code {
     --header-icon-size: var(--touch-icon-size);
     --header-tab-height: var(--touch-control-size);
     --header-tab-font-size: 0.9375rem;
+    --inline-control-height: var(--touch-inline-control-height);
+    --inline-icon-size: var(--touch-inline-icon-size);
+    --inline-font-size: var(--touch-inline-font-size);
   }
 }
 
@@ -2713,6 +2752,37 @@ code {
     height: var(--touch-icon-size);
   }
 }
+/* The composer's context strip (checkout, branch, permissions): inline tier. */
+[data-slot="composer-context-strip"]
+  :is(button, [data-composer-context-control]):not([data-slot="separator"]) {
+  height: var(--inline-control-height);
+  font-size: var(--inline-font-size);
+}
+[data-slot="composer-context-strip"]
+  :is(button, [data-composer-context-control])
+  svg:not([data-composer-control-chevron]) {
+  width: var(--inline-icon-size);
+  height: var(--inline-icon-size);
+}
+/* Menu, select and picker rows on touch screens. The DOM fallback context menu reads the same
+   variable through `--menu-item-min-height`. */
+@media (pointer: coarse) {
+  :root {
+    --menu-item-min-height: var(--touch-menu-item-height);
+  }
+  :is(
+    [data-slot="menu-item"],
+    [data-slot="menu-checkbox-item"],
+    [data-slot="menu-radio-item"],
+    [data-slot="menu-sub-trigger"],
+    [data-slot="select-item"],
+    [data-slot="combobox-item"],
+    [data-slot="autocomplete-item"],
+    [data-slot="command-item"]
+  ) {
+    min-height: var(--touch-menu-item-height);
+  }
+}
 /* A header button with a label (Restore device defaults): control height; icon only on a phone. */
 [data-header-control-labelled] {
   height: var(--header-control-size);
@@ -2737,7 +2807,6 @@ code {
 [data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
 [data-terminal-actions] button svg,
 [data-graph-actions] button svg,
-[data-sidebar-utility] svg,
 [data-header-control] svg,
 [data-header-control-labelled] svg,
 [data-right-panel-tab-list] [data-active-tab] svg,
@@ -2829,16 +2898,45 @@ code {
   }
 }
 
-/* The sidebar's bottom row (Brain, pull requests, usage, Settings) on touch screens: icons 1.25x the
-   header's, in buttons grown to match. After the shared control rules, which it overrides. */
+/* The sidebar's bottom row (Brain, pull requests, usage, update, Settings): header sizes on desktop;
+   on touch screens icons 1.25x the header's, in buttons grown to match. Only the direct icon: the
+   update icon draws its badges and progress ring from the same variable. */
+:root {
+  --sidebar-utility-icon-size: var(--header-icon-size);
+}
 @media (pointer: coarse) {
+  :root {
+    --sidebar-utility-icon-size: calc(var(--header-icon-size) * 1.25);
+  }
   [data-sidebar-utility] {
     width: calc(var(--header-control-size) * 1.125);
     min-width: calc(var(--header-control-size) * 1.125);
     height: calc(var(--header-control-size) * 1.125);
   }
-  [data-sidebar-utility] svg {
-    width: calc(var(--header-icon-size) * 1.25);
-    height: calc(var(--header-icon-size) * 1.25);
+}
+[data-sidebar-utility] > svg {
+  width: var(--sidebar-utility-icon-size);
+  height: var(--sidebar-utility-icon-size);
+}
+
+/* Flow: the border of pills floating over the chat (status, scroll to end). Mixed from the theme's
+   text, so it stays visible over cards at normal contrast, in every theme. */
+:root {
+  --floating-pill-border: color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+
+/* Flow: thinking, commands and tool rows between answers. Mixed from the theme's own text and
+   background, so they read as a step back from the answer in every theme, even one whose muted
+   label colour is nearly as bright as its text. */
+:root {
+  --work-row-foreground: color-mix(in oklab, var(--foreground) 58%, var(--background));
+}
+
+/* Flow: Cite and Comment for selected text, finger-sized on touch screens. */
+@media (pointer: coarse) {
+  [data-selection-action] {
+    min-height: var(--touch-control-size);
+    padding-inline: 1rem;
+    font-size: var(--inline-font-size);
   }
 }

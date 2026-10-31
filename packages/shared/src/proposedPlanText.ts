@@ -38,13 +38,20 @@ export function buildPlanRevisionPrompt(feedback: string): string {
   return `${PLAN_REVISION_PROMPT_PREFIX}${feedback.trim()}`;
 }
 
-/** What the composer sends for a waiting plan: feedback revises it, an empty draft accepts it. */
-export function resolvePlanFollowUpSubmission(input: { draftText: string; planMarkdown: string }): {
+/**
+ * What the composer sends for a waiting plan: feedback revises it, an empty draft accepts it. An
+ * attached image or file is feedback too, even without text.
+ */
+export function resolvePlanFollowUpSubmission(input: {
+  draftText: string;
+  planMarkdown: string;
+  hasAttachments?: boolean;
+}): {
   text: string;
   interactionMode: "default" | "plan";
 } {
   const trimmedDraftText = input.draftText.trim();
-  if (trimmedDraftText.length > 0) {
+  if (trimmedDraftText.length > 0 || input.hasAttachments === true) {
     return {
       text: buildPlanRevisionPrompt(trimmedDraftText),
       interactionMode: "plan",

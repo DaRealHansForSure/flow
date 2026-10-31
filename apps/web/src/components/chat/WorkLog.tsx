@@ -68,7 +68,7 @@ function WorkLogLine({ icon, label, trailing, wrapLabel }: RowContent) {
         ) : null}
         <div
           className={cn(
-            "min-w-0 flex-1 text-secondary-label",
+            "min-w-0 flex-1 text-(--work-row-foreground)",
             !wrapLabel && "truncate [&_*]:whitespace-nowrap",
           )}
         >

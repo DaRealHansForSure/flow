@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect";
 import { afterEach, describe, expect, vi } from "vite-plus/test";
 import { it } from "@effect/vitest";
 import * as NodeFSP from "node:fs/promises";
+import * as NodeChildProcess from "node:child_process";
 import * as NodePath from "node:path";
 import { BrainRuntime } from "./BrainRuntime.ts";
 import { ProjectId, BrainWorkspace } from "@t3tools/contracts";
@@ -325,6 +326,23 @@ describe("native brain persistence", () => {
           expect((await reopened.state()).database.status).toBe("ready");
           const repoFolder = NodePath.join(directory, "local-repo");
           await NodeFSP.mkdir(repoFolder);
+          // Only git repositories become indexing sources, so binding has a local one to add.
+          for (const args of [
+            ["init", "-q", "-b", "main"],
+            [
+              "-c",
+              "user.name=t",
+              "-c",
+              "user.email=t@example.test",
+              "commit",
+              "-q",
+              "--allow-empty",
+              "-m",
+              "init",
+            ],
+          ]) {
+            NodeChildProcess.execFileSync("git", args, { cwd: repoFolder });
+          }
           const project = { id: ProjectId.make("project-one"), workspaceRoot: repoFolder };
           const otherProject = { id: ProjectId.make("project-two"), workspaceRoot: repoFolder };
           await expect(reopened.bindProject(project, "missing-brain")).rejects.toThrow("not found");

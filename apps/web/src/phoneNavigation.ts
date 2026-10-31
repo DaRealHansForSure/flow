@@ -10,12 +10,15 @@ export interface PhoneBackState {
   readonly screenOpen: boolean;
   readonly rightPanelOpen: boolean;
   readonly sidebarOpen: boolean;
+  /** The chat is a subagent's, so Back returns to the chat that started it. */
+  readonly hasParentChat: boolean;
 }
 
 export type PhoneBackAction =
   | "close-popup"
   | "close-screen"
   | "close-right-panel"
+  | "open-parent-chat"
   | "open-sidebar"
   | "close-sidebar";
 
@@ -33,6 +36,9 @@ export function phoneBackAction(state: PhoneBackState): PhoneBackAction {
   if (state.sidebarOpen) {
     return "close-sidebar";
   }
+  if (state.hasParentChat) {
+    return "open-parent-chat";
+  }
   return "open-sidebar";
 }
 
@@ -41,6 +47,11 @@ const SCREEN_PATHS = ["/settings", "/brain", "/usage", "/pull-requests", "/proje
 
 export function isPhoneScreenPath(pathname: string): boolean {
   return SCREEN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+/** A stored return chat is used only when it is a path inside the app, never another site. */
+export function isAppPath(href: string | null): href is string {
+  return href !== null && href.startsWith("/") && !href.startsWith("//") && !href.startsWith("/\\");
 }
 
 const EDGE_ZONE_PX = 24;

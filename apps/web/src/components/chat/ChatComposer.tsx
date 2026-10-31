@@ -82,7 +82,6 @@ import { DEFAULT_COMPOSER_PLACEHOLDER } from "../../composerPlaceholder";
 import {
   deriveComposerSendState,
   getAntigravitySendBlockReason,
-  readFileAsDataUrl,
   resolveComposerInteractionMode,
   threadShellHasStarted,
 } from "../ChatView.logic";
@@ -90,6 +89,7 @@ import {
   dataTransferHasComposerMention,
   makeComposerMentionDragHandlers,
 } from "./composerMentionDrag";
+import { serializeComposerImages } from "./composerImagePersistence";
 import {
   isInsideCollapsedComposerControls,
   isInsideRestingComposerControlScope,
@@ -99,7 +99,6 @@ import {
   type ComposerFileAttachment,
   type ComposerImageAttachment,
   type DraftId,
-  type PersistedComposerImageAttachment,
   composerFileNeedsReattach,
   composerDraftHasUserContent,
   composerTargetKey,
@@ -282,7 +281,7 @@ import { ComposerControlsBar } from "./ComposerControlsBar";
 import { heldMissingProvider } from "./missingProviderBanner";
 import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
-import { allowComposerFocus } from "../../touchComposerFocus";
+import { allowComposerFocus, composerFocusRequested } from "../../touchComposerFocus";
 
 function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
   const armed = Date.now() <= deadline.current;
@@ -420,6 +419,8 @@ export interface ChatComposerProps {
   showPlanFollowUpPrompt: boolean;
   /** Flow: Revise on the open plan was pressed; the next message changes that plan. */
   revisingPlan?: boolean;
+  /** Flow: sends the next message past the fresh plan instead of revising it. */
+  onDismissPlanFollowUp?: () => void;
   activeProposedPlan: LatestProposedPlanState | null;
   threadSyncPhase: ThreadSyncPhase | null;
 
@@ -552,6 +553,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     respondingRequestIds,
     showPlanFollowUpPrompt,
     revisingPlan = false,
+    onDismissPlanFollowUp,
     activeProposedPlan,
     runtimeMode,
     interactionMode: requestedInteractionMode,
@@ -1060,6 +1062,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     pendingUserInputs.length === 0;
 
   const composerEditorRef = useRef<ComposerPromptEditorHandle>(null);
+  const restingPressAtRef = useRef(Number.NEGATIVE_INFINITY);
   const pasteAsTextShortcutUntilRef = useRef(0);
   const composerFormRef = useRef<HTMLFormElement>(null);
   const composerSurfaceRef = useRef<HTMLDivElement>(null);
@@ -1124,6 +1127,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const composerSendState = deriveComposerSendState({
     prompt,
     imageCount: composerImages.length + composerFiles.length,
+    existingAttachmentCount: editingQueuedAttachments?.length ?? 0,
     terminalContexts: composerTerminalContexts,
     elementContextCount: composerPreviewAnnotations.length + composerReviewComments.length,
   });
@@ -1389,6 +1393,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     composerContextRecords,
     composerImages,
     composerFilesRef,
+    promptRef,
     pendingThreadImportsRef,
     addComposerFilesToDraft,
   });
@@ -1554,31 +1559,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         getComposerDraft(attachmentDraftTarget)?.persistedAttachments ?? [];
       try {
         const currentPersistedAttachments = getPersistedAttachmentsForThread();
-        const existingPersistedById = new Map(
-          currentPersistedAttachments.map((attachment) => [attachment.id, attachment]),
+        const serialized = await serializeComposerImages(
+          composerImages,
+          currentPersistedAttachments,
         );
-        const stagedAttachmentById = new Map<string, PersistedComposerImageAttachment>();
-        await Promise.all(
-          composerImages.map(async (image) => {
-            try {
-              const dataUrl = await readFileAsDataUrl(image.file);
-              stagedAttachmentById.set(image.id, {
-                id: image.id,
-                name: image.name,
-                mimeType: image.mimeType,
-                sizeBytes: image.sizeBytes,
-                dataUrl,
-                ...(image.source ? { source: image.source } : {}),
-              });
-            } catch {
-              const existingPersisted = existingPersistedById.get(image.id);
-              if (existingPersisted) {
-                stagedAttachmentById.set(image.id, existingPersisted);
-              }
-            }
-          }),
-        );
-        const serialized = Array.from(stagedAttachmentById.values());
         if (cancelled) return;
         syncComposerDraftPersistedAttachments(attachmentDraftTarget, serialized);
       } catch {
@@ -3156,6 +3140,15 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         if (isInsideCollapsedComposerControls(activeElement)) {
           return;
         }
+        // Flow: a resting phone composer opens for the user's tap only; focus handed back by a
+        // closing dialog or sheet (to the attach button, say) leaves it at rest.
+        if (
+          isComposerCollapsedMobile &&
+          window.matchMedia("(pointer: coarse)").matches &&
+          !composerFocusRequested()
+        ) {
+          return;
+        }
         if (composerBlurFrameRef.current !== null) {
           window.cancelAnimationFrame(composerBlurFrameRef.current);
           composerBlurFrameRef.current = null;
@@ -3218,6 +3211,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   <ComposerPlanFollowUpBanner
                     key={activeProposedPlan.id}
                     planTitle={proposedPlanTitle(activeProposedPlan.planMarkdown) ?? null}
+                    onNewMessage={onDismissPlanFollowUp}
                   />
                 ) : null}
               </ComposerBanner.Root>
@@ -3261,8 +3255,21 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     "flex h-(--touch-field-height) min-w-0 flex-1 items-center truncate rounded-full border border-border bg-background/60 px-4 text-left text-sm focus:outline-none",
                     prompt.trim() ? "text-foreground" : "text-muted-foreground",
                   )}
-                  onPointerDown={(event) => event.preventDefault()}
-                  onClick={expandMobileComposerStable}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    restingPressAtRef.current = performance.now();
+                  }}
+                  onClick={(event) => {
+                    // A touch that closed a sheet lands its click here once the sheet is gone;
+                    // only a press that started on the field opens it (keyboard clicks have no detail).
+                    if (
+                      event.detail !== 0 &&
+                      performance.now() - restingPressAtRef.current > 1_000
+                    ) {
+                      return;
+                    }
+                    expandMobileComposerStable();
+                  }}
                   aria-label="Expand composer"
                 >
                   {prompt.trim() ? (

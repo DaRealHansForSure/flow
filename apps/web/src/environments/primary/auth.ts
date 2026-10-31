@@ -32,6 +32,7 @@ const PrimaryEnvironmentRequestOperation = Schema.Literals([
   "list-client-sessions",
   "revoke-client-session",
   "revoke-other-client-sessions",
+  "revoke-own-session",
 ]);
 type PrimaryEnvironmentRequestOperation = typeof PrimaryEnvironmentRequestOperation.Type;
 
@@ -419,6 +420,22 @@ export async function revokeOtherServerClientSessions(): Promise<number> {
   } catch (error) {
     throw PrimaryEnvironmentRequestError.fromCause({
       operation: "revoke-other-client-sessions",
+      cause: error,
+    });
+  }
+}
+
+/** Flow: this client forgets its own pairing; the next load asks for a new pairing code. */
+export async function forgetThisDevice(): Promise<void> {
+  try {
+    await runPrimaryHttp(
+      PrimaryEnvironmentHttpClient.pipe(
+        Effect.flatMap((client) => client.auth.revokeOwnSession({ headers: {} })),
+      ),
+    );
+  } catch (error) {
+    throw PrimaryEnvironmentRequestError.fromCause({
+      operation: "revoke-own-session",
       cause: error,
     });
   }

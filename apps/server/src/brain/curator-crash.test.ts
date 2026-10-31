@@ -47,7 +47,7 @@ it("recovers a partial notes write after the worker dies before its completion r
     FALKOR_SOCKET: NodePath.join(directory, "unused.socket"),
     FLOW_EMBED_URL: "http://127.0.0.1:1",
     FLOW_EMBED_TOKEN: "test-embedding",
-    FLOW_ADMIN_TOKEN: "test-private",
+    FLOW_ADMIN_TOKEN: "a".repeat(64),
     DB_PATH: NodePath.join(directory, "flow.db"),
     JOURNAL_PATH: NodePath.join(directory, "journal.jsonl"),
     OPENCODE_WORKSPACE_DIR: directory,

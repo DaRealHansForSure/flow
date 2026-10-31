@@ -117,8 +117,11 @@ const autoEditRules = (name: string) => [
   ...mcpRules(name),
 ];
 
+// Flow: a Plan turn asks before every command (RuntimePolicy), whatever the chat's own mode.
 const planRules = (name: string) => [
-  { action: "*", resource: "*", effect: "allow" },
+  { action: "shell", resource: "*", effect: "ask" },
+  { action: "edit", resource: "*", effect: "ask" },
+  { action: "external_directory", resource: "*", effect: "ask" },
   { action: "edit", resource: "*", effect: "deny" },
   ...PLAN_PATHS,
   ...mcpRules(name),

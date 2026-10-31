@@ -26,6 +26,8 @@ function BrainRoute() {
             brain: brain ?? undefined,
             environment: environment ?? undefined,
           },
+          // Flow: picking a Brain switches the view; Back closes the page, not each pick.
+          replace: true,
         });
       }}
     />

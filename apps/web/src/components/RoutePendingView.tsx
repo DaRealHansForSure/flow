@@ -6,7 +6,8 @@ import { Spinner } from "./ui/spinner";
 
 export function RoutePendingView() {
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+    // Under the header, above the composer: centred, a phone's composer covered and dimmed it.
+    <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--workspace-topbar-height)+0.75rem)] z-50 flex justify-center">
       {/* A pill of its own, so it reads clearly over whatever page is still showing. */}
       <div
         role="status"

@@ -5,7 +5,6 @@ import { APP_VERSION } from "~/branding";
 import { isDesktopLocalConnectionTarget } from "~/connection/desktopLocal";
 import { isElectron } from "~/env";
 import { useEnvironments } from "~/state/environments";
-import { useNpmReleasePublished } from "~/state/npmRelease";
 import { environmentIdsKey } from "~/state/environmentAtomList";
 import { environmentUpdateStatesAtom } from "~/state/server";
 import { environmentSessionStatesAtom } from "~/state/session";
@@ -21,7 +20,6 @@ import {
   collectUpdateEverythingResult,
   describeUpdateEverything,
   runUpdateEverything,
-  type SkippedMachine,
   type UpdateRunMachine,
 } from "./updateEverything.logic";
 import {
@@ -68,28 +66,9 @@ export function useUpdateEverything(
     canMaintain: canUpdateServer(sessionStates[index]!),
     updateState: updateStates[index]!,
   }));
-  // A track switch's target came from npm already.
-  const {
-    targets: behindServers,
-    skipped: unreachable,
-    waitForNpm,
-  } = channelSwitch
-    ? { ...collectChannelSwitchTargets(machines, channelSwitch), waitForNpm: [] }
-    : collectServerUpdateTargets(machines, targetVersion, localUpdateVersion !== null);
-  const published = useNpmReleasePublished(waitForNpm.length > 0 ? targetVersion : null);
-  const servers = published
-    ? behindServers
-    : behindServers.filter((server) => !waitForNpm.includes(server));
-  const skipped: ReadonlyArray<SkippedMachine> = [
-    ...unreachable,
-    ...behindServers
-      .filter((server) => !servers.includes(server))
-      .map((server) => ({
-        environmentId: server.environmentId,
-        label: server.serverLabel,
-        reason: `t3@${targetVersion} is not on npm yet`,
-      })),
-  ];
+  const { targets: servers, skipped } = channelSwitch
+    ? collectChannelSwitchTargets(machines, channelSwitch)
+    : collectServerUpdateTargets(machines, targetVersion);
   // Track-only hosts save a setting and restart nothing, so they are neither listed nor counted.
   const moving = servers.filter((server) => server.trackOnly !== true);
   const restarts = collectRestartingMachines(machines, moving, localUpdateVersion !== null);
@@ -100,20 +79,23 @@ export function useUpdateEverything(
 
   const view = describeUpdateEverything({
     localVersion: localUpdateVersion,
+    localCurrentVersion: APP_VERSION,
     localMachines: machines.filter((machine) => machine.hostedByThisApp),
-    servers: moving,
+    servers: moving.map((server) => ({
+      ...server,
+      fromVersion:
+        machines.find((machine) => machine.environmentId === server.environmentId)?.serverConfig
+          ?.environment.serverVersion ?? null,
+    })),
     skipped,
     providerMachines: providers.machines.map((machine) => ({
       environmentId: machine.environmentId,
       label: machine.label,
-      // Flow: each provider shows the version it moves from and to, when both are known.
-      providers: machine.candidates.map((candidate) => {
-        const name = PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver;
-        const { currentVersion, latestVersion } = candidate.versionAdvisory;
-        return currentVersion && latestVersion
-          ? `${name} ${currentVersion} → ${latestVersion}`
-          : name;
-      }),
+      providers: machine.candidates.map((candidate) => ({
+        name: PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver,
+        from: candidate.versionAdvisory.currentVersion || null,
+        to: candidate.versionAdvisory.latestVersion || null,
+      })),
     })),
   });
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   classifyEdgeSwipe,
+  isAppPath,
   isPhoneScreenPath,
   phoneBackAction,
   type PhoneBackState,
@@ -12,6 +13,7 @@ const CLOSED: PhoneBackState = {
   screenOpen: false,
   rightPanelOpen: false,
   sidebarOpen: false,
+  hasParentChat: false,
 };
 
 describe("phoneBackAction", () => {
@@ -20,9 +22,26 @@ describe("phoneBackAction", () => {
     [{ screenOpen: true, rightPanelOpen: true }, "close-screen"],
     [{ rightPanelOpen: true }, "close-right-panel"],
     [{ sidebarOpen: true }, "close-sidebar"],
+    [{ sidebarOpen: true, hasParentChat: true }, "close-sidebar"],
+    [{ rightPanelOpen: true, hasParentChat: true }, "close-right-panel"],
+    [{ hasParentChat: true }, "open-parent-chat"],
     [{}, "open-sidebar"],
   ] as const)("%o gives %s", (open, action) => {
     expect(phoneBackAction({ ...CLOSED, ...open })).toBe(action);
+  });
+});
+
+describe("isAppPath", () => {
+  it.each([
+    ["/env-1/thread-1?tab=plan", true],
+    ["/", true],
+    ["https://example.com/", false],
+    ["//example.com/", false],
+    ["/\\example.com/", false],
+    ["javascript:alert(1)", false],
+    [null, false],
+  ] as const)("%s is an app path: %s", (href, expected) => {
+    expect(isAppPath(href)).toBe(expected);
   });
 });
 

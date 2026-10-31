@@ -5,24 +5,15 @@ import { desktopBackgroundModeAtom } from "~/state/desktopBackgroundMode";
 import { useEnvironmentQuery } from "~/state/query";
 import { SettingResetButton, SettingsRow } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogPopup,
-  AlertDialogTitle,
-} from "../ui/alert-dialog";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
+import { ensureLocalApi } from "~/localApi";
 
 const DESCRIPTION = `Off: ${BRAND.name} runs only while the app is open, and quitting ends running chats. On: a background service keeps chats running after you close the app, for your phone and other devices too.`;
 
 interface SwitchQuestion {
   readonly title: string;
   readonly description: string;
-  readonly confirmLabel: string;
 }
 
 function describeSwitchQuestion(runInBackground: boolean): SwitchQuestion {
@@ -30,13 +21,11 @@ function describeSwitchQuestion(runInBackground: boolean): SwitchQuestion {
     return {
       title: `Keep ${BRAND.name} running in the background?`,
       description: `${BRAND.name} restarts and moves to its background service, setting it up if this machine has none. Running chats end during the restart.`,
-      confirmLabel: "Switch and restart",
     };
   }
   return {
     title: "Stop the background service?",
     description: `${BRAND.name} stops the background service, turns off its autostart and restarts. It then runs only while the app is open. Running chats end. The service stays installed, so you can turn this back on.`,
-    confirmLabel: "Switch and restart",
   };
 }
 
@@ -57,7 +46,6 @@ export function BackgroundModeSettingsRow({
   const query = useEnvironmentQuery(
     bridge?.getBackgroundMode === undefined ? null : desktopBackgroundModeAtom,
   );
-  const [pendingTarget, setPendingTarget] = useState<boolean | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
 
@@ -73,7 +61,12 @@ export function BackgroundModeSettingsRow({
       return;
     }
     setSwitchError(null);
-    setPendingTarget(target);
+    const question = describeSwitchQuestion(target);
+    void ensureLocalApi()
+      .dialogs.confirm(`${question.title}\n${question.description}`, { variant: "destructive" })
+      .then((confirmed) => {
+        if (confirmed) void confirmChange(target);
+      });
   };
 
   const confirmChange = async (target: boolean) => {
@@ -95,7 +88,6 @@ export function BackgroundModeSettingsRow({
       }
     })().finally(() => {
       setIsSwitching(false);
-      setPendingTarget(null);
     });
   };
 
@@ -107,8 +99,6 @@ export function BackgroundModeSettingsRow({
   } else if (needsRestart) {
     status = `Restart ${BRAND.name} to apply.`;
   }
-
-  const question = pendingTarget === null ? null : describeSwitchQuestion(pendingTarget);
 
   return (
     <>
@@ -149,40 +139,6 @@ export function BackgroundModeSettingsRow({
           />
         }
       />
-      <AlertDialog
-        open={question !== null}
-        onOpenChange={(open) => {
-          if (!open && !isSwitching) {
-            setPendingTarget(null);
-          }
-        }}
-      >
-        <AlertDialogPopup>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{question?.title}</AlertDialogTitle>
-            <AlertDialogDescription>{question?.description}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogClose
-              disabled={isSwitching}
-              render={<Button variant="outline" disabled={isSwitching} />}
-            >
-              Cancel
-            </AlertDialogClose>
-            <Button
-              variant="destructive"
-              disabled={isSwitching}
-              onClick={() => {
-                if (pendingTarget !== null) {
-                  void confirmChange(pendingTarget);
-                }
-              }}
-            >
-              {isSwitching ? "Switching…" : question?.confirmLabel}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogPopup>
-      </AlertDialog>
     </>
   );
 }

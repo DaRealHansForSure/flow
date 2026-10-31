@@ -54,6 +54,9 @@ These rules come from the owner and override the upstream guidance above where t
   commit directly to `main`, and delete a topic branch once it is merged.
 - **Tests only when they pay.** Run tests after a big feature is complete or when the owner
   asks, not after every small edit. Typecheck and lint the touched scope before committing.
+  The full suites run in four lanes with `scripts/fork/test-lanes.sh run` (start it detached
+  with `nohup setsid`); `scripts/fork/test-lanes.sh progress` prints each lane's files done of
+  total and failed tests every minute, which suits a Monitor.
 - **CHANGELOG.md.** Every user-visible fork change gets a line under `[Unreleased]` in the
   same commit (Added / Changed / Fixed). Upstream changes get one line per sync, not a copy
   of their notes.

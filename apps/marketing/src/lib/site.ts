@@ -6,6 +6,6 @@ export const IOS_APP_STORE_URL = BRAND.links.iosDownload;
 export const ANDROID_PLAY_STORE_URL = BRAND.links.androidDownload;
 
 export const MARKETING_STATS = {
-  githubStars: "24k+",
+  githubStars: "31k+",
   users: "500,000",
 } as const;
