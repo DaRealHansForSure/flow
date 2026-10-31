@@ -8,90 +8,74 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Changed
-
-- The Brain runs on fastify 5 and MCP SDK 1.32, which close the advisories for fastify 4 and older
-  MCP SDKs; its endpoints stay local and token-protected as before.
-- The "Enjoying T3 Code? Star on GitHub" toast no longer appears; it pointed at T3 Code's
-  repository, not this fork.
-- Revoking a client, a pairing link or all other clients, and forgetting this device, ask in a
-  confirm dialog first.
-- The status pill and the scroll-to-end button above the composer keep a visible border at normal
-  contrast in every theme, mixed from the theme's text colour.
-- The icons under the composer (checkout, branch, permissions) match the header icons: 18 px on
-  desktop and 20 px on touch screens.
-- Synced with T3 Code main as of 2026-10-31 (414 commits).
-- Thinking, command and tool rows between answers use a greyer text colour, mixed from the theme's
-  own text and background, so they read apart from the answer in every theme.
-- **Update dialog.** Flow, servers and providers are listed the same way, each as one line with
-  the version it moves from and to.
-- **Update icon.** The sidebar update button takes the theme's primary color while an update is
-  waiting or downloading.
-- **Desktop icon sizes.** The sidebar's top row (project filter, Add project, New thread) uses
-  the same button and icon size as the chat header, and the composer's checkout, branch and
-  permissions strip is larger and easier to read.
-- **Close buttons.** The close button of dialogs and sheets, such as the Brain graph, has the
-  same size as the header controls.
-- **Stop button.** The banner of a running or waiting chat stops it with a red stop icon instead
-  of a text link.
-- **Menus on phones.** Rows of menus, context menus, selects and pickers are a full finger tall
-  (44 px) on touch screens, so a tap no longer hits the row next to it.
-- **Side panel tabs.** Brain, Agents and MCP share one frame: the header line stays in place while
-  the tab scrolls and shows in every state, and loading or empty tabs show the same empty state.
-
-### Fixed
-
-- The Windows install works again: the service release ships the Windows bundle, so a Windows PC
-  can run Flow and be added as an environment.
-- On Windows, `flow` no longer leaves an empty console window open while Flow runs.
-- `install.ps1` and `flow` say what they are doing: each install step with its size, checksum and
-  duration, and a line while Flow starts and waits until it is ready.
-- On a phone, the buttons of a folded settings section (such as Revoke others and Create link
-  next to Authorized clients) wrap below its title instead of covering it.
-- A subagent's chat shows the task it was given at the top, above "Load earlier turns", while its
-  first message is not loaded yet.
-- A new chat on the project checkout keeps the branch it started on; preparing its first message
-  no longer cleared it.
-- On a phone, Cite and the plan's Comment button sit 40 px under the selection, clear of
-  Android's selection handle, and are finger-sized.
-- A chat's mode, Plan included, now follows the chat on every device: once a message or a plan
-  Accept carries the mode to the server, the device drops its own remembered choice. Before, a
-  plan accepted on the phone came back as Plan on the PC after a restart.
-- On a phone, a resting composer no longer opens when a closing dialog or sheet hands focus back
-  to one of its buttons; it opens only for a tap on it or an action like Revise.
-- On a phone, the touch that closes a sheet such as Background work no longer opens the resting
-  composer underneath it; only a tap that starts on the message field opens it.
-- On a phone, closing the Background work list hands focus back to its pill instead of the
-  composer's attach button, so a resting composer stays at rest.
-- On a phone, coming back from Usage, Settings or another page leaves a resting composer at rest
-  instead of opening it without a cursor.
-- The "Loading…" pill shown while Settings, Usage or another page opens sits under the header
-  again, above everything else; on a phone it was centred behind the composer and barely visible.
-- On a phone, Back in a subagent's chat returns to the chat that started it before it opens the
-  sidebar, and a reload on Settings, the Brain page or Usage keeps the way back to the chat.
-- Picking another Brain on the Brain page no longer adds a page per pick, so Back closes the Brain
-  page at once.
-- In Plan mode, a message is sent as feedback on a plan only when that plan came from the chat's
-  latest answer or Revise was pressed on it; an older open plan no longer turns a later answer into
-  "Revise your proposed plan". The Plan ready banner gets New message to send past a fresh plan.
-- A plan proposed while the chat still waits on its subagents no longer offers Accept, Revise and
-  Decline before they finish; the run resumes afterwards and may still change the plan.
-- In Chrome on Android, Back in a chat opened straight from a link or after a reload opens the
-  sidebar instead of leaving the app. Chrome skipped the history entry Flow added on load.
-- On a phone, switching chats from the sidebar or the command palette replaces the page instead of
-  adding one, so the browser history no longer grows with every chat.
-- **Update icon position.** The sidebar's update icon sits right next to Settings instead of in
-  the middle of the row, at the same size as the other sidebar icons.
-- **Plan feedback with an attachment.** A message with an image or file sent while a plan waits
-  for review now revises the plan, as text-only feedback does, instead of going to the agent as an
-  ordinary message.
-- **Provider settings.** The folded Runtime, Environment, Models and MCP servers sections keep a
-  margin to the sides of the provider card instead of meeting its edge.
+## [0.2.3] - 2026-10-31
 
 ### Added
 
-- A paired browser can forget itself: Settings → Sharing & access → Forget this device ends its
-  own session without the right to manage other clients; pairing again needs a new code.
+- **Forget this device.** A paired browser can sign itself out: Settings → Sharing & access →
+  Forget this device ends its own session without the right to manage other clients; pairing again
+  needs a new code.
+- **Windows.** The service release ships the Windows bundle again, so a Windows PC can run Flow and
+  be added as an environment. `install.ps1` and `flow` report each install step with its size,
+  checksum and duration, and a line while Flow starts.
+
+### Changed
+
+- **Confirmations.** Revoking a client, a pairing link or all other clients, and forgetting this
+  device, ask in a confirm dialog first.
+- **Work rows.** Thinking, command and tool rows between answers use a greyer text colour, mixed
+  from the theme's own text and background, so they read apart from the answer in every theme.
+- **Status pills.** The status pill and the scroll-to-end button above the composer keep a visible
+  border at normal contrast in every theme.
+- **Desktop icon sizes.** The sidebar's top row uses the same button and icon size as the chat
+  header, and the icons under the composer (checkout, branch, permissions) match the header icons:
+  18 px on desktop and 20 px on touch screens.
+- **Close and Stop.** The close button of dialogs and sheets has the same size as the header
+  controls, and the banner of a running chat stops it with a red stop icon.
+- **Menus on phones.** Rows of menus, context menus, selects and pickers are a full finger tall
+  (44 px) on touch screens.
+- **Side panel tabs.** Brain, Agents and MCP share one frame: the header line stays in place while
+  the tab scrolls, and loading or empty tabs show the same empty state.
+- **Updates.** The update dialog lists Flow, servers and providers the same way, each with the
+  version it moves from and to; the sidebar's update icon takes the theme's primary colour while an
+  update waits and sits right next to Settings.
+- **Brain dependencies.** The Brain runs on fastify 5 and MCP SDK 1.32, which close the advisories
+  for fastify 4 and older MCP SDKs; its endpoints stay local and token-protected.
+- The "Enjoying T3 Code? Star on GitHub" toast no longer appears; it pointed at T3 Code's
+  repository, not this fork.
+- Synced with T3 Code main as of 2026-10-31 (414 commits).
+
+### Fixed
+
+- **Phone Back.**
+  - In Chrome on Android, Back in a chat opened from a link or after a reload opens the sidebar
+    instead of leaving the app.
+  - Switching chats from the sidebar or the command palette, or picking another Brain, replaces
+    the page instead of adding one, so history no longer grows.
+  - Back in a subagent's chat returns to the chat that started it, and a reload on Settings, the
+    Brain page or Usage keeps the way back to the chat.
+- **Phone composer.** A resting composer stays at rest when a dialog or sheet closes (Background
+  work included), when its closing touch lands on it, and when you come back from Usage, Settings
+  or another page; it opens only for a tap on the field or an action like Revise.
+- **Plan mode.**
+  - A chat's mode follows the chat on every device: once a message or a plan Accept carries it to
+    the server, a device drops its own remembered choice. Before, a plan accepted on the phone came
+    back as Plan on the PC after a restart.
+  - A message is sent as feedback on a plan only when that plan came from the latest answer or
+    Revise was pressed on it; the Plan ready banner gets New message to send past a fresh plan.
+  - A plan proposed while the chat still waits on its subagents offers Accept, Revise and Decline
+    only once they finish.
+  - A message with an image or file sent while a plan waits for review revises the plan, as
+    text-only feedback does.
+- **Subagent chats** show the task they were given at the top, above "Load earlier turns".
+- **Branches.** A new chat on the project checkout keeps the branch it started on.
+- **Cite and Comment** sit 40 px under a phone selection, clear of Android's selection handle, and
+  are finger-sized.
+- **Narrow settings.** The buttons of a folded settings section (such as Revoke others next to
+  Authorized clients) wrap below its title instead of covering it; provider settings' folded
+  sections keep a margin to the card's sides.
+- **Loading pill.** The "Loading…" pill shown while a page opens sits under the header again.
+- **Windows.** `flow` no longer leaves an empty console window open while Flow runs.
 
 ## [0.2.2] - 2026-10-31
 
