@@ -213,7 +213,7 @@ export function McpServerList(props: { readonly servers: ReadonlyArray<ProviderM
           return null;
         }
         return (
-          <section key={group} aria-label={group}>
+          <section key={group} aria-label={group} data-panel-section="">
             <div className="flex justify-between px-3 pt-3 pb-1 font-semibold text-2xs text-muted-foreground uppercase tracking-wide">
               <span>{group}</span>
               <span>{members.length}</span>

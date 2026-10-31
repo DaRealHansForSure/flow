@@ -46,7 +46,8 @@ The Brain, Agents and MCP tabs share one layout, so a new tab starts from it:
   `·` (counts, last check), and the tab's actions on the right. It sits above a bottom border and
   does not scroll. Examples: "Claude Home · checked 0:49", "Agents · 2 running · 4 done".
 - **Sections:** a small uppercase label (`text-2xs font-semibold uppercase tracking-wide`, muted)
-  with its count, or its switch, on the right. Sections are separated by spacing, not borders.
+  with its count, or its switch, on the right. Each section carries `data-panel-section`, which ends
+  it in a divider (`index.css`), so a graph, prose and lists below each other still read apart.
 - **Rows:** full width, `px-3` from the edge, hover fill, the name first and its state as muted text.
 - **Disclosure arrows:** a section that collapses has its arrow on the right of its label (⌄), next
   to its switch or count. A row that unfolds its own details has its arrow before its name (›), like

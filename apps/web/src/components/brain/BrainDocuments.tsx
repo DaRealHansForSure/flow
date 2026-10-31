@@ -329,7 +329,12 @@ export function BrainDocumentLibrary({
         const oldVisible = old.filter((doc) => matches(`${doc.title} ${doc.body}`));
         const label = kind === "doc" ? "Auto-Docs" : kind === "skill" ? "Auto-Skills" : "Memories";
         return (
-          <section key={kind} aria-label={label} className={compact ? undefined : "space-y-3"}>
+          <section
+            key={kind}
+            aria-label={label}
+            className={compact ? undefined : "space-y-3"}
+            data-panel-section={compact ? "" : undefined}
+          >
             <BrainSectionHeader
               label={label}
               count={all.length + old.length}
@@ -353,7 +358,7 @@ export function BrainDocumentLibrary({
                   onClick={() => setSelected(doc)}
                   className={
                     compact
-                      ? "group w-full rounded-xl px-2 py-2.5 text-left hover:bg-muted/60"
+                      ? "group w-full px-3 py-2 text-left hover:bg-muted/40"
                       : "group flex h-full flex-col rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/35 hover:bg-primary/[0.025]"
                   }
                 >
@@ -389,7 +394,7 @@ export function BrainDocumentLibrary({
                   onClick={() => setLegacy(doc)}
                   className={
                     compact
-                      ? "w-full rounded-xl px-2 py-2.5 text-left text-xs leading-relaxed hover:bg-muted/60"
+                      ? "w-full px-3 py-2 text-left text-xs leading-relaxed hover:bg-muted/40"
                       : "rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/35"
                   }
                 >
@@ -397,12 +402,12 @@ export function BrainDocumentLibrary({
                 </button>
               ))}
               {isEmpty && (
-                <p className="px-2 py-1 text-xs text-muted-foreground">
+                <p className="px-3 py-1 text-xs text-muted-foreground">
                   No {label} from this chat yet.
                 </p>
               )}
               {!isEmpty && !visible.length && !oldVisible.length && (
-                <p className="p-3 text-xs text-muted-foreground">
+                <p className="px-3 py-2 text-xs text-muted-foreground">
                   No matching {kind === "skill" ? "skills" : "memories"}.
                 </p>
               )}

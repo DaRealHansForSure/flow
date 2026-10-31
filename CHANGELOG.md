@@ -38,6 +38,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   icons, and the side panel's tabs are a step larger; touch screens keep their 40 px. The sidebar
   toggle swaps its icon without an animation.
 - The resting phone composer's message field and send button are 48 px high instead of 40 px.
+- The Brain tab sets its parts apart: a fixed header line with the Brain and an Open link, then
+  Knowledge graph, Conversation notes, Auto-Docs and Auto-Skills as sections ending in a divider,
+  all lined up on one edge. The Agents and MCP tabs divide their sections the same way.
 - The right side panel, its Plan tab included, uses the left sidebar's colours in every theme, so
   both sides match on desktop and phone.
 - The resting phone composer keeps the attach button left of the message field; files picked there

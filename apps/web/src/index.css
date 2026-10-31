@@ -2770,3 +2770,9 @@ code {
     border-inline-start-width: 0;
   }
 }
+
+/* Flow: the sections of the Brain, Agents and MCP tabs end in a divider, so each reads as its own block. */
+[data-panel-section] {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}

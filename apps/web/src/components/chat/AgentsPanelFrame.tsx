@@ -31,7 +31,7 @@ export function AgentsPanelSection(props: {
   readonly children: ReactNode;
 }) {
   return (
-    <section aria-label={props.label}>
+    <section aria-label={props.label} data-panel-section="">
       <div className="flex justify-between px-3 pt-3 pb-1 font-semibold text-2xs text-muted-foreground uppercase tracking-wide">
         <span>{props.label}</span>
         <span className="tabular-nums">{props.count}</span>
