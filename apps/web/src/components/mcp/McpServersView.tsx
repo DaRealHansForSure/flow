@@ -150,11 +150,6 @@ export function McpPanel(props: {
           <span className="flex-1" />
           {refreshButton}
         </div>
-        {listing.profile ? (
-          <div className="mt-0.5 truncate font-mono text-2xs text-muted-foreground">
-            {listing.profile}
-          </div>
-        ) : null}
         {query.error ? <div className="mt-1 text-destructive text-xs">{query.error}</div> : null}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
