@@ -30,6 +30,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The "Loading…" pill shown while Settings, Usage or another page opens sits under the header
+  again, above everything else; on a phone it was centred behind the composer and barely visible.
 - **Update icon position.** The sidebar's update icon sits right next to Settings instead of in
   the middle of the row, at the same size as the other sidebar icons.
 - **Plan feedback with an attachment.** A message with an image or file sent while a plan waits
