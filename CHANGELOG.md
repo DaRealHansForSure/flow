@@ -34,6 +34,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The sidebar's project filter, Add project and New thread buttons sit right-aligned in its top
+  row, so the search field below gets the full width, bordered like the Brain page's search.
 - The Brain opens from an icon next to Settings at the bottom left instead of a wide button at
   the top of the sidebar. A small amber dot shows while it starts, a red one when it fails.
 - On desktop the header, side panel, terminal and sidebar footer buttons are 32 px with 18 px

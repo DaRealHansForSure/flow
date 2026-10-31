@@ -33,8 +33,11 @@ import { observeResize } from "~/lib/observeResize";
 
 export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   isElectron,
+  actions,
 }: {
   isElectron: boolean;
+  /** Flow: the thread actions, right-aligned in this row. */
+  actions?: ReactNode;
 }) {
   const stageLabel = useEnvironmentStageLabel();
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
@@ -67,6 +70,7 @@ export const SidebarChromeHeader = memo(function SidebarChromeHeader({
           </div>
         ) : null}
       </div>
+      {actions}
     </div>
   );
 });
