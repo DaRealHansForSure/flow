@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The status pill and the scroll-to-end button above the composer keep a visible border at normal
+  contrast in every theme, mixed from the theme's text colour.
 - The icons under the composer (checkout, branch, permissions) match the header icons: 18 px on
   desktop and 20 px on touch screens.
 - Synced with T3 Code main as of 2026-10-31 (414 commits).

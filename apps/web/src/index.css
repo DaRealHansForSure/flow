@@ -2919,6 +2919,12 @@ code {
   height: var(--sidebar-utility-icon-size);
 }
 
+/* Flow: the border of pills floating over the chat (status, scroll to end). Mixed from the theme's
+   text, so it stays visible over cards at normal contrast, in every theme. */
+:root {
+  --floating-pill-border: color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+
 /* Flow: thinking, commands and tool rows between answers. Mixed from the theme's own text and
    background, so they read as a step back from the answer in every theme, even one whose muted
    label colour is nearly as bright as its text. */
