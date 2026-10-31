@@ -1358,6 +1358,13 @@ export function useComposerSend(input: ComposerSendInput) {
       } else {
         turnStartSucceeded = true;
         setKeepFullHistory(routeThreadKey, false);
+        if (isServerThread) {
+          // Flow: the chat now holds these modes; a device keeping its own choice would bring an
+          // old mode back after another device changed it (Plan accepted on a phone).
+          const draftStore = useComposerDraftStore.getState();
+          draftStore.setInteractionMode(composerDraftTarget, null);
+          draftStore.setRuntimeMode(composerDraftTarget, null);
+        }
         clearUsageLimitsFor(routeThreadKey);
         if (turnUsesAttachmentUploads) {
           releaseDraftAttachments(composerAttachmentsSnapshot);
