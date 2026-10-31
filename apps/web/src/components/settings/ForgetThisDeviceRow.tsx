@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 import { forgetThisDevice } from "~/environments/primary";
-import { Button } from "../ui/button";
 import { stackedThreadToast, toastManager } from "../ui/toast";
+import { ConfirmActionButton } from "./ConfirmActionButton";
 import { SettingsRow } from "./settingsLayout";
 
 /**
@@ -37,15 +37,16 @@ export function ForgetThisDeviceRow() {
       title="This device"
       description="Forget this browser's pairing. Pairing it again needs a new pairing code."
       control={
-        <Button
-          type="button"
+        <ConfirmActionButton
           size="sm"
-          variant="destructive-outline"
           disabled={busy}
-          onClick={() => void forget()}
+          title="Forget this device?"
+          description="This browser is signed out. Opening Flow here again needs a new pairing code."
+          confirmLabel="Forget device"
+          onConfirm={() => void forget()}
         >
           Forget this device
-        </Button>
+        </ConfirmActionButton>
       }
     />
   );

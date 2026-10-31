@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Revoking a client, a pairing link or all other clients, and forgetting this device, ask in a
+  confirm dialog first.
 - The status pill and the scroll-to-end button above the composer keep a visible border at normal
   contrast in every theme, mixed from the theme's text colour.
 - The icons under the composer (checkout, branch, permissions) match the header icons: 18 px on

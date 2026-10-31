@@ -65,6 +65,7 @@ import {
   isHostedAppPairingUrl,
   endpointShareHint,
 } from "./ConnectionsSettings.logic";
+import { ConfirmActionButton } from "./ConfirmActionButton";
 
 function AccessScopeSummary({
   scopes,
@@ -378,14 +379,15 @@ const PairingLinkListRow = memo(function PairingLinkListRow({
               </DialogFooter>
             </DialogPopup>
           </Dialog>
-          <Button
-            size="xs"
-            variant="destructive-outline"
+          <ConfirmActionButton
             disabled={!canRevoke || revokingPairingLinkId === pairingLink.id}
-            onClick={() => void onRevoke(pairingLink.id)}
+            title="Revoke this pairing link?"
+            description="Nobody can pair with it any more. Devices already paired with it keep their access."
+            confirmLabel="Revoke link"
+            onConfirm={() => void onRevoke(pairingLink.id)}
           >
             {revokingPairingLinkId === pairingLink.id ? "Revoking…" : "Revoke"}
-          </Button>
+          </ConfirmActionButton>
         </div>
       </div>
       {isQrPanelOpen && qrPairingUrl !== null ? (
@@ -546,14 +548,15 @@ const ConnectedClientListRow = memo(function ConnectedClientListRow({
         </div>
         <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
           {!clientSession.current ? (
-            <Button
-              size="xs"
-              variant="destructive-outline"
+            <ConfirmActionButton
               disabled={!canRevoke || revokingClientSessionId === clientSession.sessionId}
-              onClick={() => void onRevokeSession(clientSession.sessionId)}
+              title="Revoke this client?"
+              description="It is signed out at once and needs a new pairing code to connect again."
+              confirmLabel="Revoke client"
+              onConfirm={() => void onRevokeSession(clientSession.sessionId)}
             >
               {revokingClientSessionId === clientSession.sessionId ? "Revoking…" : "Revoke"}
-            </Button>
+            </ConfirmActionButton>
           ) : null}
         </div>
       </div>
@@ -626,14 +629,15 @@ export const AuthorizedClientsHeaderAction = memo(function AuthorizedClientsHead
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        size="xs"
-        variant="destructive-outline"
+      <ConfirmActionButton
         disabled={isRevokingOtherClients || !canRevokeOtherClients(clientSessions)}
-        onClick={() => void onRevokeOtherClients()}
+        title="Revoke all other clients?"
+        description="Every client except this one is signed out at once and needs a new pairing code to connect again."
+        confirmLabel="Revoke others"
+        onConfirm={() => void onRevokeOtherClients()}
       >
         {isRevokingOtherClients ? "Revoking…" : "Revoke others"}
-      </Button>
+      </ConfirmActionButton>
       <Dialog
         open={dialogOpen}
         onOpenChange={(open) => {
