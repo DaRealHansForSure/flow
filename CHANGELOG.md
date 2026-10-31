@@ -64,6 +64,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sidebar, and a reload on Settings, the Brain page or Usage keeps the way back to the chat.
 - Picking another Brain on the Brain page no longer adds a page per pick, so Back closes the Brain
   page at once.
+- In Chrome on Android, Back in a chat opened straight from a link or after a reload opens the
+  sidebar instead of leaving the app. Chrome skipped the history entry Flow added on load.
 - On a phone, switching chats from the sidebar or the command palette replaces the page instead of
   adding one, so the browser history no longer grows with every chat.
 - **Update icon position.** The sidebar's update icon sits right next to Settings instead of in

@@ -126,16 +126,32 @@ export function PhoneNavigation() {
         hasParentChat: snapshot.parentThreadRef !== null,
       };
     };
-    // A chat opened straight from a link is the first entry, and Back there would leave the app
-    // before the page sees it; one copy of the entry gives Back something to come back from.
-    // Read the router's own history: a memory history (tests, embedded views) never changes
-    // window.history, so checking that one added a copy on every run.
-    if (router.history.location.state.__TSR_index === 0) {
+    // On the first entry Back would leave the app, so a copy gives it something to come back
+    // from. Read the router's history: a memory history never changes window.history.
+    // Chrome's Back skips entries added before the user touched the page, so wait for a tap.
+    const addFirstEntryCopy = () => {
+      if (router.history.location.state.__TSR_index !== 0) {
+        return;
+      }
       // Without the old state, so the router gives the copy its own history index; copying the
       // index made Back read as a jump, which the blocker let through.
       router.history.push(router.state.location.href);
+    };
+    const onFirstActivation = () => {
+      removeActivationListeners();
+      addFirstEntryCopy();
+    };
+    const removeActivationListeners = () => {
+      document.removeEventListener("pointerup", onFirstActivation, { capture: true });
+      document.removeEventListener("keydown", onFirstActivation, { capture: true });
+    };
+    if (navigator.userActivation?.hasBeenActive === true) {
+      addFirstEntryCopy();
+    } else {
+      document.addEventListener("pointerup", onFirstActivation, { capture: true });
+      document.addEventListener("keydown", onFirstActivation, { capture: true });
     }
-    return router.history.block({
+    const unblock = router.history.block({
       enableBeforeUnload: false,
       blockerFn: ({ action, currentLocation, nextLocation }) => {
         // A jump (GO) to an earlier or the same entry is a Back too, for example after entries
@@ -181,6 +197,10 @@ export function PhoneNavigation() {
         }
       },
     });
+    return () => {
+      removeActivationListeners();
+      unblock();
+    };
   }, [isMobile, router, setOpenMobile]);
 
   // The sidebar stays open behind pickers it opens (New thread, Add project); a new page closes it.
