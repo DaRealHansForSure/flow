@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 
 import {
   classifyEdgeSwipe,
+  isAppPath,
   isPhoneScreenPath,
   phoneBackAction,
   type PhoneBackState,
@@ -53,7 +54,8 @@ const RETURN_CHAT_KEY = "flow:phone-return-chat";
 
 function readReturnChat(): string | null {
   try {
-    return window.sessionStorage.getItem(RETURN_CHAT_KEY);
+    const href = window.sessionStorage.getItem(RETURN_CHAT_KEY);
+    return isAppPath(href) ? href : null;
   } catch {
     return null;
   }

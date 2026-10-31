@@ -49,6 +49,11 @@ export function isPhoneScreenPath(pathname: string): boolean {
   return SCREEN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+/** A stored return chat is used only when it is a path inside the app, never another site. */
+export function isAppPath(href: string | null): href is string {
+  return href !== null && href.startsWith("/") && !href.startsWith("//") && !href.startsWith("/\\");
+}
+
 const EDGE_ZONE_PX = 24;
 const MIN_SWIPE_PX = 48;
 const HORIZONTAL_RATIO = 1.5;
