@@ -30,6 +30,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, Back in a subagent's chat returns to the chat that started it before it opens the
+  sidebar, and a reload on Settings, the Brain page or Usage keeps the way back to the chat.
 - Picking another Brain on the Brain page no longer adds a page per pick, so Back closes the Brain
   page at once.
 - On a phone, switching chats from the sidebar or the command palette replaces the page instead of

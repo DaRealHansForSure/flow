@@ -10,12 +10,15 @@ export interface PhoneBackState {
   readonly screenOpen: boolean;
   readonly rightPanelOpen: boolean;
   readonly sidebarOpen: boolean;
+  /** The chat is a subagent's, so Back returns to the chat that started it. */
+  readonly hasParentChat: boolean;
 }
 
 export type PhoneBackAction =
   | "close-popup"
   | "close-screen"
   | "close-right-panel"
+  | "open-parent-chat"
   | "open-sidebar"
   | "close-sidebar";
 
@@ -32,6 +35,9 @@ export function phoneBackAction(state: PhoneBackState): PhoneBackAction {
   // The sidebar is reached from the chat, so Back returns there; the app is left with Home.
   if (state.sidebarOpen) {
     return "close-sidebar";
+  }
+  if (state.hasParentChat) {
+    return "open-parent-chat";
   }
   return "open-sidebar";
 }

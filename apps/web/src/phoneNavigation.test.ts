@@ -12,6 +12,7 @@ const CLOSED: PhoneBackState = {
   screenOpen: false,
   rightPanelOpen: false,
   sidebarOpen: false,
+  hasParentChat: false,
 };
 
 describe("phoneBackAction", () => {
@@ -20,6 +21,9 @@ describe("phoneBackAction", () => {
     [{ screenOpen: true, rightPanelOpen: true }, "close-screen"],
     [{ rightPanelOpen: true }, "close-right-panel"],
     [{ sidebarOpen: true }, "close-sidebar"],
+    [{ sidebarOpen: true, hasParentChat: true }, "close-sidebar"],
+    [{ rightPanelOpen: true, hasParentChat: true }, "close-right-panel"],
+    [{ hasParentChat: true }, "open-parent-chat"],
     [{}, "open-sidebar"],
   ] as const)("%o gives %s", (open, action) => {
     expect(phoneBackAction({ ...CLOSED, ...open })).toBe(action);
