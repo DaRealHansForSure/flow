@@ -68,6 +68,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The sidebar's Brain button no longer flashes amber each time the sidebar opens: it keeps the
+  last known state and shows amber only while the Brain really starts.
 - On a phone a tap on a side panel tab only switches to it; only the open tab shows its X, so
   switching no longer closes tabs by accident. Closing a view tab offers Undo for a few seconds.
 - A long press on an answer offers Cite also while the message box has focus: the message box lets

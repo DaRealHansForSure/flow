@@ -229,7 +229,7 @@ export const SidebarChromeFooter = memo(function SidebarChromeFooter() {
   );
 });
 
-/** Fork: amber while the Brain starts, red when it fails, so trouble shows before it is opened. */
+/** Fork: amber while the Brain starts, red when it fails; neutral until the first answer. */
 function brainHealthTint(health: ReturnType<typeof useBrainHealth>) {
   if (health.kind === "failed") {
     return { overlay: "bg-destructive/70", label: `Brain unavailable: ${health.reason}` };
