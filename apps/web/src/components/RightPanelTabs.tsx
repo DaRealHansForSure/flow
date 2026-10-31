@@ -60,6 +60,7 @@ import { cn } from "~/lib/utils";
 import { resolveShortcutCommand, type ShortcutMatchContext } from "~/keybindings";
 import { readLocalApi } from "~/localApi";
 import { useStableCallback } from "~/hooks/useStableCallback";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { Button } from "~/components/ui/button";
 import { MorphIcon } from "~/components/MorphIcon";
 import { AndroidIcon, AppleIcon } from "~/components/Icons";
@@ -905,13 +906,25 @@ function RightPanelTab(
     onStartRename,
     onFinishRename,
   } = props;
+  const coarsePointer = useMediaQuery("(pointer: coarse)");
   const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: surface.id,
     disabled: props.dragDisabled,
   });
   const content = (
     <>
-      <PanelTabCloseButton label={`Close ${title}`} onClick={() => onClose(surface)}>
+      <PanelTabCloseButton
+        label={`Close ${title}`}
+        onClick={() => onClose(surface)}
+        // Flow: on a phone a tap on a tab only switches to it; only the open tab shows its X.
+        {...(coarsePointer
+          ? {
+              touch: props.active
+                ? { mode: "close" as const }
+                : { mode: "activate" as const, onActivate: () => onActivate(surface) },
+            }
+          : {})}
+      >
         <SurfaceIcon
           surface={surface}
           previewUrl={props.previewUrl}
