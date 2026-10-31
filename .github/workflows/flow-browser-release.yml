@@ -125,8 +125,6 @@ jobs:
   # Windows runs the server and browser UI against a Brain hosted elsewhere;
   # FalkorDB has no Windows build, so this bundle carries no database.
   package-windows:
-    # Flow fork: off until the Windows bundle builds again; publish ships Linux alone meanwhile.
-    if: false
     needs: version
     runs-on: windows-2025
     # Published when it succeeds. A failure here must never hold back or fail a

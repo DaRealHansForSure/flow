@@ -8,6 +8,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The Windows install works again: the service release ships the Windows bundle, so a Windows PC
+  can run Flow and be added as an environment.
+
 ### Changed
 
 - The "Enjoying T3 Code? Star on GitHub" toast no longer appears; it pointed at T3 Code's
