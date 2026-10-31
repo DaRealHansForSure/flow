@@ -193,6 +193,13 @@ app's update feed is the repository its release workflow runs in.
 - Below that text every release page links to the install guide (`docs/user/install.md`).
 - Every push to `release` starts a service release of the next patch version on its own. When
   the push is only the base for a "Flow release" run, put `[skip ci]` in its merge commit.
+- Without `gh` (no way to start "Flow release" by hand), release a patch in one pass: merge
+  `develop` into `main` and `main` into `release` (no `[skip ci]`), push all three, wait for
+  `flow-vX.Y.Z`, then push the tag `flow-desktop-vX.Y.Z` on the same `release` commit. `release`
+  then equals `main`, so no empty commit and no back-merge into `main` are needed; the back-merge
+  of `main` into `develop` changes no files and Flow CI skips it.
+- Flow CI runs on pushes to `develop` and on pull requests only, and skips a merge whose files
+  equal its first parent's.
 - A machine that still has an upstream install switches once, by accepting the update the
   fork's desktop app offers at start or by running this fork's `install.sh`; after that
   `flow update` and the desktop updater follow this fork.

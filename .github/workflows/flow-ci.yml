@@ -6,8 +6,9 @@ name: Flow CI
 
 on:
   pull_request:
+  # main only ever receives develop, which was checked when it was pushed.
   push:
-    branches: [develop, main]
+    branches: [develop]
   workflow_dispatch:
 
 permissions:
@@ -31,8 +32,34 @@ jobs:
       - name: Reject upstream workflows
         run: scripts/fork/prune-upstream-workflows.sh --check
 
+  changed:
+    name: Changed files
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      files: ${{ steps.compare.outputs.files }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          sparse-checkout: .github
+      # A merge whose files equal its first parent's, such as a back-merge after a release,
+      # has nothing new to check.
+      - name: Compare with the first parent
+        id: compare
+        run: |
+          if [ "${{ github.event_name }}" = push ] && git rev-parse -q --verify HEAD^1 > /dev/null &&
+            [ "$(git rev-parse 'HEAD^{tree}')" = "$(git rev-parse 'HEAD^1^{tree}')" ]; then
+            echo "Same files as the first parent; skipping the check."
+            echo "files=same" >> "$GITHUB_OUTPUT"
+          else
+            echo "files=changed" >> "$GITHUB_OUTPUT"
+          fi
+
   check:
     name: Format, lint, types and quick tests
+    needs: changed
+    if: needs.changed.outputs.files == 'changed'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
