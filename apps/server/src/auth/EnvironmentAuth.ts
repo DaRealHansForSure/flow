@@ -518,6 +518,10 @@ export class EnvironmentAuth extends Context.Service<
     readonly revokeOtherClientSessions: (
       currentSessionId: AuthSessionId,
     ) => Effect.Effect<number, ServerAuthInternalError>;
+    /** Flow: a client forgets its own pairing; needs no access scope, only the session itself. */
+    readonly revokeOwnSession: (
+      currentSessionId: AuthSessionId,
+    ) => Effect.Effect<boolean, ServerAuthInternalError>;
     readonly authenticateHttpRequest: (
       request: HttpServerRequest.HttpServerRequest,
     ) => Effect.Effect<AuthenticatedSession, ServerAuthCredentialError | ServerAuthInternalError>;
@@ -1184,6 +1188,9 @@ export const make = Effect.gen(function* () {
       Effect.withSpan("EnvironmentAuth.revokeOtherClientSessions"),
     );
 
+  const revokeOwnSession: EnvironmentAuth["Service"]["revokeOwnSession"] = (currentSessionId) =>
+    revokeSession(currentSessionId).pipe(Effect.withSpan("EnvironmentAuth.revokeOwnSession"));
+
   const issueStartupPairingUrl: EnvironmentAuth["Service"]["issueStartupPairingUrl"] = (baseUrl) =>
     issueStartupPairingCredential().pipe(
       Effect.map((issued) => {
@@ -1379,6 +1386,7 @@ export const make = Effect.gen(function* () {
     revokeSession,
     listClientSessions,
     revokeClientSession,
+    revokeOwnSession,
     revokeOtherClientSessions,
     authenticateHttpRequest,
     authenticateWebSocketUpgrade,

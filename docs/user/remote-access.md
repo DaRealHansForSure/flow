@@ -349,6 +349,9 @@ pairing links and revoke client sessions. Revoking an unused link prevents new
 pairings; revoke a device's session to remove its existing access. Command-line
 management is available through `t3 auth --help`.
 
+A paired browser can also forget itself without that permission: **Settings → Sharing & access →
+Forget this device** ends its own session, and pairing it again needs a new pairing code.
+
 A session with an open connection stays listed after its access credential
 expires.
 

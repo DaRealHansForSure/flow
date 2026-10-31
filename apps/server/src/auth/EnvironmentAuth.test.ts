@@ -309,6 +309,24 @@ it.layer(NodeServices.layer)("EnvironmentAuth.layer", (it) => {
     }).pipe(Effect.provide(layerEnvironmentAuth({ mode: "web", host: "192.168.1.50" }))),
   );
 
+  it.effect("lets a session forget itself, after which it no longer authenticates", () =>
+    Effect.gen(function* () {
+      const serverAuth = yield* EnvironmentAuth.EnvironmentAuth;
+      const session = yield* serverAuth.issueSession();
+      const request = {
+        cookies: {},
+        headers: { authorization: `Bearer ${session.token}` },
+      } as never;
+      expect((yield* serverAuth.authenticateHttpRequest(request)).sessionId).toBe(
+        session.sessionId,
+      );
+
+      expect(yield* serverAuth.revokeOwnSession(session.sessionId)).toBe(true);
+      const after = yield* Effect.exit(serverAuth.authenticateHttpRequest(request));
+      expect(after._tag).toBe("Failure");
+    }).pipe(Effect.provide(layerEnvironmentAuth({ mode: "web", host: "192.168.1.50" }))),
+  );
+
   it.effect("preserves pairing grants after rejecting scopes they do not grant", () =>
     Effect.gen(function* () {
       const serverAuth = yield* EnvironmentAuth.EnvironmentAuth;

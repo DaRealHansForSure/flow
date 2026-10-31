@@ -499,6 +499,20 @@ export const layer = HttpApiBuilder.group(
         ),
       )
       .handle(
+        "revokeOwnSession",
+        Effect.fn("environment.auth.revokeOwnSession")(
+          function* (args) {
+            yield* annotateEnvironmentRequest(args.endpoint.name);
+            const session = yield* EnvironmentAuthenticatedPrincipal;
+            const revoked = yield* serverAuth.revokeOwnSession(session.sessionId);
+            return { revoked };
+          },
+          Effect.catchIf(EnvironmentAuth.isServerAuthInternalError, (error) =>
+            failEnvironmentInternal("client_session_revoke_failed", error),
+          ),
+        ),
+      )
+      .handle(
         "revokeOtherClients",
         Effect.fn("environment.auth.revokeOtherClients")(
           function* (args) {
