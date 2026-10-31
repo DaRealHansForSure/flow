@@ -42,8 +42,8 @@ export function shouldContinueDesktopUpdateCheckAnimation({
 
 function DesktopUpdateAvailableIcon() {
   return (
-    <span className="relative grid size-4 place-items-center">
-      <DownloadIcon className="size-4" />
+    <span className="relative grid size-(--sidebar-utility-icon-size) place-items-center">
+      <DownloadIcon className="size-full" />
       <span
         aria-hidden="true"
         className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-current ring-2 ring-sidebar-control-surface"
@@ -84,15 +84,15 @@ function DesktopUpdateDownloadingIcon({ percent }: { readonly percent: number | 
           className="transition-[stroke-dashoffset] duration-300 ease-out motion-reduce:transition-none"
         />
       </svg>
-      <DownloadIcon className="size-4" />
+      <DownloadIcon className="size-(--sidebar-utility-icon-size)" />
     </span>
   );
 }
 
 function DesktopUpdateDownloadedIcon() {
   return (
-    <span className="relative grid size-4 place-items-center">
-      <RotateCwIcon className="size-4" />
+    <span className="relative grid size-(--sidebar-utility-icon-size) place-items-center">
+      <RotateCwIcon className="size-full" />
       <span className="absolute -right-1 -bottom-1 grid size-2.5 place-items-center rounded-full bg-current ring-2 ring-background [&_svg]:text-background">
         <CheckIcon className="size-2" strokeWidth={3} />
       </span>
@@ -133,11 +133,12 @@ export function DesktopUpdateStatusIcon({
       </span>
     );
   }
-  if (status === "everything") return <CircleArrowUpIcon className="size-4 text-primary" />;
+  if (status === "everything")
+    return <CircleArrowUpIcon className="size-(--sidebar-utility-icon-size) text-primary" />;
 
   return (
     <RefreshIcon
-      className="size-4"
+      className="size-(--sidebar-utility-icon-size)"
       refreshing={status === "checking" && isCheckAnimating === true}
       onAnimationIteration={onCheckAnimationIteration}
     />

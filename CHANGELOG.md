@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the same button and icon size as the chat header, and the composer's checkout, branch and
   permissions strip is larger and easier to read.
 
+### Fixed
+
+- **Update icon position.** The sidebar's update icon sits right next to Settings instead of in
+  the middle of the row, at the same size as the other sidebar icons.
+
 ## [0.2.2] - 2026-10-31
 
 ### Added

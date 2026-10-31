@@ -134,7 +134,12 @@ function SidebarUtilityItem({
   end?: boolean;
 }) {
   return (
-    <SidebarMenuItem className={end ? "ml-auto shrink-0" : "shrink-0"}>
+    <SidebarMenuItem
+      className={
+        // An update control right before it already holds the right edge: sit next to it.
+        end ? "ml-auto shrink-0 [[data-sidebar-update]+&]:ml-0" : "shrink-0"
+      }
+    >
       <Tooltip>
         <TooltipTrigger
           render={

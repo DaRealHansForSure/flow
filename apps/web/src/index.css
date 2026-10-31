@@ -2763,7 +2763,6 @@ code {
 [data-right-panel-tabbar] [aria-label="Add panel surface"] svg,
 [data-terminal-actions] button svg,
 [data-graph-actions] button svg,
-[data-sidebar-utility] svg,
 [data-header-control] svg,
 [data-header-control-labelled] svg,
 [data-right-panel-tab-list] [data-active-tab] svg,
@@ -2855,16 +2854,23 @@ code {
   }
 }
 
-/* The sidebar's bottom row (Brain, pull requests, usage, Settings) on touch screens: icons 1.25x the
-   header's, in buttons grown to match. After the shared control rules, which it overrides. */
+/* The sidebar's bottom row (Brain, pull requests, usage, update, Settings): header sizes on desktop;
+   on touch screens icons 1.25x the header's, in buttons grown to match. Only the direct icon: the
+   update icon draws its badges and progress ring from the same variable. */
+:root {
+  --sidebar-utility-icon-size: var(--header-icon-size);
+}
 @media (pointer: coarse) {
+  :root {
+    --sidebar-utility-icon-size: calc(var(--header-icon-size) * 1.25);
+  }
   [data-sidebar-utility] {
     width: calc(var(--header-control-size) * 1.125);
     min-width: calc(var(--header-control-size) * 1.125);
     height: calc(var(--header-control-size) * 1.125);
   }
-  [data-sidebar-utility] svg {
-    width: calc(var(--header-icon-size) * 1.25);
-    height: calc(var(--header-icon-size) * 1.25);
-  }
+}
+[data-sidebar-utility] > svg {
+  width: var(--sidebar-utility-icon-size);
+  height: var(--sidebar-utility-icon-size);
 }
