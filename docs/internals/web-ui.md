@@ -48,6 +48,9 @@ The Brain, Agents and MCP tabs share one layout, so a new tab starts from it:
 - **Sections:** a small uppercase label (`text-2xs font-semibold uppercase tracking-wide`, muted)
   with its count, or its switch, on the right. Sections are separated by spacing, not borders.
 - **Rows:** full width, `px-3` from the edge, hover fill, the name first and its state as muted text.
+- **Disclosure arrows:** a section that collapses has its arrow on the right of its label (⌄), next
+  to its switch or count. A row that unfolds its own details has its arrow before its name (›), like
+  a file tree, so the row's right side keeps the value to scan (a tool count, a time).
 - **Icons only where they inform:** status dots, provider icons and a Brain's own icon. Section
   labels and headers carry no decorative icons; the tab bar already names the tab.
 
