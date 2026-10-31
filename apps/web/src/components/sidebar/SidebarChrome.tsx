@@ -129,7 +129,12 @@ function SidebarUtilityItem({
       <Tooltip>
         <TooltipTrigger
           render={
-            <SidebarMenuButton aria-label={label} onClick={onClick} size="icon">
+            <SidebarMenuButton
+              aria-label={label}
+              onClick={onClick}
+              size="icon"
+              data-sidebar-utility
+            >
               {icon}
             </SidebarMenuButton>
           }
