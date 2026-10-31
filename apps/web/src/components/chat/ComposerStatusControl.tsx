@@ -257,7 +257,7 @@ export function ComposerStatusControl(props: {
           aria-label="Thread status"
           className={cn(
             STATUS_PILL_CLASS,
-            "pointer-events-auto mx-0 gap-0 divide-x divide-input overflow-hidden px-0",
+            "pointer-events-auto mx-0 gap-0 divide-x divide-border overflow-hidden px-0",
           )}
         >
           {segments}
