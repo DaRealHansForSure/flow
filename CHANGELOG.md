@@ -34,6 +34,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The sidebar's Working, Snoozed and Settled headers are labelled like the side panel's sections
+  (small uppercase label, count, arrow on the right), and Settings sits alone at the right of the
+  sidebar's bottom row.
 - The sidebar's project filter, Add project and New thread buttons sit right-aligned in its top
   row, so the search field below gets the full width, bordered like the Brain page's search.
 - The Brain opens from an icon next to Settings at the bottom left instead of a wide button at

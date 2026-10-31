@@ -123,15 +123,18 @@ function SidebarUtilityItem({
   label,
   onClick,
   dot = null,
+  end = false,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
   /** Fork: a status colour class shown as a dot on the icon's corner. */
   dot?: string | null;
+  /** Fork: pushed to the row's right end. */
+  end?: boolean;
 }) {
   return (
-    <SidebarMenuItem className="shrink-0">
+    <SidebarMenuItem className={end ? "ml-auto shrink-0" : "shrink-0"}>
       <Tooltip>
         <TooltipTrigger
           render={
@@ -213,11 +216,6 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
       ) : (
         <>
           <SidebarUtilityItem
-            icon={<SettingsIcon />}
-            label="Settings"
-            onClick={handleSettingsClick}
-          />
-          <SidebarUtilityItem
             icon={<BrainCircuit />}
             label={brain.label}
             onClick={handleBrainClick}
@@ -239,6 +237,14 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
       )}
       <SidebarThreadUndoNotice />
       <SidebarUpdatePill />
+      {isOnUtilityPage ? null : (
+        <SidebarUtilityItem
+          icon={<SettingsIcon />}
+          label="Settings"
+          onClick={handleSettingsClick}
+          end
+        />
+      )}
     </SidebarMenu>
   );
 });
