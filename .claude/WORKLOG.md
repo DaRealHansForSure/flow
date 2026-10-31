@@ -1,23 +1,24 @@
 # Worklog
 
-Updated: 2026-10-31 01:40
+Updated: 2026-10-31 02:25
 
 ## Current focus
 
-- **Topic:** phone and chat polish, No project cleanup, fork CI (after the Brain settings plan)
-- **Goal:** test 0.2.2-dev builds on the phone, then Brain settings in one place (Part 2)
-- **Branch:** develop (all merged, not pushed; 0.2.2-dev.1 AppImage built)
-- **Last step done:** Flow CI on GitHub runners, T3 workflows removed, No project folder cleanup,
-  Cite fixes, taller resting composer
-- **Next step:** owner's word on push and tests; build 0.2.2-dev.2 for the server changes
+- **Topic:** release 0.2.2 (phone and panel polish, No project cleanup, fork CI)
+- **Goal:** full suites green, then release 0.2.2 (service and desktop) from the fork
+- **Branch:** develop (pushed to c0daab5a0; CI failed on two settings tests, fixed locally)
+- **Last step done:** Brain tab sections, sidebar top-row actions and bottom row, phone sidebar
+  stays mounted, touch sizes for composer, page headers and Settings list, Brain graph buttons
+- **Next step:** full suites in four background lanes (.t3/test-run/run-full.sh), fix until green,
+  then CHANGELOG [0.2.2], develop -> main -> release, tag flow-desktop-v0.2.2, back-merge
 - **Open questions / blockers:**
-  - Tests written, not run: paging, ThreadFind, usage tone, phone nav, MCP panel, selection.
+  - Reload lands mid-chat on a running chat; not reproduced yet (copy of chats on :5734).
   - Windows service bundle switched off until fixed.
-  - Next topic: research and redo routing/history for phone (chat base, one layer, replace) and
-    recheck desktop navigation; one fork module with fake-history table tests.
+  - Next topic after the release: routing/history redesign; Brain settings Part 2.
 
 ## Finished features
 
+- 2026-10-31 - Brain tab sections, sidebar layout, touch sizes, CI fixes (develop, pushed)
 - 2026-10-31 - Flow CI, T3 workflows removed, No project cleanup, Cite and composer fixes (develop)
 - 2026-10-30 - MCP view: MCP tab, /mcp, Settings > Providers MCP section, folded provider cards (merged into develop)
 - 2026-10-30 - Side fixes: agents pill, phone Back and swipes, usage chip, keyboard guard, work-row colours (develop)
@@ -33,6 +34,7 @@ Updated: 2026-10-31 01:40
 
 ## History
 
+- 2026-10-31 02:25 - develop pushed, CI quick tests fixed, full suites running for 0.2.2
 - 2026-10-31 01:00 - CI fixed, scratch cleanup merged; push and tests waiting
 - 2026-10-30 23:45 - feat/mcp-view merged into develop; later: Check servers for Codex and OpenCode
 - 2026-10-30 23:10 - Part 1 side fixes committed on develop; tests waiting for the owner
