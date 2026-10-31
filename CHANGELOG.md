@@ -68,6 +68,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone the left sidebar opens as instantly as the right panel: it stays built while closed
+  instead of rebuilding its chat list on every open. It also uses the same colours as the right
+  panel and the desktop sidebar instead of a lighter grey.
 - The sidebar's Brain button no longer flashes amber each time the sidebar opens: it keeps the
   last known state and shows amber only while the Brain really starts.
 - On a phone a tap on a side panel tab only switches to it; only the open tab shows its X, so

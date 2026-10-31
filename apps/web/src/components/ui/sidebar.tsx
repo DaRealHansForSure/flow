@@ -38,7 +38,7 @@ type SidebarContextProps = {
   setOpen: (open: boolean) => void;
   openMobile: boolean;
   mobileSheetMounted: boolean;
-  setMobileSheetElement: (element: HTMLDivElement | null) => void;
+  setMobileSheetSettled: (open: boolean) => void;
   setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
@@ -197,10 +197,9 @@ function SidebarProvider({
     store.getSnapshot,
     store.getSnapshot,
   );
-  const [mobileSheetMounted, setMobileSheetMounted] = React.useState(false);
-  const setMobileSheetElement = (element: HTMLDivElement | null) => {
-    setMobileSheetMounted(element !== null);
-  };
+  // The phone sheet stays mounted; it counts as on screen while open and through its exit.
+  const [mobileSheetSettledOpen, setMobileSheetSettled] = React.useState(false);
+  const mobileSheetMounted = openMobile || mobileSheetSettledOpen;
 
   const state = resolveSidebarState({ isMobile, open, openMobile });
 
@@ -209,7 +208,7 @@ function SidebarProvider({
     open,
     openMobile,
     mobileSheetMounted,
-    setMobileSheetElement,
+    setMobileSheetSettled,
     setOpen: store.setOpen,
     setOpenMobile: store.setOpenMobile,
     state,
@@ -281,7 +280,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none";
   resizable?: boolean | SidebarResizableOptions;
 }) {
-  const { isMobile, state, openMobile, setOpenMobile, setMobileSheetElement } = useSidebar();
+  const { isMobile, state, openMobile, setOpenMobile, setMobileSheetSettled } = useSidebar();
   // Flow: the phone sheet follows Settings' panel animation length, 0 ms included.
   const panelAnimation = usePanelAnimationSettings();
   const offcanvasCollapsed = !isMobile && collapsible === "offcanvas" && state === "collapsed";
@@ -309,9 +308,14 @@ function Sidebar({
   if (isMobile) {
     return (
       <SidebarInstanceContext value={instanceContextValue}>
-        <Sheet onOpenChange={setOpenMobile} open={openMobile}>
+        <Sheet
+          onOpenChange={setOpenMobile}
+          onOpenChangeComplete={setMobileSheetSettled}
+          open={openMobile}
+        >
+          {/* Flow: kept mounted like the right panel's sheet, so it opens without rebuilding. */}
           <SheetPopup
-            ref={setMobileSheetElement}
+            keepMounted
             className={cn(
               // Flow: a small portrait screen gives the sidebar its full width.
               "w-(--sidebar-width) max-w-none bg-sidebar surface-grain p-0 text-sidebar-foreground max-sm:w-full max-sm:border-e-0",
@@ -334,8 +338,9 @@ function Sidebar({
               <SheetDescription>Displays the mobile sidebar.</SheetDescription>
             </SheetHeader>
             <div
+              // Flow: painted here, inside the sidebar's palette, so it matches the desktop sidebar.
               className={cn(
-                "flex h-full w-full flex-col pb-safe pt-safe",
+                "flex h-full w-full flex-col bg-sidebar surface-grain pb-safe pt-safe",
                 SIDEBAR_TITLEBAR_CONTROL_SIZE,
                 side === "left" ? "pl-safe" : "pr-safe",
               )}
