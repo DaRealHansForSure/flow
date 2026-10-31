@@ -31,6 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, closing the Background work list hands focus back to its pill instead of the
+  composer's attach button, so a resting composer stays at rest.
 - On a phone, coming back from Usage, Settings or another page leaves a resting composer at rest
   instead of opening it without a cursor.
 - The "Loading…" pill shown while Settings, Usage or another page opens sits under the header
