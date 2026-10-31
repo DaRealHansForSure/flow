@@ -119,6 +119,8 @@ function PreviewPanelShellFrame(
       ref={attachHost}
       {...(props.workspaceArea ? panelArea : {})}
       data-workspace-focus-key={props.workspaceFocusKey}
+      // Flow: the side panel uses the left sidebar's palette, so both sides match in every theme.
+      data-side-panel-palette=""
       data-workspace-unavailable={collapsible && !open ? "true" : undefined}
       className={cn(
         "relative flex h-full min-h-0 min-w-0 max-w-full flex-col self-stretch bg-sidebar surface-grain",
