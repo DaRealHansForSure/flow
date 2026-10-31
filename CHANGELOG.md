@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Thinking, command and tool rows between answers use a greyer text colour, mixed from the theme's
+  own text and background, so they read apart from the answer in every theme.
 - **Update dialog.** Flow, servers and providers are listed the same way, each as one line with
   the version it moves from and to.
 - **Update icon.** The sidebar update button takes the theme's primary color while an update is
