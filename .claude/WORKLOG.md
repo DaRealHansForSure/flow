@@ -4,15 +4,13 @@ Updated: 2026-10-31 15:20
 
 ## Current focus
 
-- **Topic:** security review fixes, then browser scenario tests or Brain settings Part 2
-- **Goal:** F1 (`chore/brain-deps`, fastify 5 + MCP SDK 1.32) merged once the Brain tests pass
-- **Branch:** develop (not pushed); `chore/brain-deps` open, not merged
-- **Last step done:** security review with `security-and-hardening`; F2 (Brain token check), F3
-  (phone Back return path), F4 (.gitignore keys) on develop; F1 committed on its branch, typecheck
-  clean, Brain tests not run yet. Plan-mode feedback fix, plan waits for subagents, Android Back fix,
-  Windows bundle merged.
-- **Next step:** owner's word to run the Brain tests (`flow-t3/shared/orchestrator` test script,
-  `apps/server/src/brain`), then merge `chore/brain-deps` with `--no-ff`
+- **Topic:** security review fixes done; next browser scenario tests or Brain settings Part 2
+- **Goal:** owner picks the next topic
+- **Branch:** develop (not pushed); `chore/brain-deps` merged and deleted
+- **Last step done:** F1 merged (fastify 5, MCP SDK 1.32): server Brain tests 123/123, graph
+  gateway 36/36, orchestrator 156/165 (the 9 failures are stale curation tests that save "memory"
+  documents, which the store refuses since upstream #108; unrelated to the upgrade)
+- **Next step:** owner's choice; the stale curation tests could be updated to notes documents
 - **Open questions / blockers:**
   - T3's `ChatView.browser.test.tsx` draft test times out under CPU load (also without the phone
     navigation); passes on an idle machine. Run the web-browser lane alone.
