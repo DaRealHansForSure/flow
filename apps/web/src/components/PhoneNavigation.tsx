@@ -138,6 +138,19 @@ export function PhoneNavigation() {
     });
   }, [isMobile, router, setOpenMobile]);
 
+  // The sidebar stays open behind pickers it opens (New thread, Add project); a new page closes it.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- follows router navigations while on a phone
+  useEffect(() => {
+    if (!isMobile) {
+      return;
+    }
+    return router.subscribe("onResolved", (event) => {
+      if (event.pathChanged && snapshotRef.current.sidebarOpen) {
+        setOpenMobile(false);
+      }
+    });
+  }, [isMobile, router, setOpenMobile]);
+
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- listens for edge swipes on the document while on a phone
   useEffect(() => {
     if (!isMobile) {

@@ -75,6 +75,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, New thread in the sidebar opens its project picker over the sidebar, like Add
+  project, instead of closing the sidebar first; the sidebar closes once the new chat opens.
 - On a phone the left sidebar opens as instantly as the right panel: it stays built while closed
   instead of rebuilding its chat list on every open. It also uses the same colours as the right
   panel and the desktop sidebar instead of a lighter grey.
