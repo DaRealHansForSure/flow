@@ -74,6 +74,8 @@ import { orchestrationEnvironment } from "../../state/orchestration";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { AgentElapsed } from "./AgentElapsed";
 import { ThreadRelationshipIcon, threadRelationshipStatusLabel } from "./ThreadRelationshipIcon";
+import { AgentsPanelFrame, AgentsPanelSection } from "./AgentsPanelFrame";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 import { ThreadLineageWorkflowRow } from "./ThreadLineageWorkflowRow";
 
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
@@ -154,6 +156,19 @@ function ThreadLineageGroup(props: {
     ({ edge }) => edge.status === "failed" || edge.status === "error",
   ).length;
   if (props.rows.length === 0) return null;
+  if (props.inPanel && props.label) {
+    return (
+      <AgentsPanelSection label={props.label} count={props.rows.length}>
+        <ThreadLineageRowList
+          hiddenCount={hiddenCount}
+          onShowMore={() => setVisibleCount((count) => count + THREAD_LINEAGE_PAGE_COUNT)}
+          fullHeight
+        >
+          {props.children(visibleRows)}
+        </ThreadLineageRowList>
+      </AgentsPanelSection>
+    );
+  }
   return (
     <div>
       {props.label ? (
@@ -478,9 +493,14 @@ export function ThreadRelationshipsPanel(props: {
       : "active";
   });
   const groups = [
-    { id: "related", label: null, rows: related, expanded: true },
-    { id: "active", label: inPanel ? "Active agents" : null, rows: active, expanded: true },
-    { id: "previous", label: "Previous agents", rows: previous, expanded: inPanel },
+    { id: "related", label: inPanel ? "Related chats" : null, rows: related, expanded: true },
+    { id: "active", label: inPanel ? "Running" : null, rows: active, expanded: true },
+    {
+      id: "previous",
+      label: inPanel ? "Finished" : "Previous agents",
+      rows: previous,
+      expanded: inPanel,
+    },
   ];
   // Tasks running in a linked environment have no thread here; they get their own rows.
   const remoteSubagents = (projection?.subagents ?? []).filter(
@@ -494,12 +514,21 @@ export function ThreadRelationshipsPanel(props: {
 
   // A linked environment's agent may have delegated this thread from there.
   const delegatedFrom = currentThread?.delegatedFrom;
+  const agentsSummary =
+    [
+      runningCount > 0 ? `${runningCount} running` : null,
+      previous.length > 0 ? `${previous.length} done` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || null;
 
   if (
     relationshipRows.length === 0 &&
     runningCount === 0 &&
     remoteSubagents.length === 0 &&
-    delegatedFrom === undefined
+    delegatedFrom === undefined &&
+    // Flow: the Agents tab says so instead of staying blank.
+    !inPanel
   ) {
     return null;
   }
@@ -578,49 +607,48 @@ export function ThreadRelationshipsPanel(props: {
     remoteSubagents.length === 0 &&
     delegatedFrom === undefined
   ) {
-    return <p className="p-3 text-muted-foreground text-xs">No agents in this chat yet.</p>;
+    return (
+      <AgentsPanelFrame summary={null}>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <BotIcon />
+            </EmptyMedia>
+            <EmptyTitle>No agents in this chat yet</EmptyTitle>
+            <EmptyDescription>
+              Subagents and related chats show here once the agent starts one.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </AgentsPanelFrame>
+    );
   }
 
-  return (
-    <ThreadDetailsSection
-      headingId="thread-details-lineage-heading"
-      title={runningCount > 0 ? `Lineage · ${runningCount} running` : "Lineage"}
-      // A lone "Previous agents" row names itself; the heading returns for status or actions.
-      showHeading={
-        inPanel ||
-        runningCount > 0 ||
-        canDetach ||
-        related.length > 0 ||
-        active.length > 0 ||
-        delegatedFrom !== undefined
-      }
-      data-thread-relationships-panel
-      actions={
-        canDetach ? (
-          <Menu>
-            <MenuTrigger
-              render={
-                <ThreadDetailsControl
-                  size="icon-xs"
-                  variant="ghost"
-                  part="icon"
-                  aria-label="More thread actions"
-                  disabled={busyAction !== null}
-                />
-              }
-            >
-              <MoreHorizontalIcon className="size-3.5" />
-            </MenuTrigger>
-            <MenuPopup align="end" className="min-w-60 max-w-(--available-width)">
-              <MenuItem onClick={() => void detach()}>
-                <UnplugIcon className="size-3.5" />
-                Disconnect agent session
-              </MenuItem>
-            </MenuPopup>
-          </Menu>
-        ) : null
-      }
-    >
+  const actionsMenu = canDetach ? (
+    <Menu>
+      <MenuTrigger
+        render={
+          <ThreadDetailsControl
+            size="icon-xs"
+            variant="ghost"
+            part="icon"
+            aria-label="More thread actions"
+            disabled={busyAction !== null}
+          />
+        }
+      >
+        <MoreHorizontalIcon className="size-3.5" />
+      </MenuTrigger>
+      <MenuPopup align="end" className="min-w-60 max-w-(--available-width)">
+        <MenuItem onClick={() => void detach()}>
+          <UnplugIcon className="size-3.5" />
+          Disconnect agent session
+        </MenuItem>
+      </MenuPopup>
+    </Menu>
+  ) : null;
+  const lineageContent = (
+    <>
       {delegatedFrom === undefined ? null : (
         <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}} fullHeight={inPanel}>
           <DelegatedFromRow
@@ -665,6 +693,11 @@ export function ThreadRelationshipsPanel(props: {
                 agent?.status ??
                 threadRelationshipRowStatus(graph, { threadId, edge });
               const failed = rowStatus === "failed" || rowStatus === "error";
+              // Flow: in the Agents tab a finished subagent's idle chat reads as done.
+              const statusText =
+                inPanel && isSubagent && !isParent && rowStatus === "idle"
+                  ? "Done"
+                  : threadRelationshipStatusLabel(rowStatus);
               const canStop =
                 agent &&
                 (agent.origin === "app_owned" ||
@@ -731,7 +764,7 @@ export function ThreadRelationshipsPanel(props: {
                 inPanel && agent && !workflowGroup
                   ? {
                       summary: [
-                        threadRelationshipStatusLabel(rowStatus),
+                        statusText,
                         resolveSubagentMetadata({ model: agent.model, provider }).modelLabel,
                       ].join(" · "),
                       activity: agent.progress?.replace(/\s+/gu, " ").trim() || null,
@@ -781,7 +814,7 @@ export function ThreadRelationshipsPanel(props: {
                           : `shrink-0 text-2xs ${failed ? "text-destructive" : "text-muted-foreground"} ${trailingVisibilityClass}`
                       }
                     >
-                      {threadRelationshipStatusLabel(rowStatus)}
+                      {statusText}
                     </span>
                   ) : null}
                 </>
@@ -844,7 +877,7 @@ export function ThreadRelationshipsPanel(props: {
                               size="sm"
                               variant="ghost"
                               part="primary"
-                              aria-label={`${threadTitle} ${threadRelationshipStatusLabel(rowStatus)}`}
+                              aria-label={`${threadTitle} ${statusText}`}
                               disabled={node?.missing === true}
                               onClick={() => openThread(threadId)}
                             />
@@ -890,7 +923,7 @@ export function ThreadRelationshipsPanel(props: {
                         </TooltipPopup>
                       </Tooltip>
                       <span className="shrink-0 border border-transparent ps-1 pe-2.5 text-2xs font-medium text-muted-foreground">
-                        {threadRelationshipStatusLabel(rowStatus)}
+                        {statusText}
                       </span>
                     </div>
                   ) : (
@@ -942,6 +975,33 @@ export function ThreadRelationshipsPanel(props: {
           ))}
         </ThreadLineageRowList>
       ) : null}
+    </>
+  );
+  // Flow: the Agents tab gets its own frame, laid out like the MCP tab.
+  if (inPanel) {
+    return (
+      <AgentsPanelFrame summary={agentsSummary} actions={actionsMenu}>
+        {lineageContent}
+      </AgentsPanelFrame>
+    );
+  }
+  return (
+    <ThreadDetailsSection
+      headingId="thread-details-lineage-heading"
+      title={runningCount > 0 ? `Lineage · ${runningCount} running` : "Lineage"}
+      // A lone "Previous agents" row names itself; the heading returns for status or actions.
+      showHeading={
+        inPanel ||
+        runningCount > 0 ||
+        canDetach ||
+        related.length > 0 ||
+        active.length > 0 ||
+        delegatedFrom !== undefined
+      }
+      data-thread-relationships-panel
+      actions={actionsMenu}
+    >
+      {lineageContent}
     </ThreadDetailsSection>
   );
 }

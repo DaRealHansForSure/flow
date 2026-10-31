@@ -51,6 +51,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   any more: a row in its list opens that agent's chat.
 - The Agents tab shows each subagent's status, model and latest activity on its row, as the
   mobile app's Agents sheet does; before, these were only in a hover card.
+- The Agents tab is laid out like the MCP tab: a header with how many agents run and are done, and
+  Running, Finished and Related chats sections with their counts instead of the thread details'
+  collapsible Lineage groups. A finished subagent reads Done instead of Idle, and a chat without
+  agents says so instead of showing an empty tab.
 
 ### Fixed
 

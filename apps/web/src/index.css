@@ -2651,8 +2651,6 @@ code {
   --touch-icon-size: 1.25rem;
   /* Where an icon starts inside a touch control: tabs use it so their icons line up with buttons. */
   --touch-control-icon-inset: calc((var(--touch-control-size) - var(--touch-icon-size)) / 2);
-  /* The phone's left content line: where the chat header's first icon starts. */
-  --phone-content-line: calc(var(--workspace-controls-left) + var(--touch-control-icon-inset));
 }
 
 @media (pointer: coarse) {
@@ -2695,10 +2693,6 @@ code {
 @media (max-width: 639px) {
   [data-right-panel-tabbar] {
     padding-inline-start: var(--workspace-controls-left);
-  }
-  /* The Agents tab's section and rows add 1.125rem of their own insets before their icons. */
-  [data-right-panel-agents] {
-    padding-inline: calc(var(--phone-content-line) - 1.125rem);
   }
 }
 

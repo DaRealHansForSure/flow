@@ -201,10 +201,7 @@ export function RightPanelSurfaceContent(props: {
     // Flow: the Agents tab.
     case "agents":
       return (
-        <div
-          data-right-panel-agents
-          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2"
-        >
+        <div className="flex min-h-0 flex-1 flex-col">
           <ThreadRelationshipsPanel
             environmentId={props.environmentId}
             threadId={threadRef.threadId}
