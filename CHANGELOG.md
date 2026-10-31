@@ -35,6 +35,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, the buttons of a folded settings section (such as Revoke others and Create link
+  next to Authorized clients) wrap below its title instead of covering it.
 - A subagent's chat shows the task it was given at the top, above "Load earlier turns", while its
   first message is not loaded yet.
 - A new chat on the project checkout keeps the branch it started on; preparing its first message
