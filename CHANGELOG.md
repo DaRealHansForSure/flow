@@ -34,6 +34,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Settings' section list has 40 px rows with larger icons on touch screens, and a deeper fade at
+  its top and bottom edges shows when there is more to scroll.
 - The Brain graph's Fit and Open larger buttons sit in a bordered group on a solid background, like
   the terminal's actions, so they stay readable over the graph, at the shared control size.
 - The headers of Usage and Settings are as tall as the chat header, and their buttons (refresh,

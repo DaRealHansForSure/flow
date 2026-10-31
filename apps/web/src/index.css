@@ -2813,3 +2813,18 @@ code {
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.5rem;
 }
+
+/* Flow: Settings' section list. Finger-sized rows and icons on touch screens, and a fade deep enough
+   to show there is more to scroll above or below. */
+[data-settings-nav] [data-slot="scroll-area-viewport"] {
+  --fade-size: 2.5rem;
+}
+@media (pointer: coarse) {
+  [data-settings-nav] [data-sidebar="menu-button"] {
+    min-height: var(--touch-control-size);
+  }
+  [data-settings-nav] [data-sidebar="menu-button"] > svg {
+    width: var(--touch-icon-size);
+    height: var(--touch-icon-size);
+  }
+}

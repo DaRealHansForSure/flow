@@ -253,6 +253,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
     <nav
       {...navArea}
       role="navigation"
+      data-settings-nav=""
       className={cn(
         "flex w-60 shrink-0 flex-col border-e bg-sidebar text-sidebar-foreground max-md:w-14",
         compactSearchOpen &&
