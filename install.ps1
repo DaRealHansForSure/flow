@@ -37,31 +37,50 @@ $version = '__FLOW_CLI_VERSION__'
 $url = if ($version -match '^[0-9.]+$') { "https://github.com/DaRealHansForSure/flow/releases/download/flow-v$version" }
   else { 'https://github.com/DaRealHansForSure/flow/releases/latest/download' }
 
+function Step([string]$text) { Write-Host "==> $text" -ForegroundColor Cyan }
+function Done([string]$text) { Write-Host "    $text" -ForegroundColor DarkGray }
+$clock = [Diagnostics.Stopwatch]::StartNew()
+function Took { '{0:N0} s' -f $clock.Elapsed.TotalSeconds; $clock.Restart() }
+
+Write-Host "Installing Flow into $releaseHome"
 $temp = Join-Path $releaseHome ".bootstrap.$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
 New-Item -ItemType Directory -Force -Path (Join-Path $temp 'bundle') | Out-Null
 try {
-  Write-Host 'Downloading the Flow CLI (Node and Git are included)...'
+  Step "Downloading Flow (Node and Git are included) from $url/$asset"
   $archive = Join-Path $temp $asset
   Invoke-WebRequest -UseBasicParsing -Uri "$url/$asset" -OutFile $archive
+  Done ("{0:N0} MB in {1}" -f ((Get-Item $archive).Length / 1MB), (Took))
+
+  Step 'Checking the download against its SHA-256 checksum'
   $expected = ((Invoke-WebRequest -UseBasicParsing -Uri "$url/$asset.sha256").Content |
     ForEach-Object { if ($_ -is [byte[]]) { [Text.Encoding]::ASCII.GetString($_) } else { $_ } }).Trim().Split()[0].ToLower()
   $actual = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLower()
   if ($expected -notmatch '^[a-f0-9]{64}$' -or $actual -ne $expected) { throw 'The Flow download did not match its checksum.' }
+  Done "matches $actual"
 
+  Step 'Unpacking (a few minutes, no output while it runs)'
   & $tar -xzf $archive -C (Join-Path $temp 'bundle')
   if ($LASTEXITCODE -ne 0) { throw 'Could not unpack the Flow CLI.' }
+  Done "done in $(Took)"
+
+  Step 'Installing the release and the flow command'
   & (Join-Path $temp 'bundle\runtime\bin\node.exe') --disable-warning=ExperimentalWarning `
     (Join-Path $temp 'bundle\scripts\flow-release.mjs') install-bundle (Join-Path $temp 'bundle') $actual
   if ($LASTEXITCODE -ne 0) { throw 'Flow could not be installed.' }
+  Done "done in $(Took)"
 } finally {
   Remove-Item -Recurse -Force $temp -ErrorAction SilentlyContinue
 }
 
 # Windows has no conventional per-user bin folder, so Flow's own goes on PATH.
 $bin = Join-Path $releaseHome 'bin'
+Step "Adding $bin to your PATH"
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 if (-not (($userPath -split ';') -contains $bin)) {
   [Environment]::SetEnvironmentVariable('Path', (@($userPath, $bin) | Where-Object { $_ }) -join ';', 'User')
+  Done 'added for new terminals'
+} else {
+  Done 'already on PATH'
 }
 if (-not (($env:Path -split ';') -contains $bin)) { $env:Path = "$env:Path;$bin" }
 
