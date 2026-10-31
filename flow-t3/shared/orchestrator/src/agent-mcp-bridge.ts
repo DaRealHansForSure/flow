@@ -1,7 +1,8 @@
 // @effect-diagnostics nodeBuiltinImport:off - The MCP SDK owns Node HTTP request/response objects.
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
-import { bearerTokenMatches } from "./bearer-token.js";
+// The server imports this file under Node's own TypeScript loader, which needs the real extension.
+import { bearerTokenMatches } from "./bearer-token.ts";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
