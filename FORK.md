@@ -47,8 +47,8 @@ every change.
   In a chat without a Brain the menu entry is greyed out with a hint instead of missing.
 - **You see when the Brain has trouble.** The chat's Brain button is amber until the Brain has
   answered and turns red, with the reason on hover, when it fails; a "Brain unavailable" message
-  then appears once. The Brain entry at the top of the sidebar does the same for the Brain as a
-  whole: amber while it starts, red when it fails.
+  then appears once. The Brain icon in the sidebar's bottom row does the same for the Brain as a
+  whole with a small dot: amber while it starts, red when it fails.
 - **A chat shows its own Brain.** A chat that picked its own Brain shows that Brain next to it,
   and a "No Brain" chat shows none, instead of the project's Brain.
 - **Plan is a permission mode.** Plan sits in the composer's permission picker and can be the
@@ -56,11 +56,18 @@ every change.
   takes comments on selected passages, keeps its versions and can be reopened. In Plan every
   command asks first.
 - **More in the right panel.** Besides the Brain and Plan tabs, an Agents tab lists the chat's
-  active and previous agents. The terminal and panel buttons show an arrow while their panel is
-  open.
-- **A status pill above the composer**, as in the mobile app: background work (with the full list
-  one tap away), the working timer, the chat's browsers and queued messages. Holding the send
-  button while the agent works offers Steer now or Queue.
+  running and finished agents with their status, model and latest activity, and an MCP tab lists
+  the MCP servers of the chat's agent with their status and tools (`/mcp`; tested with Claude).
+  The Brain, Agents and MCP tabs share one layout: a header line and labelled sections. The panel
+  uses the sidebar's colours, and the terminal and panel buttons show an arrow while their panel
+  is open.
+- **A status pill above the composer**, as in the mobile app: the turn's agents, background work
+  (with the full list one tap away), the working timer, the chat's browsers and queued messages.
+  Holding the send button while the agent works offers Steer now or Queue.
+- **Usage at a glance.** The model chip under the composer turns amber above 80 % of a usage limit
+  and red above 90 %.
+- **Work rows by colour.** Thinking, commands, tools, file edits and searches each have a colour,
+  and code inside them is set smaller than the answer.
 - **Long chats open fast.** A chat opens with its last five turns and loads older ones in chunks
   of five as you scroll up.
 - **Browsers, files and pages.** The floating browser can be moved into the right panel and stays
@@ -74,14 +81,23 @@ every change.
 
 ### Phones and touch screens
 
-- **Made for the phone browser.** Side menus open full width, header and sidebar buttons are
-  finger-sized, the idle composer looks like a field, Cite works after a long press on Android,
-  hints open on a tap, and the start screen shows its logo at once.
+- **Made for the phone browser.** Side menus open full width and at once, header, sidebar,
+  composer and settings buttons are finger-sized, the idle composer looks like a field, Cite works
+  after a long press on Android, hints open on a tap, and the start screen shows its logo at once.
+- **The chat is the main page.** Back closes menus, full-screen pages and the side panel, then
+  opens the projects sidebar; swipes from the screen edges open the side menus.
+- **The keyboard stays down** unless you tap the message box: closing a dialog or menu no longer
+  raises it, and tapping a side panel tab switches to it instead of closing it.
 
 ### Settings
 
 - **Chat font.** Settings > Appearance > Chat font sizes only the chat's text, so the chat can be
-  smaller without shrinking the buttons.
+  smaller without shrinking the buttons. Highlight code in tool calls turns syntax colours off
+  for commands and tool input.
+- **No project folders are cleaned up.** Deleting a No project chat deletes its folder, and
+  Settings > Maintenance removes folders no chat uses any more after a day.
+- **Shorter provider cards.** Each provider's Runtime, Environment, Models and MCP servers fold
+  under their own header.
 - **Built-in providers can go.** A turned-off Codex or Claude default leaves Settings > Providers;
   Add provider brings it back.
 
@@ -132,7 +148,8 @@ every change.
   `release` branch, publishes the service and the desktop app of the same version together, so
   the service version every app asks for exists.
 - **Releases build for Linux.** The release workflows no longer build the macOS service bundle
-  or macOS desktop apps, so publishing needs no Apple signing keys.
+  or macOS desktop apps, so publishing needs no Apple signing keys. The Windows service bundle is
+  paused until its build is fixed.
 
 ### Development tooling
 
@@ -152,6 +169,10 @@ every change.
 - **Upstream checks pass.** The fork's code follows T3 Code's lint and knip rules and carries
   license notices for the Brain packages, so the build and the pre-commit hook run as they do
   upstream.
+- **Flow CI.** Each push to `develop` or `main` runs format, lint, typecheck and quick tests on
+  GitHub's own runners (`flow-ci.yml`). T3 Code's workflows need runners this repository does not
+  have, so they are removed, and `scripts/fork/prune-upstream-workflows.sh` removes them again
+  after each sync.
 
 ## What stays the same
 
@@ -166,14 +187,16 @@ every change.
 
 ## In progress
 
-- **Release 0.2.1.** Plan mode and the chat, Brain and phone changes above are tested as
-  development AppImages (0.2.1-dev.N) before they are released. Version 0.2.0 was the first
-  release published from this fork.
+- **Phone navigation, second round.** Phone screens as standalone layers in the browser history,
+  and a check of the desktop's side panels and dialogs.
+- **Brain settings in one place.** A Settings > Brain page for the agents that index and write
+  notes, instructions per Brain and per source, storage, and moving a Brain to another folder.
+- Releases so far: 0.2.0 (the first from this fork), 0.2.1 and 0.2.2.
 
 ## Platforms
 
 This fork targets Linux x64 (Ubuntu 24.04 or compatible): the desktop app ships as an AppImage,
 and the `flow` command and service install with the app or with `install.sh`. Windows x64 still
 gets the `install.ps1` bundle, which connects to a Brain hosted on another computer or in Cloud;
-there is no Windows desktop app. macOS is not targeted: no macOS builds are published, although
+there is no Windows desktop app, and that bundle is paused from 0.2.2 until its build is fixed. macOS is not targeted: no macOS builds are published, although
 upstream's macOS code is still in the repository.

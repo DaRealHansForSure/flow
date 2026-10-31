@@ -27,6 +27,9 @@ On web and desktop, **Settings → Appearance → Chat font** sizes only the tex
 from 70 to 130 % of the interface font size. Use it to make a chat smaller or larger without
 shrinking buttons and menus the way browser zoom does.
 
+**Highlight code in tool calls** (on by default) colours commands and tool input in expanded tool
+calls; turn it off to show them as plain text.
+
 ## Composer context
 
 Git-backed projects show branch and worktree controls below the composer while you create a thread.
