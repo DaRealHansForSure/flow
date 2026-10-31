@@ -69,6 +69,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sidebar, and a reload on Settings, the Brain page or Usage keeps the way back to the chat.
 - Picking another Brain on the Brain page no longer adds a page per pick, so Back closes the Brain
   page at once.
+- A plan proposed while the chat still waits on its subagents no longer offers Accept, Revise and
+  Decline before they finish; the run resumes afterwards and may still change the plan.
 - In Chrome on Android, Back in a chat opened straight from a link or after a reload opens the
   sidebar instead of leaving the app. Chrome skipped the history entry Flow added on load.
 - On a phone, switching chats from the sidebar or the command palette replaces the page instead of

@@ -387,6 +387,7 @@ const EMPTY_PROVIDER_MODELS: ServerProvider["models"] = [];
 const EMPTY_USAGE_LIMIT_SOURCES: UsageLimitSourceSnapshots = [];
 import type { CodexArtifactTemplate } from "@t3tools/shared/codexArtifactTemplates";
 import { allowComposerFocus } from "../touchComposerFocus";
+import { backgroundWorkHoldsCompletion } from "@t3tools/shared/orchestrationV2PendingBackgroundWork";
 
 const EMPTY_FEEDBACK_SUBMISSIONS: ReadonlyArray<CodexFeedbackSubmission> = [];
 const EMPTY_PROVIDER_SKILLS: ServerProvider["skills"] = [];
@@ -1411,8 +1412,12 @@ export default function ChatView(props: ChatViewProps) {
   // Flow: the open plan wins over a newer closed one, so a reopened older plan is the one answered.
   const planVersions = deriveProposedPlanVersions(serverProjection);
   const openPlanVersion = planVersions.findLast((version) => version.status === "active");
+  const pendingBackgroundTasks = deriveThreadPendingBackgroundTasks(serverProjection);
+  // Flow: a run that waits on its subagents resumes when they finish and may change the plan, so
+  // the plan is answered only once that work is done too.
+  const planRunSettled = latestRunSettled && !backgroundWorkHoldsCompletion(pendingBackgroundTasks);
   const activeProposedPlan = (() => {
-    if (!latestRunSettled) {
+    if (!planRunSettled) {
       return null;
     }
     if (openPlanVersion !== undefined) {
@@ -1458,7 +1463,7 @@ export default function ChatView(props: ChatViewProps) {
   const showPlanFollowUpPrompt = shouldShowPlanFollowUpPrompt({
     pendingUserInputCount: pendingUserInputs.length,
     interactionMode,
-    latestTurnSettled: latestRunSettled,
+    latestTurnSettled: planRunSettled,
     hasActionableProposedPlan: hasActionableProposedPlan(activeProposedPlan),
     hasComposerAttachments: composerHasAttachments,
   });
@@ -1542,7 +1547,6 @@ export default function ChatView(props: ChatViewProps) {
     activeThreadLiveTokenUsage,
     activeProviderThread,
   );
-  const pendingBackgroundTasks = deriveThreadPendingBackgroundTasks(serverProjection);
   const activeWorkStartedAt =
     deriveActiveWorkStartedAt(activeActivityRun, activeRuntime, localDispatchStartedAt) ??
     runlessWorkStartedAt;
