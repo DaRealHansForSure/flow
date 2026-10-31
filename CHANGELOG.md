@@ -22,6 +22,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Update icon position.** The sidebar's update icon sits right next to Settings instead of in
   the middle of the row, at the same size as the other sidebar icons.
+- **Plan feedback with an attachment.** A message with an image or file sent while a plan waits
+  for review now revises the plan, as text-only feedback does, instead of going to the agent as an
+  ordinary message.
 
 ## [0.2.2] - 2026-10-31
 
