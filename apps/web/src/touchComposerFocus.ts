@@ -50,6 +50,9 @@ export function installTouchComposerFocusGuard(): void {
       if (nowMs < allowedUntilMs || focusFollowsComposerTap(nowMs)) {
         return;
       }
+      // The app must not see this focus either: the composer would count itself focused, cancel
+      // its own collapse after the blur, and stay open without a cursor.
+      event.stopImmediatePropagation();
       event.target.blur();
     },
     { capture: true },

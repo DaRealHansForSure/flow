@@ -30,6 +30,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, coming back from Usage, Settings or another page leaves a resting composer at rest
+  instead of opening it without a cursor.
 - The "Loading…" pill shown while Settings, Usage or another page opens sits under the header
   again, above everything else; on a phone it was centred behind the composer and barely visible.
 - On a phone, Back in a subagent's chat returns to the chat that started it before it opens the
