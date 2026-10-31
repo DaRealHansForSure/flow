@@ -14,6 +14,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the version it moves from and to.
 - **Update icon.** The sidebar update button takes the theme's primary color while an update is
   waiting or downloading.
+- **Desktop icon sizes.** The sidebar's top row (project filter, Add project, New thread) uses
+  the same button and icon size as the chat header, and the composer's checkout, branch and
+  permissions strip is larger and easier to read.
 
 ## [0.2.2] - 2026-10-31
 

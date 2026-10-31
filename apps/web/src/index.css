@@ -2644,9 +2644,11 @@ code {
   font-size: calc(var(--text-sm) * var(--chat-font-scale, 1));
 }
 
-/* Flow: header and panel control sizes. One set of variables, sized per pointer: finger-sized on
-   touch screens, a step larger than T3's 28 px on desktop. A new control rule reuses them instead
-   of repeating sizes. */
+/* Flow: control sizes. Two tiers, each sized per pointer (finger-sized on touch screens, a step
+   larger than T3's on desktop): the control tier for icon buttons in headers, panel bars and the
+   sidebar's rows (`--header-*`), and the inline tier for labelled chips such as the composer's
+   checkout, branch and permissions strip (`--inline-*`). A new control rule reuses them instead of
+   repeating sizes. */
 :root {
   --touch-control-size: 2.5rem;
   /* A one-line text field you tap to type in, such as the resting phone composer. */
@@ -2654,12 +2656,21 @@ code {
   --touch-icon-size: 1.25rem;
   /* The open composer's send and stop button, the one control a phone reaches for most. */
   --touch-primary-action-size: 2.75rem;
+  --touch-inline-control-height: 2.25rem;
+  --touch-inline-icon-size: 1.125rem;
+  --touch-inline-font-size: 0.9375rem;
   --desktop-control-size: 2rem;
   --desktop-icon-size: 1.125rem;
+  --desktop-inline-control-height: 1.75rem;
+  --desktop-inline-icon-size: 1rem;
+  --desktop-inline-font-size: 0.8125rem;
   --header-control-size: var(--desktop-control-size);
   --header-icon-size: var(--desktop-icon-size);
   --header-tab-height: 1.75rem;
   --header-tab-font-size: 0.8125rem;
+  --inline-control-height: var(--desktop-inline-control-height);
+  --inline-icon-size: var(--desktop-inline-icon-size);
+  --inline-font-size: var(--desktop-inline-font-size);
 }
 
 @media (pointer: coarse) {
@@ -2668,6 +2679,9 @@ code {
     --header-icon-size: var(--touch-icon-size);
     --header-tab-height: var(--touch-control-size);
     --header-tab-font-size: 0.9375rem;
+    --inline-control-height: var(--touch-inline-control-height);
+    --inline-icon-size: var(--touch-inline-icon-size);
+    --inline-font-size: var(--touch-inline-font-size);
   }
 }
 
@@ -2712,6 +2726,18 @@ code {
     width: var(--touch-icon-size);
     height: var(--touch-icon-size);
   }
+}
+/* The composer's context strip (checkout, branch, permissions): inline tier. */
+[data-slot="composer-context-strip"]
+  :is(button, [data-composer-context-control]):not([data-slot="separator"]) {
+  height: var(--inline-control-height);
+  font-size: var(--inline-font-size);
+}
+[data-slot="composer-context-strip"]
+  :is(button, [data-composer-context-control])
+  svg:not([data-composer-control-chevron]) {
+  width: var(--inline-icon-size);
+  height: var(--inline-icon-size);
 }
 /* A header button with a label (Restore device defaults): control height; icon only on a phone. */
 [data-header-control-labelled] {
