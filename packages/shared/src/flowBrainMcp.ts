@@ -30,7 +30,7 @@ function nonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
-function normalizeMcpServerName(value: string): string {
+export function normalizeMcpServerName(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 

@@ -43,6 +43,8 @@ Your agents run wherever T3 Code runs: your desktop, a server, a VPS. You connec
 
 Get the [iOS](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824) or [Android](https://play.google.com/store/apps/details?id=com.t3tools.t3code) app, then connect it to your computer with T3 Connect or a pairing link. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
 
+In the web app on a phone, the chat is the main page. Back closes an open menu or sheet, then a full-screen page such as Settings, then the side panel, and then opens the projects sidebar; Back in the sidebar returns to the chat. Swipe in from the left edge for the sidebar and from the right edge for the side panel; swipe back toward the edge to close it. With Android's gesture navigation the system takes edge swipes as Back, so the swipes only reach the page with three-button navigation.
+
 ## Why does T3 Connect keep disconnecting?
 
 T3 Connect is our built-in alternative to Tailscale for remote connections. If it keeps dropping, open **Settings > Environments**, find the machine, and select **Details**. The first part marked as failed is the cause. I will not be disappointed if you set up Tailscale as a fallback (I do this personally). [T3 Connect troubleshooting](./t3-connect-troubleshooting.md)

@@ -18,6 +18,7 @@ import {
 } from "../observability/Metrics.ts";
 import * as RunFinalizationService from "./RunFinalizationService.ts";
 import * as ResourceCleanupService from "./ResourceCleanupService.ts";
+import * as ScratchFolderCleanup from "../project/ScratchFolderCleanup.ts";
 import * as EffectOutbox from "./EffectOutbox.ts";
 import * as CheckpointRollbackService from "./CheckpointRollbackService.ts";
 import * as ProviderSessionManager from "./ProviderSessionManager.ts";
@@ -85,6 +86,7 @@ export const layerExecutor: Layer.Layer<
   Effect.gen(function* () {
     const runFinalization = yield* RunFinalizationService.RunFinalizationService;
     const resourceCleanup = yield* ResourceCleanupService.ResourceCleanupService;
+    const scratchFolders = yield* ScratchFolderCleanup.ScratchFolderCleanup;
     const checkpointRollback = yield* CheckpointRollbackService.CheckpointRollbackServiceV2;
     const providerSessions = yield* ProviderSessionManager.ProviderSessionManagerV2;
     const providerTurnControl = yield* ProviderTurnControlService.ProviderTurnControlServiceV2;
@@ -511,6 +513,8 @@ export const layerExecutor: Layer.Layer<
                   }),
               ),
             );
+          case "scratch-folder.cleanup":
+            return scratchFolders.removeThreadFolder(effect.request.worktreePath);
           case "attachment.cleanup":
             return resourceCleanup.cleanupAttachments(effect.request.attachmentIds).pipe(
               Effect.mapError(

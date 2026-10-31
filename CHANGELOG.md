@@ -8,6 +8,95 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-31
+
+### Added
+
+- **Phone navigation.** On a phone the chat is the main page. Back closes an open menu or sheet,
+  then a full-screen page such as Settings (back to the chat it came from), then the side panel,
+  and then opens the projects sidebar; Back in the sidebar returns to the chat. Swiping in from the
+  left edge opens the sidebar, from the right edge the side panel, and swiping back toward the
+  edge closes it.
+- **MCP tab.** The right panel lists the MCP servers of the chat's running agent, grouped into
+  Flow, your servers, plugins and claude.ai connectors, with each server's status and tools;
+  failed servers and servers that need a sign-in come first. Open it with `/mcp`, **Show MCP
+  servers** in the command palette or the panel's + menu. Settings > Providers shows the same list
+  per provider, and **Check servers** starts Claude once when no chat runs. Claude, Codex and
+  OpenCode report their servers; only Claude has been tested so far.
+- **Usage warning on the model chip.** The chip under the composer turns amber when the account
+  has used more than 80 % of a usage limit and red above 90 %; its tooltip names the limit and when
+  it resets. Coming back to the app refreshes usage that is older than 5 minutes.
+- **No project folders are cleaned up.** Deleting a No project chat also deletes its folder under
+  `~/.t3/scratch`, unless another chat still works in it. Settings > Maintenance > Delete unused
+  No project folders (on, after 1 day) removes folders no chat uses any more.
+- **Plain tool input.** Settings > Appearance > Highlight code in tool calls (on by default) shows
+  commands and tool input as plain text when off.
+
+### Changed
+
+- **Side panel tabs share one layout.** The Brain, Agents and MCP tabs have a header line (name,
+  summary, actions) and sections with a small uppercase label, a count and a divider. The Brain tab
+  shows Knowledge graph, Conversation notes, Auto-Docs and Auto-Skills as such sections. The Agents
+  tab shows Running, Finished and Related chats, each subagent's status, model and latest activity
+  on its row, and Done instead of Idle.
+- **Agents in the status pill.** The pill above the composer shows the turn's agents as the mobile
+  app does ("2/3" while they work, "3 done" after); tapping it opens the Agents tab. Rows in the
+  background work list open their agent's chat; the separate Open button is gone.
+- **Sidebar.** The project filter, Add project and New thread sit right-aligned in the top row, and
+  the search field below is bordered and full width. The Working, Snoozed and Settled headers look
+  like the side panel's sections. The Brain opens from an icon in the bottom row, with an amber dot
+  while it starts and a red one when it fails; Settings sits alone at the row's right end.
+- **One colour scheme for both sides.** The right side panel, its Plan tab included, uses the left
+  sidebar's colours in every theme, on desktop and phone.
+- **Control sizes.** Header, side panel, terminal, Usage and Settings header buttons are 32 px with
+  18 px icons on desktop and 40 px with 20 px icons on touch screens; the side panel's tabs are a
+  step larger, and Usage and Settings headers are as tall as the chat header. On touch screens the
+  open composer's send and stop button is 44 px and its attach button 40 px, the sidebar's bottom
+  row uses larger icons, and Settings' section list has 40 px rows.
+- **Resting phone composer.** The message field and send button are 48 px high, the attach button
+  stays left of the field, and files picked there open the composer with the cursor in it.
+- **Work rows.** Thinking, commands, tools, file edits and searches each have a colour, on the icon
+  and as a rail beside expanded details, and expanded details line up under the row's label. Code
+  inside tool calls and thinking uses 80 % of the code font size.
+- **Provider settings fold.** Runtime, Environment, Models and MCP servers each fold under a header
+  with a short summary, so a provider no longer runs several screens long on a phone.
+- **Brain graph buttons.** Fit and Open larger sit in a bordered group on a solid background, like
+  the terminal's buttons.
+- **Scroll hints.** Settings' section list fades at its top and bottom edges when there is more to
+  scroll.
+- **No Windows bundle in this release.** The Windows service bundle (`install.ps1`) is not built
+  until its build is fixed; Linux is unchanged.
+
+### Fixed
+
+- **Phone sidebar.** It opens as instantly as the right panel, follows the panel animation setting
+  (no sliding at 0 ms), and stays open behind the New thread project picker until the new chat
+  opens. Opening a chat from it closes the side panel. Its Brain icon no longer flashes amber on
+  every open.
+- **Phone side panel.** A tap on a tab only switches to it; only the open tab shows its X, and
+  closing a view tab offers Undo for a few seconds. The left menu button hides while the panel is
+  open, and the panel's tabs start where that button sits.
+- **Phone keyboard.** The message box takes the cursor, and raises the keyboard, only when you tap
+  it or press Revise on a plan; closing a dialog, sheet or menu no longer brings the keyboard up.
+- **Cite.** A long press on an answer offers Cite also while the message box has focus. The Cite
+  and Comment buttons appear where the selection ends, also when it was dragged upwards, and a
+  selection dragged from above an answer into it cites the answer's part. Cite is a primary button
+  the size of Comment, and the resting composer shows a quote as a chip instead of its raw link.
+- **Scrolling on touch screens.** An expanded tool call shows its whole content instead of a small
+  box that scrolls on its own and stops the chat from scrolling.
+- **Plans.** A plan card keeps its menu at the top right and wraps a long title to two lines.
+  Revise brings the message box into view with the cursor in it and says "Describe what to change
+  in the plan".
+- **MCP tab** asks the agent again once the chat's session starts, instead of staying on "The agent
+  is not running".
+- **"Worked for …"** opens and closes from anywhere on its row.
+- **Loading** for pages such as Usage or Settings sits in a solid pill instead of bare text.
+- **Settings > About** no longer offers T3 Code's update tracks or its `t3` command; Flow updates
+  from this fork's releases only.
+- **A chat that cannot be opened** (deleted, or on a computer the app is not connected to) shows
+  "This chat could not be opened" after ten seconds, with Go to start and Retry, instead of a blank
+  page.
+
 ## [0.2.1] - 2026-10-30
 
 ### Added

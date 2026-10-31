@@ -307,6 +307,7 @@ function BrainController({
                 variant="ghost"
                 size="icon"
                 aria-label="Brain settings"
+                data-header-control=""
                 onClick={() => setSettingsOpen(true)}
               >
                 <SettingsIcon size={16} />

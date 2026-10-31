@@ -67,7 +67,7 @@ function PlanDocument(props: {
     workspaceRoot: props.workspaceRoot,
   });
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className={FILE_SURFACE_SUBHEADER_CLASS} data-surface-subheader>
         <div className="flex min-w-0 flex-1 items-center text-xs">
           <span className="shrink-0 px-0.5 text-muted-foreground">Plan</span>

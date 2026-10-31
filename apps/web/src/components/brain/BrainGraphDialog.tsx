@@ -37,17 +37,24 @@ function BrainGraphIconButton(props: {
  * the large dialog. Pass it as the graph's `corner` function so it receives `fit`.
  */
 export function brainGraphCorner(onEnlarge?: () => void) {
+  // Flow: grouped on a solid background like the terminal's actions, so they read over the graph.
   return (fit: () => void) => (
-    <>
+    <div
+      data-graph-actions=""
+      className="inline-flex items-center overflow-hidden rounded-md border border-border/80 bg-background shadow-xs"
+    >
       <BrainGraphIconButton label="Fit to view" onClick={fit}>
         <ScanIcon />
       </BrainGraphIconButton>
       {onEnlarge ? (
-        <BrainGraphIconButton label="Open larger" onClick={onEnlarge}>
-          <Maximize2Icon />
-        </BrainGraphIconButton>
+        <>
+          <div className="h-4 w-px bg-border/80" />
+          <BrainGraphIconButton label="Open larger" onClick={onEnlarge}>
+            <Maximize2Icon />
+          </BrainGraphIconButton>
+        </>
       ) : null}
-    </>
+    </div>
   );
 }
 

@@ -12,8 +12,7 @@ import { Button } from "../ui/button";
 import { SidebarInput, SidebarMenuButton } from "../ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
-export interface SidebarThreadHeaderProps {
-  searchFieldRef?: RefObject<HTMLDivElement | null>;
+export interface SidebarThreadActionsProps {
   hasProjects: boolean;
   projectScope: ReactNode;
   onNewProject: () => void;
@@ -22,6 +21,10 @@ export interface SidebarThreadHeaderProps {
   newThreadShortcutLabel: string | null | undefined;
   newThreadInProjectShortcutLabel: string | null | undefined;
   showNewThreadInProjectHint: boolean;
+}
+
+export interface SidebarThreadHeaderProps {
+  searchFieldRef?: RefObject<HTMLDivElement | null>;
   searchInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
@@ -34,14 +37,6 @@ export interface SidebarThreadHeaderProps {
 
 export function SidebarThreadHeader({
   searchFieldRef,
-  hasProjects,
-  projectScope,
-  onNewProject,
-  onNewThread,
-  newThreadDisabled,
-  newThreadShortcutLabel,
-  newThreadInProjectShortcutLabel,
-  showNewThreadInProjectHint,
   searchInputRef,
   searchQuery,
   onSearchQueryChange,
@@ -54,15 +49,13 @@ export function SidebarThreadHeader({
   const resultsVisible = isSearching && searchResultCount > 0;
   // Shrinking results can remove the active option; never leave aria-activedescendant pointing at it.
   const activeResultExists = resultsVisible && activeSearchResultIndex < searchResultCount;
-  const newThreadLabel = newThreadShortcutLabel
-    ? `New thread (${newThreadShortcutLabel})`
-    : "New thread";
 
   return (
     <div className="flex items-center gap-1">
       <div
         ref={searchFieldRef}
-        className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-within:bg-sidebar-row-hover focus-within:text-sidebar-foreground focus-within:ring-1 focus-within:ring-inset focus-within:ring-ring/70"
+        // Flow: a bordered field like the Brain page's search.
+        className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-sidebar-border bg-card px-3 text-sm text-sidebar-muted-foreground focus-within:text-sidebar-foreground focus-within:ring-1 focus-within:ring-inset focus-within:ring-ring/70"
       >
         <SearchIcon className="size-4 shrink-0 text-(--sidebar-icon-color)" />
         <SidebarInput
@@ -101,36 +94,55 @@ export function SidebarThreadHeader({
           </Button>
         ) : null}
       </div>
-      <div className="flex shrink-0 items-center">
-        {hasProjects ? (
-          <>
-            {projectScope}
-            <SidebarHeaderIconButton label="Add project" onClick={onNewProject}>
-              <FolderPlusIcon />
-            </SidebarHeaderIconButton>
-          </>
-        ) : null}
-        <SidebarHeaderIconButton
-          label="New thread"
-          tooltip={
-            showNewThreadInProjectHint ? (
-              <span className="flex flex-col gap-0.5">
-                <span>{newThreadLabel}</span>
-                <span className="text-muted-foreground">
-                  New thread in current project: Shift+click
-                  {newThreadInProjectShortcutLabel ? ` (${newThreadInProjectShortcutLabel})` : ""}
-                </span>
+    </div>
+  );
+}
+
+/** Flow: the project filter, Add project and New thread, shown in the sidebar's top row. */
+export function SidebarThreadActions({
+  hasProjects,
+  projectScope,
+  onNewProject,
+  onNewThread,
+  newThreadDisabled,
+  newThreadShortcutLabel,
+  newThreadInProjectShortcutLabel,
+  showNewThreadInProjectHint,
+}: SidebarThreadActionsProps) {
+  const newThreadLabel = newThreadShortcutLabel
+    ? `New thread (${newThreadShortcutLabel})`
+    : "New thread";
+
+  return (
+    <div className="relative z-10 flex shrink-0 items-center">
+      {hasProjects ? (
+        <>
+          {projectScope}
+          <SidebarHeaderIconButton label="Add project" onClick={onNewProject}>
+            <FolderPlusIcon />
+          </SidebarHeaderIconButton>
+        </>
+      ) : null}
+      <SidebarHeaderIconButton
+        label="New thread"
+        tooltip={
+          showNewThreadInProjectHint ? (
+            <span className="flex flex-col gap-0.5">
+              <span>{newThreadLabel}</span>
+              <span className="text-muted-foreground">
+                New thread in current project: Shift+click
+                {newThreadInProjectShortcutLabel ? ` (${newThreadInProjectShortcutLabel})` : ""}
               </span>
-            ) : (
-              newThreadLabel
-            )
-          }
-          disabled={newThreadDisabled}
-          onClick={onNewThread}
-        >
-          <SquarePenIcon />
-        </SidebarHeaderIconButton>
-      </div>
+            </span>
+          ) : (
+            newThreadLabel
+          )
+        }
+        disabled={newThreadDisabled}
+        onClick={onNewThread}
+      >
+        <SquarePenIcon />
+      </SidebarHeaderIconButton>
     </div>
   );
 }

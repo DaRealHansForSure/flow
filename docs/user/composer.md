@@ -246,6 +246,17 @@ After you add or change skills, plugins, or MCP servers, use **Restart agent
 session** in the command palette on web and desktop. The conversation continues,
 and your next message starts the agent again with the new setup.
 
+`/mcp`, **Show MCP servers** in the command palette, or **MCP** in the right
+panel lists the MCP servers the chat's running agent has loaded: Flow's own,
+your own, plugins and claude.ai connectors, with their status and tools. A
+server that failed or needs a sign-in is shown at the top. The list comes from
+the running agent, so it is empty until the chat's first message. Claude, Codex
+and OpenCode report their servers; other providers say they do not. **Settings → Providers**
+shows the same list under **MCP servers** for each provider's running chat; without one,
+**Check servers** starts Claude for a moment to list them, which also starts its MCP servers.
+So far the MCP view has been tested and used with Claude only; the Codex and OpenCode
+lists are built from their own reports but not yet checked against a real session.
+
 Provider commands must start the message to run. T3 Code commands such as
 `/model` and `/plan`, and skill mentions, work on any line.
 

@@ -28,6 +28,7 @@ import * as Equal from "effect/Equal";
 import * as Schema from "effect/Schema";
 import { APP_VERSION, HOSTED_APP_CHANNEL, HOSTED_APP_CHANNEL_LABEL } from "../../branding";
 import { CliCommandSettingsRow } from "./CliCommandSettingsRow";
+import { FORK_HAS_T3_RELEASE_CHANNELS } from "../../forkReleases";
 import { MobileAppSettingsRow } from "./MobileAppSettingsRow";
 import {
   canCheckForUpdate,
@@ -297,7 +298,7 @@ function AboutVersionSection(props: { readonly versions: ReactNode }) {
 
   return (
     <>
-      {hasDesktopBridge ? (
+      {FORK_HAS_T3_RELEASE_CHANNELS && hasDesktopBridge ? (
         <SettingsRow
           {...searchableSetting("update-track")}
           description={
@@ -349,7 +350,7 @@ function AboutVersionSection(props: { readonly versions: ReactNode }) {
             </Select>
           }
         />
-      ) : selectedHostedAppChannel ? (
+      ) : FORK_HAS_T3_RELEASE_CHANNELS && selectedHostedAppChannel ? (
         <SettingsRow
           {...searchableSetting("update-track")}
           description="Switches the hosted app release channel."
@@ -401,7 +402,7 @@ function AboutVersionSection(props: { readonly versions: ReactNode }) {
         }
       />
       {props.versions}
-      {hasDesktopBridge ? <CliCommandSettingsRow /> : null}
+      {FORK_HAS_T3_RELEASE_CHANNELS && hasDesktopBridge ? <CliCommandSettingsRow /> : null}
       {switchChannel === null ? null : (
         <UpdateTrackSwitchDialog channel={switchChannel} onClose={() => setSwitchChannel(null)} />
       )}
@@ -445,6 +446,10 @@ export function useSettingsRestore(onRestored?: () => void) {
       : []),
     ...(settings.mathRenderingEnabled !== DEFAULT_UNIFIED_SETTINGS.mathRenderingEnabled
       ? ["Render math"]
+      : []),
+    ...(settings.workDetailSyntaxHighlighting !==
+    DEFAULT_UNIFIED_SETTINGS.workDetailSyntaxHighlighting
+      ? ["Highlight code in tool calls"]
       : []),
     ...(settings.panelAnimationDurationMs !== DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs
       ? ["Panel animations"]
@@ -633,6 +638,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       chatWidth: DEFAULT_UNIFIED_SETTINGS.chatWidth,
       effortDisplay: DEFAULT_UNIFIED_SETTINGS.effortDisplay,
       mathRenderingEnabled: DEFAULT_UNIFIED_SETTINGS.mathRenderingEnabled,
+      workDetailSyntaxHighlighting: DEFAULT_UNIFIED_SETTINGS.workDetailSyntaxHighlighting,
       timestampFormat: DEFAULT_UNIFIED_SETTINGS.timestampFormat,
       notificationMode: DEFAULT_UNIFIED_SETTINGS.notificationMode,
       inAppNotificationsEnabled: DEFAULT_UNIFIED_SETTINGS.inAppNotificationsEnabled,

@@ -28,6 +28,32 @@ export function resolveSelectionActionPosition(options: {
 
 type SelectionRect = { left: number; top: number; right: number; bottom: number };
 
+/**
+ * Flow: the line where a drag ended, so a selection made upwards gets its action at the top, not
+ * on the line the drag started from. `selectionRect` for resolveSelectionActionPosition.
+ */
+export function selectionFocusRect(
+  range: Range,
+  selection: Selection | null,
+): { right: number; bottom: number } | null {
+  const rects = range.getClientRects();
+  const first = rects.item(0);
+  const last = rects.item(rects.length - 1);
+  const backward =
+    selection !== null &&
+    selection.anchorNode !== null &&
+    selection.focusNode !== null &&
+    (selection.anchorNode === selection.focusNode
+      ? selection.focusOffset < selection.anchorOffset
+      : (selection.anchorNode.compareDocumentPosition(selection.focusNode) &
+          Node.DOCUMENT_POSITION_PRECEDING) !==
+        0);
+  if (backward && first !== null) {
+    return { right: first.left, bottom: first.bottom };
+  }
+  return last ?? range.getBoundingClientRect();
+}
+
 export function isSelectionRectVisible(rect: SelectionRect, clips: readonly SelectionRect[]) {
   let { left, top, right, bottom } = rect;
   for (const clip of clips) {
@@ -86,9 +112,21 @@ export function observeSelectionActions({
     cancel();
     onDismiss("cancel");
   };
+  // Flow: a long press selects text without moving focus. A focused editor elsewhere (the message
+  // box) then pulls the selection back into itself, so its focus is released first.
+  const releaseOutsideEditorFocus = () => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || element.contains(active)) return;
+    const editable =
+      active.isContentEditable || active.tagName === "INPUT" || active.tagName === "TEXTAREA";
+    if (editable) active.blur();
+  };
   const onContextMenu = () => {
     // Chrome on Android fires contextmenu for the long press that selects text.
-    if (touchGesture && gestureActive) return;
+    if (touchGesture && gestureActive) {
+      releaseOutsideEditorFocus();
+      return;
+    }
     cancel();
     onDismiss("interaction");
   };
@@ -143,6 +181,7 @@ export function observeSelectionActions({
   // finishes the gesture rather than dismissing it, so handle drags afterwards still count.
   const onPointerCancel = (event: PointerEvent) => {
     if (event.pointerType !== "mouse" && gestureActive) {
+      releaseOutsideEditorFocus();
       pointerDown = gestureActive = false;
       pointer = null;
       dismissed = false;
@@ -177,6 +216,23 @@ export function observeSelectionActions({
     onDismiss("cancel");
   };
 
+  // Flow: a phone keyboard opening or closing changes only the height. A long press in the chat
+  // while the composer has focus closes the keyboard right after selecting, so that resize
+  // settles and places the actions again instead of dismissing them; a real resize still does.
+  let viewWidth = view.innerWidth;
+  const onResize = () => {
+    const widthChanged = view.innerWidth !== viewWidth;
+    viewWidth = view.innerWidth;
+    if (widthChanged) {
+      dismiss();
+      return;
+    }
+    cancelPending();
+    if (!pointerDown && !dismissed && restorable) {
+      schedule(SELECTION_SCROLL_SETTLE_MS);
+    }
+  };
+
   document.addEventListener("pointerdown", onPointerDown, true);
   element.addEventListener("pointerdown", onSelectionStart);
   view.addEventListener("pointerup", onPointerUp);
@@ -187,7 +243,7 @@ export function observeSelectionActions({
   element.addEventListener("contextmenu", onContextMenu, true);
   element.addEventListener("scroll", onScroll, true);
   view.addEventListener("blur", dismiss);
-  view.addEventListener("resize", dismiss);
+  view.addEventListener("resize", onResize);
 
   return {
     get pending() {
@@ -214,7 +270,7 @@ export function observeSelectionActions({
       element.removeEventListener("contextmenu", onContextMenu, true);
       element.removeEventListener("scroll", onScroll, true);
       view.removeEventListener("blur", dismiss);
-      view.removeEventListener("resize", dismiss);
+      view.removeEventListener("resize", onResize);
     },
   };
 }

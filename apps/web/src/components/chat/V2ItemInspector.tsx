@@ -25,6 +25,7 @@ import { RenderErrorBoundary } from "../RenderErrorBoundary";
 import { CommandOutputPanel, useCommandOutputStreaming } from "./CommandOutputPanel";
 import { resolveExternalWebLinkHref } from "./externalLinkContextMenu";
 import type { ExpandedImagePreview } from "./ExpandedImagePreview";
+import { useClientSettings } from "../../hooks/useSettings";
 import { ShellCommandBlock } from "./ShellCommandBlock";
 import type { TurnItemSource } from "./timelineRowContext";
 
@@ -83,12 +84,13 @@ function StructuredValue({
   readonly highlightJson?: boolean;
   readonly language?: "typescript";
 }) {
+  const highlight = useClientSettings((settings) => settings.workDetailSyntaxHighlighting);
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
   const isJson = highlightJson && isJsonText(text);
   if (!text) return null;
   return (
     <pre className={cn("max-h-80 overflow-auto text-muted-foreground", monoClassName)}>
-      {language || isJson ? (
+      {highlight && (language || isJson) ? (
         <RenderErrorBoundary fallback={text}>
           <Suspense fallback={text}>
             <SyntaxTokens text={text} language={language ?? "json"} />

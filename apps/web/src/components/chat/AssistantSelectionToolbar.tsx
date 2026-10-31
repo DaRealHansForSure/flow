@@ -15,6 +15,7 @@ import {
   isSelectionRectVisible,
   observeSelectionActions,
   resolveSelectionActionPosition,
+  selectionFocusRect,
   type SelectionActionPoint,
 } from "~/lib/selectionActions";
 import { Button } from "../ui/button";
@@ -129,7 +130,7 @@ export function AssistantSelectionToolbar({
         },
         position: resolveSelectionActionPosition({
           bounds: viewportRect,
-          selectionRect: rects.item(rects.length - 1) ?? rect,
+          selectionRect: selectionFocusRect(captured.range, window.getSelection()) ?? rect,
           pointer: pointerOnText ? pointer : null,
           viewport: { width: window.innerWidth, height: window.innerHeight },
         }),
@@ -189,8 +190,8 @@ export function AssistantSelectionToolbar({
     <Button
       ref={toolbarRef}
       type="button"
-      size="xs"
-      variant="glass"
+      size="sm"
+      variant="default"
       disabled={tooLong}
       aria-label={tooLong ? "Selection is too long to cite" : "Cite selection in composer"}
       className="fixed z-50 max-w-[calc(100vw-1rem)]"

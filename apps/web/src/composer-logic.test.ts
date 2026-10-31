@@ -23,6 +23,7 @@ import {
   formatAssistantCitationForComposer,
   isPathSuggestionCurrent,
   replaceTextRange,
+  isMcpCommand,
 } from "./composer-logic";
 import { carryDisplacedCustomAnswerIntoPrompt } from "./pendingUserInput";
 import { formatTerminalContextReference } from "./lib/terminalContext";
@@ -230,6 +231,18 @@ describe("composerSubmissionIntentForKey", () => {
     { event: { ...enter, repeat: true } },
   ])("does not submit with %j", (override) => {
     expect(composerSubmissionIntentForKey({ ...input, event: enter, ...override })).toBeNull();
+  });
+});
+
+describe("isMcpCommand", () => {
+  it.each([
+    ["/mcp", true],
+    ["  /MCP  ", true],
+    ["/mcp list", false],
+    ["/mcpx", false],
+    ["show /mcp", false],
+  ])("treats %j as the MCP command: %s", (text, expected) => {
+    expect(isMcpCommand(text)).toBe(expected);
   });
 });
 

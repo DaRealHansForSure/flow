@@ -8,13 +8,7 @@ import type {
   EnvironmentId,
   ThreadId,
 } from "@t3tools/contracts";
-import {
-  BrainCircuitIcon,
-  ChevronDownIcon,
-  BookOpenIcon,
-  Maximize2Icon,
-  AlertCircleIcon,
-} from "lucide-react";
+import { BrainCircuitIcon, Maximize2Icon, AlertCircleIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BrainGraph } from "./BrainGraph";
 import { BrainGraphDialog, brainGraphCorner } from "./BrainGraphDialog";
@@ -105,87 +99,90 @@ export function ChatBrainPanel({
     <>
       <section
         aria-label="Flow brain and conversation notes"
-        className="h-full min-h-0 overflow-y-auto p-4"
+        className="h-full min-h-0 overflow-y-auto pb-4"
       >
         {error && (
-          <p role="alert" className="mb-3 text-xs text-destructive">
+          <p role="alert" className="px-3 py-2 text-xs text-destructive">
             Could not refresh context. {response ? "Showing last loaded data." : "Reconnecting…"}
           </p>
         )}
         {!response && !error && (
-          <p role="status" className="py-3 text-xs text-muted-foreground">
+          <p role="status" className="px-3 py-3 text-xs text-muted-foreground">
             Loading your brain…
           </p>
         )}
         {response && (
           <>
-            <section aria-label="Connected brain">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-expanded={brainExpanded}
-                  onClick={() => setBrainExpanded(!brainExpanded)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-left hover:bg-muted/60"
-                >
-                  {brain ? (
-                    <BrainIcon id={brain.id} />
-                  ) : (
-                    <BrainCircuitIcon className="size-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-xs text-muted-foreground">Brain</span>
-                    <span className="block truncate text-sm">
-                      {brain?.name ?? "No brain connected"}
-                    </span>
-                  </span>
-                  {consultedNodeCount > 0 && (
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-3xs font-medium text-primary">
-                      {consultedNodeCount} used
-                    </span>
-                  )}
-                  <ChevronDownIcon
-                    className={`size-4 shrink-0 text-muted-foreground ${brainExpanded ? "rotate-180" : ""}`}
-                  />
-                </button>
-              </div>
-              {brain && failedSources.length > 0 && (
-                <div
-                  role="alert"
-                  className="mt-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive"
-                >
-                  <div className="flex items-center gap-2 font-medium">
-                    <AlertCircleIcon className="size-4 shrink-0" />
-                    <span>
-                      Indexing failed for {failedSources.length}{" "}
-                      {failedSources.length === 1 ? "source" : "sources"}
-                    </span>
-                  </div>
-                  <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto">
-                    {failedSources.map((source) => (
-                      <li key={source.id}>
-                        <details>
-                          <summary className="cursor-pointer break-words font-medium">
-                            {source.repository || source.localPath || "Source"}
-                          </summary>
-                          <p className="mt-1 whitespace-pre-wrap break-words">
-                            {source.message ||
-                              "Indexing did not complete. Open the brain to retry this source."}
-                          </p>
-                        </details>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    to="/brain"
-                    search={{ brain: brain.id, environment: environmentId }}
-                    className="mt-3 inline-block font-medium underline underline-offset-2"
-                  >
-                    Manage sources and retry →
-                  </Link>
-                </div>
+            {/* Flow: the tab's header line, like the MCP and Agents tabs: name, summary, action. */}
+            <div className="flex min-h-11 items-center gap-2 border-b px-3 py-2">
+              {brain ? (
+                <BrainIcon id={brain.id} />
+              ) : (
+                <BrainCircuitIcon className="size-4 shrink-0 text-muted-foreground" />
               )}
+              <span className="min-w-0 truncate font-semibold text-sm">
+                {brain?.name ?? "No brain connected"}
+              </span>
+              {consultedNodeCount > 0 && (
+                <span className="shrink-0 text-muted-foreground text-xs">
+                  · {consultedNodeCount} used
+                </span>
+              )}
+              <span className="flex-1" />
+              {brain && (
+                <Link
+                  to="/brain"
+                  search={{ brain: brain.id, environment: environmentId }}
+                  className="shrink-0 text-primary text-xs hover:underline"
+                >
+                  Open
+                </Link>
+              )}
+            </div>
+            {brain && failedSources.length > 0 && (
+              <div
+                role="alert"
+                className="mx-3 mt-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive"
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  <AlertCircleIcon className="size-4 shrink-0" />
+                  <span>
+                    Indexing failed for {failedSources.length}{" "}
+                    {failedSources.length === 1 ? "source" : "sources"}
+                  </span>
+                </div>
+                <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto">
+                  {failedSources.map((source) => (
+                    <li key={source.id}>
+                      <details>
+                        <summary className="cursor-pointer break-words font-medium">
+                          {source.repository || source.localPath || "Source"}
+                        </summary>
+                        <p className="mt-1 whitespace-pre-wrap break-words">
+                          {source.message ||
+                            "Indexing did not complete. Open the brain to retry this source."}
+                        </p>
+                      </details>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/brain"
+                  search={{ brain: brain.id, environment: environmentId }}
+                  className="mt-3 inline-block font-medium underline underline-offset-2"
+                >
+                  Manage sources and retry →
+                </Link>
+              </div>
+            )}
+            <section aria-label="Knowledge graph" data-panel-section="">
+              <BrainSectionHeader
+                label="Knowledge graph"
+                expanded={brainExpanded}
+                onToggle={() => setBrainExpanded(!brainExpanded)}
+              />
               {brainExpanded && (
-                <div className="mt-2 overflow-hidden rounded-xl border border-border/50">
+                <div className="mx-3 mb-1 overflow-hidden rounded-xl border border-border/50">
                   {brain && response.state.database.status !== "ready" ? (
                     <p role="alert" className="p-3 text-xs text-destructive">
                       {response.state.database.message}
@@ -215,21 +212,13 @@ export function ChatBrainPanel({
                       {consultedNodeCount === 1 ? "node" : "nodes"} used by this chat
                     </p>
                   )}
-                  <Link
-                    to="/brain"
-                    search={{ brain: brain?.id, environment: environmentId }}
-                    className="block px-3 py-2 text-xs text-primary hover:underline"
-                  >
-                    Open brain →
-                  </Link>
                 </div>
               )}
             </section>
           </>
         )}
-        <section aria-label="Conversation notes" className="mt-3 border-t border-border/60 pt-3">
+        <section aria-label="Conversation notes" data-panel-section="">
           <BrainSectionHeader
-            icon={BookOpenIcon}
             label="Conversation notes"
             expanded={notesExpanded}
             onToggle={() => setNotesExpanded(!notesExpanded)}
@@ -243,7 +232,7 @@ export function ChatBrainPanel({
                     type="button"
                     aria-label="Read full notes"
                     onClick={() => setView("notes")}
-                    className={`w-full rounded-xl py-2 pr-9 pl-2.5 text-left hover:bg-muted/60 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
+                    className={`w-full py-2 pr-10 pl-3 text-left hover:bg-muted/40 ${changedIds.includes(notes.notes.id) ? "bg-primary/5" : ""}`}
                   >
                     <ConversationNotesPreview text={notes.notes.text} />
                     <span className="mt-2 block text-2xs text-primary">Read full notes →</span>
@@ -252,13 +241,13 @@ export function ChatBrainPanel({
                     type="button"
                     aria-label="Read full conversation notes"
                     onClick={() => setView("notes")}
-                    className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="absolute top-1.5 right-2 flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     <Maximize2Icon className="size-3.5" />
                   </button>
                 </div>
               ) : readOnly && brain ? null : (
-                <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">
+                <p className="px-3 py-2 text-xs leading-relaxed text-muted-foreground">
                   {brain
                     ? "Your task, progress, and corrections will appear here from the first message."
                     : "Notes help you and your agent pick up where this conversation left off."}
@@ -268,20 +257,20 @@ export function ChatBrainPanel({
                 role="status"
                 className={
                   notes?.extractionIssue && !notesAgentOff && !readOnly
-                    ? "px-2 py-2 text-2xs text-destructive"
-                    : "px-2 py-2 text-2xs text-muted-foreground"
+                    ? "px-3 py-1.5 text-2xs text-destructive"
+                    : "px-3 py-1.5 text-2xs text-muted-foreground"
                 }
               >
                 {memoryStatus}
               </p>
               {/* Who writes the notes matters when they stop; the full view always says. */}
               {notesAgent && notes?.status === "error" ? (
-                <p className="px-2 pb-2 text-2xs leading-relaxed text-muted-foreground">
+                <p className="px-3 pb-2 text-2xs leading-relaxed text-muted-foreground">
                   {notesAgent}
                 </p>
               ) : null}
               {notes?.extractionError && (
-                <details className="px-2 pb-2 text-xs text-destructive">
+                <details className="px-3 pb-2 text-xs text-destructive">
                   <summary className="cursor-pointer">
                     {notes.extractionIssue ? "Details" : "Extraction needs attention"}
                   </summary>

@@ -83,6 +83,10 @@ the dialog.
 
 ## Track subscription limits
 
+The model chip under the composer warns before a limit runs out: it turns amber when the selected
+account has used more than 80 % of a usage limit and red above 90 %, and its tooltip names the
+limit and when it resets.
+
 **Usage → Limits** pools every subscription account it can see per provider, so with several Codex
 or Claude accounts across your enabled environments and hubs you read one number per window rather than a
 list. Each window card shows how much of the pool is left and a bar with one segment per account,

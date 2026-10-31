@@ -6,9 +6,15 @@ import { Spinner } from "./ui/spinner";
 
 export function RoutePendingView() {
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-      <Spinner className="size-4" />
-      <span>Loading…</span>
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+      {/* A pill of its own, so it reads clearly over whatever page is still showing. */}
+      <div
+        role="status"
+        className="flex items-center gap-2 rounded-full border border-border bg-popover px-4 py-2 text-sm text-foreground shadow-lg"
+      >
+        <Spinner className="size-4" />
+        <span>Loading…</span>
+      </div>
     </div>
   );
 }

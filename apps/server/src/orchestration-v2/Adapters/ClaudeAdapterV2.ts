@@ -1,5 +1,6 @@
 import * as DocumentText from "../../provider/DocumentText.ts";
 import { makeProviderTextDeltaCoalescer } from "./ProviderTextDeltaCoalescer.ts";
+import { mapClaudeMcpServers } from "./claudeMcpServers.ts";
 import { claudeTaskOutputRoot, tailClaudeTaskOutput } from "./ClaudeTaskOutputTail.ts";
 import {
   dynamicToolTitle,
@@ -37,6 +38,7 @@ import {
   type PermissionMode,
   type PermissionResult,
   type PermissionUpdate,
+  type McpServerStatus,
   type Query as ClaudeQuery,
   type Settings as ClaudeSdkSettings,
   type SpawnOptions as ClaudeSpawnOptions,
@@ -518,6 +520,10 @@ export interface ClaudeAgentSdkQuerySession {
     mode: PermissionMode,
   ) => Effect.Effect<void, ClaudeAgentSdkQueryRunnerError>;
   readonly stopTask: (taskId: string) => Effect.Effect<void, ClaudeAgentSdkQueryRunnerError>;
+  readonly mcpServerStatus?: Effect.Effect<
+    ReadonlyArray<McpServerStatus>,
+    ClaudeAgentSdkQueryRunnerError
+  >;
   readonly backgroundTasks: (
     toolUseId: string,
   ) => Effect.Effect<boolean, ClaudeAgentSdkQueryRunnerError>;
@@ -1192,6 +1198,10 @@ export const layerQueryRunner: Layer.Layer<
                   }),
                 ),
               ),
+            mcpServerStatus: Effect.tryPromise({
+              try: () => queryRuntime.mcpServerStatus(),
+              catch: (cause) => queryRunnerError(cause, "mcpServerStatus"),
+            }),
             stopTask: (taskId) =>
               Effect.tryPromise({
                 try: () => queryRuntime.stopTask(taskId),
@@ -10835,6 +10845,35 @@ export const makeClaudeAdapterV2 = Effect.fn("makeClaudeAdapterV2")(function* (
               message: { ...turnInput.message, text: "/compact" },
             }),
           steerTurn,
+          mcpServers: {
+            list: Effect.fn("ClaudeAdapterV2.listMcpServers")(function* ({ providerThread }) {
+              const liveQuery = yield* Ref.get(queryContext);
+              if (
+                liveQuery === null ||
+                liveQuery.stopping ||
+                liveQuery.query.mcpServerStatus === undefined ||
+                liveQuery.nativeThreadId !== providerThread.nativeThreadRef?.nativeId
+              ) {
+                return null;
+              }
+              const statuses = yield* liveQuery.query.mcpServerStatus.pipe(
+                Effect.mapError(
+                  (cause) =>
+                    new ProviderAdapter.ProviderAdapterProtocolError({
+                      driver: CLAUDE_PROVIDER,
+                      detail: "MCP server status request failed",
+                      cause,
+                    }),
+                ),
+              );
+              const configuredDir = adapterOptions.environment.CLAUDE_CONFIG_DIR?.trim() ?? "";
+              const profile =
+                configuredDir.length > 0
+                  ? path.resolve(session.cwd, configuredDir)
+                  : path.join(yield* HostProcess.HomeDirectory, ".claude");
+              return { profile, servers: mapClaudeMcpServers(statuses) };
+            }),
+          },
           stopTask: Effect.fn("ClaudeAdapterV2.stopTask")(function* ({ providerThread, taskId }) {
             const liveQuery = yield* Ref.get(queryContext);
             const task = (yield* Ref.get(sessionSubagentsByTaskId)).get(taskId);

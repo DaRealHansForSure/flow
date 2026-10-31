@@ -160,6 +160,8 @@ export default defineConfig({
       // Preserved Flow services retain their own formatting during integration.
       "flow/**",
       "flow-t3/shared/**",
+      // Flow upstream's CLI script keeps its own style, so syncs stay conflict-free.
+      "scripts/cli-brains.mjs",
       ".repos/**",
       "infra/task-cache/vendor/**",
       // Macroscope requires one glob per line; Markdown formatting corrupts it.

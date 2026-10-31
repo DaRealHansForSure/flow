@@ -50,6 +50,7 @@ import * as OrchestrationHttp from "./http.ts";
 import * as ProjectionStore from "./ProjectionStore.ts";
 import * as ProjectStore from "./ProjectStore.ts";
 import * as ThreadManagementService from "./ThreadManagementService.ts";
+import { THREAD_HISTORY_PAGE_POLICY } from "./threadHistoryPaging.ts";
 
 const decodeBounded = Schema.decodeUnknownSync(
   Schema.fromJsonString(Schema.toCodecJson(OrchestrationV2ThreadBoundedSnapshot)),
@@ -68,6 +69,7 @@ const projectId = ProjectId.make("project:compact-transport");
 const PARENT = ThreadId.make("thread:compact-transport:parent");
 const FORK = ThreadId.make("thread:compact-transport:fork");
 const LONG = ThreadId.make("thread:compact-transport:long");
+const LONG_TOOL_ROWS = THREAD_HISTORY_PAGE_POLICY.maxItems + 15;
 const BODIES = ThreadId.make("thread:compact-transport:bodies");
 const parentRun = RunId.make("run:compact-transport:parent");
 const longRun = RunId.make("run:compact-transport:long");
@@ -382,10 +384,11 @@ const seed = Effect.gen(function* () {
     threadCreated(LONG, at),
     runCreated(LONG, longRun, at),
     itemUpdated(LONG, longRun, "request", 1, at, "run_interrupt_request"),
-    ...Array.from({ length: 90 }, (_, index) =>
+    // Longer than one history page, so the request only stays through its retained pairing.
+    ...Array.from({ length: LONG_TOOL_ROWS }, (_, index) =>
       itemUpdated(LONG, longRun, `tool-${index}`, index + 2, at),
     ),
-    itemUpdated(LONG, longRun, "result", 92, at, "run_interrupt_result"),
+    itemUpdated(LONG, longRun, "result", LONG_TOOL_ROWS + 2, at, "run_interrupt_result"),
     ...bodiesEvents(at),
   ];
   for (const event of events) yield* projections.apply(event);

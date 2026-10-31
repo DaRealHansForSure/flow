@@ -182,6 +182,23 @@ function lastRunSummary(
   return entries.map((entry) => `${entry.label}: ${entry.counts}`).join(" · ");
 }
 
+function folderName(path: string | null): string | undefined {
+  return path?.split(/[\\/]/).findLast(Boolean);
+}
+
+function cleanupEntryName(entry: StorageCleanupReport["entries"][number]): string {
+  switch (entry.kind) {
+    case "worktree":
+      return (entry.threadId === null ? entry.path : folderName(entry.path)) ?? "Worktrees";
+    case "logs":
+      return "Rotated logs";
+    case "scratch-folder":
+      return `No project: ${folderName(entry.path) ?? "folder"}`;
+    case "browser-artifacts":
+      return "Browser artifacts";
+  }
+}
+
 function CleanupResults({
   report,
   environmentLabel,
@@ -192,14 +209,7 @@ function CleanupResults({
   return (
     <>
       {report.entries.map((entry, index) => {
-        const name =
-          entry.kind === "worktree"
-            ? ((entry.threadId === null
-                ? entry.path
-                : entry.path?.split(/[\\/]/).findLast(Boolean)) ?? "Worktrees")
-            : entry.kind === "logs"
-              ? "Rotated logs"
-              : "Browser artifacts";
+        const name = cleanupEntryName(entry);
         return (
           <SettingsRow
             key={`${entry.path ?? entry.kind}:${entry.threadId ?? index}`}
@@ -308,6 +318,7 @@ function CleanupSection() {
     return (
       settings.storageCleanup.browserArtifactsAfterDays !== null ||
       settings.storageCleanup.logsAfterDays !== null ||
+      settings.storageCleanup.scratchFoldersAfterDays !== null ||
       enabled(resolveWorktreeCleanup(settings, null)) ||
       Object.values(settings.projectSettingsOverrides).some(
         (override) =>
@@ -696,7 +707,9 @@ export function StorageCleanupSections() {
   const updateSettings = useUpdateScopedSettings();
   if (scope.kind === "project" || scope.kind === "checkout") return null;
   const settings = scopedSettings.storageCleanup;
-  const ruleStatus = (key: "browserArtifactsAfterDays" | "logsAfterDays") =>
+  const ruleStatus = (
+    key: "browserArtifactsAfterDays" | "logsAfterDays" | "scratchFoldersAfterDays",
+  ) =>
     targets.some((target) => target.settings.storageCleanup[key] !== settings[key])
       ? "Mixed across selected machines"
       : undefined;
@@ -748,6 +761,19 @@ export function StorageCleanupSections() {
               label="Delete old rotated logs"
               value={settings.logsAfterDays}
               onChange={(logsAfterDays) => update({ logsAfterDays })}
+            />
+          }
+        />
+        <SettingsRow
+          title="Delete unused No project folders"
+          status={ruleStatus("scratchFoldersAfterDays")}
+          description="Delete folders under scratch that no chat uses any more, such as those of deleted No project chats, once untouched for this many days."
+          serverScoped
+          control={
+            <RetentionControl
+              label="Delete unused No project folders"
+              value={settings.scratchFoldersAfterDays}
+              onChange={(scratchFoldersAfterDays) => update({ scratchFoldersAfterDays })}
             />
           }
         />

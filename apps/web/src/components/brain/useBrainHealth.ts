@@ -3,22 +3,32 @@
 
 import { useEffect, useState } from "react";
 
+import type { EnvironmentId } from "@t3tools/contracts";
+
 import { brainCommand } from "../../state/brain";
 import { usePrimaryEnvironmentId } from "../../state/environments";
 import { useAtomCommand } from "../../state/use-atom-command";
 
 export type BrainHealth =
+  | { readonly kind: "unknown" }
   | { readonly kind: "loading" }
   | { readonly kind: "ready" }
   | { readonly kind: "failed"; readonly reason: string };
 
 const STARTING_POLL_MS = 15_000;
 const READY_POLL_MS = 60_000;
+const UNKNOWN: BrainHealth = { kind: "unknown" };
+
+// The phone sidebar mounts on every open; without the last answer it would flash "loading" each time.
+const lastHealthByEnvironment = new Map<EnvironmentId, BrainHealth>();
 
 export function useBrainHealth(): BrainHealth {
   const environmentId = usePrimaryEnvironmentId();
   const execute = useAtomCommand(brainCommand, { reportFailure: false });
-  const [health, setHealth] = useState<BrainHealth>({ kind: "loading" });
+  const [health, setHealth] = useState<BrainHealth>(
+    () =>
+      (environmentId === null ? undefined : lastHealthByEnvironment.get(environmentId)) ?? UNKNOWN,
+  );
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- polls the Brain server for its health
   useEffect(() => {
@@ -51,6 +61,7 @@ export function useBrainHealth(): BrainHealth {
       } else {
         next = { kind: "ready" };
       }
+      lastHealthByEnvironment.set(environmentId, next);
       setHealth((previous) =>
         JSON.stringify(previous) === JSON.stringify(next) ? previous : next,
       );

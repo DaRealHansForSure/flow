@@ -1860,14 +1860,17 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
       `;
 
       // A turn split by the row budget keeps an interrupt result's request on the same page.
+      // The request sits further back than one page, so only the pairing brings it in.
+      const requestOrdinal = 580 - THREAD_HISTORY_PAGE_POLICY.maxItems - 10;
+      const requestRunId = `run:bounded-sql-history:${requestOrdinal}`;
       yield* sql`
         UPDATE orchestration_v2_projection_turn_items
-        SET run_id = 'run:bounded-sql-history:500',
-          type = CASE ordinal WHEN 500 THEN 'run_interrupt_request' ELSE 'run_interrupt_result' END,
+        SET run_id = ${requestRunId},
+          type = CASE ordinal WHEN ${requestOrdinal} THEN 'run_interrupt_request' ELSE 'run_interrupt_result' END,
           payload_json = json_set(payload_json,
-            '$.runId', 'run:bounded-sql-history:500', '$.message', 'Stop',
-            '$.type', CASE ordinal WHEN 500 THEN 'run_interrupt_request' ELSE 'run_interrupt_result' END)
-        WHERE thread_id = ${threadId} AND ordinal IN (500, 580)
+            '$.runId', ${requestRunId}, '$.message', 'Stop',
+            '$.type', CASE ordinal WHEN ${requestOrdinal} THEN 'run_interrupt_request' ELSE 'run_interrupt_result' END)
+        WHERE thread_id = ${threadId} AND ordinal IN (${requestOrdinal}, 580)
       `;
       const interruptPage = yield* projectionStore.getThreadHistoryPage(
         threadId,
@@ -1880,14 +1883,14 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
       );
       const interruptIds = interruptPage.items.map((row) => String(row.sourceItemId));
       assert.include(interruptIds, "turn-item:bounded-sql-history:580");
-      assert.include(interruptIds, "turn-item:bounded-sql-history:500");
-      assert.notInclude(interruptIds, "turn-item:bounded-sql-history:501");
+      assert.include(interruptIds, `turn-item:bounded-sql-history:${requestOrdinal}`);
+      assert.notInclude(interruptIds, `turn-item:bounded-sql-history:${requestOrdinal + 1}`);
       yield* sql`
         UPDATE orchestration_v2_projection_turn_items
         SET run_id = 'run:bounded-sql-history:' || ordinal, type = 'command_execution',
           payload_json = json_set(payload_json,
             '$.runId', 'run:bounded-sql-history:' || ordinal, '$.type', 'command_execution')
-        WHERE thread_id = ${threadId} AND ordinal IN (500, 580)
+        WHERE thread_id = ${threadId} AND ordinal IN (${requestOrdinal}, 580)
       `;
 
       const retainedRequestPlan = yield* sql<{ readonly detail: string }>`
@@ -2023,7 +2026,7 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
           false,
           "work",
         );
-        assert.isAtMost(page.items.length, 75);
+        assert.isAtMost(page.items.length, THREAD_HISTORY_PAGE_POLICY.maxItems);
         for (const row of page.items) workIds.add(row.sourceItemId);
         workCursor = page.nextCursor;
       }
@@ -2268,7 +2271,10 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         projection: hiddenSuffixSnapshot.projection,
         snapshotSequence: hiddenSuffixSnapshot.snapshotSequence,
       });
-      assert.lengthOf(hiddenSuffixPage.projection.visibleTurnItems, 75);
+      assert.lengthOf(
+        hiddenSuffixPage.projection.visibleTurnItems,
+        THREAD_HISTORY_PAGE_POLICY.maxItems,
+      );
       assert.strictEqual(hiddenSuffixPage.latestLocalTurnOrdinal, 1_100);
       assert.isTrue(hiddenSuffixPage.hasMoreHistory);
       assert.isFalse(
@@ -2289,7 +2295,7 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         cursor: hiddenSuffixCursor!,
         snapshotSequence: hiddenSuffixOlderSnapshot.snapshotSequence,
       });
-      assert.lengthOf(hiddenSuffixOlderPage.items, 75);
+      assert.lengthOf(hiddenSuffixOlderPage.items, THREAD_HISTORY_PAGE_POLICY.maxItems);
       assert.isTrue(hiddenSuffixOlderPage.hasMoreHistory);
 
       const cancelledRunId = RunId.make("run:bounded-sql-history:cancelled-suffix");
@@ -2428,7 +2434,10 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         snapshotSequence: cancelledSuffixSnapshot.snapshotSequence,
       });
       assert.strictEqual(cancelledSuffixPage.latestLocalTurnOrdinal, 1_202);
-      assert.lengthOf(cancelledSuffixPage.projection.visibleTurnItems, 75);
+      assert.lengthOf(
+        cancelledSuffixPage.projection.visibleTurnItems,
+        THREAD_HISTORY_PAGE_POLICY.maxItems,
+      );
       assert.isFalse(
         cancelledSuffixPage.projection.visibleTurnItems.some((row) =>
           String(row.sourceItemId).includes(":cancelled:"),
@@ -2529,7 +2538,9 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         ordinal: 1_201,
         type: "run_interrupt_request",
       });
-      for (let ordinal = 1_202; ordinal <= 1_281; ordinal += 1) {
+      // Enough filler that the request falls outside a full row window.
+      const lastFillerOrdinal = 1_201 + sqlPageLimit + 4;
+      for (let ordinal = 1_202; ordinal <= lastFillerOrdinal; ordinal += 1) {
         const id = `turn-item:bounded-sql-history:interrupt-filler:${ordinal}`;
         yield* sql`
           INSERT INTO orchestration_v2_projection_turn_items (
@@ -2563,7 +2574,7 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
       }
       yield* insertInterruptItem({
         id: interruptResultId,
-        ordinal: 1_282,
+        ordinal: lastFillerOrdinal + 1,
         type: "run_interrupt_result",
       });
 
@@ -2584,7 +2595,9 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         SET payload_json = json_set(payload_json, '$.createdBy', 'agent')
         WHERE thread_id = ${threadId} AND type = 'user_message'
       `;
-      const agentPromptId = TurnItemId.make("turn-item:bounded-sql-history:interrupt-filler:1281");
+      const agentPromptId = TurnItemId.make(
+        `turn-item:bounded-sql-history:interrupt-filler:${lastFillerOrdinal}`,
+      );
       yield* sql`
         UPDATE orchestration_v2_projection_turn_items
         SET type = 'user_message',
@@ -6048,11 +6061,12 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         ],
       );
 
+      const nestedPolicy = { ...THREAD_HISTORY_PAGE_POLICY, maxUserTurns: undefined };
       const nestedInitial = buildBoundedThreadProjection({
-        policy: { ...THREAD_HISTORY_PAGE_POLICY, maxUserTurns: undefined },
+        policy: nestedPolicy,
         projection: yield* projectionStore
           .getThreadSnapshotWindow(nestedThreadId, {
-            rowLimit: THREAD_HISTORY_PAGE_POLICY.maxItems + 2,
+            rowLimit: nestedPolicy.maxItems + 2,
           })
           .pipe(Effect.map((snapshot) => snapshot.projection)),
         snapshotSequence: 1,
@@ -6068,12 +6082,12 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
       while (nestedCursor !== null) {
         const decoded = decodeThreadHistoryCursor(nestedCursor);
         const snapshot = yield* projectionStore.getThreadSnapshotWindow(nestedThreadId, {
-          rowLimit: THREAD_HISTORY_PAGE_POLICY.maxItems + 2,
+          rowLimit: nestedPolicy.maxItems + 2,
           anchorItemId: TurnItemId.make(decoded.si),
           anchorThreadId: ThreadId.make(decoded.st),
         });
         const page = selectHistoryPageFromCursor({
-          policy: { ...THREAD_HISTORY_PAGE_POLICY, maxUserTurns: undefined },
+          policy: nestedPolicy,
           items: snapshot.projection.visibleTurnItems,
           cursor: nestedCursor,
           snapshotSequence: snapshot.snapshotSequence,
@@ -6082,12 +6096,12 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
         nestedCursor = page.nextCursor;
         nestedPages += 1;
       }
-      assert.isAtLeast(nestedPages, 3);
+      assert.isAtLeast(nestedPages, Math.ceil(expectedNestedIds.length / nestedPolicy.maxItems));
       assert.lengthOf(nestedIds, expectedNestedIds.length);
       assert.deepEqual(nestedIds, expectedNestedIds);
 
       const nestedTurnWindow = yield* projectionStore.getThreadSnapshotWindow(nestedThreadId, {
-        rowLimit: 77,
+        rowLimit: THREAD_HISTORY_PAGE_POLICY.maxItems + 2,
         userTurnLimit: 10,
       });
       const nestedTurnPage = buildBoundedThreadProjection({
@@ -6101,7 +6115,7 @@ it.layer(layerTest)("ProjectionStoreV2", (it) => {
       while (turnCursor !== null) {
         const anchor = decodeThreadHistoryCursor(turnCursor);
         const snapshot = yield* projectionStore.getThreadSnapshotWindow(nestedThreadId, {
-          rowLimit: 77,
+          rowLimit: THREAD_HISTORY_PAGE_POLICY.maxItems + 2,
           userTurnLimit: 20,
           anchorItemId: TurnItemId.make(anchor.si),
           anchorThreadId: ThreadId.make(anchor.st),

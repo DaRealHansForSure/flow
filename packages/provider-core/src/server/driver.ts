@@ -44,6 +44,11 @@ export interface ProviderInstance {
     cwd: string,
   ) => Effect.Effect<ProviderWorkspaceSnapshot, ProviderDriverError>;
   readonly refreshModels?: () => Effect.Effect<void, ProviderDriverError>;
+  /** Explicit user action only: starts a short-lived provider process, and with it every MCP server. */
+  readonly checkMcpServers?: () => Effect.Effect<
+    ProviderAdapter.ProviderAdapterV2McpServerListing,
+    ProviderDriverError
+  >;
   readonly invalidateCaches?: Effect.Effect<void>;
   readonly consumeResetCredit?: () => Effect.Effect<
     ProviderConsumeResetCreditOutcome,

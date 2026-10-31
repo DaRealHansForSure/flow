@@ -86,6 +86,7 @@ import {
   deriveLatestThreadRun,
   deriveThreadStructureRuntime,
 } from "@t3tools/client-runtime/state/thread-execution";
+import { resolveSubagentPillSegment } from "@t3tools/client-runtime/state/thread-subagents";
 import {
   resolveWorkflowOpening,
   workflowOpeningParentThreadId,
@@ -262,6 +263,7 @@ import {
   useThreadHistory,
   useQuietThreadShell,
   useThreadCheckpointSummaries,
+  useThreadTurnSubagents,
 } from "../state/entities";
 import { useEnvironmentShellHasSnapshot } from "../state/shell";
 import { ChatComposer, type ChatComposerHandle } from "./chat/ChatComposer";
@@ -384,6 +386,7 @@ const EMPTY_PROVIDERS: ServerProvider[] = [];
 const EMPTY_PROVIDER_MODELS: ServerProvider["models"] = [];
 const EMPTY_USAGE_LIMIT_SOURCES: UsageLimitSourceSnapshots = [];
 import type { CodexArtifactTemplate } from "@t3tools/shared/codexArtifactTemplates";
+import { allowComposerFocus } from "../touchComposerFocus";
 
 const EMPTY_FEEDBACK_SUBMISSIONS: ReadonlyArray<CodexFeedbackSubmission> = [];
 const EMPTY_PROVIDER_SKILLS: ServerProvider["skills"] = [];
@@ -483,6 +486,7 @@ export default function ChatView(props: ChatViewProps) {
   });
   const serverThreadProjection = useQuietThreadProjection(routeThreadDetailRef);
   const serverProjection = serverThreadProjection?.projection ?? null;
+  const turnSubagents = useThreadTurnSubagents(routeThreadDetailRef);
   // Subagent rows, an open child's own row and its ancestors come from the family when the shell
   // leaves idle children out. Every source agrees on the root, so the key never flips.
   useThreadFamily(
@@ -1409,6 +1413,11 @@ export default function ChatView(props: ChatViewProps) {
   const openPlanSurfaceStable = useStableCallback(() => {
     if (activeThreadRef) {
       useRightPanelStore.getState().open(activeThreadRef, "plan");
+    }
+  });
+  const openMcpSurfaceStable = useStableCallback(() => {
+    if (activeThreadRef) {
+      useRightPanelStore.getState().open(activeThreadRef, "mcp");
     }
   });
   const openAgentsSurfaceStable = useStableCallback(() => {
@@ -2928,6 +2937,7 @@ export default function ChatView(props: ChatViewProps) {
     usageLimitsKey,
     usageLimitsOffered,
     openUsageLimits,
+    openMcp: isServerThread ? openMcpSurfaceStable : undefined,
     clearUsageLimitsFor,
     needsLoadBalancing,
     loadBalancing,
@@ -3032,6 +3042,16 @@ export default function ChatView(props: ChatViewProps) {
     isServerThread && hasActionableProposedPlan(activeProposedPlan)
       ? (activeProposedPlan?.id ?? null)
       : null;
+  // Flow: Revise brings the composer into view and says the next message changes the plan; the
+  // hint ends when that plan is no longer the one to review.
+  const [revisingPlanId, setRevisingPlanId] = useState<PlanId | null>(null);
+  const revisingPlan = revisingPlanId !== null && revisingPlanId === reviewablePlanId;
+  const revisePlanStable = useStableCallback(() => {
+    setRevisingPlanId(reviewablePlanId);
+    composerOverlayElement?.scrollIntoView({ block: "nearest" });
+    allowComposerFocus();
+    focusComposer();
+  });
   const { modes: reviewRuntimeModes, mode: reviewRuntimeMode } = resolveCompatibleRuntimeMode(
     runtimeMode,
     activeProviderStatus?.supportedRuntimeModes,
@@ -3051,7 +3071,7 @@ export default function ChatView(props: ChatViewProps) {
             disabled: reviewDisabled,
             accept: (mode: RuntimeMode) => void acceptPlanStable(mode),
             acceptInNewThread: () => void onImplementPlanInNewThreadStable(),
-            revise: focusComposerStable,
+            revise: revisePlanStable,
             decline: declinePlanStable,
             comment: commentOnPlanStable,
           },
@@ -3197,6 +3217,7 @@ export default function ChatView(props: ChatViewProps) {
       : null;
   const hasThreadNow = childInputNow !== null || goalNow !== null || shownThreadSyncPhase !== null;
   const queuedRunCount = serverProjection ? getUserQueuedThreadRuns(serverProjection).length : 0;
+  const agentsPillSegment = resolveSubagentPillSegment(turnSubagents);
   // The queue control is mounted for every server thread but joins the footer only while it shows
   // something, by its own rule: an optimistic message stops counting once the server has it.
   const hasQueuedTurns =
@@ -3604,6 +3625,11 @@ export default function ChatView(props: ChatViewProps) {
                   work={backgroundWorkNow}
                   workingSince={activeWorkStartedAt}
                   browsers={browserNow}
+                  agents={
+                    agentsPillSegment === null
+                      ? null
+                      : { segment: agentsPillSegment, onOpen: openAgentsSurfaceStable }
+                  }
                   queuedCount={queuedRunCount}
                   showScrollToEnd={showScrollToBottom}
                   onScrollToEnd={() => scrollToEnd(true)}
@@ -3751,6 +3777,7 @@ export default function ChatView(props: ChatViewProps) {
                                   ? openUsageLimits
                                   : undefined
                               }
+                              onMcpCommand={isServerThread ? openMcpSurfaceStable : undefined}
                               environmentUnavailable={activeEnvironmentUnavailableState}
                               activePendingApproval={activePendingApproval}
                               pendingApprovals={pendingApprovals}
@@ -3763,6 +3790,7 @@ export default function ChatView(props: ChatViewProps) {
                               activePendingQuestionIndex={activePendingQuestionIndex}
                               respondingRequestIds={respondingRequestIds}
                               showPlanFollowUpPrompt={showPlanFollowUpPrompt}
+                              revisingPlan={revisingPlan}
                               activeProposedPlan={activeProposedPlan}
                               threadSyncPhase={
                                 activeEnvironmentUnavailable ? null : threadSyncPhase
@@ -4087,6 +4115,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddBrain={chatBrain.brain ? openBrainSurfaceStable : undefined}
           onAddPlan={planVersions.length > 0 ? openPlanSurfaceStable : undefined}
           onAddAgents={isServerThread ? openAgentsSurfaceStable : undefined}
+          onAddMcp={isServerThread ? openMcpSurfaceStable : undefined}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}

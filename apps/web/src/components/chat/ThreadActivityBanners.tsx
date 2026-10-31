@@ -13,6 +13,7 @@ import { childThreadInputsTitle } from "@t3tools/client-runtime/state/threads";
 import { formatDuration } from "@t3tools/shared/orchestrationTiming";
 import * as DateTime from "effect/DateTime";
 import {
+  ChevronRightIcon,
   CircleDashedIcon,
   GitBranchIcon,
   MessageCircleIcon,
@@ -138,7 +139,6 @@ export function backgroundWorkNowItem(input: {
     .toSorted((left, right) => right.updatedAtMs - left.updatedAtMs)[0];
   const isCommand = (row: (typeof rows)[number]) => row.task.kind !== "subagent";
   const verb = presentation.waiting ? "Waiting on" : "Running";
-  const onlyThreadId = only?.childThreadId;
   const startedAtMs = only?.startedAtMs ?? null;
   return {
     id: `background-work:${input.threadId}`,
@@ -163,8 +163,8 @@ export function backgroundWorkNowItem(input: {
       <ul className="flex flex-col divide-y divide-border">
         {rows.map((row) => {
           const childThreadId = row.childThreadId;
-          return (
-            <li key={row.task.taskId} className="flex items-start gap-3 py-2.5">
+          const content = (
+            <>
               <span
                 aria-hidden
                 className="mt-0.5 flex shrink-0 text-muted-foreground [&_svg]:size-4"
@@ -185,11 +185,30 @@ export function backgroundWorkNowItem(input: {
                   {row.activity ?? (isCommand(row) ? "Command" : "Subagent")}
                 </span>
               </span>
-              {childThreadId === undefined ? null : (
-                <InlineButton tone="muted" onClick={() => onOpenThread(childThreadId)}>
-                  Open
-                </InlineButton>
-              )}
+            </>
+          );
+          // Flow: as in the mobile app, a subagent's row opens its chat; there is no Open button.
+          if (childThreadId === undefined) {
+            return (
+              <li key={row.task.taskId} data-work-row className="flex items-start gap-3 py-2.5">
+                {content}
+              </li>
+            );
+          }
+          return (
+            <li key={row.task.taskId}>
+              <button
+                type="button"
+                data-work-row
+                className="flex w-full cursor-pointer items-start gap-3 py-2.5 text-left hover:bg-accent/40 focus-visible:outline-2 focus-visible:outline-ring"
+                onClick={() => onOpenThread(childThreadId)}
+              >
+                {content}
+                <ChevronRightIcon
+                  aria-hidden
+                  className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+                />
+              </button>
             </li>
           );
         })}
@@ -205,11 +224,6 @@ export function backgroundWorkNowItem(input: {
             )}
             className="tabular-nums"
           />
-        )}
-        {onlyThreadId === undefined ? null : (
-          <InlineButton tone="muted" onClick={() => onOpenThread(onlyThreadId)}>
-            Open
-          </InlineButton>
         )}
         <InlineButton disabled={input.stopDisabled} onClick={() => void input.onStop()}>
           {input.stopping ? "Stopping..." : "Stop"}

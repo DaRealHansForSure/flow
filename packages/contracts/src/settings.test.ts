@@ -39,6 +39,8 @@ describe("storage cleanup settings", () => {
       worktreeKeepWhen: "uncommitted-changes",
       browserArtifactsAfterDays: null,
       logsAfterDays: null,
+      // Only folders of deleted "No project" chats, which nothing reads any more.
+      scratchFoldersAfterDays: 1,
     });
   });
 

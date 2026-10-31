@@ -499,6 +499,7 @@ function GuestThread({
             work={null}
             workingSince={null}
             browsers={null}
+            agents={null}
             queuedCount={0}
             showScrollToEnd
             onScrollToEnd={() => follow.scrollToEnd(true)}

@@ -219,6 +219,7 @@ describe("Muse history discovery", () => {
             PATH: "/host/bin",
             XDG_DATA_HOME: xdg ?? "/host/data",
             MUSE_NO_AUTO_UPDATE: "1",
+            FLOW_SESSION_ID: "t3-managed",
           },
           readOnly: true,
           startupTimeoutMs: 5_000,

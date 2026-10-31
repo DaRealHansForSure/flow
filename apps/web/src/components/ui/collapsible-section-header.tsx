@@ -18,7 +18,8 @@ export function CollapsibleSectionHeader({
 }: Omit<ComponentProps<"button">, "className" | "style" | "aria-expanded"> & {
   expanded: boolean;
   tone?: keyof typeof tones;
-  variant?: "default" | "panel";
+  /** Flow: "section" is the right panel tabs' section label: small uppercase, arrow on the right. */
+  variant?: "default" | "panel" | "section";
   accessory?: ReactNode;
 }) {
   return (
@@ -27,7 +28,10 @@ export function CollapsibleSectionHeader({
       type="button"
       aria-expanded={expanded}
       className={cn(
-        "flex h-8 w-full cursor-pointer items-center gap-2 rounded-md text-left text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70",
+        "flex h-8 w-full cursor-pointer items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70",
+        variant === "section"
+          ? "text-2xs font-semibold uppercase tracking-wide"
+          : "text-xs font-medium",
         variant === "panel" ? "ps-2 pe-2.5" : "px-2",
         tones[tone].label,
       )}
@@ -36,12 +40,21 @@ export function CollapsibleSectionHeader({
       <span
         aria-hidden
         // A header with a trailing count drops its rule so it doesn't read as a leader.
-        className={cn("h-px min-w-2 flex-1", tones[tone].line, accessory && "invisible")}
+        className={cn(
+          "h-px min-w-2 flex-1",
+          tones[tone].line,
+          (accessory || variant === "section") && "invisible",
+        )}
       />
       {accessory}
       <ChevronDownIcon
         aria-hidden
-        className={cn("size-3 shrink-0 transition-transform", !expanded && "-rotate-90")}
+        className={cn(
+          "shrink-0 transition-transform",
+          variant === "section"
+            ? cn("size-4", expanded && "rotate-180")
+            : cn("size-3", !expanded && "-rotate-90"),
+        )}
       />
     </button>
   );

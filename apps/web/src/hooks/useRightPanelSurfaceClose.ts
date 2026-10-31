@@ -3,7 +3,9 @@ import {
   AuthTerminalOperateScope,
   type ScopedThreadRef,
 } from "@t3tools/contracts";
+import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
+import { toastManager } from "../components/ui/toast";
 import { agentControlledBrowserCloseConfirmation } from "../components/ChatView.logic";
 import { closePreviewSession } from "../components/preview/closePreviewSession";
 import { useThreadTerminalActions } from "../components/terminal/useThreadTerminalActions";
@@ -16,12 +18,31 @@ import {
   selectThreadRightPanelState,
   useRightPanelStore,
   type RightPanelSurface,
+  type ThreadRightPanelState,
 } from "../rightPanelStore";
 import { previewEnvironment } from "../state/preview";
 import { readEnvironmentScope, useEnvironmentScope } from "../state/session";
 import { useAtomCommand } from "../state/use-atom-command";
 import { useTerminalUiStateStore } from "../terminalUiStateStore";
 import { useStableCallback } from "./useStableCallback";
+
+const CLOSE_UNDO_TIMEOUT_MS = 5_000;
+
+/** Puts the thread's panel back as it was before a tab closed: its tabs and the open one. */
+function offerCloseUndo(threadRef: ScopedThreadRef, before: ThreadRightPanelState) {
+  toastManager.add({
+    type: "info",
+    title: "Tab closed",
+    timeout: CLOSE_UNDO_TIMEOUT_MS,
+    actionProps: {
+      children: "Undo",
+      onClick: () =>
+        useRightPanelStore.setState((state) => ({
+          byThreadKey: { ...state.byThreadKey, [scopedThreadKey(threadRef)]: before },
+        })),
+    },
+  });
+}
 
 /** Closing releases preview and terminal sessions. Agent-driven browsers and terminal tabs require confirmation. */
 export function useRightPanelSurfaceClose(input: {
@@ -119,7 +140,13 @@ export function useRightPanelSurfaceClose(input: {
       surface.kind !== "terminal" ||
       !readEnvironmentScope(threadRef.environmentId, AuthTerminalOperateScope)
     ) {
+      // Flow: closing a view tab (no session behind it) can be undone; a slip costs nothing.
+      const before = selectThreadRightPanelState(
+        useRightPanelStore.getState().byThreadKey,
+        threadRef,
+      );
       finishClose([surface]);
+      offerCloseUndo(threadRef, before);
       return;
     }
     const otherLabels = surface.terminalIds

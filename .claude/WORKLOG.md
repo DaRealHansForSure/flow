@@ -1,31 +1,27 @@
 # Worklog
 
-Updated: 2026-10-30 21:00
+Updated: 2026-10-31 02:25
 
 ## Current focus
 
-- **Topic:** release 0.2.1 prep: phone, Brain page and No project polish
-- **Goal:** ship Plan mode and today's chat, Brain and phone changes as service and desktop 0.2.1
-- **Branch:** develop (pushed up to 0697c3631 = 0.2.1-dev.6; 36 commits since, not pushed)
-- **Last step done:** No project chats only read their Brain and stay out of project lists
-  (server and web, merged from fix/no-project-temporary); Connected projects as a searchable,
-  sortable table with tap hints; per-terminal font zoom; rendered pages open on tap; Brain tab
-  remembers sections; graph Fit button; two T3 security fixes cherry-picked; FORK.md and
-  CHANGELOG tidied. Dev web against the live service: `node scripts/dev-runner.ts dev:web
-  --port 3773 --share` on https://nixda.tail096d14.ts.net:5733/
-- **Next step:** push develop and build 0.2.1-dev.7 when the owner says so (server changes need
-  it); then the T3 sync (157 commits) or background task output
-  (.plans/background-task-output.md)
+- **Topic:** release 0.2.2 (phone and panel polish, No project cleanup, fork CI)
+- **Goal:** full suites green, then release 0.2.2 (service and desktop) from the fork
+- **Branch:** develop (pushed to c0daab5a0; CI failed on two settings tests, fixed locally)
+- **Last step done:** Brain tab sections, sidebar top-row actions and bottom row, phone sidebar
+  stays mounted, touch sizes for composer, page headers and Settings list, Brain graph buttons
+- **Next step:** full suites in four background lanes (.t3/test-run/run-full.sh), fix until green,
+  then CHANGELOG [0.2.2], develop -> main -> release, tag flow-desktop-v0.2.2, back-merge
 - **Open questions / blockers:**
-  - Removing notes recorded from earlier No project chats, and the scratch folder's old Brain
-    binding, deletes Brain data: only with the owner's yes.
-  - No project chats follow the normal settle rules (owner); phone scroll loss after closing
-    Usage is ignored for now (owner).
-  - feat/windows-desktop stays unmerged; no shims for the Play Store T3 app; the eval plan files
-    in the Claude profile stay (owner).
+  - Reload lands mid-chat on a running chat; not reproduced yet (copy of chats on :5734).
+  - Windows service bundle switched off until fixed.
+  - Next topic after the release: routing/history redesign; Brain settings Part 2.
 
 ## Finished features
 
+- 2026-10-31 - Brain tab sections, sidebar layout, touch sizes, CI fixes (develop, pushed)
+- 2026-10-31 - Flow CI, T3 workflows removed, No project cleanup, Cite and composer fixes (develop)
+- 2026-10-30 - MCP view: MCP tab, /mcp, Settings > Providers MCP section, folded provider cards (merged into develop)
+- 2026-10-30 - Side fixes: agents pill, phone Back and swipes, usage chip, keyboard guard, work-row colours (develop)
 - 2026-10-30 - No project chats only read their Brain and are not projects; Connected projects table; source search; terminal font zoom; rendered pages open on tap; Brain tab memory; graph Fit; provider removal; About order; dev bundling page fits phones (develop)
 - 2026-10-30 - Status pill, Steer/Queue long press, background work list, touch-sized buttons, full-width phone menus, context window colours, update dialog versions (develop)
 - 2026-10-30 - Agents tab, Chat font, sidebar follows Last user message, browser zoom and globe pill, docked browser, Revise reworks the plan, FalkorDB crash fix (develop)
@@ -38,6 +34,10 @@ Updated: 2026-10-30 21:00
 
 ## History
 
+- 2026-10-31 02:25 - develop pushed, CI quick tests fixed, full suites running for 0.2.2
+- 2026-10-31 01:00 - CI fixed, scratch cleanup merged; push and tests waiting
+- 2026-10-30 23:45 - feat/mcp-view merged into develop; later: Check servers for Codex and OpenCode
+- 2026-10-30 23:10 - Part 1 side fixes committed on develop; tests waiting for the owner
 - 2026-10-30 21:00 - FORK.md, CHANGELOG and worklog tidied; tap hints in the projects table
 - 2026-10-30 20:45 - No project chats only read their Brain, hidden from project lists (merged)
 - 2026-10-30 20:30 - Projects table: icons, middle-cut paths, state hints, picker above it
