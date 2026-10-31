@@ -8,14 +8,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Fixed
-
-- The Windows install works again: the service release ships the Windows bundle, so a Windows PC
-  can run Flow and be added as an environment.
-- On Windows, `flow` no longer leaves an empty console window open while Flow runs.
-- `install.ps1` and `flow` say what they are doing: each install step with its size, checksum and
-  duration, and a line while Flow starts and waits until it is ready.
-
 ### Changed
 
 - The "Enjoying T3 Code? Star on GitHub" toast no longer appears; it pointed at T3 Code's
@@ -47,6 +39,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Windows install works again: the service release ships the Windows bundle, so a Windows PC
+  can run Flow and be added as an environment.
+- On Windows, `flow` no longer leaves an empty console window open while Flow runs.
+- `install.ps1` and `flow` say what they are doing: each install step with its size, checksum and
+  duration, and a line while Flow starts and waits until it is ready.
 - On a phone, the buttons of a folded settings section (such as Revoke others and Create link
   next to Authorized clients) wrap below its title instead of covering it.
 - A subagent's chat shows the task it was given at the top, above "Load earlier turns", while its
