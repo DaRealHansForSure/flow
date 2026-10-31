@@ -100,20 +100,23 @@ export function useUpdateEverything(
 
   const view = describeUpdateEverything({
     localVersion: localUpdateVersion,
+    localCurrentVersion: APP_VERSION,
     localMachines: machines.filter((machine) => machine.hostedByThisApp),
-    servers: moving,
+    servers: moving.map((server) => ({
+      ...server,
+      fromVersion:
+        machines.find((machine) => machine.environmentId === server.environmentId)?.serverConfig
+          ?.environment.serverVersion ?? null,
+    })),
     skipped,
     providerMachines: providers.machines.map((machine) => ({
       environmentId: machine.environmentId,
       label: machine.label,
-      // Flow: each provider shows the version it moves from and to, when both are known.
-      providers: machine.candidates.map((candidate) => {
-        const name = PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver;
-        const { currentVersion, latestVersion } = candidate.versionAdvisory;
-        return currentVersion && latestVersion
-          ? `${name} ${currentVersion} → ${latestVersion}`
-          : name;
-      }),
+      providers: machine.candidates.map((candidate) => ({
+        name: PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver,
+        from: candidate.versionAdvisory.currentVersion || null,
+        to: candidate.versionAdvisory.latestVersion || null,
+      })),
     })),
   });
 

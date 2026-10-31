@@ -293,10 +293,13 @@ describe("runUpdateEverything", () => {
 });
 
 describe("describeUpdateEverything", () => {
-  it("gives each machine one row with its T3 Code and provider updates", () => {
+  it("gives each machine one row with its T3 Code and provider updates, from and to", () => {
     const id = EnvironmentId.make;
+    const codex = { name: "Codex", from: "0.40.0", to: "0.41.0" };
+    const claude = { name: "Claude", from: null, to: "2.1.316" };
     const { rows } = describeUpdateEverything({
       localVersion: "1.1.0",
+      localCurrentVersion: "1.0.0",
       localMachines: [
         { environmentId: id("local"), label: "Mainbook" },
         { environmentId: id("wsl"), label: "Mainbook WSL" },
@@ -307,12 +310,13 @@ describe("describeUpdateEverything", () => {
           serverLabel: "bb-1",
           selfUpdate: "respawn",
           targetVersion: "1.1.0",
+          fromVersion: "1.0.2",
         },
       ],
       providerMachines: [
-        { environmentId: id("npm"), label: "bb-1", providers: ["Codex", "Claude"] },
-        { environmentId: id("local"), label: "Mainbook", providers: ["Codex"] },
-        { environmentId: id("manual"), label: "alvin", providers: ["Claude"] },
+        { environmentId: id("npm"), label: "bb-1", providers: [codex, claude] },
+        { environmentId: id("local"), label: "Mainbook", providers: [codex] },
+        { environmentId: id("manual"), label: "alvin", providers: [claude] },
       ],
       skipped: [
         { environmentId: id("manual"), label: "alvin", reason: "needs a manual update" },
@@ -321,13 +325,20 @@ describe("describeUpdateEverything", () => {
     });
 
     expect(
-      rows.map(({ label, app, skipped, providers }) => [label, app, skipped, providers]),
+      rows.map(({ label, app, appFrom, appTo, skipped, providers }) => [
+        label,
+        app,
+        appFrom,
+        appTo,
+        skipped,
+        providers,
+      ]),
     ).toEqual([
-      ["Mainbook", "this-app", null, ["Codex"]],
-      ["Mainbook WSL", "this-app", null, []],
-      ["bb-1", "server", null, ["Codex", "Claude"]],
-      ["alvin", null, "needs a manual update", ["Claude"]],
-      ["TheoRoom", null, "not connected", []],
+      ["Mainbook", "this-app", "1.0.0", "1.1.0", null, [codex]],
+      ["Mainbook WSL", "this-app", "1.0.0", "1.1.0", null, []],
+      ["bb-1", "server", "1.0.2", "1.1.0", null, [codex, claude]],
+      ["alvin", null, null, null, "needs a manual update", [claude]],
+      ["TheoRoom", null, null, null, "not connected", []],
     ]);
   });
 });
