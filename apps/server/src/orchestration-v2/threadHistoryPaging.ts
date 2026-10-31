@@ -7,13 +7,14 @@ import type {
 } from "@t3tools/contracts";
 
 /**
- * Every window stops at the byte budget; one with a user turn also at `maxUserTurns` or
- * `maxTurnItems` rows. Any other window (an agent-driven chat, the inside of a very long turn)
- * stops at `maxItems`. Flow: the same 300 rows, so a subagent's chat opens at its prompt.
+ * Every window stops at the byte budget. A window that holds a user turn also
+ * stops at `maxUserTurns` or `maxTurnItems` rows, which keeps ordinary turns
+ * whole. Any other window, such as an agent-driven thread or the inside of one
+ * very long turn, stops at `maxItems` rows.
  */
 export const THREAD_HISTORY_PAGE_POLICY = {
   maxUserTurns: 5,
-  maxItems: 300,
+  maxItems: 75,
   maxTurnItems: 300,
   maxEncodedBytes: 1_048_576,
 } as const;

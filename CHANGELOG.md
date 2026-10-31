@@ -87,7 +87,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Plans.** A plan card keeps its menu at the top right and wraps a long title to two lines.
   Revise brings the message box into view with the cursor in it and says "Describe what to change
   in the plan".
-- **Subagent chats** open at their prompt instead of behind "Load earlier turns".
 - **MCP tab** asks the agent again once the chat's session starts, instead of staying on "The agent
   is not running".
 - **"Worked for …"** opens and closes from anywhere on its row.
