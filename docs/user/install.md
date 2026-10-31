@@ -91,6 +91,21 @@ Create projects in the app and choose their Brain. See
 [updating Flow](./updating.md) for automatic release preparation and
 [local instances](./local-instances.md) for stop, restart, and development commands.
 
+## Use a Windows PC as an environment
+
+A Windows PC can run Flow next to the Flow you already use, so agents work on projects stored on
+that PC. Windows does not host a Brain.
+
+1. On the Windows PC, install Flow in PowerShell with the `install.ps1` command from the
+   [README](../../README.md#install).
+2. Run `flow` and keep that window open. Windows has no background service yet, so Flow runs
+   while `flow` runs.
+3. In the Flow that opens on the PC, create a pairing link with an address your other computer
+   can reach (LAN or Tailscale), as described in
+   [Remote access](./remote-access.md#pair-over-a-lan-or-private-network).
+4. On your other computer, paste the link under **Settings → Environments → Add environment**.
+   Projects you add on that environment use folders on the Windows PC.
+
 ## Install from a checkout
 
 For development, install Node.js 24.13.1+ within 24.x and Git, then run:
