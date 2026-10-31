@@ -272,7 +272,7 @@ function BrainController({
         }}
         indexing={workspace && <BrainIndexing workspace={workspace} send={send} busy={busy} />}
         toolbar={
-          <header className="flex flex-wrap items-center justify-between gap-4">
+          <header className="flex flex-wrap items-center justify-between gap-4" data-page-header="">
             <div className="flex flex-wrap items-center gap-3">
               <BrainSelect
                 label="Current brain"
