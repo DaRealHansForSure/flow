@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The Windows install works again: the service release ships the Windows bundle, so a Windows PC
   can run Flow and be added as an environment.
+- On Windows, `flow` no longer leaves an empty console window open while Flow runs.
 
 ### Changed
 
