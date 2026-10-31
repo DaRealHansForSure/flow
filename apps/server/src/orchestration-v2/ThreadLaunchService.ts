@@ -466,7 +466,11 @@ const make = Effect.gen(function* () {
             type: "thread.metadata.update",
             commandId: CommandId.make(`${input.commandId}:workspace`),
             threadId,
-            branch,
+            // Flow: on the project checkout with no branch asked for, keep the one recorded at
+            // launch instead of clearing it.
+            ...(input.workspaceStrategy.type === "root" && requestedBranch === undefined
+              ? {}
+              : { branch }),
             worktreePath,
           })
           .pipe(Effect.mapError(mapError(input, "update-thread", threadId)));

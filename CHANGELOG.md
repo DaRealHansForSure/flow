@@ -35,6 +35,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A new chat on the project checkout keeps the branch it started on; preparing its first message
+  no longer cleared it.
 - On a phone, Cite and the plan's Comment button sit 40 px under the selection, clear of
   Android's selection handle, and are finger-sized.
 - A chat's mode, Plan included, now follows the chat on every device: once a message or a plan
