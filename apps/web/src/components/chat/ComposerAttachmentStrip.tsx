@@ -704,6 +704,7 @@ export function ComposerAttachButton({
               onPointerDown={(event) => event.preventDefault()}
               onClick={() => inputRef.current?.click()}
               aria-label="Attach files"
+              data-composer-attach=""
             />
           }
         >

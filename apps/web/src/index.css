@@ -2652,6 +2652,8 @@ code {
   /* A one-line text field you tap to type in, such as the resting phone composer. */
   --touch-field-height: 3rem;
   --touch-icon-size: 1.25rem;
+  /* The open composer's send and stop button, the one control a phone reaches for most. */
+  --touch-primary-action-size: 2.75rem;
   --desktop-control-size: 2rem;
   --desktop-icon-size: 1.125rem;
   --header-control-size: var(--desktop-control-size);
@@ -2688,6 +2690,25 @@ code {
   width: var(--header-control-size);
   min-width: var(--header-control-size);
   height: var(--header-control-size);
+}
+/* The open composer on a touch screen: a bigger send/stop button and attach button. */
+@media (pointer: coarse) {
+  [data-composer-primary-action] {
+    width: var(--touch-primary-action-size);
+    height: var(--touch-primary-action-size);
+  }
+  [data-composer-primary-action] > svg {
+    width: var(--touch-icon-size);
+    height: var(--touch-icon-size);
+  }
+  [data-composer-attach] {
+    width: var(--touch-control-size);
+    height: var(--touch-control-size);
+  }
+  [data-composer-attach] > svg {
+    width: var(--touch-icon-size);
+    height: var(--touch-icon-size);
+  }
 }
 /* The side panel's tabs: control height, icon on the same inset as a control's icon. */
 [data-right-panel-tab-list] [data-active-tab] {

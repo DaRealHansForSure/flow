@@ -171,6 +171,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
               if (canOperateThread) onInterrupt();
             }}
             aria-label="Stop generation"
+            data-composer-primary-action={insidePendingAction ? undefined : ""}
           />
         }
       >
@@ -388,6 +389,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
     <button
       ref={setFollowUpMenuAnchor}
       type={showResume ? "button" : "submit"}
+      data-composer-primary-action=""
       className={cn(
         "relative isolate flex h-9 w-9 select-none items-center justify-center overflow-hidden rounded-full shadow-xs [-webkit-touch-callout:none] transition-all duration-150 enabled:cursor-pointer enabled:inset-shadow-control-highlight hover:scale-105 active:inset-shadow-control-pressed active:shadow-none disabled:pointer-events-none disabled:shadow-none disabled:hover:scale-100 sm:h-8 sm:w-8 [&_svg]:pointer-events-none",
         stageBackdropVariant

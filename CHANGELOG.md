@@ -34,6 +34,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- On touch screens the open composer's send and stop button is 44 px with a larger icon, and its
+  attach button is 40 px.
 - The sidebar's Working, Snoozed and Settled headers are labelled like the side panel's sections
   (small uppercase label, count, arrow on the right), and Settings sits alone at the right of the
   sidebar's bottom row.
