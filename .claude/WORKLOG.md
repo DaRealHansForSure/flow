@@ -1,23 +1,27 @@
 # Worklog
 
-Updated: 2026-10-31 02:25
+Updated: 2026-10-31 03:30
 
 ## Current focus
 
-- **Topic:** release 0.2.2 (phone and panel polish, No project cleanup, fork CI)
-- **Goal:** full suites green, then release 0.2.2 (service and desktop) from the fork
-- **Branch:** develop (pushed to c0daab5a0; CI failed on two settings tests, fixed locally)
-- **Last step done:** Brain tab sections, sidebar top-row actions and bottom row, phone sidebar
-  stays mounted, touch sizes for composer, page headers and Settings list, Brain graph buttons
-- **Next step:** full suites in four background lanes (.t3/test-run/run-full.sh), fix until green,
-  then CHANGELOG [0.2.2], develop -> main -> release, tag flow-desktop-v0.2.2, back-merge
+- **Topic:** after release 0.2.2
+- **Goal:** next topics on the owner's word
+- **Branch:** develop (main merged back after 0.2.2)
+- **Last step done:** released flow-v0.2.2 (service and AppImage, update feed at 0.2.2); full
+  suites run in four lanes, failures fixed; 300-row history window reverted (transfer budget)
+- **Next step:** owner picks: subagent chat window fix (targeted, within the 110 KB budget),
+  reload-lands-mid-chat repro, routing/history redesign, Brain settings Part 2
 - **Open questions / blockers:**
-  - Reload lands mid-chat on a running chat; not reproduced yet (copy of chats on :5734).
+  - Tests failing already in 0.2.1, left for the next upstream sync: BrainRuntime integration
+    (local source lookup), OpenCode2 plan-mode integration, OpenCode2TextGeneration replay,
+    storageCleanup submodule deinit. Load-only flakes: FilePreviewPanel, MessagesTimeline and
+    AttachmentFilePreview browser tests, AcpAdapterV2.
   - Windows service bundle switched off until fixed.
-  - Next topic after the release: routing/history redesign; Brain settings Part 2.
+  - Copy of chats for the scroll repro served on :5734 (PID 2301163, .t3/repro).
 
 ## Finished features
 
+- 2026-10-31 - Release 0.2.2 (service and desktop) published from release
 - 2026-10-31 - Brain tab sections, sidebar layout, touch sizes, CI fixes (develop, pushed)
 - 2026-10-31 - Flow CI, T3 workflows removed, No project cleanup, Cite and composer fixes (develop)
 - 2026-10-30 - MCP view: MCP tab, /mcp, Settings > Providers MCP section, folded provider cards (merged into develop)
@@ -34,6 +38,7 @@ Updated: 2026-10-31 02:25
 
 ## History
 
+- 2026-10-31 03:30 - 0.2.2 released; suites green apart from issues already in 0.2.1
 - 2026-10-31 02:25 - develop pushed, CI quick tests fixed, full suites running for 0.2.2
 - 2026-10-31 01:00 - CI fixed, scratch cleanup merged; push and tests waiting
 - 2026-10-30 23:45 - feat/mcp-view merged into develop; later: Check servers for Codex and OpenCode
