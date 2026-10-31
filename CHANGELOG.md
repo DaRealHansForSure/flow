@@ -35,6 +35,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- On a phone, a resting composer no longer opens when a closing dialog or sheet hands focus back
+  to one of its buttons; it opens only for a tap on it or an action like Revise.
 - On a phone, the touch that closes a sheet such as Background work no longer opens the resting
   composer underneath it; only a tap that starts on the message field opens it.
 - On a phone, closing the Background work list hands focus back to its pill instead of the

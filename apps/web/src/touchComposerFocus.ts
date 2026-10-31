@@ -24,6 +24,12 @@ function focusFollowsComposerTap(nowMs: number): boolean {
   return lastComposerTapAtMs !== null && nowMs - lastComposerTapAtMs <= TAP_FOCUS_WINDOW_MS;
 }
 
+/** Whether a focus now comes from the user: a tap on the composer or an action that asks for typing. */
+export function composerFocusRequested(): boolean {
+  const nowMs = performance.now();
+  return nowMs < allowedUntilMs || focusFollowsComposerTap(nowMs);
+}
+
 export function installTouchComposerFocusGuard(): void {
   const coarsePointer = window.matchMedia(COARSE_POINTER_QUERY);
   document.addEventListener(
@@ -46,8 +52,7 @@ export function installTouchComposerFocusGuard(): void {
       if (editor === null) {
         return;
       }
-      const nowMs = performance.now();
-      if (nowMs < allowedUntilMs || focusFollowsComposerTap(nowMs)) {
+      if (composerFocusRequested()) {
         return;
       }
       // The app must not see this focus either: the composer would count itself focused, cancel

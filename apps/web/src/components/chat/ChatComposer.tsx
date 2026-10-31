@@ -281,7 +281,7 @@ import { ComposerControlsBar } from "./ComposerControlsBar";
 import { heldMissingProvider } from "./missingProviderBanner";
 import { CollapsedComposerPrompt } from "./CollapsedComposerPrompt";
 import { composerCommandKeyHandler } from "./composerCommandKey";
-import { allowComposerFocus } from "../../touchComposerFocus";
+import { allowComposerFocus, composerFocusRequested } from "../../touchComposerFocus";
 
 function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
   const armed = Date.now() <= deadline.current;
@@ -3135,6 +3135,15 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           return;
         }
         if (isInsideCollapsedComposerControls(activeElement)) {
+          return;
+        }
+        // Flow: a resting phone composer opens for the user's tap only; focus handed back by a
+        // closing dialog or sheet (to the attach button, say) leaves it at rest.
+        if (
+          isComposerCollapsedMobile &&
+          window.matchMedia("(pointer: coarse)").matches &&
+          !composerFocusRequested()
+        ) {
           return;
         }
         if (composerBlurFrameRef.current !== null) {
