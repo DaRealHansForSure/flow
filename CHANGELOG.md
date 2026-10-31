@@ -34,8 +34,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- On touch screens the sidebar's bottom-row icons (Brain, pull requests, usage, Settings) are 1.5x
-  the header icons' size, in 50 px buttons.
+- On touch screens the sidebar's bottom-row icons (Brain, pull requests, usage, Settings) are 1.25x
+  the header icons' size, in 45 px buttons.
 - Settings' section list has 40 px rows with larger icons on touch screens, and a deeper fade at
   its top and bottom edges shows when there is more to scroll.
 - The Brain graph's Fit and Open larger buttons sit in a bordered group on a solid background, like
