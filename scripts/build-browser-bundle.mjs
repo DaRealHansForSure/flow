@@ -166,6 +166,12 @@ try {
         "@flow/brain-graph-gateway...",
         "--filter",
         "@flow/brain-orchestrator...",
+        // pnpm 12 ignores the workspace's supportedArchitectures on Windows; only its flags filter.
+        "--",
+        "--os",
+        platform,
+        "--cpu",
+        architecture,
       ],
       source,
     );

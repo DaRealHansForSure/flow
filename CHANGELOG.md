@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The Windows install works again: the service release ships the Windows bundle, so a Windows PC
+  can run Flow and be added as an environment.
+- On Windows, `flow` no longer leaves an empty console window open while Flow runs.
+- `install.ps1` and `flow` say what they are doing: each install step with its size, checksum and
+  duration, and a line while Flow starts and waits until it is ready.
+
 ### Changed
 
 - The "Enjoying T3 Code? Star on GitHub" toast no longer appears; it pointed at T3 Code's
