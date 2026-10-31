@@ -6,7 +6,7 @@ Updated: 2026-10-31 10:45
 
 - **Topic:** UI consistency (icon sizes, panel frame, plan revise with attachments)
 - **Goal:** desktop icons on the shared size concept; side panel tabs on one frame
-- **Branch:** develop (fix/ui-consistency merged, not pushed)
+- **Branch:** develop (fix/ui-consistency merged, provider inset and touch menu rows on top; not pushed)
 - **Last step done:** shared control + inline size tiers in index.css (sidebar top row, composer
   strip, dialog close buttons, update icon next to Settings); plan feedback with an attachment
   revises the plan; red Stop icon in the running banner; PanelTabFrame for Brain, Agents, MCP
