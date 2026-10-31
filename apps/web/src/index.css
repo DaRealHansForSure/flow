@@ -2828,3 +2828,17 @@ code {
     height: var(--touch-icon-size);
   }
 }
+
+/* The sidebar's bottom row (Brain, pull requests, usage, Settings) on touch screens: icons 1.5x the
+   header's, in buttons grown to match. After the shared control rules, which it overrides. */
+@media (pointer: coarse) {
+  [data-sidebar-utility] {
+    width: calc(var(--header-control-size) * 1.25);
+    min-width: calc(var(--header-control-size) * 1.25);
+    height: calc(var(--header-control-size) * 1.25);
+  }
+  [data-sidebar-utility] svg {
+    width: calc(var(--header-icon-size) * 1.5);
+    height: calc(var(--header-icon-size) * 1.5);
+  }
+}
