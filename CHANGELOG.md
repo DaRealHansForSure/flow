@@ -21,6 +21,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Background status.** A finished chat that still has a command or monitor running in the
+  background shows Background in the sidebar instead of looking idle.
 - **Confirmations.** Revoking a client, a pairing link or all other clients, and forgetting this
   device, ask in a confirm dialog first.
 - **Work rows.** Thinking, command and tool rows between answers use a greyer text colour, mixed

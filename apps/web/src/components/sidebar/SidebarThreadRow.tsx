@@ -534,6 +534,7 @@ const TOP_STATUS_ICONS = {
   failed: CircleAlertIcon,
   done: CircleCheckIcon,
   woke: AlarmClockIcon,
+  background: TerminalIcon,
 } as const;
 
 function TopStatusIcon(props: { icon: keyof typeof TOP_STATUS_ICONS; className: string }) {
@@ -791,7 +792,15 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                             icon: "done" as const,
                             className: "text-success-foreground",
                           }
-                        : null;
+                        : // Flow: a finished chat with a command or monitor still running in the
+                          // background says so instead of looking idle.
+                          (thread.pendingBackgroundTasks?.length ?? 0) > 0
+                          ? {
+                              label: "Background",
+                              icon: "background" as const,
+                              className: "text-muted-foreground",
+                            }
+                          : null;
   const isWokeStatus = topStatus?.icon === "woke";
 
   const branchMismatch = resolveLocalCheckoutBranchMismatch({
