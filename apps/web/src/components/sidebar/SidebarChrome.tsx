@@ -9,7 +9,6 @@ import { usePullRequestsSupported } from "../../state/environments";
 import { BrandWordmark } from "../BrandWordmark";
 import {
   resolveEnvironmentIdentificationPillLabel,
-  StageBackdropButtonArt,
   useEnvironmentStageLabel,
 } from "../SidebarStageBackdrop";
 import { Badge } from "../ui/badge";
@@ -119,10 +118,13 @@ function SidebarUtilityItem({
   icon,
   label,
   onClick,
+  dot = null,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
+  /** Fork: a status colour class shown as a dot on the icon's corner. */
+  dot?: string | null;
 }) {
   return (
     <SidebarMenuItem className="shrink-0">
@@ -134,8 +136,15 @@ function SidebarUtilityItem({
               onClick={onClick}
               size="icon"
               data-sidebar-utility
+              className={dot ? "relative" : undefined}
             >
               {icon}
+              {dot ? (
+                <span
+                  aria-hidden
+                  className={cn("absolute top-1.5 right-1.5 size-2 rounded-full", dot)}
+                />
+              ) : null}
             </SidebarMenuButton>
           }
         />
@@ -153,6 +162,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
     select: (location) => isSidebarUtilityPage(location.pathname),
   });
   const pullRequestsSupported = usePullRequestsSupported();
+  const brain = brainHealthIndicator(useBrainHealth());
   const closeMobileSidebar = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -168,6 +178,11 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   const handleSettingsClick = () => {
     closeMobileSidebar();
     void navigate({ to: "/settings" });
+  };
+
+  const handleBrainClick = () => {
+    closeMobileSidebar();
+    void navigate({ to: "/brain", search: { brain: undefined, environment: undefined } });
   };
 
   const handleUsageClick = () => {
@@ -197,6 +212,12 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
             icon={<SettingsIcon />}
             label="Settings"
             onClick={handleSettingsClick}
+          />
+          <SidebarUtilityItem
+            icon={<BrainCircuit />}
+            label={brain.label}
+            onClick={handleBrainClick}
+            dot={brain.dot}
           />
           {pullRequestsSupported ? (
             <SidebarUtilityItem
@@ -229,41 +250,13 @@ export const SidebarChromeFooter = memo(function SidebarChromeFooter() {
   );
 });
 
-/** Fork: amber while the Brain starts, red when it fails; neutral until the first answer. */
-function brainHealthTint(health: ReturnType<typeof useBrainHealth>) {
+/** Fork: an amber dot while the Brain starts, a red one when it fails, so trouble shows early. */
+function brainHealthIndicator(health: ReturnType<typeof useBrainHealth>) {
   if (health.kind === "failed") {
-    return { overlay: "bg-destructive/70", label: `Brain unavailable: ${health.reason}` };
+    return { dot: "bg-destructive", label: `Brain unavailable: ${health.reason}` };
   }
   if (health.kind === "loading") {
-    return { overlay: "bg-warning/70", label: "Brain is loading" };
+    return { dot: "bg-warning", label: "Brain is loading" };
   }
-  return { overlay: "bg-black/15", label: "Brain" };
-}
-
-export function SidebarBrainLink() {
-  const active = useLocation({ select: (location) => location.pathname === "/brain" });
-  const { isMobile, setOpenMobile } = useSidebar();
-  const tint = brainHealthTint(useBrainHealth());
-  return (
-    <div className="px-3 pb-2">
-      <Link
-        aria-label={tint.label}
-        title={tint.label}
-        aria-current={active ? "page" : undefined}
-        to="/brain"
-        search={{ brain: undefined, environment: undefined }}
-        onClick={() => {
-          if (isMobile) setOpenMobile(false);
-        }}
-        className="relative isolate flex items-center gap-2.5 overflow-hidden rounded-lg px-2.5 py-2 text-sm font-medium text-white outline-none hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-      >
-        <span aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <StageBackdropButtonArt variant="dev" />
-          <span className={cn("absolute inset-0", tint.overlay)} />
-        </span>
-        <BrainCircuit size={16} />
-        <span>Brain</span>
-      </Link>
-    </div>
-  );
+  return { dot: null, label: "Brain" };
 }
