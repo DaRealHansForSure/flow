@@ -3,15 +3,8 @@ import type { FlowBrowserUpdateState } from "@t3tools/contracts";
 import { ArrowUpCircleIcon } from "lucide-react";
 import { isElectron } from "../../env";
 import { Button } from "../ui/button";
-import {
-  AlertDialog,
-  AlertDialogPopup,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-} from "../ui/alert-dialog";
 import { fetchFlowBrowserUpdate, waitForFlowBrowserUpdate } from "./flowBrowserUpdate";
+import { ensureLocalApi } from "~/localApi";
 
 export function FlowBrowserUpdateNotice() {
   return isElectron ? null : <BrowserUpdateNotice />;
@@ -19,7 +12,6 @@ export function FlowBrowserUpdateNotice() {
 
 function BrowserUpdateNotice() {
   const [state, setState] = useState<FlowBrowserUpdateState | null>(null);
-  const [confirming, setConfirming] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Polls the server's update route and rechecks when the tab becomes visible.
@@ -51,9 +43,15 @@ function BrowserUpdateNotice() {
     };
   }, []);
 
+  const confirmRestart = async () => {
+    const confirmed = await ensureLocalApi().dialogs.confirm(
+      "Restart Flow to update?\nThis restarts the server hosting this app. Running agents and terminal commands may be interrupted. Your saved threads, projects, and Brain data stay in place.",
+    );
+    if (confirmed) await restart();
+  };
+
   const restart = async () => {
     if (!state?.readyVersion || restarting) return;
-    setConfirming(false);
     setRestarting(true);
     setError(null);
     try {
@@ -85,27 +83,10 @@ function BrowserUpdateNotice() {
         className="mt-2 w-full"
         size="sm"
         disabled={restarting}
-        onClick={() => setConfirming(true)}
+        onClick={() => void confirmRestart()}
       >
         Restart to update
       </Button>
-      <AlertDialog open={confirming} onOpenChange={setConfirming}>
-        <AlertDialogPopup>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Restart Flow to update?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This restarts the server hosting this app. Running agents and terminal commands may be
-              interrupted. Your saved threads, projects, and Brain data stay in place.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="outline" onClick={() => setConfirming(false)}>
-              Later
-            </Button>
-            <Button onClick={() => void restart()}>Restart to update</Button>
-          </AlertDialogFooter>
-        </AlertDialogPopup>
-      </AlertDialog>
     </div>
   );
 }

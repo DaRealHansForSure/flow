@@ -12,11 +12,6 @@ import { SettingsRow } from "./settingsLayout";
 export function ForgetThisDeviceRow() {
   const [busy, setBusy] = useState(false);
   const forget = async () => {
-    if (
-      !window.confirm("Forget this device? Opening Flow here again asks for a new pairing code.")
-    ) {
-      return;
-    }
     setBusy(true);
     try {
       await forgetThisDevice();
@@ -42,7 +37,6 @@ export function ForgetThisDeviceRow() {
           disabled={busy}
           title="Forget this device?"
           description="This browser is signed out. Opening Flow here again needs a new pairing code."
-          confirmLabel="Forget device"
           onConfirm={() => void forget()}
         >
           Forget this device

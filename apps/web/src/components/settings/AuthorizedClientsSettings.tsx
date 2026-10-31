@@ -383,7 +383,6 @@ const PairingLinkListRow = memo(function PairingLinkListRow({
             disabled={!canRevoke || revokingPairingLinkId === pairingLink.id}
             title="Revoke this pairing link?"
             description="Nobody can pair with it any more. Devices already paired with it keep their access."
-            confirmLabel="Revoke link"
             onConfirm={() => void onRevoke(pairingLink.id)}
           >
             {revokingPairingLinkId === pairingLink.id ? "Revoking…" : "Revoke"}
@@ -552,7 +551,6 @@ const ConnectedClientListRow = memo(function ConnectedClientListRow({
               disabled={!canRevoke || revokingClientSessionId === clientSession.sessionId}
               title="Revoke this client?"
               description="It is signed out at once and needs a new pairing code to connect again."
-              confirmLabel="Revoke client"
               onConfirm={() => void onRevokeSession(clientSession.sessionId)}
             >
               {revokingClientSessionId === clientSession.sessionId ? "Revoking…" : "Revoke"}
@@ -633,7 +631,6 @@ export const AuthorizedClientsHeaderAction = memo(function AuthorizedClientsHead
         disabled={isRevokingOtherClients || !canRevokeOtherClients(clientSessions)}
         title="Revoke all other clients?"
         description="Every client except this one is signed out at once and needs a new pairing code to connect again."
-        confirmLabel="Revoke others"
         onConfirm={() => void onRevokeOtherClients()}
       >
         {isRevokingOtherClients ? "Revoking…" : "Revoke others"}
