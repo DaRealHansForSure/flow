@@ -98,10 +98,12 @@ that PC. Windows does not host a Brain.
 
 1. On the Windows PC, install Flow in PowerShell with the `install.ps1` command from the
    [README](../../README.md#install).
-2. Run `flow` and keep that window open. Windows has no background service yet, so Flow runs
-   while `flow` runs.
-3. In the Flow that opens on the PC, create a pairing link with an address your other computer
-   can reach (LAN or Tailscale), as described in
+2. Run `flow`. It starts Flow in the background and opens it in the browser. Flow keeps running
+   after you close the terminal, until `flow stop` or a restart of the PC; Windows does not
+   start it at login yet, so run `flow` again after a restart.
+3. In the Flow that opens on the PC, open **Settings → Sharing & access**, turn on **Network
+   access** (allow Flow through the Windows firewall if asked), and create a pairing link with an
+   address your other computer can reach (LAN or Tailscale). See
    [Remote access](./remote-access.md#pair-over-a-lan-or-private-network).
 4. On your other computer, paste the link under **Settings → Environments → Add environment**.
    Projects you add on that environment use folders on the Windows PC.
