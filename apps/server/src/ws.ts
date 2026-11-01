@@ -91,6 +91,7 @@ import {
   PersistChatAttachmentsError,
   RpcClientId,
   EnvironmentAuthorizationError,
+  FlowBrowserUpdateRpcError,
   type ProjectId,
   type ProviderDriverKind,
   type ProviderInstanceId,
@@ -101,6 +102,7 @@ import {
   WsRpcGroup,
 } from "@t3tools/contracts";
 import {
+  FetchHttpClient,
   HttpRouter,
   HttpServerRequest,
   HttpServerRespondable,
@@ -108,6 +110,7 @@ import {
 } from "effect/http";
 import { RpcGroup, RpcSerialization, RpcServer } from "effect/rpc";
 
+import { requestFlowBrowserUpdate } from "./flowBrowserUpdate.ts";
 import * as CheckpointDiffQuery from "./checkpointing/CheckpointDiffQuery.ts";
 import * as ServerConfig from "./config.ts";
 import * as EnvironmentTheme from "./environmentTheme.ts";
@@ -273,6 +276,21 @@ import * as AgentSessionImporter from "./project/AgentSessionImporter.ts";
 import * as UsageLimitSources from "./usage/UsageLimitSources.ts";
 
 const CONFIG_DISCOVERY_TIMEOUT = Duration.seconds(5);
+
+/** The supervisor's error is local detail; clients get a retryable reason. */
+const flowBrowserUpdate = (apply: boolean) =>
+  requestFlowBrowserUpdate(apply).pipe(
+    Effect.provide(FetchHttpClient.layer),
+    Effect.mapError(
+      (error) =>
+        new FlowBrowserUpdateRpcError({
+          reason:
+            typeof error.cause === "string"
+              ? error.cause
+              : "Flow's update manager is unavailable. Please retry.",
+        }),
+    ),
+  );
 const isProviderUploadFeedbackError = Schema.is(ProviderUploadFeedbackError);
 
 const resolveDiscoveryForConfig = <A, E, R>(
@@ -2493,6 +2511,8 @@ export const layerWsRpc = (
         [WS_METHODS.providerInstallRemove]: (input) => providerInstallation.remove(input),
         [WS_METHODS.serverUpdateServer]: (input) => serverSelfUpdate.update(input),
         [WS_METHODS.serverGetNpmRelease]: (input) => npmRelease.get(input),
+        [WS_METHODS.flowGetBrowserUpdate]: () => flowBrowserUpdate(false),
+        [WS_METHODS.flowApplyBrowserUpdate]: () => flowBrowserUpdate(true),
         [WS_METHODS.serverUpdateServerWithProgress]: (input) =>
           ServerSelfUpdate.updateProgressStream(serverSelfUpdate, input),
         [WS_METHODS.serverCommitDesktopUpdate]: (input) =>

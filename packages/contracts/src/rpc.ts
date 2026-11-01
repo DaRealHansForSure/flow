@@ -84,6 +84,11 @@ import {
 } from "./acpRegistry.ts";
 import { ExternalLauncherError, LaunchEditorInput } from "./editor.ts";
 import {
+  FlowBrowserUpdateInput,
+  FlowBrowserUpdateRpcError,
+  FlowBrowserUpdateState,
+} from "./flowBrowserUpdate.ts";
+import {
   AuthAccessStreamError,
   AuthAccessStreamEvent,
   EnvironmentAuthorizationError,
@@ -506,6 +511,8 @@ export const WS_METHODS = {
   serverProbe: "server.probe",
   serverGetConfig: "server.getConfig",
   serverGetNpmRelease: "server.getNpmRelease",
+  flowGetBrowserUpdate: "flow.getBrowserUpdate",
+  flowApplyBrowserUpdate: "flow.applyBrowserUpdate",
   serverRefreshProviders: "server.refreshProviders",
   serverUpdateProvider: "server.updateProvider",
   serverUpdateServer: "server.updateServer",
@@ -764,6 +771,18 @@ const WsServerGetNpmReleaseRpc = Rpc.make(WS_METHODS.serverGetNpmRelease, {
   payload: ServerNpmReleaseInput,
   success: Schema.NullOr(ServerNpmRelease),
   error: Schema.Union([ServerNpmReleaseError, EnvironmentAuthorizationError]),
+});
+
+const WsFlowGetBrowserUpdateRpc = Rpc.make(WS_METHODS.flowGetBrowserUpdate, {
+  payload: FlowBrowserUpdateInput,
+  success: FlowBrowserUpdateState,
+  error: Schema.Union([FlowBrowserUpdateRpcError, EnvironmentAuthorizationError]),
+});
+
+const WsFlowApplyBrowserUpdateRpc = Rpc.make(WS_METHODS.flowApplyBrowserUpdate, {
+  payload: FlowBrowserUpdateInput,
+  success: FlowBrowserUpdateState,
+  error: Schema.Union([FlowBrowserUpdateRpcError, EnvironmentAuthorizationError]),
 });
 
 const WsServerUpdateServerRpc = Rpc.make(WS_METHODS.serverUpdateServer, {
@@ -2012,6 +2031,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsProviderInstallRemoveRpc,
   WsServerUpdateServerRpc,
   WsServerGetNpmReleaseRpc,
+  WsFlowGetBrowserUpdateRpc,
+  WsFlowApplyBrowserUpdateRpc,
   WsServerUpdateServerWithProgressRpc,
   WsServerCommitDesktopUpdateRpc,
   WsServerUpsertKeybindingRpc,
