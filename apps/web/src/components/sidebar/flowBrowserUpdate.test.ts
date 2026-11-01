@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, afterEach } from "vite-plus/test";
-import { fetchFlowBrowserUpdate, waitForFlowBrowserUpdate } from "./flowBrowserUpdate";
+import type { EnvironmentId, FlowBrowserUpdateState } from "@t3tools/contracts";
+import {
+  fetchFlowBrowserUpdate,
+  planFlowFleetUpdate,
+  runFlowFleetUpdate,
+  waitForFlowBrowserUpdate,
+} from "./flowBrowserUpdate";
 
 const state = {
   supported: true,
@@ -54,5 +60,65 @@ describe("Flow browser updates", () => {
         now: () => now,
       }),
     ).rejects.toThrow("not reconnected");
+  });
+});
+
+describe("Flow fleet updates", () => {
+  const id = (value: string) => value as EnvironmentId;
+  const member = (name: string, change: Partial<FlowBrowserUpdateState> | null) => ({
+    environmentId: id(name),
+    label: name,
+    state: change === null ? null : { ...state, ...change },
+  });
+
+  it("plans every other environment with a staged release and the hosting server last", () => {
+    expect(
+      planFlowFleetUpdate(state, [
+        member("ext", {}),
+        member("old", { supported: false }),
+        member("busy", { restarting: true }),
+        member("current", { readyVersion: null }),
+        member("same", { currentVersion: "1.1.0" }),
+        member("offline", null),
+      ]),
+    ).toEqual({
+      others: [{ environmentId: id("ext"), label: "ext", version: "1.1.0" }],
+      hostingVersion: "1.1.0",
+    });
+    expect(planFlowFleetUpdate({ ...state, readyVersion: null }, []).hostingVersion).toBeNull();
+  });
+
+  it("updates the other environments one after another before restarting the hosting server", async () => {
+    const calls: string[] = [];
+    const failures = await runFlowFleetUpdate(
+      planFlowFleetUpdate(state, [member("a", {}), member("b", {})]),
+      {
+        updateOther: async ({ label }) => {
+          calls.push(`start ${label}`);
+          await Promise.resolve();
+          calls.push(`done ${label}`);
+        },
+        updateHosting: async (version) => {
+          calls.push(`hosting ${version}`);
+        },
+      },
+    );
+    expect(failures).toEqual([]);
+    expect(calls).toEqual(["start a", "done a", "start b", "done b", "hosting 1.1.0"]);
+  });
+
+  it("keeps the hosting server running when another environment fails, so the page can report it", async () => {
+    const updateHosting = vi.fn();
+    const failures = await runFlowFleetUpdate(
+      planFlowFleetUpdate(state, [member("a", {}), member("b", {})]),
+      {
+        updateOther: async ({ label }) => {
+          if (label === "a") throw new Error("not reconnected");
+        },
+        updateHosting,
+      },
+    );
+    expect(failures).toEqual(["a: not reconnected"]);
+    expect(updateHosting).not.toHaveBeenCalled();
   });
 });

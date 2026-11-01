@@ -34,6 +34,8 @@ const RPC_AGGREGATES = {
   [WS_METHODS.serverProbe]: "server",
   [WS_METHODS.serverGetConfig]: "server",
   [WS_METHODS.serverGetNpmRelease]: "server",
+  [WS_METHODS.flowGetBrowserUpdate]: "server",
+  [WS_METHODS.flowApplyBrowserUpdate]: "server",
   [WS_METHODS.serverRefreshProviders]: "server",
   [WS_METHODS.serverUpdateProvider]: "server",
   [WS_METHODS.providerAuthStart]: "provider",

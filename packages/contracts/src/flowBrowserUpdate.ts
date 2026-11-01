@@ -8,3 +8,16 @@ export const FlowBrowserUpdateState = Schema.Struct({
   restarting: Schema.Boolean,
 });
 export type FlowBrowserUpdateState = typeof FlowBrowserUpdateState.Type;
+
+/** Lets one browser read and apply a staged Flow update on every connected environment. */
+export const FlowBrowserUpdateInput = Schema.Struct({});
+export type FlowBrowserUpdateInput = typeof FlowBrowserUpdateInput.Type;
+
+export class FlowBrowserUpdateRpcError extends Schema.TaggedError<FlowBrowserUpdateRpcError>()(
+  "FlowBrowserUpdateRpcError",
+  { reason: Schema.String },
+) {
+  override get message(): string {
+    return this.reason;
+  }
+}
