@@ -13,6 +13,13 @@ once the updated server is ready. Choose **Later** to keep working; the notice
 stays available. This restarts the server hosting the browser app, not a
 different remote environment selected in a thread.
 
+When other connected environments have the release prepared too, the notice
+lists them and the button reads **Update all**. Flow updates them one after
+another, waits until each runs the new version, and restarts the server hosting
+the browser app last. If one of them fails, the hosting server keeps running and
+the notice shows the error. Environments on a release before 0.2.4 are not
+listed; update those from their own browser app or with `flow restart`.
+
 A prepared update also takes effect the next time you start the stopped primary
 app. Your instance identity, projects, threads, and Brain storage stay in the
 same data directory. Terminal commands remain available:
