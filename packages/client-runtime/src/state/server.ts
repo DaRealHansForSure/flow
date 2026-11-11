@@ -1265,6 +1265,15 @@ export function createServerEnvironmentAtoms<R, E>(
       label: "environment-data:server:trace-diagnostics",
       tag: WS_METHODS.serverGetTraceDiagnostics,
     }),
+    flowBrowserUpdate: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:server:flow-browser-update",
+      tag: WS_METHODS.flowGetBrowserUpdate,
+    }),
+    applyFlowBrowserUpdate: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:server:flow-browser-update-apply",
+      tag: WS_METHODS.flowApplyBrowserUpdate,
+      concurrency: { mode: "singleFlight", key: ({ environmentId }) => environmentId },
+    }),
     npmRelease: createEnvironmentRpcQueryAtomFamily(runtime, {
       label: "environment-data:server:npm-release",
       tag: WS_METHODS.serverGetNpmRelease,

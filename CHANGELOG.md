@@ -8,6 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Update every connected server.** When a Flow release is ready, the sidebar's update notice also
+  lists the other connected environments that have it staged. Update all restarts them one after
+  another, waits until each runs the new version, and restarts the server hosting the app last.
+  If one of them fails, the hosting server keeps running so the error stays visible.
+
 ## [0.2.3] - 2026-10-31
 
 ### Added
