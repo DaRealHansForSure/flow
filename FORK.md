@@ -150,6 +150,9 @@ every change.
   follow this fork's releases. A machine that has upstream Flow switches once, either by
   accepting the service update the desktop app offers or by running this fork's `install.sh`.
   [Back up first](./docs/user/install.md#back-up-an-existing-flow-first).
+- **Update all.** The browser app's update notice also lists the other connected environments
+  that have the release prepared. Update all restarts them one after another and the server
+  hosting the app last (see [Updating Flow](./docs/user/updating.md)).
 - **One release run publishes both parts.** The "Flow release" workflow, run by hand on the
   `release` branch, publishes the service and the desktop app of the same version together, so
   the service version every app asks for exists.
